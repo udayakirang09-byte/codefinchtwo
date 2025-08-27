@@ -1,196 +1,215 @@
-import { z } from 'zod';
-import { createInsertSchema } from 'drizzle-zod';
+import { sql, relations } from "drizzle-orm";
+import {
+  pgTable,
+  varchar,
+  text,
+  timestamp,
+  integer,
+  decimal,
+  boolean,
+  jsonb,
+} from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
 
-// User types
-export const UserRole = z.enum(['student', 'teacher', 'admin']);
-export const UserStatus = z.enum(['active', 'inactive', 'suspended']);
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: z.infer<typeof UserRole>;
-  status: z.infer<typeof UserStatus>;
-  profileImage?: string;
-  bio?: string;
-  skills?: string[];
-  hourlyRate?: number;
-  experience?: number;
-  rating?: number;
-  totalClasses?: number;
-  totalEarnings?: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Class/Session types
-export const ClassStatus = z.enum(['scheduled', 'ongoing', 'completed', 'cancelled']);
-export const ClassType = z.enum(['one-on-one', 'group']);
-
-export interface Class {
-  id: string;
-  teacherId: string;
-  studentId: string;
-  title: string;
-  description: string;
-  subject: string;
-  type: z.infer<typeof ClassType>;
-  status: z.infer<typeof ClassStatus>;
-  scheduledAt: Date;
-  duration: number;
-  fee: number;
-  platformFee: number;
-  teacherEarnings: number;
-  meetingLink?: string;
-  chatRoomId?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Feedback types
-export interface Feedback {
-  id: string;
-  classId: string;
-  fromUserId: string;
-  toUserId: string;
-  rating: number;
-  comment: string;
-  createdAt: Date;
-}
-
-// Analytics types
-export interface TeacherAnalytics {
-  teacherId: string;
-  totalClasses: number;
-  totalEarnings: number;
-  averageRating: number;
-  studentRetentionRate: number;
-  teachingBrillanceScore: number;
-  skillPopularity: Record<string, number>;
-  monthlyTrends: Array<{
-    month: string;
-    classes: number;
-    earnings: number;
-    rating: number;
-  }>;
-}
-
-export interface StudentAnalytics {
-  studentId: string;
-  totalClasses: number;
-  totalSpent: number;
-  learningProgress: Record<string, number>;
-  participationScore: number;
-  favoriteSubjects: string[];
-  monthlyActivity: Array<{
-    month: string;
-    classes: number;
-    subjects: string[];
-  }>;
-}
-
-export interface PlatformAnalytics {
-  totalUsers: number;
-  totalClasses: number;
-  totalRevenue: number;
-  growthRate: number;
-  popularSubjects: Array<{
-    subject: string;
-    demand: number;
-    avgPrice: number;
-  }>;
-  trendingSkills: Array<{
-    skill: string;
-    growth: number;
-    teacherCount: number;
-  }>;
-  abuseReports: Array<{
-    type: string;
-    count: number;
-    severity: 'low' | 'medium' | 'high';
-  }>;
-}
-
-// Chat and Communication
-export interface ChatMessage {
-  id: string;
-  roomId: string;
-  userId: string;
-  message: string;
-  timestamp: Date;
-  type: 'text' | 'file' | 'system';
-}
-
-export interface ChatRoom {
-  id: string;
-  classId: string;
-  participants: string[];
-  createdAt: Date;
-  lastActivity: Date;
-}
-
-// Admin toggles and settings
-export interface AdminSettings {
-  id: string;
-  featureTogles: {
-    videoClasses: boolean;
-    chatSystem: boolean;
-    aiAnalytics: boolean;
-    powerBiIntegration: boolean;
-    quantumAI: boolean;
-    abuseTracking: boolean;
-  };
-  platformSettings: {
-    commissionRate: number;
-    minClassFee: number;
-    maxClassFee: number;
-    allowGroupClasses: boolean;
-    requireTeacherVerification: boolean;
-  };
-  updatedAt: Date;
-}
-
-// Zod schemas for validation
-export const userInsertSchema = z.object({
-  email: z.string().email(),
-  name: z.string().min(2),
-  role: UserRole,
-  profileImage: z.string().optional(),
-  bio: z.string().optional(),
-  skills: z.array(z.string()).optional(),
-  hourlyRate: z.number().min(0).optional(),
-  experience: z.number().min(0).optional(),
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").unique().notNull(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  role: varchar("role").notNull().default("student"), // student, mentor, admin
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const classInsertSchema = z.object({
-  teacherId: z.string(),
-  studentId: z.string(),
-  title: z.string().min(3),
-  description: z.string().min(10),
-  subject: z.string(),
-  type: ClassType,
-  scheduledAt: z.string().datetime(),
-  duration: z.number().min(30),
-  fee: z.number().min(1),
+export const mentors = pgTable("mentors", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  specialties: jsonb("specialties").$type<string[]>().default([]),
+  experience: integer("experience").notNull(), // years
+  rating: decimal("rating", { precision: 3, scale: 2 }).default("0.00"),
+  totalStudents: integer("total_students").default(0),
+  hourlyRate: decimal("hourly_rate", { precision: 10, scale: 2 }),
+  isActive: boolean("is_active").default(true),
+  availableSlots: jsonb("available_slots").$type<{ day: string; times: string[] }[]>().default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const feedbackInsertSchema = z.object({
-  classId: z.string(),
-  fromUserId: z.string(),
-  toUserId: z.string(),
-  rating: z.number().min(1).max(5),
-  comment: z.string(),
+export const students = pgTable("students", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  age: integer("age"),
+  interests: jsonb("interests").$type<string[]>().default([]),
+  skillLevel: varchar("skill_level").default("beginner"), // beginner, intermediate, advanced
+  parentEmail: varchar("parent_email"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const chatMessageInsertSchema = z.object({
-  roomId: z.string(),
-  userId: z.string(),
-  message: z.string().min(1),
-  type: z.enum(['text', 'file', 'system']).default('text'),
+export const bookings = pgTable("bookings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  studentId: varchar("student_id").references(() => students.id).notNull(),
+  mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
+  scheduledAt: timestamp("scheduled_at").notNull(),
+  duration: integer("duration").notNull(), // minutes
+  status: varchar("status").notNull().default("scheduled"), // scheduled, completed, cancelled
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Types for API responses
-export type UserInsert = z.infer<typeof userInsertSchema>;
-export type ClassInsert = z.infer<typeof classInsertSchema>;
-export type FeedbackInsert = z.infer<typeof feedbackInsertSchema>;
-export type ChatMessageInsert = z.infer<typeof chatMessageInsertSchema>;
+export const achievements = pgTable("achievements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  studentId: varchar("student_id").references(() => students.id).notNull(),
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  badgeIcon: varchar("badge_icon").notNull(),
+  earnedAt: timestamp("earned_at").defaultNow(),
+});
+
+export const reviews = pgTable("reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
+  studentId: varchar("student_id").references(() => students.id).notNull(),
+  mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
+  rating: integer("rating").notNull(), // 1-5 stars
+  comment: text("comment"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Relations
+export const usersRelations = relations(users, ({ one }) => ({
+  mentor: one(mentors, {
+    fields: [users.id],
+    references: [mentors.userId],
+  }),
+  student: one(students, {
+    fields: [users.id],
+    references: [students.userId],
+  }),
+}));
+
+export const mentorsRelations = relations(mentors, ({ one, many }) => ({
+  user: one(users, {
+    fields: [mentors.userId],
+    references: [users.id],
+  }),
+  bookings: many(bookings),
+  reviews: many(reviews),
+}));
+
+export const studentsRelations = relations(students, ({ one, many }) => ({
+  user: one(users, {
+    fields: [students.userId],
+    references: [users.id],
+  }),
+  bookings: many(bookings),
+  achievements: many(achievements),
+  reviews: many(reviews),
+}));
+
+export const bookingsRelations = relations(bookings, ({ one, many }) => ({
+  student: one(students, {
+    fields: [bookings.studentId],
+    references: [students.id],
+  }),
+  mentor: one(mentors, {
+    fields: [bookings.mentorId],
+    references: [mentors.id],
+  }),
+  reviews: many(reviews),
+}));
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  booking: one(bookings, {
+    fields: [reviews.bookingId],
+    references: [bookings.id],
+  }),
+  student: one(students, {
+    fields: [reviews.studentId],
+    references: [students.id],
+  }),
+  mentor: one(mentors, {
+    fields: [reviews.mentorId],
+    references: [mentors.id],
+  }),
+}));
+
+export const achievementsRelations = relations(achievements, ({ one }) => ({
+  student: one(students, {
+    fields: [achievements.studentId],
+    references: [students.id],
+  }),
+}));
+
+// Insert schemas
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMentorSchema = createInsertSchema(mentors).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  rating: true,
+  totalStudents: true,
+});
+
+export const insertStudentSchema = createInsertSchema(students).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertBookingSchema = createInsertSchema(bookings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertReviewSchema = createInsertSchema(reviews).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAchievementSchema = createInsertSchema(achievements).omit({
+  id: true,
+  earnedAt: true,
+});
+
+// Types
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export type Mentor = typeof mentors.$inferSelect;
+export type InsertMentor = z.infer<typeof insertMentorSchema>;
+
+export type Student = typeof students.$inferSelect;
+export type InsertStudent = z.infer<typeof insertStudentSchema>;
+
+export type Booking = typeof bookings.$inferSelect;
+export type InsertBooking = z.infer<typeof insertBookingSchema>;
+
+export type Review = typeof reviews.$inferSelect;
+export type InsertReview = z.infer<typeof insertReviewSchema>;
+
+export type Achievement = typeof achievements.$inferSelect;
+export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
+
+// Extended types with relations
+export type MentorWithUser = Mentor & { user: User };
+export type StudentWithUser = Student & { user: User };
+export type BookingWithDetails = Booking & {
+  student: StudentWithUser;
+  mentor: MentorWithUser;
+};
+export type ReviewWithDetails = Review & {
+  student: StudentWithUser;
+  mentor: MentorWithUser;
+};

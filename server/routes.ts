@@ -1,263 +1,212 @@
-import { Router } from 'express';
-import { IStorage } from './storage';
-import { userInsertSchema, classInsertSchema, feedbackInsertSchema, chatMessageInsertSchema } from '../shared/schema';
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import {
+  insertUserSchema,
+  insertMentorSchema,
+  insertStudentSchema,
+  insertBookingSchema,
+  insertReviewSchema,
+  insertAchievementSchema,
+} from "@shared/schema";
 
-export function createRoutes(storage: IStorage) {
-  const router = Router();
-
-  // Auth routes
-  router.post('/api/auth/login', async (req, res) => {
+export async function registerRoutes(app: Express): Promise<Server> {
+  
+  // Mentor routes
+  app.get("/api/mentors", async (req, res) => {
     try {
-      const { email, password } = req.body;
-      const user = await storage.getUserByEmail(email);
-      
-      if (!user) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
-      
-      res.json({ user: { ...user, password: undefined } });
+      const mentors = await storage.getMentors();
+      res.json(mentors);
     } catch (error) {
-      res.status(500).json({ error: 'Login failed' });
+      console.error("Error fetching mentors:", error);
+      res.status(500).json({ message: "Failed to fetch mentors" });
     }
   });
 
-  router.post('/api/auth/register', async (req, res) => {
+  app.get("/api/mentors/:id", async (req, res) => {
     try {
-      const userData = userInsertSchema.parse(req.body);
-      const existingUser = await storage.getUserByEmail(userData.email);
-      
-      if (existingUser) {
-        return res.status(400).json({ error: 'User already exists' });
+      const { id } = req.params;
+      const mentor = await storage.getMentor(id);
+      if (!mentor) {
+        return res.status(404).json({ message: "Mentor not found" });
       }
-      
-      const user = await storage.createUser(userData);
-      res.json({ user: { ...user, password: undefined } });
+      res.json(mentor);
     } catch (error) {
-      res.status(400).json({ error: 'Registration failed' });
+      console.error("Error fetching mentor:", error);
+      res.status(500).json({ message: "Failed to fetch mentor" });
+    }
+  });
+
+  app.post("/api/mentors", async (req, res) => {
+    try {
+      const mentorData = insertMentorSchema.parse(req.body);
+      const mentor = await storage.createMentor(mentorData);
+      res.status(201).json(mentor);
+    } catch (error) {
+      console.error("Error creating mentor:", error);
+      res.status(400).json({ message: "Invalid mentor data" });
+    }
+  });
+
+  // Student routes
+  app.get("/api/students/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const student = await storage.getStudent(id);
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+      res.json(student);
+    } catch (error) {
+      console.error("Error fetching student:", error);
+      res.status(500).json({ message: "Failed to fetch student" });
+    }
+  });
+
+  app.post("/api/students", async (req, res) => {
+    try {
+      const studentData = insertStudentSchema.parse(req.body);
+      const student = await storage.createStudent(studentData);
+      res.status(201).json(student);
+    } catch (error) {
+      console.error("Error creating student:", error);
+      res.status(400).json({ message: "Invalid student data" });
     }
   });
 
   // User routes
-  router.get('/api/users', async (req, res) => {
+  app.post("/api/users", async (req, res) => {
     try {
-      const { role } = req.query;
-      const users = await storage.getAllUsers(role as string);
-      res.json(users.map(u => ({ ...u, password: undefined })));
+      const userData = insertUserSchema.parse(req.body);
+      const user = await storage.createUser(userData);
+      res.status(201).json(user);
     } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch users' });
+      console.error("Error creating user:", error);
+      res.status(400).json({ message: "Invalid user data" });
     }
   });
 
-  router.get('/api/users/:id', async (req, res) => {
+  // Booking routes
+  app.get("/api/bookings", async (req, res) => {
     try {
-      const user = await storage.getUserById(req.params.id);
-      if (!user) {
-        return res.status(404).json({ error: 'User not found' });
+      const bookings = await storage.getBookings();
+      res.json(bookings);
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+      res.status(500).json({ message: "Failed to fetch bookings" });
+    }
+  });
+
+  app.get("/api/bookings/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const booking = await storage.getBooking(id);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
       }
-      res.json({ ...user, password: undefined });
+      res.json(booking);
     } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch user' });
+      console.error("Error fetching booking:", error);
+      res.status(500).json({ message: "Failed to fetch booking" });
     }
   });
 
-  router.put('/api/users/:id', async (req, res) => {
+  app.get("/api/students/:id/bookings", async (req, res) => {
     try {
-      const user = await storage.updateUser(req.params.id, req.body);
-      res.json({ ...user, password: undefined });
+      const { id } = req.params;
+      const bookings = await storage.getBookingsByStudent(id);
+      res.json(bookings);
     } catch (error) {
-      res.status(500).json({ error: 'Failed to update user' });
+      console.error("Error fetching student bookings:", error);
+      res.status(500).json({ message: "Failed to fetch student bookings" });
     }
   });
 
-  // Class routes
-  router.post('/api/classes', async (req, res) => {
+  app.get("/api/mentors/:id/bookings", async (req, res) => {
     try {
-      const classData = classInsertSchema.parse(req.body);
-      const newClass = await storage.createClass(classData);
-      
-      // Create chat room for the class
-      await storage.createChatRoom(newClass.id, [classData.teacherId, classData.studentId]);
-      
-      res.json(newClass);
+      const { id } = req.params;
+      const bookings = await storage.getBookingsByMentor(id);
+      res.json(bookings);
     } catch (error) {
-      res.status(400).json({ error: 'Failed to create class' });
+      console.error("Error fetching mentor bookings:", error);
+      res.status(500).json({ message: "Failed to fetch mentor bookings" });
     }
   });
 
-  router.get('/api/classes', async (req, res) => {
+  app.post("/api/bookings", async (req, res) => {
     try {
-      const { teacherId, studentId } = req.query;
-      let classes;
+      const bookingData = insertBookingSchema.parse(req.body);
+      const booking = await storage.createBooking(bookingData);
+      res.status(201).json(booking);
+    } catch (error) {
+      console.error("Error creating booking:", error);
+      res.status(400).json({ message: "Invalid booking data" });
+    }
+  });
+
+  app.patch("/api/bookings/:id/status", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
       
-      if (teacherId) {
-        classes = await storage.getClassesByTeacher(teacherId as string);
-      } else if (studentId) {
-        classes = await storage.getClassesByStudent(studentId as string);
-      } else {
-        classes = await storage.getAllClasses();
+      if (!["scheduled", "completed", "cancelled"].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
       }
-      
-      res.json(classes);
+
+      await storage.updateBookingStatus(id, status);
+      res.json({ message: "Booking status updated successfully" });
     } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch classes' });
+      console.error("Error updating booking status:", error);
+      res.status(500).json({ message: "Failed to update booking status" });
     }
   });
 
-  router.get('/api/classes/:id', async (req, res) => {
+  // Review routes
+  app.get("/api/mentors/:id/reviews", async (req, res) => {
     try {
-      const classItem = await storage.getClassById(req.params.id);
-      if (!classItem) {
-        return res.status(404).json({ error: 'Class not found' });
-      }
-      res.json(classItem);
+      const { id } = req.params;
+      const reviews = await storage.getReviewsByMentor(id);
+      res.json(reviews);
     } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch class' });
+      console.error("Error fetching mentor reviews:", error);
+      res.status(500).json({ message: "Failed to fetch mentor reviews" });
     }
   });
 
-  router.put('/api/classes/:id', async (req, res) => {
+  app.post("/api/reviews", async (req, res) => {
     try {
-      const updatedClass = await storage.updateClass(req.params.id, req.body);
-      res.json(updatedClass);
+      const reviewData = insertReviewSchema.parse(req.body);
+      const review = await storage.createReview(reviewData);
+      res.status(201).json(review);
     } catch (error) {
-      res.status(500).json({ error: 'Failed to update class' });
+      console.error("Error creating review:", error);
+      res.status(400).json({ message: "Invalid review data" });
     }
   });
 
-  router.get('/api/classes/upcoming/:userId', async (req, res) => {
+  // Achievement routes
+  app.get("/api/students/:id/achievements", async (req, res) => {
     try {
-      const classes = await storage.getUpcomingClasses(req.params.userId);
-      res.json(classes);
+      const { id } = req.params;
+      const achievements = await storage.getAchievementsByStudent(id);
+      res.json(achievements);
     } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch upcoming classes' });
+      console.error("Error fetching student achievements:", error);
+      res.status(500).json({ message: "Failed to fetch student achievements" });
     }
   });
 
-  // Feedback routes
-  router.post('/api/feedback', async (req, res) => {
+  app.post("/api/achievements", async (req, res) => {
     try {
-      const feedbackData = feedbackInsertSchema.parse(req.body);
-      const feedback = await storage.createFeedback(feedbackData);
-      res.json(feedback);
+      const achievementData = insertAchievementSchema.parse(req.body);
+      const achievement = await storage.createAchievement(achievementData);
+      res.status(201).json(achievement);
     } catch (error) {
-      res.status(400).json({ error: 'Failed to create feedback' });
+      console.error("Error creating achievement:", error);
+      res.status(400).json({ message: "Invalid achievement data" });
     }
   });
 
-  router.get('/api/feedback/class/:classId', async (req, res) => {
-    try {
-      const feedback = await storage.getFeedbackByClass(req.params.classId);
-      res.json(feedback);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch feedback' });
-    }
-  });
-
-  router.get('/api/feedback/user/:userId', async (req, res) => {
-    try {
-      const feedback = await storage.getFeedbackByUser(req.params.userId);
-      res.json(feedback);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch feedback' });
-    }
-  });
-
-  // Chat routes
-  router.get('/api/chat/room/:roomId', async (req, res) => {
-    try {
-      const room = await storage.getChatRoom(req.params.roomId);
-      if (!room) {
-        return res.status(404).json({ error: 'Chat room not found' });
-      }
-      res.json(room);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch chat room' });
-    }
-  });
-
-  router.get('/api/chat/messages/:roomId', async (req, res) => {
-    try {
-      const messages = await storage.getChatMessages(req.params.roomId);
-      res.json(messages);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch messages' });
-    }
-  });
-
-  router.post('/api/chat/messages', async (req, res) => {
-    try {
-      const messageData = chatMessageInsertSchema.parse(req.body);
-      const message = await storage.addChatMessage(messageData);
-      res.json(message);
-    } catch (error) {
-      res.status(400).json({ error: 'Failed to send message' });
-    }
-  });
-
-  // Analytics routes
-  router.get('/api/analytics/teacher/:teacherId', async (req, res) => {
-    try {
-      const analytics = await storage.getTeacherAnalytics(req.params.teacherId);
-      res.json(analytics);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch teacher analytics' });
-    }
-  });
-
-  router.get('/api/analytics/student/:studentId', async (req, res) => {
-    try {
-      const analytics = await storage.getStudentAnalytics(req.params.studentId);
-      res.json(analytics);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch student analytics' });
-    }
-  });
-
-  router.get('/api/analytics/platform', async (req, res) => {
-    try {
-      const analytics = await storage.getPlatformAnalytics();
-      res.json(analytics);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch platform analytics' });
-    }
-  });
-
-  // Admin routes
-  router.get('/api/admin/settings', async (req, res) => {
-    try {
-      const settings = await storage.getAdminSettings();
-      res.json(settings);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch admin settings' });
-    }
-  });
-
-  router.put('/api/admin/settings', async (req, res) => {
-    try {
-      const settings = await storage.updateAdminSettings(req.body);
-      res.json(settings);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to update admin settings' });
-    }
-  });
-
-  router.get('/api/admin/abuse-reports', async (req, res) => {
-    try {
-      const reports = await storage.getAbuseReports();
-      res.json(reports);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch abuse reports' });
-    }
-  });
-
-  router.post('/api/admin/abuse-reports', async (req, res) => {
-    try {
-      const report = await storage.createAbuseReport(req.body);
-      res.json(report);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to create abuse report' });
-    }
-  });
-
-  return router;
+  const httpServer = createServer(app);
+  return httpServer;
 }
