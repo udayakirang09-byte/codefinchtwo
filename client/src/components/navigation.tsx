@@ -19,11 +19,29 @@ export default function Navigation() {
   }, []);
 
   useEffect(() => {
-    // Check authentication status
-    const authStatus = localStorage.getItem('isAuthenticated') === 'true';
-    const email = localStorage.getItem('userEmail') || '';
-    setIsAuthenticated(authStatus);
-    setUserEmail(email);
+    // Check authentication status on component mount and window focus
+    const checkAuthStatus = () => {
+      const authStatus = localStorage.getItem('isAuthenticated') === 'true';
+      const email = localStorage.getItem('userEmail') || '';
+      console.log('🔍 Checking auth status:', { authStatus, email });
+      setIsAuthenticated(authStatus);
+      setUserEmail(email);
+    };
+
+    checkAuthStatus();
+    
+    // Listen for storage changes and window focus to update auth status
+    window.addEventListener('storage', checkAuthStatus);
+    window.addEventListener('focus', checkAuthStatus);
+    
+    // Also check periodically in case localStorage was updated in same tab
+    const interval = setInterval(checkAuthStatus, 1000);
+    
+    return () => {
+      window.removeEventListener('storage', checkAuthStatus);
+      window.removeEventListener('focus', checkAuthStatus);
+      clearInterval(interval);
+    };
   }, []);
 
   const scrollToSection = (sectionId: string) => {

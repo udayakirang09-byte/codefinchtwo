@@ -37,22 +37,25 @@ export default function Login() {
       }
 
       // Simulate login API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Store authentication state (in a real app, this would be handled by proper auth)
       localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('userEmail', email);
+      localStorage.setItem('userEmail', email.trim());
+      
+      console.log('✅ Authentication stored, redirecting to home page...');
       
       toast({
         title: "Login Successful",
-        description: "Welcome back to CodeConnect!",
+        description: "Welcome back to CodeConnect! Redirecting...",
         variant: "default",
       });
       
-      // Redirect to home page after successful login
+      // Redirect to home page immediately after successful login
       setTimeout(() => {
+        console.log('🏠 Redirecting to home page now...');
         window.location.href = "/";
-      }, 1000);
+      }, 500);
       
     } catch (error) {
       toast({
