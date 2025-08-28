@@ -17,6 +17,12 @@ export default function Navigation() {
   }, []);
 
   const scrollToSection = (sectionId: string) => {
+    // Don't scroll on system test page
+    if (window.location.pathname === '/system-test') {
+      console.log('Navigation scroll disabled on system test page');
+      return;
+    }
+    
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -81,6 +87,10 @@ export default function Navigation() {
               data-testid="button-sign-in"
               onClick={() => {
                 console.log('🔐 Sign In button clicked - redirecting to mentor discovery');
+                if (window.location.pathname === '/system-test') {
+                  console.log('Navigation disabled on system test page');
+                  return;
+                }
                 const discoverSection = document.getElementById('discover');
                 if (discoverSection) {
                   discoverSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -93,6 +103,10 @@ export default function Navigation() {
               data-testid="button-get-started"
               onClick={() => {
                 console.log('🚀 Get Started button clicked - navigating to mentors');
+                if (window.location.pathname === '/system-test') {
+                  console.log('Navigation disabled on system test page');
+                  return;
+                }
                 const discoverSection = document.getElementById('discover');
                 if (discoverSection) {
                   discoverSection.scrollIntoView({ behavior: 'smooth', block: 'start' });

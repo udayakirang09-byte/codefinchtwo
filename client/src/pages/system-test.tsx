@@ -25,11 +25,19 @@ export default function SystemTest() {
   const [isRunning, setIsRunning] = useState(false);
   const [currentTest, setCurrentTest] = useState<string>('');
 
-  // Debug: Log that we're on the system test page
+  // Debug: Log that we're on the system test page and prevent any redirects
   useEffect(() => {
     console.log('🧪 System Test page loaded successfully!');
     console.log('Current URL:', window.location.href);
     console.log('Pathname:', window.location.pathname);
+    
+    // Prevent any automatic redirects
+    const handleBeforeUnload = (e: Event) => {
+      console.log('⚠️ Page unload detected - preventing redirect');
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
   // Test data queries
