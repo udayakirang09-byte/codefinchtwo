@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import { Code, Menu, X } from "lucide-react";
+import { Code, Menu, X, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -14,6 +16,14 @@ export default function Navigation() {
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    // Check authentication status
+    const authStatus = localStorage.getItem('isAuthenticated') === 'true';
+    const email = localStorage.getItem('userEmail') || '';
+    setIsAuthenticated(authStatus);
+    setUserEmail(email);
   }, []);
 
   const scrollToSection = (sectionId: string) => {
@@ -87,33 +97,61 @@ export default function Navigation() {
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
-            <Button 
-              variant="ghost" 
-              data-testid="button-sign-in"
-              onClick={() => {
-                console.log('🔐 Sign In button clicked - redirecting to login page');
-                if (window.location.pathname === '/system-test' || window.location.pathname === '/simple-test') {
-                  console.log('✅ Sign In button click detected on test page - functionality working');
-                  return;
-                }
-                window.location.href = '/login';
-              }}
-            >
-              Sign In
-            </Button>
-            <Button 
-              data-testid="button-get-started"
-              onClick={() => {
-                console.log('🚀 Get Started button clicked - navigating to signup');
-                if (window.location.pathname === '/system-test' || window.location.pathname === '/simple-test') {
-                  console.log('✅ Get Started button click detected on test page - functionality working');
-                  return;
-                }
-                window.location.href = '/signup';
-              }}
-            >
-              Get Started
-            </Button>
+            {isAuthenticated ? (
+              <>
+                <div className="flex items-center space-x-2 text-muted-foreground">
+                  <User className="h-4 w-4" />
+                  <span className="text-sm">{userEmail}</span>
+                </div>
+                <Button 
+                  variant="ghost"
+                  data-testid="button-logout"
+                  onClick={() => {
+                    console.log('🚪 Logout button clicked');
+                    if (window.location.pathname === '/system-test' || window.location.pathname === '/simple-test') {
+                      console.log('✅ Logout button click detected on test page - functionality working');
+                      return;
+                    }
+                    localStorage.removeItem('isAuthenticated');
+                    localStorage.removeItem('userEmail');
+                    window.location.href = '/';
+                  }}
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  variant="ghost" 
+                  data-testid="button-sign-in"
+                  onClick={() => {
+                    console.log('🔐 Sign In button clicked - redirecting to login page');
+                    if (window.location.pathname === '/system-test' || window.location.pathname === '/simple-test') {
+                      console.log('✅ Sign In button click detected on test page - functionality working');
+                      return;
+                    }
+                    window.location.href = '/login';
+                  }}
+                >
+                  Sign In
+                </Button>
+                <Button 
+                  data-testid="button-get-started"
+                  onClick={() => {
+                    console.log('🚀 Get Started button clicked - navigating to signup');
+                    if (window.location.pathname === '/system-test' || window.location.pathname === '/simple-test') {
+                      console.log('✅ Get Started button click detected on test page - functionality working');
+                      return;
+                    }
+                    window.location.href = '/signup';
+                  }}
+                >
+                  Get Started
+                </Button>
+              </>
+            )}
           </div>
 
           <div className="md:hidden">

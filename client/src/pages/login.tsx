@@ -19,8 +19,26 @@ export default function Login() {
     setLoading(true);
 
     try {
+      // Check credentials against test user
+      const validEmail = "udayakirang09@gmail.com";
+      const validPassword = "Hello111";
+      
+      if (email !== validEmail || password !== validPassword) {
+        toast({
+          title: "Login Failed",
+          description: "Invalid email or password. Please try again.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       // Simulate login API call
       await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Store authentication state (in a real app, this would be handled by proper auth)
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('userEmail', email);
       
       toast({
         title: "Login Successful",
@@ -29,11 +47,14 @@ export default function Login() {
       });
       
       // Redirect to home page after successful login
-      window.location.href = "/";
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1000);
+      
     } catch (error) {
       toast({
         title: "Login Failed",
-        description: "Please check your credentials and try again.",
+        description: "There was an error logging in. Please try again.",
         variant: "destructive",
       });
     } finally {
