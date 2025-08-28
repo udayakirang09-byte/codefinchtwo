@@ -11,6 +11,9 @@ import Courses from "@/pages/courses";
 import Help from "@/pages/help";
 import SystemTest from "@/pages/system-test";
 import SimpleTest from "@/pages/simple-test";
+import Login from "@/pages/login";
+import Signup from "@/pages/signup";
+import ForgotPassword from "@/pages/forgot-password";
 
 function Router() {
   return (
@@ -20,6 +23,9 @@ function Router() {
       <Route path="/booking/:mentorId" component={Booking} />
       <Route path="/courses" component={Courses} />
       <Route path="/help" component={Help} />
+      <Route path="/login" component={Login} />
+      <Route path="/signup" component={Signup} />
+      <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/system-test" component={SystemTest} />
       <Route path="/simple-test" component={SimpleTest} />
       <Route component={NotFound} />
