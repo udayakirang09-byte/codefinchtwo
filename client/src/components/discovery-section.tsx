@@ -8,9 +8,10 @@ import type { MentorWithUser } from "@shared/schema";
 export default function DiscoverySection() {
   const [activeFilter, setActiveFilter] = useState("all");
   
-  const { data: mentors = [], isLoading } = useQuery<MentorWithUser[]>({
+  const { data: mentors = [], isLoading, error } = useQuery<MentorWithUser[]>({
     queryKey: ["/api/mentors"],
   });
+
 
   const filters = [
     { id: "all", label: "All Mentors" },
@@ -73,6 +74,18 @@ export default function DiscoverySection() {
                 <div className="h-10 bg-muted rounded w-full"></div>
               </div>
             ))}
+          </div>
+        ) : error ? (
+          <div className="text-center py-16" data-testid="text-error">
+            <p className="text-red-500 text-lg mb-4">Error loading mentors: {error.message}</p>
+            <Button onClick={() => window.location.reload()} data-testid="button-retry">
+              Try Again
+            </Button>
+          </div>
+        ) : !mentors || mentors.length === 0 ? (
+          <div className="text-center py-16" data-testid="text-no-mentors-available">
+            <p className="text-muted-foreground text-lg mb-4">No mentors available yet.</p>
+            <p className="text-sm text-muted-foreground">Please check back later or contact support.</p>
           </div>
         ) : filteredMentors.length === 0 ? (
           <div className="text-center py-16" data-testid="text-no-mentors">
