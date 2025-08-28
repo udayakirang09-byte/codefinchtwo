@@ -135,12 +135,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/bookings", async (req, res) => {
     try {
+      // Convert scheduledAt string to Date if needed
+      if (req.body.scheduledAt && typeof req.body.scheduledAt === 'string') {
+        req.body.scheduledAt = new Date(req.body.scheduledAt);
+      }
+      
       const bookingData = insertBookingSchema.parse(req.body);
       const booking = await storage.createBooking(bookingData);
       res.status(201).json(booking);
     } catch (error) {
       console.error("Error creating booking:", error);
-      res.status(400).json({ message: "Invalid booking data" });
+      if (error.name === 'ZodError') {
+        res.status(400).json({ message: "Invalid booking data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to create booking" });
+      }
     }
   });
 

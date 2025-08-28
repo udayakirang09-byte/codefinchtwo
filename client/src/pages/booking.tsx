@@ -115,10 +115,12 @@ export default function Booking() {
     const bookingData = {
       studentId: dummyStudentId,
       mentorId,
-      scheduledAt: scheduledAt.toISOString(),
+      scheduledAt: scheduledAt,  // Send as Date object, not string
       duration: parseInt(formData.duration),
       notes: formData.notes,
     };
+    
+    console.log('Booking data:', bookingData);
 
     bookingMutation.mutate(bookingData);
   };

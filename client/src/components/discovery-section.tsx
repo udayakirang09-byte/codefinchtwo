@@ -103,7 +103,15 @@ export default function DiscoverySection() {
         )}
         
         <div className="text-center mt-12">
-          <Button size="lg" variant="secondary" data-testid="button-explore-all">
+          <Button 
+            size="lg" 
+            variant="secondary" 
+            data-testid="button-explore-all"
+            onClick={() => {
+              console.log('Explore All Mentors button clicked');
+              alert('Advanced mentor search coming soon! More filtering options will be available.');
+            }}
+          >
             <Search className="mr-2" size={20} />
             Explore All Mentors
           </Button>

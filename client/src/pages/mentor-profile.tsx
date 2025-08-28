@@ -202,11 +202,27 @@ export default function MentorProfile() {
                       Book a Session
                     </Button>
                   </Link>
-                  <Button variant="outline" className="w-full" data-testid="button-video-call">
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    data-testid="button-video-call"
+                    onClick={() => {
+                      console.log('Start Video Call button clicked');
+                      alert('Video calling feature coming soon! Book a session for now.');
+                    }}
+                  >
                     <Video className="mr-2" size={20} />
                     Start Video Call
                   </Button>
-                  <Button variant="outline" className="w-full" data-testid="button-send-message">
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    data-testid="button-send-message"
+                    onClick={() => {
+                      console.log('Send Message button clicked');
+                      alert('Messaging feature coming soon! Book a session to get started.');
+                    }}
+                  >
                     <MessageSquare className="mr-2" size={20} />
                     Send Message
                   </Button>

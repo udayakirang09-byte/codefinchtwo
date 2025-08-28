@@ -69,10 +69,25 @@ export default function Navigation() {
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" data-testid="button-sign-in">
+            <Button 
+              variant="ghost" 
+              data-testid="button-sign-in"
+              onClick={() => {
+                console.log('Sign In button clicked');
+                alert('Sign In functionality coming soon!');
+              }}
+            >
               Sign In
             </Button>
-            <Button data-testid="button-get-started">Get Started</Button>
+            <Button 
+              data-testid="button-get-started"
+              onClick={() => {
+                console.log('Get Started button clicked');
+                alert('Get Started functionality coming soon!');
+              }}
+            >
+              Get Started
+            </Button>
           </div>
 
           <div className="md:hidden">
@@ -120,10 +135,25 @@ export default function Navigation() {
                 Success Stories
               </button>
               <div className="pt-4 pb-3 border-t border-border">
-                <Button variant="ghost" className="w-full mb-2" data-testid="button-mobile-sign-in">
+                <Button 
+                  variant="ghost" 
+                  className="w-full mb-2" 
+                  data-testid="button-mobile-sign-in"
+                  onClick={() => {
+                    console.log('Mobile Sign In button clicked');
+                    alert('Sign In functionality coming soon!');
+                  }}
+                >
                   Sign In
                 </Button>
-                <Button className="w-full" data-testid="button-mobile-get-started">
+                <Button 
+                  className="w-full" 
+                  data-testid="button-mobile-get-started"
+                  onClick={() => {
+                    console.log('Mobile Get Started button clicked');
+                    alert('Get Started functionality coming soon!');
+                  }}
+                >
                   Get Started
                 </Button>
               </div>

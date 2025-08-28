@@ -29,6 +29,13 @@ export default function HeroSection() {
                 size="lg" 
                 className="bg-white text-primary px-8 py-4 hover:bg-white/90 hover-lift font-semibold text-lg"
                 data-testid="button-learn"
+                onClick={() => {
+                  console.log('I Want to Learn button clicked');
+                  const discoverSection = document.getElementById('discover');
+                  if (discoverSection) {
+                    discoverSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }}
               >
                 <GraduationCap className="mr-2" size={20} />
                 I Want to Learn
@@ -37,6 +44,10 @@ export default function HeroSection() {
                 size="lg" 
                 className="bg-accent text-accent-foreground px-8 py-4 hover:bg-accent/90 hover-lift font-semibold text-lg"
                 data-testid="button-teach"
+                onClick={() => {
+                  console.log('I Want to Teach button clicked');
+                  alert('Mentor registration coming soon! We\'re excited to have you join our community of educators.');
+                }}
               >
                 <Presentation className="mr-2" size={20} />
                 I Want to Teach

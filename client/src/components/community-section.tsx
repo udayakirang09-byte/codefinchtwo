@@ -22,6 +22,10 @@ export default function CommunitySection() {
             <Button 
               className="bg-white text-primary hover:bg-white/90 transition-colors"
               data-testid="button-join-student-community"
+              onClick={() => {
+                console.log('Join Student Community button clicked');
+                alert('Student Community platform coming soon! Connect with fellow young coders.');
+              }}
             >
               Join Student Community
             </Button>
@@ -36,6 +40,10 @@ export default function CommunitySection() {
             <Button 
               className="bg-accent text-accent-foreground hover:bg-accent/90 transition-colors"
               data-testid="button-become-mentor"
+              onClick={() => {
+                console.log('Become a Mentor button clicked');
+                alert('Mentor registration coming soon! Share your passion for coding with the next generation.');
+              }}
             >
               Become a Mentor
             </Button>
