@@ -20,6 +20,10 @@ import StudentProgress from "@/pages/student/progress";
 import VideoClass from "@/pages/video-class/[id]";
 import ChatClass from "@/pages/chat/[id]";
 import FeedbackForm from "@/pages/feedback/[id]";
+import Checkout from "@/pages/checkout";
+import PaymentSuccess from "@/pages/payment-success";
+import StudentCommunity from "@/pages/student-community";
+import AchievementBadges from "@/pages/achievement-badges";
 
 function Router() {
   return (
@@ -29,6 +33,10 @@ function Router() {
       <Route path="/mentors/:id" component={MentorProfile} />
       <Route path="/booking/:mentorId" component={Booking} />
       <Route path="/courses" component={Courses} />
+      <Route path="/checkout" component={Checkout} />
+      <Route path="/payment-success" component={PaymentSuccess} />
+      <Route path="/student-community" component={StudentCommunity} />
+      <Route path="/achievement-badges" component={AchievementBadges} />
       <Route path="/help" component={Help} />
       <Route path="/student/progress" component={StudentProgress} />
       <Route path="/video-class/:id" component={VideoClass} />

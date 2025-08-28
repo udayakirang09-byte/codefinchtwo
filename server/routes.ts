@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
+import Stripe from "stripe";
 import {
   insertUserSchema,
   insertMentorSchema,
@@ -15,6 +16,14 @@ import {
   insertClassFeedbackSchema,
   insertNotificationSchema,
 } from "@shared/schema";
+
+// Initialize Stripe
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+}
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2023-10-16",
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -380,6 +389,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("❌ Error fetching users:", error);
       res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  // Stripe Payment Routes
+  app.post("/api/create-payment-intent", async (req, res) => {
+    try {
+      const { amount, courseId, courseName } = req.body;
+      
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to paise (cents equivalent)
+        currency: "inr", // Use INR for India (supports UPI, cards, net banking)
+        payment_method_types: ['card', 'upi', 'netbanking', 'wallet'],
+        metadata: {
+          courseId: courseId,
+          courseName: courseName,
+        },
+      });
+      
+      console.log(`💳 Created payment intent for ₹${amount} - Course: ${courseName}`);
+      res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id 
+      });
+    } catch (error: any) {
+      console.error("❌ Payment intent creation failed:", error.message);
+      res
+        .status(500)
+        .json({ message: "Error creating payment intent: " + error.message });
+    }
+  });
+
+  // Admin Contact Features Toggle Routes
+  app.get("/api/admin/contact-settings", async (req, res) => {
+    try {
+      // In real app, this would be stored in database
+      const settings = {
+        emailEnabled: false,
+        chatEnabled: false,
+        phoneEnabled: false,
+      };
+      res.json(settings);
+    } catch (error: any) {
+      console.error("❌ Error fetching contact settings:", error.message);
+      res.status(500).json({ message: "Failed to fetch contact settings" });
+    }
+  });
+
+  app.patch("/api/admin/contact-settings", async (req, res) => {
+    try {
+      const { emailEnabled, chatEnabled, phoneEnabled } = req.body;
+      
+      // In real app, save to database
+      console.log(`⚙️ Contact settings updated:`, { emailEnabled, chatEnabled, phoneEnabled });
+      
+      const settings = { emailEnabled, chatEnabled, phoneEnabled };
+      res.json(settings);
+    } catch (error: any) {
+      console.error("❌ Error updating contact settings:", error.message);
+      res.status(500).json({ message: "Failed to update contact settings" });
     }
   });
 

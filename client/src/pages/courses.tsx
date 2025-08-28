@@ -15,6 +15,7 @@ export default function Courses() {
       students: 245,
       rating: 4.8,
       difficulty: "Beginner",
+      price: 2999,
       image: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
     },
     {
@@ -25,6 +26,7 @@ export default function Courses() {
       students: 189,
       rating: 4.9,
       difficulty: "Beginner",
+      price: 3999,
       image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
     },
     {
@@ -35,6 +37,7 @@ export default function Courses() {
       students: 367,
       rating: 4.7,
       difficulty: "Beginner",
+      price: 2499,
       image: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
     }
   ];
@@ -74,29 +77,37 @@ export default function Courses() {
                 </p>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
-                  <div className="flex items-center" data-testid={`course-duration-${course.id}`}>
-                    <Clock size={16} className="mr-1" />
-                    {course.duration}
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <div className="flex items-center" data-testid={`course-duration-${course.id}`}>
+                      <Clock size={16} className="mr-1" />
+                      {course.duration}
+                    </div>
+                    <div className="flex items-center" data-testid={`course-students-${course.id}`}>
+                      <Users size={16} className="mr-1" />
+                      {course.students} students
+                    </div>
+                    <div className="flex items-center" data-testid={`course-rating-${course.id}`}>
+                      <Star size={16} className="mr-1 text-accent" />
+                      {course.rating}
+                    </div>
                   </div>
-                  <div className="flex items-center" data-testid={`course-students-${course.id}`}>
-                    <Users size={16} className="mr-1" />
-                    {course.students} students
-                  </div>
-                  <div className="flex items-center" data-testid={`course-rating-${course.id}`}>
-                    <Star size={16} className="mr-1 text-accent" />
-                    {course.rating}
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold text-green-600">₹{course.price}</span>
+                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                      Best Value
+                    </Badge>
                   </div>
                 </div>
                 <Button 
-                  className="w-full" 
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 h-11 text-base font-semibold shadow-lg" 
                   data-testid={`button-enroll-${course.id}`}
                   onClick={() => {
-                    console.log(`Enroll in course ${course.id} clicked`);
-                    alert(`Course enrollment coming soon! ${course.title} looks like a great choice.`);
+                    console.log(`🛒 Enrolling in course ${course.id}: ${course.title}`);
+                    window.location.href = `/checkout?courseId=${course.id}`;
                   }}
                 >
-                  Enroll Now
+                  Enroll Now - ₹{course.price}
                 </Button>
               </CardContent>
             </Card>

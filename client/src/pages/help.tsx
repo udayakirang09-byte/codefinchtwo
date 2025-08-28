@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 import { Button } from "@/components/ui/button";
@@ -5,14 +6,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { HelpCircle, Mail, Phone, MessageSquare } from "lucide-react";
 
 export default function Help() {
+  const [contactSettings, setContactSettings] = useState({
+    emailEnabled: false,
+    chatEnabled: false,
+    phoneEnabled: false,
+  });
+
+  useEffect(() => {
+    // Fetch admin contact settings
+    fetch("/api/admin/contact-settings")
+      .then((res) => res.json())
+      .then((settings) => setContactSettings(settings))
+      .catch(() => {
+        // Default to all disabled
+        setContactSettings({ emailEnabled: false, chatEnabled: false, phoneEnabled: false });
+      });
+  }, []);
+
   const faqs = [
     {
       question: "How do I book a session with a mentor?",
       answer: "Browse our mentors, click on a profile, and then click 'Book a Session'. Fill in the required details and submit the form."
-    },
-    {
-      question: "Is the platform safe for children?",
-      answer: "Yes! We have strict safety guidelines, background checks for mentors, and encourage parent supervision during sessions."
     },
     {
       question: "What age groups do you support?",
@@ -25,6 +39,10 @@ export default function Help() {
     {
       question: "What equipment do I need?",
       answer: "A computer or tablet with internet access. Some courses may require specific software, which we'll help you install."
+    },
+    {
+      question: "How do I enroll in a course?",
+      answer: "Browse our courses, select one that interests you, and click 'Enroll Now'. Complete the secure payment process to gain access."
     }
   ];
 
@@ -42,7 +60,7 @@ export default function Help() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8 mb-16">
-          <Card className="text-center">
+          <Card className={`text-center ${!contactSettings.emailEnabled ? 'opacity-50' : ''}`}>
             <CardHeader>
               <Mail className="mx-auto text-primary mb-4" size={48} />
               <CardTitle>Email Support</CardTitle>
@@ -54,18 +72,21 @@ export default function Help() {
               <Button 
                 variant="outline" 
                 className="w-full"
+                disabled={!contactSettings.emailEnabled}
                 onClick={() => {
-                  console.log('Email Support clicked');
-                  alert('Email support coming soon! support@codeconnect.com');
+                  if (contactSettings.emailEnabled) {
+                    console.log('Email Support clicked');
+                    window.location.href = 'mailto:support@codeconnect.com';
+                  }
                 }}
                 data-testid="button-email-support"
               >
-                Contact Support
+                {contactSettings.emailEnabled ? 'Contact Support' : 'Currently Unavailable'}
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="text-center">
+          <Card className={`text-center ${!contactSettings.chatEnabled ? 'opacity-50' : ''}`}>
             <CardHeader>
               <MessageSquare className="mx-auto text-primary mb-4" size={48} />
               <CardTitle>Live Chat</CardTitle>
@@ -77,18 +98,22 @@ export default function Help() {
               <Button 
                 variant="outline" 
                 className="w-full"
+                disabled={!contactSettings.chatEnabled}
                 onClick={() => {
-                  console.log('Live Chat clicked');
-                  alert('Live chat coming soon! Email us for now.');
+                  if (contactSettings.chatEnabled) {
+                    console.log('Live Chat clicked');
+                    // In real app, open chat widget
+                    alert('Live chat is now available!');
+                  }
                 }}
                 data-testid="button-live-chat"
               >
-                Start Chat
+                {contactSettings.chatEnabled ? 'Start Chat' : 'Currently Unavailable'}
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="text-center">
+          <Card className={`text-center ${!contactSettings.phoneEnabled ? 'opacity-50' : ''}`}>
             <CardHeader>
               <Phone className="mx-auto text-primary mb-4" size={48} />
               <CardTitle>Phone Support</CardTitle>
@@ -100,13 +125,16 @@ export default function Help() {
               <Button 
                 variant="outline" 
                 className="w-full"
+                disabled={!contactSettings.phoneEnabled}
                 onClick={() => {
-                  console.log('Phone Support clicked');
-                  alert('Phone support coming soon! Email us for urgent matters.');
+                  if (contactSettings.phoneEnabled) {
+                    console.log('Phone Support clicked');
+                    window.location.href = 'tel:+91-8000-123-456';
+                  }
                 }}
                 data-testid="button-phone-support"
               >
-                Call Now
+                {contactSettings.phoneEnabled ? 'Call Now' : 'Currently Unavailable'}
               </Button>
             </CardContent>
           </Card>

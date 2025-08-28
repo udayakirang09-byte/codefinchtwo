@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck, Mail, MessageSquare, Phone } from "lucide-react";
 
 interface SystemStats {
   totalUsers: number;
@@ -37,6 +38,11 @@ export default function AdminDashboard() {
 
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
+  const [contactSettings, setContactSettings] = useState({
+    emailEnabled: false,
+    chatEnabled: false,
+    phoneEnabled: false,
+  });
 
   useEffect(() => {
     // Load sample alert data
@@ -70,6 +76,12 @@ export default function AdminDashboard() {
       { id: 3, action: 'Booking completed', user: 'Mike Chen → James Parker', time: '1 hour ago' },
       { id: 4, action: 'Feedback submitted', user: 'Alex Rivera', time: '2 hours ago' },
     ]);
+
+    // Load contact settings
+    fetch("/api/admin/contact-settings")
+      .then((res) => res.json())
+      .then((settings) => setContactSettings(settings))
+      .catch(() => console.error("Failed to load contact settings"));
   }, []);
 
   const handleViewDetails = (category: string) => {
@@ -219,6 +231,88 @@ export default function AdminDashboard() {
                   <p className="text-xs text-gray-500">{activity.time}</p>
                 </div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Contact Settings Control */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Contact Features Control
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Mail className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <p className="font-medium">Email Support</p>
+                    <p className="text-sm text-gray-600">Allow users to contact via email</p>
+                  </div>
+                </div>
+                <Switch 
+                  checked={contactSettings.emailEnabled}
+                  onCheckedChange={(checked) => {
+                    const newSettings = { ...contactSettings, emailEnabled: checked };
+                    setContactSettings(newSettings);
+                    fetch("/api/admin/contact-settings", {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(newSettings)
+                    });
+                  }}
+                  data-testid="switch-email-support"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <MessageSquare className="h-5 w-5 text-green-600" />
+                  <div>
+                    <p className="font-medium">Live Chat</p>
+                    <p className="text-sm text-gray-600">Enable real-time chat support</p>
+                  </div>
+                </div>
+                <Switch 
+                  checked={contactSettings.chatEnabled}
+                  onCheckedChange={(checked) => {
+                    const newSettings = { ...contactSettings, chatEnabled: checked };
+                    setContactSettings(newSettings);
+                    fetch("/api/admin/contact-settings", {
+                      method: "PATCH", 
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(newSettings)
+                    });
+                  }}
+                  data-testid="switch-live-chat"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Phone className="h-5 w-5 text-orange-600" />
+                  <div>
+                    <p className="font-medium">Phone Support</p>
+                    <p className="text-sm text-gray-600">Allow users to call for support</p>
+                  </div>
+                </div>
+                <Switch 
+                  checked={contactSettings.phoneEnabled}
+                  onCheckedChange={(checked) => {
+                    const newSettings = { ...contactSettings, phoneEnabled: checked };
+                    setContactSettings(newSettings);
+                    fetch("/api/admin/contact-settings", {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(newSettings)
+                    });
+                  }}
+                  data-testid="switch-phone-support"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>

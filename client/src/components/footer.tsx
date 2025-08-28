@@ -68,21 +68,14 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/#community" className="hover:text-white transition-colors" data-testid="link-student-community">
+                <Link href="/student-community" className="hover:text-white transition-colors" data-testid="link-student-community">
                   Student Community
                 </Link>
               </li>
               <li>
-                <button 
-                  onClick={() => {
-                    console.log('Achievement Badges clicked');
-                    window.location.href = '/courses';
-                  }}
-                  className="hover:text-white transition-colors text-left" 
-                  data-testid="link-achievement-badges"
-                >
+                <Link href="/achievement-badges" className="hover:text-white transition-colors" data-testid="link-achievement-badges">
                   Achievement Badges
-                </button>
+                </Link>
               </li>
             </ul>
           </div>
@@ -91,36 +84,22 @@ export default function Footer() {
             <h3 className="font-semibold text-lg mb-4" data-testid="text-mentors-section">For Mentors</h3>
             <ul className="space-y-2 text-white/80">
               <li>
-                <button 
-                  onClick={() => {
-                    console.log('Become a Mentor clicked');
-                    window.location.href = '/help';
-                  }}
-                  className="hover:text-white transition-colors text-left" 
-                  data-testid="link-become-mentor"
-                >
+                <Link href="/become-mentor" className="hover:text-white transition-colors" data-testid="link-become-mentor">
                   Become a Mentor
-                </button>
+                </Link>
               </li>
               <li>
-                <button 
-                  onClick={() => {
-                    console.log('Teacher Resources clicked');
-                    window.location.href = '/help';
-                  }}
-                  className="hover:text-white transition-colors text-left" 
-                  data-testid="link-teacher-resources"
-                >
+                <Link href="/teacher-resources" className="hover:text-white transition-colors" data-testid="link-teacher-resources">
                   Teacher Resources
-                </button>
+                </Link>
               </li>
               <li>
-                <Link href="/#community" className="hover:text-white transition-colors" data-testid="link-mentor-community">
+                <Link href="/mentor-community" className="hover:text-white transition-colors" data-testid="link-mentor-community">
                   Mentor Community
                 </Link>
               </li>
               <li>
-                <Link href="/#success-stories" className="hover:text-white transition-colors" data-testid="link-success-stories">
+                <Link href="/success-stories" className="hover:text-white transition-colors" data-testid="link-success-stories">
                   Success Stories
                 </Link>
               </li>
@@ -136,16 +115,9 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <button 
-                  onClick={() => {
-                    console.log('Safety Guidelines clicked');
-                    window.location.href = '/help';
-                  }}
-                  className="hover:text-white transition-colors text-left" 
-                  data-testid="link-safety-guidelines"
-                >
+                <Link href="/safety-guidelines" className="hover:text-white transition-colors" data-testid="link-safety-guidelines">
                   Safety Guidelines
-                </button>
+                </Link>
               </li>
               <li>
                 <Link href="/help" className="hover:text-white transition-colors" data-testid="link-contact-us">
@@ -153,16 +125,9 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <button 
-                  onClick={() => {
-                    console.log('Privacy Policy clicked');
-                    window.location.href = '/help';
-                  }}
-                  className="hover:text-white transition-colors text-left" 
-                  data-testid="link-privacy-policy"
-                >
+                <Link href="/privacy-policy" className="hover:text-white transition-colors" data-testid="link-privacy-policy">
                   Privacy Policy
-                </button>
+                </Link>
               </li>
             </ul>
           </div>
@@ -173,36 +138,15 @@ export default function Footer() {
             © 2024 CodeConnect. All rights reserved.
           </p>
           <div className="flex space-x-6 text-white/60 text-sm">
-            <button 
-              onClick={() => {
-                console.log('Terms of Service clicked');
-                window.location.href = '/help';
-              }}
-              className="hover:text-white transition-colors" 
-              data-testid="link-terms"
-            >
+            <Link href="/terms-of-service" className="hover:text-white transition-colors" data-testid="link-terms">
               Terms of Service
-            </button>
-            <button 
-              onClick={() => {
-                console.log('Privacy Policy clicked');
-                window.location.href = '/help';
-              }}
-              className="hover:text-white transition-colors" 
-              data-testid="link-privacy"
-            >
+            </Link>
+            <Link href="/privacy-policy" className="hover:text-white transition-colors" data-testid="link-privacy">
               Privacy Policy
-            </button>
-            <button 
-              onClick={() => {
-                console.log('Cookie Policy clicked');
-                window.location.href = '/help';
-              }}
-              className="hover:text-white transition-colors" 
-              data-testid="link-cookies"
-            >
+            </Link>
+            <Link href="/cookie-policy" className="hover:text-white transition-colors" data-testid="link-cookies">
               Cookie Policy
-            </button>
+            </Link>
           </div>
         </div>
       </div>
