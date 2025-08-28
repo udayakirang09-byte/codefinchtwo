@@ -25,6 +25,13 @@ export default function SystemTest() {
   const [isRunning, setIsRunning] = useState(false);
   const [currentTest, setCurrentTest] = useState<string>('');
 
+  // Debug: Log that we're on the system test page
+  useEffect(() => {
+    console.log('🧪 System Test page loaded successfully!');
+    console.log('Current URL:', window.location.href);
+    console.log('Pathname:', window.location.pathname);
+  }, []);
+
   // Test data queries
   const { data: mentors } = useQuery({
     queryKey: ["/api/mentors"],
@@ -343,11 +350,15 @@ export default function SystemTest() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-4">
-            System Test Dashboard
+            🧪 System Test Dashboard
           </h1>
           <p className="text-muted-foreground mb-6">
             Comprehensive testing suite for all system components, APIs, and functionality
           </p>
+          <div className="bg-green-100 border border-green-300 rounded-lg p-4 mb-4">
+            <p className="text-green-800 font-medium">✅ System Test page is working correctly!</p>
+            <p className="text-green-700 text-sm">Current path: {window.location.pathname}</p>
+          </div>
           
           <div className="flex justify-center gap-4 mb-6">
             <Button 
