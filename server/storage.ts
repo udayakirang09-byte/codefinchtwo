@@ -107,7 +107,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createMentor(mentorData: InsertMentor): Promise<Mentor> {
-    const [mentor] = await db.insert(mentors).values([mentorData]).returning();
+    const [mentor] = await db.insert(mentors).values(mentorData).returning();
     return mentor;
   }
 
@@ -140,7 +140,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createStudent(studentData: InsertStudent): Promise<Student> {
-    const [student] = await db.insert(students).values([studentData]).returning();
+    const [student] = await db.insert(students).values(studentData).returning();
     return student;
   }
 
