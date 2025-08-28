@@ -103,13 +103,13 @@ const CheckoutForm = ({ courseData }: { courseData: any }) => {
 };
 
 export default function Checkout() {
-  const [, params] = useLocation();
+  const [location] = useLocation();
   const [clientSecret, setClientSecret] = useState("");
   const [courseData, setCourseData] = useState<any>(null);
   const { toast } = useToast();
 
-  // Extract course ID from URL params
-  const urlParams = new URLSearchParams(params || '');
+  // Extract course ID from URL params  
+  const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const courseId = urlParams.get('courseId') || '1';
 
   useEffect(() => {

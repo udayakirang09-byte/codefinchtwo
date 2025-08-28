@@ -18,12 +18,12 @@ import {
 } from "@shared/schema";
 
 // Initialize Stripe
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === 'NA') {
+  console.warn('⚠️ Stripe not configured - payment features disabled');
 }
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2023-10-16",
-});
+const stripe = process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY !== 'NA' 
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2025-08-27.basil" })
+  : null;
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -156,9 +156,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const bookingData = insertBookingSchema.parse(req.body);
+      
+      // Ensure student exists before creating booking
+      const student = await storage.getStudentByUserId(bookingData.studentId);
+      if (!student) {
+        return res.status(400).json({ message: "Student not found. Please register as a student first." });
+      }
+      
       const booking = await storage.createBooking(bookingData);
       res.status(201).json(booking);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating booking:", error);
       if (error.name === 'ZodError') {
         res.status(400).json({ message: "Invalid booking data", errors: error.errors });
@@ -395,6 +402,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stripe Payment Routes
   app.post("/api/create-payment-intent", async (req, res) => {
     try {
+      if (!stripe) {
+        return res.status(500).json({ 
+          message: "Payment system not configured. Please contact support." 
+        });
+      }
+
       const { amount, courseId, courseName } = req.body;
       
       const paymentIntent = await stripe.paymentIntents.create({

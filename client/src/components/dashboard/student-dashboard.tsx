@@ -52,7 +52,7 @@ export default function StudentDashboard() {
         id: '1',
         mentorName: 'Sarah Johnson',
         subject: 'Python Basics',
-        scheduledAt: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
+        scheduledAt: new Date(Date.now() + 50 * 60 * 1000), // 50 minutes from now (chat enabled, video in 40 mins)
         duration: 60,
         videoEnabled: false,
         chatEnabled: true,
