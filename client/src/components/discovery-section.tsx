@@ -109,7 +109,13 @@ export default function DiscoverySection() {
             data-testid="button-explore-all"
             onClick={() => {
               console.log('Explore All Mentors button clicked');
-              alert('Advanced mentor search coming soon! More filtering options will be available.');
+              // Reset filter to show all mentors
+              setActiveFilter('all');
+              // Scroll to top of mentor grid
+              const mentorGrid = document.querySelector('[data-testid="text-discovery-title"]');
+              if (mentorGrid) {
+                mentorGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
             }}
           >
             <Search className="mr-2" size={20} />

@@ -46,7 +46,11 @@ export default function HeroSection() {
                 data-testid="button-teach"
                 onClick={() => {
                   console.log('I Want to Teach button clicked');
-                  alert('Mentor registration coming soon! We\'re excited to have you join our community of educators.');
+                  // Scroll to community section to learn about becoming a mentor
+                  const communitySection = document.getElementById('community');
+                  if (communitySection) {
+                    communitySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
                 }}
               >
                 <Presentation className="mr-2" size={20} />

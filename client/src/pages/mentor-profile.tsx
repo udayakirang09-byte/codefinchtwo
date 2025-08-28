@@ -208,7 +208,8 @@ export default function MentorProfile() {
                     data-testid="button-video-call"
                     onClick={() => {
                       console.log('Start Video Call button clicked');
-                      alert('Video calling feature coming soon! Book a session for now.');
+                      // Redirect to booking page for this mentor
+                      window.location.href = `/booking/${mentor.id}`;
                     }}
                   >
                     <Video className="mr-2" size={20} />
@@ -220,7 +221,8 @@ export default function MentorProfile() {
                     data-testid="button-send-message"
                     onClick={() => {
                       console.log('Send Message button clicked');
-                      alert('Messaging feature coming soon! Book a session to get started.');
+                      // Redirect to booking page for this mentor
+                      window.location.href = `/booking/${mentor.id}`;
                     }}
                   >
                     <MessageSquare className="mr-2" size={20} />

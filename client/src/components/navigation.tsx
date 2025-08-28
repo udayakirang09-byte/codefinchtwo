@@ -74,7 +74,11 @@ export default function Navigation() {
               data-testid="button-sign-in"
               onClick={() => {
                 console.log('Sign In button clicked');
-                alert('Sign In functionality coming soon!');
+                // Scroll to discover section to find mentors
+                const discoverSection = document.getElementById('discover');
+                if (discoverSection) {
+                  discoverSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
               }}
             >
               Sign In
@@ -83,7 +87,11 @@ export default function Navigation() {
               data-testid="button-get-started"
               onClick={() => {
                 console.log('Get Started button clicked');
-                alert('Get Started functionality coming soon!');
+                // Scroll to discover section to start browsing mentors
+                const discoverSection = document.getElementById('discover');
+                if (discoverSection) {
+                  discoverSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
               }}
             >
               Get Started
@@ -141,7 +149,11 @@ export default function Navigation() {
                   data-testid="button-mobile-sign-in"
                   onClick={() => {
                     console.log('Mobile Sign In button clicked');
-                    alert('Sign In functionality coming soon!');
+                    setIsMobileMenuOpen(false);
+                    const discoverSection = document.getElementById('discover');
+                    if (discoverSection) {
+                      discoverSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
                   }}
                 >
                   Sign In
@@ -151,7 +163,11 @@ export default function Navigation() {
                   data-testid="button-mobile-get-started"
                   onClick={() => {
                     console.log('Mobile Get Started button clicked');
-                    alert('Get Started functionality coming soon!');
+                    setIsMobileMenuOpen(false);
+                    const discoverSection = document.getElementById('discover');
+                    if (discoverSection) {
+                      discoverSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
                   }}
                 >
                   Get Started

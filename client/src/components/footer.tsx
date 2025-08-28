@@ -76,7 +76,7 @@ export default function Footer() {
                 <button 
                   onClick={() => {
                     console.log('Achievement Badges clicked');
-                    alert('Achievement system coming soon! Earn badges as you learn.');
+                    window.location.href = '/courses';
                   }}
                   className="hover:text-white transition-colors text-left" 
                   data-testid="link-achievement-badges"
@@ -94,7 +94,7 @@ export default function Footer() {
                 <button 
                   onClick={() => {
                     console.log('Become a Mentor clicked');
-                    alert('Mentor registration coming soon! Share your coding passion.');
+                    window.location.href = '/help';
                   }}
                   className="hover:text-white transition-colors text-left" 
                   data-testid="link-become-mentor"
@@ -106,7 +106,7 @@ export default function Footer() {
                 <button 
                   onClick={() => {
                     console.log('Teacher Resources clicked');
-                    alert('Teacher resources coming soon! Helpful materials for educators.');
+                    window.location.href = '/help';
                   }}
                   className="hover:text-white transition-colors text-left" 
                   data-testid="link-teacher-resources"
@@ -139,7 +139,7 @@ export default function Footer() {
                 <button 
                   onClick={() => {
                     console.log('Safety Guidelines clicked');
-                    alert('Safety guidelines coming soon! Child safety is our top priority.');
+                    window.location.href = '/help';
                   }}
                   className="hover:text-white transition-colors text-left" 
                   data-testid="link-safety-guidelines"
@@ -156,7 +156,7 @@ export default function Footer() {
                 <button 
                   onClick={() => {
                     console.log('Privacy Policy clicked');
-                    alert('Privacy policy coming soon! We protect your data.');
+                    window.location.href = '/help';
                   }}
                   className="hover:text-white transition-colors text-left" 
                   data-testid="link-privacy-policy"
@@ -176,7 +176,7 @@ export default function Footer() {
             <button 
               onClick={() => {
                 console.log('Terms of Service clicked');
-                alert('Terms of service coming soon!');
+                window.location.href = '/help';
               }}
               className="hover:text-white transition-colors" 
               data-testid="link-terms"
@@ -186,7 +186,7 @@ export default function Footer() {
             <button 
               onClick={() => {
                 console.log('Privacy Policy clicked');
-                alert('Privacy policy coming soon!');
+                window.location.href = '/help';
               }}
               className="hover:text-white transition-colors" 
               data-testid="link-privacy"
@@ -196,7 +196,7 @@ export default function Footer() {
             <button 
               onClick={() => {
                 console.log('Cookie Policy clicked');
-                alert('Cookie policy coming soon!');
+                window.location.href = '/help';
               }}
               className="hover:text-white transition-colors" 
               data-testid="link-cookies"

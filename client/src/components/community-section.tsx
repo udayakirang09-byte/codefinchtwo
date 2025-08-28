@@ -24,7 +24,8 @@ export default function CommunitySection() {
               data-testid="button-join-student-community"
               onClick={() => {
                 console.log('Join Student Community button clicked');
-                alert('Student Community platform coming soon! Connect with fellow young coders.');
+                // Navigate to courses page to start learning
+                window.location.href = '/courses';
               }}
             >
               Join Student Community
@@ -42,7 +43,8 @@ export default function CommunitySection() {
               data-testid="button-become-mentor"
               onClick={() => {
                 console.log('Become a Mentor button clicked');
-                alert('Mentor registration coming soon! Share your passion for coding with the next generation.');
+                // Navigate to help page for mentor information
+                window.location.href = '/help';
               }}
             >
               Become a Mentor
