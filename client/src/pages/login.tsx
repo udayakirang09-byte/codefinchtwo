@@ -8,8 +8,8 @@ import { Code, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("udayakirang09@gmail.com");
+  const [password, setPassword] = useState("Hello111");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -19,14 +19,17 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // Check credentials against test user
+      // Check credentials against test user (trim whitespace)
       const validEmail = "udayakirang09@gmail.com";
       const validPassword = "Hello111";
       
-      if (email !== validEmail || password !== validPassword) {
+      console.log('Login attempt:', { email: email.trim(), password: password.trim() });
+      console.log('Expected:', { validEmail, validPassword });
+      
+      if (email.trim() !== validEmail || password.trim() !== validPassword) {
         toast({
           title: "Login Failed",
-          description: "Invalid email or password. Please try again.",
+          description: `Invalid email or password. Expected: ${validEmail} / ${validPassword}`,
           variant: "destructive",
         });
         setLoading(false);
@@ -74,6 +77,11 @@ export default function Login() {
           <p className="text-muted-foreground">
             Welcome back! Enter your details to access your account.
           </p>
+          <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded mt-2">
+            <strong>Test Credentials:</strong><br />
+            Email: udayakirang09@gmail.com<br />
+            Password: Hello111
+          </div>
         </CardHeader>
         
         <CardContent>
