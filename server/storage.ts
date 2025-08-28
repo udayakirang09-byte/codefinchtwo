@@ -5,6 +5,11 @@ import {
   bookings,
   achievements,
   reviews,
+  chatSessions,
+  chatMessages,
+  videoSessions,
+  classFeedback,
+  notifications,
   type User,
   type InsertUser,
   type Mentor,
@@ -17,6 +22,16 @@ import {
   type InsertReview,
   type Achievement,
   type InsertAchievement,
+  type ChatSession,
+  type InsertChatSession,
+  type ChatMessage,
+  type InsertChatMessage,
+  type VideoSession,
+  type InsertVideoSession,
+  type ClassFeedback,
+  type InsertClassFeedback,
+  type Notification,
+  type InsertNotification,
   type MentorWithUser,
   type StudentWithUser,
   type BookingWithDetails,
@@ -29,17 +44,20 @@ export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  getAllUsers(): Promise<User[]>;
   
   // Mentor operations
   getMentors(): Promise<MentorWithUser[]>;
   getMentor(id: string): Promise<MentorWithUser | undefined>;
   getMentorByUserId(userId: string): Promise<Mentor | undefined>;
+  getMentorReviews(mentorId: string): Promise<ReviewWithDetails[]>;
   createMentor(mentor: InsertMentor): Promise<Mentor>;
   updateMentorRating(mentorId: string, rating: number): Promise<void>;
   
   // Student operations
   getStudent(id: string): Promise<StudentWithUser | undefined>;
   getStudentByUserId(userId: string): Promise<Student | undefined>;
+  getStudentBookings(studentId: string): Promise<BookingWithDetails[]>;
   createStudent(student: InsertStudent): Promise<Student>;
   
   // Booking operations
@@ -57,6 +75,28 @@ export interface IStorage {
   // Achievement operations
   getAchievementsByStudent(studentId: string): Promise<Achievement[]>;
   createAchievement(achievement: InsertAchievement): Promise<Achievement>;
+  
+  // Video session operations
+  createVideoSession(session: InsertVideoSession): Promise<VideoSession>;
+  getVideoSessionByBooking(bookingId: string): Promise<VideoSession | undefined>;
+  
+  // Chat operations
+  createChatSession(session: InsertChatSession): Promise<ChatSession>;
+  getChatSessionByBooking(bookingId: string): Promise<ChatSession | undefined>;
+  sendChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  getChatMessages(sessionId: string): Promise<ChatMessage[]>;
+  
+  // Feedback operations
+  submitClassFeedback(feedback: InsertClassFeedback): Promise<ClassFeedback>;
+  getClassFeedback(bookingId: string): Promise<ClassFeedback | undefined>;
+  
+  // Notification operations
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  getUserNotifications(userId: string): Promise<Notification[]>;
+  markNotificationAsRead(notificationId: string): Promise<void>;
+  
+  // Admin operations
+  getSystemStats(): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -69,6 +109,11 @@ export class DatabaseStorage implements IStorage {
   async createUser(userData: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(userData).returning();
     return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    const result = await db.select().from(users).orderBy(desc(users.createdAt));
+    return result;
   }
 
   // Mentor operations
@@ -118,6 +163,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(mentors.id, mentorId));
   }
 
+  async getMentorReviews(mentorId: string): Promise<ReviewWithDetails[]> {
+    return this.getReviewsByMentor(mentorId);
+  }
+
   // Student operations
   async getStudent(id: string): Promise<StudentWithUser | undefined> {
     const [result] = await db
@@ -142,6 +191,10 @@ export class DatabaseStorage implements IStorage {
   async createStudent(studentData: InsertStudent): Promise<Student> {
     const [student] = await db.insert(students).values(studentData).returning();
     return student;
+  }
+
+  async getStudentBookings(studentId: string): Promise<BookingWithDetails[]> {
+    return this.getBookingsByStudent(studentId);
   }
 
   // Booking operations
@@ -268,6 +321,93 @@ export class DatabaseStorage implements IStorage {
   async createAchievement(achievementData: InsertAchievement): Promise<Achievement> {
     const [achievement] = await db.insert(achievements).values(achievementData).returning();
     return achievement;
+  }
+
+  // Video session operations
+  async createVideoSession(sessionData: InsertVideoSession): Promise<VideoSession> {
+    const [session] = await db.insert(videoSessions).values(sessionData).returning();
+    return session;
+  }
+
+  async getVideoSessionByBooking(bookingId: string): Promise<VideoSession | undefined> {
+    const [session] = await db.select().from(videoSessions).where(eq(videoSessions.bookingId, bookingId));
+    return session;
+  }
+
+  // Chat operations
+  async createChatSession(sessionData: InsertChatSession): Promise<ChatSession> {
+    const [session] = await db.insert(chatSessions).values(sessionData).returning();
+    return session;
+  }
+
+  async getChatSessionByBooking(bookingId: string): Promise<ChatSession | undefined> {
+    const [session] = await db.select().from(chatSessions).where(eq(chatSessions.bookingId, bookingId));
+    return session;
+  }
+
+  async sendChatMessage(messageData: InsertChatMessage): Promise<ChatMessage> {
+    const [message] = await db.insert(chatMessages).values(messageData).returning();
+    return message;
+  }
+
+  async getChatMessages(sessionId: string): Promise<ChatMessage[]> {
+    const messages = await db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.chatSessionId, sessionId))
+      .orderBy(chatMessages.sentAt);
+    return messages;
+  }
+
+  // Feedback operations
+  async submitClassFeedback(feedbackData: InsertClassFeedback): Promise<ClassFeedback> {
+    const [feedback] = await db.insert(classFeedback).values(feedbackData).returning();
+    return feedback;
+  }
+
+  async getClassFeedback(bookingId: string): Promise<ClassFeedback | undefined> {
+    const [feedback] = await db.select().from(classFeedback).where(eq(classFeedback.bookingId, bookingId));
+    return feedback;
+  }
+
+  // Notification operations
+  async createNotification(notificationData: InsertNotification): Promise<Notification> {
+    const [notification] = await db.insert(notifications).values(notificationData).returning();
+    return notification;
+  }
+
+  async getUserNotifications(userId: string): Promise<Notification[]> {
+    const result = await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+    return result;
+  }
+
+  async markNotificationAsRead(notificationId: string): Promise<void> {
+    await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, notificationId));
+  }
+
+  // Admin operations
+  async getSystemStats(): Promise<any> {
+    const allUsers = await db.select().from(users);
+    const allMentors = await db.select().from(mentors);
+    const allStudents = await db.select().from(students);
+    const allBookings = await db.select().from(bookings);
+    const completedBookings = await db.select().from(bookings).where(eq(bookings.status, 'completed'));
+
+    return {
+      totalUsers: allUsers.length || 0,
+      totalMentors: allMentors.length || 0,
+      totalStudents: allStudents.length || 0,
+      totalBookings: allBookings.length || 0,
+      completedBookings: completedBookings.length || 0,
+      completionRate: allBookings.length > 0 ? (completedBookings.length / allBookings.length) * 100 : 0
+    };
   }
 }
 

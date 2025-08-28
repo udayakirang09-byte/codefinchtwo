@@ -19,17 +19,23 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // Check credentials against test user (trim whitespace)
-      const validEmail = "udayakirang09@gmail.com";
-      const validPassword = "Hello111";
+      // Check credentials against test users (trim whitespace)
+      const validCredentials = [
+        { email: "udayakirang09@gmail.com", password: "Hello111" },
+        { email: "teacher@codeconnect.com", password: "Hello111" },
+        { email: "admin@codeconnect.com", password: "Hello111" }
+      ];
       
       console.log('Login attempt:', { email: email.trim(), password: password.trim() });
-      console.log('Expected:', { validEmail, validPassword });
       
-      if (email.trim() !== validEmail || password.trim() !== validPassword) {
+      const validUser = validCredentials.find(cred => 
+        cred.email === email.trim() && cred.password === password.trim()
+      );
+      
+      if (!validUser) {
         toast({
           title: "Login Failed",
-          description: `Invalid email or password. Expected: ${validEmail} / ${validPassword}`,
+          description: "Invalid email or password. Try: udayakirang09@gmail.com, teacher@codeconnect.com, or admin@codeconnect.com with password Hello111",
           variant: "destructive",
         });
         setLoading(false);
@@ -88,10 +94,14 @@ export default function Login() {
           <p className="text-muted-foreground">
             Welcome back! Enter your details to access your account.
           </p>
-          <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded mt-2">
-            <strong>Test Credentials:</strong><br />
-            Email: udayakirang09@gmail.com<br />
-            Password: Hello111
+          <div className="text-xs text-blue-600 bg-blue-50 p-3 rounded-lg mt-2 space-y-1">
+            <strong>📚 Test Accounts:</strong><br />
+            <div className="font-mono">
+              <div>👨‍🎓 Student: udayakirang09@gmail.com</div>
+              <div>👨‍🏫 Teacher: teacher@codeconnect.com</div>
+              <div>👨‍💼 Admin: admin@codeconnect.com</div>
+              <div className="mt-1">🔑 Password: <strong>Hello111</strong> (for all)</div>
+            </div>
           </div>
         </CardHeader>
         

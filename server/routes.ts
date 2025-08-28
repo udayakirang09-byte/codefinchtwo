@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { z } from "zod";
 import {
   insertUserSchema,
   insertMentorSchema,
@@ -8,6 +9,11 @@ import {
   insertBookingSchema,
   insertReviewSchema,
   insertAchievementSchema,
+  insertChatSessionSchema,
+  insertChatMessageSchema,
+  insertVideoSessionSchema,
+  insertClassFeedbackSchema,
+  insertNotificationSchema,
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -213,6 +219,167 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating achievement:", error);
       res.status(400).json({ message: "Invalid achievement data" });
+    }
+  });
+
+  // Video session routes
+  app.post("/api/video-sessions", async (req, res) => {
+    console.log("🎥 POST /api/video-sessions - Creating video session");
+    try {
+      const videoData = insertVideoSessionSchema.parse(req.body);
+      const session = await storage.createVideoSession(videoData);
+      console.log(`✅ Created video session ${session.id}`);
+      res.status(201).json(session);
+    } catch (error) {
+      console.error("❌ Error creating video session:", error);
+      res.status(500).json({ message: "Failed to create video session" });
+    }
+  });
+
+  app.get("/api/bookings/:bookingId/video-session", async (req, res) => {
+    console.log(`🔍 GET /api/bookings/${req.params.bookingId}/video-session - Fetching video session`);
+    try {
+      const session = await storage.getVideoSessionByBooking(req.params.bookingId);
+      if (!session) {
+        return res.status(404).json({ message: "Video session not found" });
+      }
+      res.json(session);
+    } catch (error) {
+      console.error("❌ Error fetching video session:", error);
+      res.status(500).json({ message: "Failed to fetch video session" });
+    }
+  });
+
+  // Chat session routes
+  app.post("/api/chat-sessions", async (req, res) => {
+    console.log("💬 POST /api/chat-sessions - Creating chat session");
+    try {
+      const chatData = insertChatSessionSchema.parse(req.body);
+      const session = await storage.createChatSession(chatData);
+      console.log(`✅ Created chat session ${session.id}`);
+      res.status(201).json(session);
+    } catch (error) {
+      console.error("❌ Error creating chat session:", error);
+      res.status(500).json({ message: "Failed to create chat session" });
+    }
+  });
+
+  app.post("/api/chat-sessions/:sessionId/messages", async (req, res) => {
+    console.log(`💬 POST /api/chat-sessions/${req.params.sessionId}/messages - Sending message`);
+    try {
+      const messageData = insertChatMessageSchema.parse({
+        ...req.body,
+        chatSessionId: req.params.sessionId
+      });
+      const message = await storage.sendChatMessage(messageData);
+      console.log(`✅ Sent message ${message.id}`);
+      res.status(201).json(message);
+    } catch (error) {
+      console.error("❌ Error sending message:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  app.get("/api/chat-sessions/:sessionId/messages", async (req, res) => {
+    console.log(`🔍 GET /api/chat-sessions/${req.params.sessionId}/messages - Fetching messages`);
+    try {
+      const messages = await storage.getChatMessages(req.params.sessionId);
+      console.log(`✅ Found ${messages.length} messages`);
+      res.json(messages);
+    } catch (error) {
+      console.error("❌ Error fetching messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  // Class feedback routes
+  app.post("/api/class-feedback", async (req, res) => {
+    console.log("⭐ POST /api/class-feedback - Submitting feedback");
+    try {
+      const feedbackData = insertClassFeedbackSchema.parse(req.body);
+      const feedback = await storage.submitClassFeedback(feedbackData);
+      console.log(`✅ Submitted feedback ${feedback.id}`);
+      res.status(201).json(feedback);
+    } catch (error) {
+      console.error("❌ Error submitting feedback:", error);
+      res.status(500).json({ message: "Failed to submit feedback" });
+    }
+  });
+
+  app.get("/api/bookings/:bookingId/feedback", async (req, res) => {
+    console.log(`🔍 GET /api/bookings/${req.params.bookingId}/feedback - Fetching feedback`);
+    try {
+      const feedback = await storage.getClassFeedback(req.params.bookingId);
+      if (!feedback) {
+        return res.status(404).json({ message: "Feedback not found" });
+      }
+      res.json(feedback);
+    } catch (error) {
+      console.error("❌ Error fetching feedback:", error);
+      res.status(500).json({ message: "Failed to fetch feedback" });
+    }
+  });
+
+  // Notification routes
+  app.post("/api/notifications", async (req, res) => {
+    console.log("🔔 POST /api/notifications - Creating notification");
+    try {
+      const notificationData = insertNotificationSchema.parse(req.body);
+      const notification = await storage.createNotification(notificationData);
+      console.log(`✅ Created notification ${notification.id}`);
+      res.status(201).json(notification);
+    } catch (error) {
+      console.error("❌ Error creating notification:", error);
+      res.status(500).json({ message: "Failed to create notification" });
+    }
+  });
+
+  app.get("/api/users/:userId/notifications", async (req, res) => {
+    console.log(`🔍 GET /api/users/${req.params.userId}/notifications - Fetching notifications`);
+    try {
+      const notifications = await storage.getUserNotifications(req.params.userId);
+      console.log(`✅ Found ${notifications.length} notifications`);
+      res.json(notifications);
+    } catch (error) {
+      console.error("❌ Error fetching notifications:", error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  app.patch("/api/notifications/:id/read", async (req, res) => {
+    console.log(`📖 PATCH /api/notifications/${req.params.id}/read - Marking as read`);
+    try {
+      await storage.markNotificationAsRead(req.params.id);
+      console.log(`✅ Marked notification ${req.params.id} as read`);
+      res.json({ message: "Notification marked as read" });
+    } catch (error) {
+      console.error("❌ Error marking notification as read:", error);
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
+  // Admin routes
+  app.get("/api/admin/stats", async (req, res) => {
+    console.log("📊 GET /api/admin/stats - Fetching system statistics");
+    try {
+      const stats = await storage.getSystemStats();
+      console.log(`✅ Retrieved system stats`);
+      res.json(stats);
+    } catch (error) {
+      console.error("❌ Error fetching stats:", error);
+      res.status(500).json({ message: "Failed to fetch system statistics" });
+    }
+  });
+
+  app.get("/api/admin/users", async (req, res) => {
+    console.log("👥 GET /api/admin/users - Fetching all users (admin only)");
+    try {
+      const users = await storage.getAllUsers();
+      console.log(`✅ Found ${users.length} users`);
+      res.json(users);
+    } catch (error) {
+      console.error("❌ Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
     }
   });
 

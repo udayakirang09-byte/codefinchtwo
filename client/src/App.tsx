@@ -15,15 +15,25 @@ import ComprehensiveSystemTest from "@/pages/comprehensive-system-test";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import ForgotPassword from "@/pages/forgot-password";
+import Mentors from "@/pages/mentors";
+import StudentProgress from "@/pages/student/progress";
+import VideoClass from "@/pages/video-class/[id]";
+import ChatClass from "@/pages/chat/[id]";
+import FeedbackForm from "@/pages/feedback/[id]";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/mentors" component={Mentors} />
       <Route path="/mentors/:id" component={MentorProfile} />
       <Route path="/booking/:mentorId" component={Booking} />
       <Route path="/courses" component={Courses} />
       <Route path="/help" component={Help} />
+      <Route path="/student/progress" component={StudentProgress} />
+      <Route path="/video-class/:id" component={VideoClass} />
+      <Route path="/chat/:id" component={ChatClass} />
+      <Route path="/feedback/:id" component={FeedbackForm} />
       <Route path="/login" component={Login} />
       <Route path="/signup" component={Signup} />
       <Route path="/forgot-password" component={ForgotPassword} />
