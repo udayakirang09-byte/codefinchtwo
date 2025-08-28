@@ -10,6 +10,7 @@ import Booking from "@/pages/booking";
 import Courses from "@/pages/courses";
 import Help from "@/pages/help";
 import SystemTest from "@/pages/system-test";
+import SimpleTest from "@/pages/simple-test";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/courses" component={Courses} />
       <Route path="/help" component={Help} />
       <Route path="/system-test" component={SystemTest} />
+      <Route path="/simple-test" component={SimpleTest} />
       <Route component={NotFound} />
     </Switch>
   );

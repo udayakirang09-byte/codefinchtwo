@@ -43,11 +43,16 @@ export default function Navigation() {
             <span className="text-2xl font-bold text-gradient">CodeConnect</span>
           </Link>
           
-          {/* Debug: Add system test link for development */}
+          {/* Debug: Add test links for development */}
           {(window.location.hostname === 'localhost' || window.location.hostname.includes('replit')) && (
-            <Link href="/system-test" className="ml-4 text-xs bg-red-100 text-red-800 px-2 py-1 rounded" data-testid="link-system-test">
-              🧪 Tests
-            </Link>
+            <div className="flex gap-2">
+              <Link href="/simple-test" className="ml-4 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded" data-testid="link-simple-test">
+                🔧 Simple Test
+              </Link>
+              <Link href="/system-test" className="ml-2 text-xs bg-red-100 text-red-800 px-2 py-1 rounded" data-testid="link-system-test">
+                🧪 Full Tests
+              </Link>
+            </div>
           )}
 
           <div className="hidden md:flex items-center space-x-8">

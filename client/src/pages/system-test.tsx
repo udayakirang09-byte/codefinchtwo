@@ -31,13 +31,10 @@ export default function SystemTest() {
     console.log('Current URL:', window.location.href);
     console.log('Pathname:', window.location.pathname);
     
-    // Prevent any automatic redirects
-    const handleBeforeUnload = (e: Event) => {
-      console.log('⚠️ Page unload detected - preventing redirect');
-    };
-    
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    // Stop any automatic test execution or redirects
+    setIsRunning(false);
+    setCurrentTest('');
+    setTestResults([]);
   }, []);
 
   // Test data queries
@@ -355,6 +352,7 @@ export default function SystemTest() {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
+      {/* Remove Footer to prevent any navigation conflicts */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-4">
@@ -469,7 +467,7 @@ export default function SystemTest() {
           </Card>
         )}
       </div>
-      <Footer />
+      {/* Footer temporarily removed to prevent navigation conflicts */}
     </div>
   );
 }
