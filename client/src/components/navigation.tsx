@@ -36,6 +36,13 @@ export default function Navigation() {
             <Code className="text-primary" size={28} />
             <span className="text-2xl font-bold text-gradient">CodeConnect</span>
           </Link>
+          
+          {/* Debug: Add system test link for development */}
+          {(window.location.hostname === 'localhost' || window.location.hostname.includes('replit')) && (
+            <Link href="/system-test" className="ml-4 text-xs bg-red-100 text-red-800 px-2 py-1 rounded" data-testid="link-system-test">
+              🧪 Tests
+            </Link>
+          )}
 
           <div className="hidden md:flex items-center space-x-8">
             <button
@@ -73,8 +80,7 @@ export default function Navigation() {
               variant="ghost" 
               data-testid="button-sign-in"
               onClick={() => {
-                console.log('Sign In button clicked');
-                // Scroll to discover section to find mentors
+                console.log('🔐 Sign In button clicked - redirecting to mentor discovery');
                 const discoverSection = document.getElementById('discover');
                 if (discoverSection) {
                   discoverSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -86,8 +92,7 @@ export default function Navigation() {
             <Button 
               data-testid="button-get-started"
               onClick={() => {
-                console.log('Get Started button clicked');
-                // Scroll to discover section to start browsing mentors
+                console.log('🚀 Get Started button clicked - navigating to mentors');
                 const discoverSection = document.getElementById('discover');
                 if (discoverSection) {
                   discoverSection.scrollIntoView({ behavior: 'smooth', block: 'start' });

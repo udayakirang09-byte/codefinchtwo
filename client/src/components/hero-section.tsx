@@ -30,7 +30,7 @@ export default function HeroSection() {
                 className="bg-white text-primary px-8 py-4 hover:bg-white/90 hover-lift font-semibold text-lg"
                 data-testid="button-learn"
                 onClick={() => {
-                  console.log('I Want to Learn button clicked');
+                  console.log('📚 I Want to Learn button clicked - scrolling to mentor discovery');
                   const discoverSection = document.getElementById('discover');
                   if (discoverSection) {
                     discoverSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -45,8 +45,7 @@ export default function HeroSection() {
                 className="bg-accent text-accent-foreground px-8 py-4 hover:bg-accent/90 hover-lift font-semibold text-lg"
                 data-testid="button-teach"
                 onClick={() => {
-                  console.log('I Want to Teach button clicked');
-                  // Scroll to community section to learn about becoming a mentor
+                  console.log('👨‍🏫 I Want to Teach button clicked - scrolling to community section');
                   const communitySection = document.getElementById('community');
                   if (communitySection) {
                     communitySection.scrollIntoView({ behavior: 'smooth', block: 'start' });

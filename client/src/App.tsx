@@ -9,6 +9,7 @@ import MentorProfile from "@/pages/mentor-profile";
 import Booking from "@/pages/booking";
 import Courses from "@/pages/courses";
 import Help from "@/pages/help";
+import SystemTest from "@/pages/system-test";
 
 function Router() {
   return (
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/booking/:mentorId" component={Booking} />
       <Route path="/courses" component={Courses} />
       <Route path="/help" component={Help} />
+      <Route path="/system-test" component={SystemTest} />
       <Route component={NotFound} />
     </Switch>
   );

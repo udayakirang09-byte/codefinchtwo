@@ -1,8 +1,14 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+// Debug logging function
+const debugLog = (category: string, message: string, data?: any) => {
+  console.log(`%c[${category}] ${message}`, 'color: #059669; font-weight: bold;', data || '');
+};
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
+    debugLog('API_ERROR', `Request failed: ${res.status} ${res.statusText}`, { url: res.url, text });
     throw new Error(`${res.status}: ${text}`);
   }
 }
@@ -12,12 +18,18 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  const startTime = performance.now();
+  debugLog('API_REQUEST', `${method} ${url}`, data);
+  
   const res = await fetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
+
+  const duration = performance.now() - startTime;
+  debugLog('API_RESPONSE', `${method} ${url} - ${res.status} (${duration.toFixed(2)}ms)`);
 
   await throwIfResNotOk(res);
   return res;
