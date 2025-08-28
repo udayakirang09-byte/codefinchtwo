@@ -213,3 +213,148 @@ export type ReviewWithDetails = Review & {
   student: StudentWithUser;
   mentor: MentorWithUser;
 };
+
+// Additional tables for chat, video sessions, and feedback
+export const chatSessions = pgTable("chat_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
+  isActive: boolean("is_active").default(true),
+  startedAt: timestamp("started_at").defaultNow(),
+  endedAt: timestamp("ended_at"),
+});
+
+export const chatMessages = pgTable("chat_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  chatSessionId: varchar("chat_session_id").references(() => chatSessions.id).notNull(),
+  senderId: varchar("sender_id").references(() => users.id).notNull(),
+  message: text("message").notNull(),
+  sentAt: timestamp("sent_at").defaultNow(),
+});
+
+export const videoSessions = pgTable("video_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
+  roomId: varchar("room_id").notNull(),
+  status: varchar("status").notNull().default("waiting"), // waiting, active, ended
+  startedAt: timestamp("started_at"),
+  endedAt: timestamp("ended_at"),
+  recordingUrl: varchar("recording_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const classFeedback = pgTable("class_feedback", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
+  studentId: varchar("student_id").references(() => students.id).notNull(),
+  mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
+  rating: integer("rating").notNull(), // 1-5 stars
+  feedback: text("feedback"),
+  whatWorked: text("what_worked"),
+  improvements: text("improvements"),
+  wouldRecommend: boolean("would_recommend").default(true),
+  isVisible: boolean("is_visible").default(true), // for students: visible for 12 hours
+  expiresAt: timestamp("expires_at"), // 12 hours after class for students
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  title: varchar("title").notNull(),
+  message: text("message").notNull(),
+  type: varchar("type").notNull(), // class_reminder, chat_message, feedback_request, etc.
+  isRead: boolean("is_read").default(false),
+  relatedId: varchar("related_id"), // booking_id, chat_session_id, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Additional Relations
+export const chatSessionsRelations = relations(chatSessions, ({ one, many }) => ({
+  booking: one(bookings, {
+    fields: [chatSessions.bookingId],
+    references: [bookings.id],
+  }),
+  messages: many(chatMessages),
+}));
+
+export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
+  chatSession: one(chatSessions, {
+    fields: [chatMessages.chatSessionId],
+    references: [chatSessions.id],
+  }),
+  sender: one(users, {
+    fields: [chatMessages.senderId],
+    references: [users.id],
+  }),
+}));
+
+export const videoSessionsRelations = relations(videoSessions, ({ one }) => ({
+  booking: one(bookings, {
+    fields: [videoSessions.bookingId],
+    references: [bookings.id],
+  }),
+}));
+
+export const classFeedbackRelations = relations(classFeedback, ({ one }) => ({
+  booking: one(bookings, {
+    fields: [classFeedback.bookingId],
+    references: [bookings.id],
+  }),
+  student: one(students, {
+    fields: [classFeedback.studentId],
+    references: [students.id],
+  }),
+  mentor: one(mentors, {
+    fields: [classFeedback.mentorId],
+    references: [mentors.id],
+  }),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+}));
+
+// Additional Insert Schemas
+export const insertChatSessionSchema = createInsertSchema(chatSessions).omit({
+  id: true,
+  startedAt: true,
+});
+
+export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
+  id: true,
+  sentAt: true,
+});
+
+export const insertVideoSessionSchema = createInsertSchema(videoSessions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertClassFeedbackSchema = createInsertSchema(classFeedback).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Additional Types
+export type ChatSession = typeof chatSessions.$inferSelect;
+export type InsertChatSession = z.infer<typeof insertChatSessionSchema>;
+
+export type ChatMessage = typeof chatMessages.$inferSelect;
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+
+export type VideoSession = typeof videoSessions.$inferSelect;
+export type InsertVideoSession = z.infer<typeof insertVideoSessionSchema>;
+
+export type ClassFeedback = typeof classFeedback.$inferSelect;
+export type InsertClassFeedback = z.infer<typeof insertClassFeedbackSchema>;
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;

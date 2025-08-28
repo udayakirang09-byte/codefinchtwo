@@ -11,6 +11,7 @@ import Courses from "@/pages/courses";
 import Help from "@/pages/help";
 import SystemTest from "@/pages/system-test";
 import SimpleTest from "@/pages/simple-test";
+import ComprehensiveSystemTest from "@/pages/comprehensive-system-test";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import ForgotPassword from "@/pages/forgot-password";
@@ -27,6 +28,7 @@ function Router() {
       <Route path="/signup" component={Signup} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/system-test" component={SystemTest} />
+      <Route path="/comprehensive-test" component={ComprehensiveSystemTest} />
       <Route path="/simple-test" component={SimpleTest} />
       <Route component={NotFound} />
     </Switch>

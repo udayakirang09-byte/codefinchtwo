@@ -42,6 +42,14 @@ export default function Login() {
       // Store authentication state (in a real app, this would be handled by proper auth)
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('userEmail', email.trim());
+      // For demo: set role based on email
+      if (email.includes('teacher') || email.includes('mentor')) {
+        localStorage.setItem('userRole', 'mentor');
+      } else if (email.includes('admin')) {
+        localStorage.setItem('userRole', 'admin');
+      } else {
+        localStorage.setItem('userRole', 'student');
+      }
       
       console.log('✅ Authentication stored, redirecting to home page...');
       
