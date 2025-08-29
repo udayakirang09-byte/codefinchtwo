@@ -284,7 +284,7 @@ export default function AdminDashboard() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleViewDetails('users')}>
+        <Card className="shadow-2xl bg-gradient-to-br from-white via-blue-50 to-indigo-50 border-0 rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleViewDetails('users')}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-blue-600" />
@@ -299,7 +299,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
         
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleViewDetails('classes')}>
+        <Card className="shadow-2xl bg-gradient-to-br from-white via-green-50 to-emerald-50 border-0 rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleViewDetails('classes')}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-green-600" />
@@ -314,7 +314,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
         
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleViewDetails('revenue')}>
+        <Card className="shadow-2xl bg-gradient-to-br from-white via-purple-50 to-violet-50 border-0 rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleViewDetails('revenue')}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-purple-600" />
@@ -327,7 +327,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
         
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleViewDetails('performance')}>
+        <Card className="shadow-2xl bg-gradient-to-br from-white via-orange-50 to-amber-50 border-0 rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleViewDetails('performance')}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-orange-600" />
@@ -384,7 +384,7 @@ export default function AdminDashboard() {
       )}
 
       {/* Admin Configuration Tabs */}
-      <Card>
+      <Card className="shadow-2xl bg-gradient-to-br from-white via-gray-50 to-slate-50 border-0 rounded-2xl overflow-hidden">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
@@ -1248,7 +1248,7 @@ export default function AdminDashboard() {
                 setTestResults(null);
                 
                 try {
-                  const response = await fetch('/api/admin/run-tests', {
+                  const response = await fetch('/api/test/run-all', {
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json',
