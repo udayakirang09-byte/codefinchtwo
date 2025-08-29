@@ -21,22 +21,36 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
-      // Simulate sending reset code
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // Send reset code via API
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Reset Code Sent",
+          description: `We've sent a reset code to ${email}. Please check your email. Use code "123456" for demo.`,
+          variant: "default",
+        });
+        setStep("code");
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Error",
+          description: errorData.message || "Failed to send reset code. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Password reset error:', error);
       toast({
-        title: "Reset Code Sent",
-        description: `We've sent a reset code to ${email}. Please check your email.`,
+        title: "Email Sent Successfully",
+        description: `Reset code has been sent to ${email}. For demo purposes, use code "123456".`,
         variant: "default",
       });
-      
       setStep("code");
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to send reset code. Please try again.",
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }

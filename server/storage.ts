@@ -267,9 +267,9 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  // Method to get mentor by user email
+  // Method to get mentor by user ID
   async getMentorByUserId(userId: string): Promise<Mentor | undefined> {
-    const result = await db.select().from(mentors).where(eq(mentors.email, userId));
+    const result = await db.select().from(mentors).where(eq(mentors.userId, userId));
     return result[0];
   }
 

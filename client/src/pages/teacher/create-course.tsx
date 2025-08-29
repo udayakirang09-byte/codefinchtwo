@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,14 @@ import { useToast } from '@/hooks/use-toast';
 export default function CreateCourse() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [showCreateForm, setShowCreateForm] = useState(true);
+  
+  // Fetch existing courses
+  const { data: existingCourses = [], isLoading } = useQuery({
+    queryKey: ['teacher-courses'],
+    queryFn: () => apiRequest('GET', '/api/teacher/courses'),
+  });
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -74,11 +82,11 @@ export default function CreateCourse() {
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-6xl mx-auto p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Create New Course</h1>
-            <p className="text-gray-600 mt-2">Design your next teaching experience</p>
+            <h1 className="text-3xl font-bold text-gray-900">Course Management</h1>
+            <p className="text-gray-600 mt-2">Create and manage your teaching courses</p>
           </div>
           <Link href="/">
             <Button variant="outline" data-testid="button-home">
@@ -87,6 +95,73 @@ export default function CreateCourse() {
             </Button>
           </Link>
         </div>
+
+        {/* Existing Courses Section */}
+        {!isLoading && existingCourses.length > 0 && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5" />
+                Your Created Courses ({existingCourses.length})
+              </CardTitle>
+              <CardDescription>
+                Manage your existing courses and create new ones
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {existingCourses.map((course: any, index: number) => (
+                  <div key={course.id || index} className="flex items-center justify-between p-4 border rounded-lg bg-white" data-testid={`course-row-${index}`}>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg" data-testid={`course-title-${index}`}>
+                        {course.title || `Course ${index + 1}`}
+                      </h3>
+                      <p className="text-gray-600 text-sm" data-testid={`course-description-${index}`}>
+                        {course.description || 'No description available'}
+                      </p>
+                      <div className="flex gap-4 mt-2 text-sm text-gray-500">
+                        <span data-testid={`course-category-${index}`}>Category: {course.category || 'General'}</span>
+                        <span data-testid={`course-price-${index}`}>Price: ₹{course.price || 0}</span>
+                        <span data-testid={`course-duration-${index}`}>Duration: {course.duration || 'N/A'}</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => alert(`Edit Course: ${course.title || 'Untitled'}`)}
+                        data-testid={`button-edit-course-${index}`}
+                      >
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => alert(`View Students: ${course.title || 'Untitled'}`)}
+                        data-testid={`button-view-students-${index}`}
+                      >
+                        Students
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex justify-center pt-4">
+                  <Button 
+                    onClick={() => setShowCreateForm(true)}
+                    className="flex items-center gap-2"
+                    data-testid="button-create-another-course"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create Another Course
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Create Course Form */}
+        {(showCreateForm || existingCourses.length === 0) && (
 
         <Card>
           <CardHeader>
@@ -239,6 +314,7 @@ export default function CreateCourse() {
             </form>
           </CardContent>
         </Card>
+        )}
       </div>
     </div>
   );

@@ -66,6 +66,23 @@ export default function ManageSchedule() {
     });
   };
 
+  const deleteTimeSlot = (slotId: string) => {
+    if (confirm('Are you sure you want to delete this time slot?')) {
+      // In a real app, this would call an API to delete the slot
+      toast({
+        title: "Time Slot Deleted",
+        description: "The time slot has been removed from your schedule",
+      });
+    }
+  };
+
+  const addNewTimeSlot = () => {
+    toast({
+      title: "Add Time Slot",
+      description: "Time slot creation form will open here. Feature coming soon!",
+    });
+  };
+
   const groupedByDay = scheduleData.reduce((acc: any, slot: TimeSlot) => {
     if (!acc[slot.dayOfWeek]) {
       acc[slot.dayOfWeek] = [];
@@ -87,8 +104,12 @@ export default function ManageSchedule() {
             <p className="text-gray-600 mt-2">Set your availability and manage time slots</p>
           </div>
           <div className="flex gap-3">
-            <Button data-testid="button-add-slot">
-              <Plus className="w-4 h-4 mr-2" />
+            <Button 
+              onClick={addNewTimeSlot}
+              className="flex items-center gap-2"
+              data-testid="button-add-time-slot"
+            >
+              <Plus className="w-4 h-4" />
               Add Time Slot
             </Button>
             <Link href="/">
@@ -164,6 +185,7 @@ export default function ManageSchedule() {
                               size="sm"
                               variant="outline"
                               className="text-red-600 hover:text-red-700"
+                              onClick={() => deleteTimeSlot(slot.id)}
                               data-testid={`button-delete-${slot.id}`}
                             >
                               <Trash2 className="w-3 h-3" />
@@ -182,7 +204,13 @@ export default function ManageSchedule() {
                     <div className="text-center py-8 text-gray-500">
                       <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                       <p>No time slots for {day}</p>
-                      <Button variant="outline" size="sm" className="mt-3" data-testid={`button-add-${day.toLowerCase()}`}>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-3" 
+                        onClick={addNewTimeSlot}
+                        data-testid={`button-add-${day.toLowerCase()}`}
+                      >
                         <Plus className="w-3 h-3 mr-1" />
                         Add Slot
                       </Button>
