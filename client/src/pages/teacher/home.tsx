@@ -202,7 +202,7 @@ export default function TeacherHome() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Upcoming Sessions */}
           <div className="lg:col-span-2">
-            <Card>
+            <Card className="shadow-2xl bg-gradient-to-br from-white via-gray-50 to-blue-50 border-0 rounded-2xl overflow-hidden">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5" />
@@ -255,7 +255,7 @@ export default function TeacherHome() {
           {/* Activity Feed & Quick Actions */}
           <div className="space-y-6">
             {/* Quick Actions */}
-            <Card>
+            <Card className="shadow-2xl bg-gradient-to-br from-white via-gray-50 to-purple-50 border-0 rounded-2xl overflow-hidden">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Settings className="h-5 w-5" />
@@ -381,7 +381,7 @@ export default function TeacherHome() {
             </Card>
 
             {/* Recent Activity */}
-            <Card>
+            <Card className="shadow-2xl bg-gradient-to-br from-white via-gray-50 to-green-50 border-0 rounded-2xl overflow-hidden">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Bell className="h-5 w-5" />

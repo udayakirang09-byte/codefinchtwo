@@ -10,8 +10,8 @@ export default function Navigation() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   
-  // Only show community navigation on the main/launch page
-  const isMainPage = location === '/' || location === '';
+  // Only show community navigation on the main/launch page when NOT logged in
+  const isMainPage = (location === '/' || location === '') && !isAuthenticated;
 
   useEffect(() => {
     const handleScroll = () => {

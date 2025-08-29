@@ -290,7 +290,7 @@ export default function AdminDashboard() {
               <Users className="h-5 w-5 text-blue-600" />
               <div>
                 <p className="text-sm text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</p>
+                <p className="text-2xl font-bold">{stats.totalUsers?.toLocaleString() || '0'}</p>
                 <p className="text-xs text-gray-500">
                   {stats.totalMentors} mentors, {stats.totalStudents} students
                 </p>
@@ -307,7 +307,7 @@ export default function AdminDashboard() {
                 <p className="text-sm text-gray-600">Active Classes</p>
                 <p className="text-2xl font-bold">{stats.activeClasses}</p>
                 <p className="text-xs text-gray-500">
-                  {stats.totalBookings.toLocaleString()} total bookings
+                  {stats.totalBookings?.toLocaleString() || '0'} total bookings
                 </p>
               </div>
             </div>
@@ -320,7 +320,7 @@ export default function AdminDashboard() {
               <DollarSign className="h-5 w-5 text-purple-600" />
               <div>
                 <p className="text-sm text-gray-600">Monthly Revenue</p>
-                <p className="text-2xl font-bold">${stats.monthlyRevenue.toLocaleString()}</p>
+                <p className="text-2xl font-bold">${stats.monthlyRevenue?.toLocaleString() || '0'}</p>
                 <p className="text-xs text-green-600">+12% from last month</p>
               </div>
             </div>
@@ -660,7 +660,7 @@ export default function AdminDashboard() {
                 <p className="text-2xl font-bold text-blue-700">+15%</p>
                 <p className="text-sm text-blue-600">This month</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {stats.totalUsers.toLocaleString()} total users
+                  {stats.totalUsers?.toLocaleString() || '0'} total users
                 </p>
               </div>
               
@@ -669,7 +669,7 @@ export default function AdminDashboard() {
                 <p className="text-2xl font-bold text-green-700">₹2.5M</p>
                 <p className="text-sm text-green-600">+8% growth</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  ${stats.monthlyRevenue.toLocaleString()} this month
+                  ${stats.monthlyRevenue?.toLocaleString() || '0'} this month
                 </p>
               </div>
               
@@ -678,7 +678,7 @@ export default function AdminDashboard() {
                 <p className="text-2xl font-bold text-purple-700">4.8/5</p>
                 <p className="text-sm text-purple-600">Excellent</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  Based on {stats.totalBookings.toLocaleString()} reviews
+                  Based on {stats.totalBookings?.toLocaleString() || '0'} reviews
                 </p>
               </div>
               
