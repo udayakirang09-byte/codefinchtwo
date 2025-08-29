@@ -15,7 +15,20 @@ export default function Signup() {
     email: "",
     password: "",
     confirmPassword: "",
-    role: ""
+    role: "",
+    // Mentor qualification fields
+    qualifications: [
+      { qualification: "", specialization: "", score: "" },
+      { qualification: "", specialization: "", score: "" },
+      { qualification: "", specialization: "", score: "" }
+    ],
+    subjects: [
+      { subject: "", experience: "" },
+      { subject: "", experience: "" },
+      { subject: "", experience: "" },
+      { subject: "", experience: "" },
+      { subject: "", experience: "" }
+    ]
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -24,6 +37,24 @@ export default function Signup() {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleQualificationChange = (index: number, field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      qualifications: prev.qualifications.map((qual, i) => 
+        i === index ? { ...qual, [field]: value } : qual
+      )
+    }));
+  };
+
+  const handleSubjectChange = (index: number, field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      subjects: prev.subjects.map((subj, i) => 
+        i === index ? { ...subj, [field]: value } : subj
+      )
+    }));
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -152,6 +183,76 @@ export default function Signup() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Mentor/Both Qualification Fields */}
+            {(formData.role === "mentor" || formData.role === "both") && (
+              <div className="space-y-6 p-4 border rounded-lg bg-gray-50">
+                <h3 className="text-lg font-semibold text-gray-800">Mentor Qualifications</h3>
+                
+                {/* Qualifications */}
+                <div className="space-y-4">
+                  <Label className="text-base font-medium">Educational Qualifications (Top 3)</Label>
+                  {formData.qualifications.map((qual, index) => (
+                    <div key={index} className="grid grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-sm">{index === 0 ? "Highest" : index === 1 ? "Second" : "Third"} Qualification</Label>
+                        <Input
+                          placeholder="e.g., Bachelor's in CS"
+                          value={qual.qualification}
+                          onChange={(e) => handleQualificationChange(index, "qualification", e.target.value)}
+                          data-testid={`input-qualification-${index}`}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-sm">Specialization</Label>
+                        <Input
+                          placeholder="e.g., Machine Learning"
+                          value={qual.specialization}
+                          onChange={(e) => handleQualificationChange(index, "specialization", e.target.value)}
+                          data-testid={`input-specialization-${index}`}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-sm">Score/Grade</Label>
+                        <Input
+                          placeholder="e.g., 3.8 GPA, First Class"
+                          value={qual.score}
+                          onChange={(e) => handleQualificationChange(index, "score", e.target.value)}
+                          data-testid={`input-score-${index}`}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Subjects */}
+                <div className="space-y-4">
+                  <Label className="text-base font-medium">Teaching Subjects & Experience</Label>
+                  {formData.subjects.map((subj, index) => (
+                    <div key={index} className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-sm">Subject {index + 1}</Label>
+                        <Input
+                          placeholder="e.g., Python Programming"
+                          value={subj.subject}
+                          onChange={(e) => handleSubjectChange(index, "subject", e.target.value)}
+                          data-testid={`input-subject-${index}`}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-sm">Experience</Label>
+                        <Input
+                          placeholder="e.g., 5 years, Advanced"
+                          value={subj.experience}
+                          onChange={(e) => handleSubjectChange(index, "experience", e.target.value)}
+                          data-testid={`input-experience-${index}`}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>

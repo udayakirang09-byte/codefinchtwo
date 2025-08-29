@@ -99,6 +99,9 @@ export default function AdminAnalytics() {
   const handleRefreshAnalytics = async () => {
     setRefreshing(true);
     try {
+      // First seed some sample data
+      await apiRequest('POST', '/api/admin/seed-analytics');
+      // Then run AI analysis
       await apiRequest('POST', '/api/admin/refresh-analytics');
       window.location.reload(); // Refresh all data
     } catch (error) {

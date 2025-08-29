@@ -41,6 +41,11 @@ import SuccessStories from "./pages/success-stories";
 import SafetyGuidelines from "./pages/safety-guidelines";
 import AdminAnalytics from "./pages/admin/analytics";
 import CloudDeployments from "./pages/admin/cloud-deployments";
+import TeacherHome from "./pages/teacher/home";
+import AdminHome from "./pages/admin/home";
+import CodeMapping from "./pages/admin/code-mapping";
+import TestManagement from "./pages/admin/test-management";
+import LoadTestingGuide from "./pages/admin/load-testing-guide";
 
 function Router() {
   return (
@@ -60,6 +65,11 @@ function Router() {
       <Route path="/admin/mentor-approval" component={MentorApproval} />
       <Route path="/admin/analytics" component={AdminAnalytics} />
       <Route path="/admin/cloud-deployments" component={CloudDeployments} />
+      <Route path="/admin/code-mapping" component={CodeMapping} />
+      <Route path="/admin/test-management" component={TestManagement} />
+      <Route path="/admin/load-testing" component={LoadTestingGuide} />
+      <Route path="/teacher/home" component={TeacherHome} />
+      <Route path="/admin/home" component={AdminHome} />
       <Route path="/student/active-classes" component={ActiveClasses} />
       <Route path="/student/learning-hours" component={LearningHours} />
       <Route path="/teacher/create-course" component={CreateCourse} />

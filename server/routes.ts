@@ -1472,7 +1472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { eventType, eventName, properties, userId } = req.body;
       
       const event = {
-        userId: userId || null,
+        userId: userId && await storage.getUser(userId) ? userId : null,
         sessionId: req.headers['session-id'] as string || null,
         eventType,
         eventName,
@@ -1487,6 +1487,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error tracking event:", error);
       res.status(500).json({ message: "Failed to track event" });
+    }
+  });
+
+  // Seed sample analytics data for demonstration
+  app.post("/api/admin/seed-analytics", async (req, res) => {
+    try {
+      // Get existing users
+      const users = await storage.getUsers();
+      
+      const sampleEvents = [
+        { eventType: 'user_registration', eventName: 'new_signup', properties: { source: 'homepage' } },
+        { eventType: 'session_start', eventName: 'user_login', properties: { device: 'desktop' } },
+        { eventType: 'booking_created', eventName: 'mentor_booked', properties: { mentor_type: 'coding' } },
+        { eventType: 'page_view', eventName: 'dashboard_view', properties: { page: 'dashboard' } },
+        { eventType: 'video_session', eventName: 'session_completed', properties: { duration: 45 } }
+      ];
+
+      const events = [];
+      for (let i = 0; i < 20; i++) {
+        const randomEvent = sampleEvents[Math.floor(Math.random() * sampleEvents.length)];
+        const randomUser = users.length > 0 ? users[Math.floor(Math.random() * users.length)] : null;
+        
+        events.push({
+          userId: randomUser?.id || null,
+          sessionId: `session_${i}`,
+          eventType: randomEvent.eventType,
+          eventName: randomEvent.eventName,
+          properties: randomEvent.properties,
+          url: '/dashboard',
+          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          ipAddress: '192.168.1.1',
+          timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000) // Random time in last 7 days
+        });
+      }
+      
+      await db.insert(analyticsEvents).values(events);
+      res.json({ message: "Sample analytics data seeded successfully", count: events.length });
+    } catch (error) {
+      console.error("Error seeding analytics:", error);
+      res.status(500).json({ message: "Failed to seed analytics data" });
     }
   });
 

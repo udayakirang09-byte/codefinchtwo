@@ -81,6 +81,27 @@ export const reviews = pgTable("reviews", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Teacher qualifications table
+export const teacherQualifications = pgTable("teacher_qualifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
+  qualification: varchar("qualification").notNull(), // e.g., "Bachelor's in Computer Science"
+  specialization: varchar("specialization").notNull(), // e.g., "Machine Learning"
+  score: varchar("score").notNull(), // e.g., "3.8 GPA", "First Class"
+  priority: integer("priority").notNull().default(1), // 1=highest, 2=second, 3=third
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Teacher subjects table
+export const teacherSubjects = pgTable("teacher_subjects", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
+  subject: varchar("subject").notNull(), // e.g., "Python Programming"
+  experience: varchar("experience").notNull(), // e.g., "5 years", "Advanced"
+  priority: integer("priority").notNull().default(1), // 1-5 for ordering
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one }) => ({
   mentor: one(mentors, {
@@ -100,6 +121,8 @@ export const mentorsRelations = relations(mentors, ({ one, many }) => ({
   }),
   bookings: many(bookings),
   reviews: many(reviews),
+  qualifications: many(teacherQualifications),
+  subjects: many(teacherSubjects),
 }));
 
 export const studentsRelations = relations(students, ({ one, many }) => ({
@@ -135,6 +158,20 @@ export const reviewsRelations = relations(reviews, ({ one }) => ({
   }),
   mentor: one(mentors, {
     fields: [reviews.mentorId],
+    references: [mentors.id],
+  }),
+}));
+
+export const teacherQualificationsRelations = relations(teacherQualifications, ({ one }) => ({
+  mentor: one(mentors, {
+    fields: [teacherQualifications.mentorId],
+    references: [mentors.id],
+  }),
+}));
+
+export const teacherSubjectsRelations = relations(teacherSubjects, ({ one }) => ({
+  mentor: one(mentors, {
+    fields: [teacherSubjects.mentorId],
     references: [mentors.id],
   }),
 }));
@@ -186,6 +223,10 @@ export const insertAchievementSchema = createInsertSchema(achievements).omit({
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type TeacherQualification = typeof teacherQualifications.$inferSelect;
+export type InsertTeacherQualification = typeof teacherQualifications.$inferInsert;
+export type TeacherSubject = typeof teacherSubjects.$inferSelect;
+export type InsertTeacherSubject = typeof teacherSubjects.$inferInsert;
 
 export type Mentor = typeof mentors.$inferSelect;
 export type InsertMentor = z.infer<typeof insertMentorSchema>;

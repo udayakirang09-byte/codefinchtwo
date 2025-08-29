@@ -45,6 +45,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
+  getUsers(): Promise<User[]>;
   
   // Mentor operations
   getMentors(): Promise<MentorWithUser[]>;
@@ -119,6 +120,10 @@ export class DatabaseStorage implements IStorage {
   async getAllUsers(): Promise<User[]> {
     const result = await db.select().from(users).orderBy(desc(users.createdAt));
     return result;
+  }
+
+  async getUsers(): Promise<User[]> {
+    return await db.select().from(users).limit(10);
   }
 
 
