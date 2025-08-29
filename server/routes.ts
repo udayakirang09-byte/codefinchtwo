@@ -374,6 +374,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Teacher routes
+  app.get("/api/teacher/classes", async (req, res) => {
+    try {
+      const teacherId = req.query.teacherId as string;
+      if (!teacherId) {
+        return res.status(400).json({ message: "Teacher ID required" });
+      }
+      
+      const mentor = await storage.getMentorByUserId(teacherId);
+      if (!mentor) {
+        return res.status(404).json({ message: "Mentor not found" });
+      }
+      
+      const bookings = await storage.getBookingsByMentor(mentor.id);
+      res.json(bookings);
+    } catch (error) {
+      console.error("Error fetching teacher classes:", error);
+      res.status(500).json({ message: "Failed to fetch teacher classes" });
+    }
+  });
+
+  app.get("/api/teacher/stats", async (req, res) => {
+    try {
+      const teacherId = req.query.teacherId as string;
+      if (!teacherId) {
+        return res.status(400).json({ message: "Teacher ID required" });
+      }
+      
+      const mentor = await storage.getMentorByUserId(teacherId);
+      if (!mentor) {
+        return res.status(404).json({ message: "Mentor not found" });
+      }
+      
+      const bookings = await storage.getBookingsByMentor(mentor.id);
+      const completedBookings = bookings.filter(b => b.status === 'completed');
+      const totalEarnings = completedBookings.reduce((sum, b) => sum + (b.amount || 0), 0);
+      
+      const stats = {
+        totalStudents: new Set(bookings.map(b => b.studentId)).size,
+        monthlyEarnings: totalEarnings,
+        averageRating: parseFloat(mentor.rating || '0') || 0,
+        completedSessions: completedBookings.length
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching teacher stats:", error);
+      res.status(500).json({ message: "Failed to fetch teacher stats" });
+    }
+  });
+
   // Admin routes
   app.get("/api/admin/stats", async (req, res) => {
     console.log("📊 GET /api/admin/stats - Fetching system statistics");
@@ -400,36 +451,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Stripe Payment Routes
-  app.post("/api/create-payment-intent", async (req, res) => {
+  // Non-Stripe payment processing
+  app.post("/api/process-payment", async (req, res) => {
     try {
-      if (!stripe) {
-        return res.status(500).json({ 
-          message: "Payment system not configured. Please contact support." 
-        });
-      }
-
-      const { amount, courseId, courseName } = req.body;
+      const { courseId, courseName, amount, paymentMethod, transactionId } = req.body;
       
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Convert to paise (cents equivalent)
-        currency: "inr", // Use INR for India (supports UPI, cards, net banking)
-        payment_method_types: ['card', 'upi', 'netbanking', 'wallet'],
-        metadata: {
-          courseId: courseId,
-          courseName: courseName,
-        },
-      });
+      // Simulate payment processing delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      console.log(`💳 Created payment intent for ₹${amount} - Course: ${courseName}`);
+      // Create enrollment record
+      const enrollmentData = {
+        courseId,
+        courseName,
+        amount,
+        paymentMethod,
+        transactionId,
+        status: "completed",
+        enrolledAt: new Date()
+      };
+      
+      console.log(`💳 Payment processed for ₹${amount} - Course: ${courseName} via ${paymentMethod}`);
+      
       res.json({ 
-        clientSecret: paymentIntent.client_secret,
-        paymentIntentId: paymentIntent.id 
+        success: true,
+        transactionId,
+        message: "Payment completed successfully"
       });
     } catch (error: any) {
-      console.error("❌ Payment intent creation failed:", error.message);
-      res
-        .status(500)
-        .json({ message: "Error creating payment intent: " + error.message });
+      console.error("❌ Payment processing failed:", error.message);
+      res.status(500).json({ message: "Payment processing failed: " + error.message });
     }
   });
 

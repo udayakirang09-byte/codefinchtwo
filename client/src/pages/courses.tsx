@@ -104,7 +104,7 @@ export default function Courses() {
                   data-testid={`button-enroll-${course.id}`}
                   onClick={() => {
                     console.log(`🛒 Enrolling in course ${course.id}: ${course.title}`);
-                    window.location.href = `/checkout?courseId=${course.id}`;
+                    window.location.href = `/payment?courseId=${course.id}`;
                   }}
                 >
                   Enroll Now - ₹{course.price}

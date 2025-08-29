@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Video, MessageCircle, Users, BookOpen, DollarSign, Bell, TrendingUp } from "lucide-react";
 import { formatDistanceToNow, addHours, addMinutes } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
 
 interface UpcomingClass {
   id: string;
@@ -25,64 +27,62 @@ interface CompletedClass {
 }
 
 export default function TeacherDashboard() {
-  const [upcomingClasses, setUpcomingClasses] = useState<UpcomingClass[]>([]);
-  const [completedClasses, setCompletedClasses] = useState<CompletedClass[]>([]);
-  const [stats, setStats] = useState({
-    totalStudents: 12,
-    monthlyEarnings: 2340,
-    averageRating: 4.8,
-    completedSessions: 28
-  });
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // Fetch teacher's classes from API
+  const { data: teacherClasses = [], isLoading: classesLoading } = useQuery({
+    queryKey: ['teacher-classes', user?.id],
+    queryFn: () => fetch(`/api/teacher/classes?teacherId=${user?.id}`).then(res => res.json()),
+    enabled: !!user?.id
+  });
+  
+  // Fetch teacher stats from API
+  const { data: stats = {
+    totalStudents: 0,
+    monthlyEarnings: 0,
+    averageRating: 0,
+    completedSessions: 0
+  }, isLoading: statsLoading } = useQuery({
+    queryKey: ['teacher-stats', user?.id],
+    queryFn: () => fetch(`/api/teacher/stats?teacherId=${user?.id}`).then(res => res.json()),
+    enabled: !!user?.id
+  });
+  
+  const upcomingClasses = teacherClasses.filter((booking: any) => 
+    booking.status === 'scheduled' && new Date(booking.scheduledAt) > new Date()
+  ).map((booking: any) => ({
+    id: booking.id,
+    studentName: booking.student?.user?.firstName + ' ' + (booking.student?.user?.lastName || ''),
+    subject: booking.subject,
+    scheduledAt: new Date(booking.scheduledAt),
+    duration: booking.duration,
+    videoEnabled: true,
+    chatEnabled: true,
+    rate: booking.amount
+  }));
+  
+  const completedClasses = teacherClasses.filter((booking: any) => 
+    booking.status === 'completed'
+  ).map((booking: any) => ({
+    id: booking.id,
+    studentName: booking.student?.user?.firstName + ' ' + (booking.student?.user?.lastName || ''),
+    subject: booking.subject,
+    completedAt: new Date(booking.scheduledAt),
+    earnings: booking.amount
+  }));
+  
+  const notifications = [
+    { id: 1, message: "Class with student starts soon", type: "reminder" },
+    { id: 2, message: "New student message received", type: "message" },
+    { id: 3, message: "You have pending feedback requests", type: "feedback" },
+  ];
 
   useEffect(() => {
     // Update current time every minute
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 60000);
-
-    // Load sample data
-    const sampleUpcoming: UpcomingClass[] = [
-      {
-        id: '1',
-        studentName: 'Emma Wilson',
-        subject: 'Python Data Structures',
-        scheduledAt: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes from now
-        duration: 60,
-        videoEnabled: false,
-        chatEnabled: true,
-        rate: 45,
-      },
-      {
-        id: '2',
-        studentName: 'James Parker',
-        subject: 'React Hooks Tutorial',
-        scheduledAt: new Date(Date.now() + 4 * 60 * 60 * 1000), // 4 hours from now
-        duration: 90,
-        videoEnabled: false,
-        chatEnabled: false,
-        rate: 55,
-      },
-    ];
-
-    const sampleCompleted: CompletedClass[] = [
-      {
-        id: '3',
-        studentName: 'Sophie Chen',
-        subject: 'JavaScript Basics',
-        completedAt: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
-        earnings: 45,
-      },
-    ];
-
-    setUpcomingClasses(sampleUpcoming);
-    setCompletedClasses(sampleCompleted);
-    setNotifications([
-      { id: 1, message: "Class with Emma Wilson starts in 30 minutes", type: "reminder" },
-      { id: 2, message: "New student message from James Parker", type: "message" },
-      { id: 3, message: "You have 2 pending feedback requests", type: "feedback" },
-    ]);
 
     return () => clearInterval(timer);
   }, []);
