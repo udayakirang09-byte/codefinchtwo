@@ -65,8 +65,24 @@ export default function AdminDashboard() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailCategory, setDetailCategory] = useState<string>('');
   const [detailData, setDetailData] = useState<any[]>([]);
+  const [systemHealth, setSystemHealth] = useState<any[]>([]);
 
   useEffect(() => {
+    // Load system health data
+    const fetchSystemHealth = async () => {
+      try {
+        const response = await fetch('/api/admin/system-health');
+        if (response.ok) {
+          const data = await response.json();
+          setSystemHealth(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch system health:', error);
+      }
+    };
+    
+    fetchSystemHealth();
+    
     // Load sample alert data
     setAlerts([
       {
@@ -813,41 +829,37 @@ export default function AdminDashboard() {
       )}
 
       {/* System Health */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
+      <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white">
+          <CardTitle className="flex items-center gap-3 text-xl">
+            <TrendingUp className="h-6 w-6" />
             System Health Monitoring
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="font-medium">Server Status</span>
-              </div>
-              <p className="text-sm text-gray-600">All systems operational</p>
-              <p className="text-xs text-gray-500">99.9% uptime</p>
-            </div>
-            
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="font-medium">Database</span>
-              </div>
-              <p className="text-sm text-gray-600">Performance optimal</p>
-              <p className="text-xs text-gray-500">Avg response: 45ms</p>
-            </div>
-            
-            <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <span className="font-medium">Payment System</span>
-              </div>
-              <p className="text-sm text-gray-600">Minor delays</p>
-              <p className="text-xs text-gray-500">Processing slower than usual</p>
-            </div>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {systemHealth.map((health: any) => {
+              const bgColor = health.status === 'operational' ? 'bg-gradient-to-br from-green-50 to-emerald-50' : 
+                             health.status === 'optimal' ? 'bg-gradient-to-br from-blue-50 to-cyan-50' :
+                             'bg-gradient-to-br from-yellow-50 to-amber-50';
+              const borderColor = health.status === 'operational' ? 'border-green-300 shadow-green-100' : 
+                                 health.status === 'optimal' ? 'border-blue-300 shadow-blue-100' :
+                                 'border-yellow-300 shadow-amber-100';
+              const dotColor = health.status === 'operational' ? 'bg-green-500' : 
+                              health.status === 'optimal' ? 'bg-blue-500' :
+                              'bg-yellow-500';
+              
+              return (
+                <div key={health.service} className={`p-6 ${bgColor} rounded-xl border-2 ${borderColor} shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105`}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`w-4 h-4 ${dotColor} rounded-full animate-pulse`}></div>
+                    <span className="font-semibold text-gray-800">{health.service}</span>
+                  </div>
+                  <p className="text-sm text-gray-700 font-medium mb-1">{health.description}</p>
+                  <p className="text-xs text-gray-600">{health.metric}</p>
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>

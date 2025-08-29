@@ -63,6 +63,32 @@ export default function TeacherDashboard() {
     enabled: !!user?.id
   });
   
+  // Fetch teacher notifications from API
+  const { data: notifications = [], isLoading: notificationsLoading } = useQuery({
+    queryKey: ['teacher-notifications', user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/teacher/notifications?teacherId=${user?.id}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch notifications: ${response.status}`);
+      }
+      return response.json();
+    },
+    enabled: !!user?.id
+  });
+  
+  // Fetch teacher reviews from API
+  const { data: teacherReviews = [], isLoading: reviewsLoading } = useQuery({
+    queryKey: ['teacher-reviews', user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/teacher/reviews?teacherId=${user?.id}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch reviews: ${response.status}`);
+      }
+      return response.json();
+    },
+    enabled: !!user?.id
+  });
+  
   const upcomingClasses = Array.isArray(teacherClasses) ? teacherClasses.filter((booking: any) => 
     booking.status === 'scheduled' && new Date(booking.scheduledAt) > new Date()
   ).map((booking: any) => ({
@@ -86,11 +112,7 @@ export default function TeacherDashboard() {
     earnings: booking.amount
   })) : [];
   
-  const notifications = [
-    { id: 1, message: "Class with student starts soon", type: "reminder" },
-    { id: 2, message: "New student message received", type: "message" },
-    { id: 3, message: "You have pending feedback requests", type: "feedback" },
-  ];
+  // notifications now comes from API query above
 
   useEffect(() => {
     // Update current time every minute
@@ -194,7 +216,7 @@ export default function TeacherDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {notifications.map((notification) => (
+              {notifications.map((notification: any) => (
                 <div 
                   key={notification.id} 
                   className={`p-3 rounded-lg border-l-4 ${
@@ -442,41 +464,27 @@ export default function TeacherDashboard() {
               <div className="space-y-3">
                 <h4 className="font-semibold">Recent Reviews:</h4>
                 
-                <div className="border-l-4 border-green-400 bg-green-50 p-4 rounded-r-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-yellow-500">⭐⭐⭐⭐⭐</span>
-                    <span className="font-medium text-sm">Sarah M.</span>
-                    <span className="text-xs text-gray-500">2 days ago</span>
-                  </div>
-                  <p className="text-sm text-gray-700">"Excellent teaching style! The instructor explains complex JavaScript concepts in a very clear and understandable way. Highly recommend!"</p>
-                </div>
-
-                <div className="border-l-4 border-green-400 bg-green-50 p-4 rounded-r-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-yellow-500">⭐⭐⭐⭐⭐</span>
-                    <span className="font-medium text-sm">Mike K.</span>
-                    <span className="text-xs text-gray-500">1 week ago</span>
-                  </div>
-                  <p className="text-sm text-gray-700">"Very helpful and patient teacher. Made Python programming easy to understand. Great examples and practical exercises!"</p>
-                </div>
-
-                <div className="border-l-4 border-green-400 bg-green-50 p-4 rounded-r-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-yellow-500">⭐⭐⭐⭐⭐</span>
-                    <span className="font-medium text-sm">Alex P.</span>
-                    <span className="text-xs text-gray-500">2 weeks ago</span>
-                  </div>
-                  <p className="text-sm text-gray-700">"Clear explanations and good pace. The Node.js session was exactly what I needed. Thank you!"</p>
-                </div>
-
-                <div className="border-l-4 border-blue-400 bg-blue-50 p-4 rounded-r-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-yellow-500">⭐⭐⭐⭐⭐</span>
-                    <span className="font-medium text-sm">Jennifer L.</span>
-                    <span className="text-xs text-gray-500">3 weeks ago</span>
-                  </div>
-                  <p className="text-sm text-gray-700">"Fantastic React tutorial! The step-by-step approach really helped me grasp the concepts quickly."</p>
-                </div>
+                {teacherReviews.map((review: any) => {
+                  const stars = '⭐'.repeat(review.rating);
+                  const borderColor = review.rating >= 4 ? 'border-green-400' : review.rating >= 3 ? 'border-yellow-400' : 'border-red-400';
+                  const bgColor = review.rating >= 4 ? 'bg-green-50' : review.rating >= 3 ? 'bg-yellow-50' : 'bg-red-50';
+                  
+                  return (
+                    <div key={review.id} className={`border-l-4 ${borderColor} ${bgColor} p-4 rounded-r-lg`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-yellow-500">{stars}</span>
+                        <span className="font-medium text-sm">{review.studentName}</span>
+                        <span className="text-xs text-gray-500">{formatDistanceToNow(new Date(review.createdAt), { addSuffix: true })}</span>
+                      </div>
+                      <p className="text-sm text-gray-700">"{review.comment}"</p>
+                      <p className="text-xs text-gray-500 mt-1">Subject: {review.subject}</p>
+                    </div>
+                  );
+                })}
+                
+                {teacherReviews.length === 0 && (
+                  <p className="text-gray-500 text-center py-4">No reviews yet</p>
+                )}
               </div>
             </div>
           </CardContent>
