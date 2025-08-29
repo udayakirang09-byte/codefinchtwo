@@ -30,14 +30,14 @@ interface Alert {
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<SystemStats>({
-    totalUsers: 1247,
-    totalMentors: 89,
-    totalStudents: 1158,
-    activeClasses: 23,
-    monthlyRevenue: 45680,
-    totalBookings: 2834,
-    averageRating: 4.7,
-    completionRate: 94.2
+    totalUsers: 0,
+    totalMentors: 0,
+    totalStudents: 0,
+    activeClasses: 0,
+    monthlyRevenue: 0,
+    totalBookings: 0,
+    averageRating: 0,
+    completionRate: 0
   });
 
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -66,6 +66,8 @@ export default function AdminDashboard() {
   const [detailCategory, setDetailCategory] = useState<string>('');
   const [detailData, setDetailData] = useState<any[]>([]);
   const [systemHealth, setSystemHealth] = useState<any[]>([]);
+  const [testResults, setTestResults] = useState<any>(null);
+  const [isRunningTests, setIsRunningTests] = useState(false);
 
   useEffect(() => {
     // Load system health data
@@ -81,7 +83,21 @@ export default function AdminDashboard() {
       }
     };
     
+    // Load real admin stats
+    const fetchAdminStats = async () => {
+      try {
+        const response = await fetch('/api/admin/stats');
+        if (response.ok) {
+          const data = await response.json();
+          setStats(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch admin stats:', error);
+      }
+    };
+    
     fetchSystemHealth();
+    fetchAdminStats();
     
     // Load sample alert data
     setAlerts([
@@ -1093,14 +1109,14 @@ export default function AdminDashboard() {
       </Card>
 
       {/* Load Testing Strategy Documentation */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
+      <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-orange-600 to-red-700 text-white">
+          <CardTitle className="flex items-center gap-3 text-xl">
+            <TrendingUp className="h-6 w-6" />
             Load Testing Strategy - 3K Concurrent Users
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <div className="space-y-6">
             {/* Strategy Overview */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1227,14 +1243,38 @@ export default function AdminDashboard() {
           <div className="text-center">
             <p className="text-gray-600 mb-4">Run comprehensive system tests with admin privileges</p>
             <Button 
-              onClick={() => {
-                console.log('🧪 Running all tests with admin credentials');
-                // Test functionality for admins
+              onClick={async () => {
+                setIsRunningTests(true);
+                setTestResults(null);
+                
+                try {
+                  const response = await fetch('/api/admin/run-tests', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                      testType: 'system', 
+                      userRole: 'admin' 
+                    }),
+                  });
+                  
+                  if (response.ok) {
+                    const results = await response.json();
+                    setTestResults(results);
+                    console.log('🧪 Test results:', results);
+                  }
+                } catch (error) {
+                  console.error('Failed to run tests:', error);
+                } finally {
+                  setIsRunningTests(false);
+                }
               }}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-12 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+              disabled={isRunningTests}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-12 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
               data-testid="button-run-all-tests-admin"
             >
-              Run All Tests (Admin)
+              {isRunningTests ? 'Running Tests...' : 'Run All Tests (Admin)'}
             </Button>
           </div>
         </CardContent>
