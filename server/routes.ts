@@ -54,6 +54,74 @@ const stripe = process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY !=
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // Authentication routes
+  // Signup endpoint
+  app.post("/api/auth/signup", async (req, res) => {
+    try {
+      const { firstName, lastName, email, password, role, mentorData } = req.body;
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email.trim());
+      if (existingUser) {
+        return res.status(400).json({ message: "User already exists with this email" });
+      }
+      
+      // Create user
+      const user = await storage.createUser({
+        firstName,
+        lastName,
+        email: email.trim(),
+        role
+      });
+      
+      // Create corresponding student/mentor record
+      if (role === 'student' || role === 'both') {
+        await storage.createStudent({
+          userId: user.id,
+          age: 16,
+          interests: ['programming']
+        });
+      }
+      
+      if (role === 'mentor' || role === 'both') {
+        // Create mentor record
+        const mentor = await storage.createMentor({
+          userId: user.id,
+          title: 'Programming Mentor',
+          description: 'Experienced programming mentor',
+          experience: 5,
+          specialties: ['JavaScript', 'Python'],
+          hourlyRate: '35.00',
+          availableSlots: []
+        });
+        
+        // Create teacher profile with qualification and subject data
+        if (mentorData) {
+          await storage.createTeacherProfile({
+            userId: user.id,
+            qualifications: mentorData.qualifications || [],
+            subjects: mentorData.subjects || [],
+            isProfileComplete: true
+          });
+        }
+      }
+      
+      res.status(201).json({ 
+        success: true, 
+        message: "Account created successfully",
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          role: user.role,
+          firstName: user.firstName,
+          lastName: user.lastName
+        } 
+      });
+    } catch (error) {
+      console.error("Signup error:", error);
+      res.status(500).json({ message: "Signup failed" });
+    }
+  });
+
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { email, password } = req.body;

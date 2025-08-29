@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
   Calendar,
   Users,
@@ -16,7 +17,8 @@ import {
   TrendingUp,
   FileText,
   Settings,
-  Bell
+  Bell,
+  X
 } from 'lucide-react';
 import { Link } from 'wouter';
 import Navigation from '@/components/navigation';
@@ -24,11 +26,18 @@ import { apiRequest } from '@/lib/queryClient';
 
 export default function TeacherHome() {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Fetch teacher profile data
+  const { data: teacherProfile } = useQuery({
+    queryKey: ['/api/teacher/profile', { teacherId: 'teacher@codeconnect.com' }],
+    retry: false,
+  });
 
   // Mock data - in production this would come from real APIs
   const stats = {
@@ -270,10 +279,104 @@ export default function TeacherHome() {
                   <TrendingUp className="w-4 h-4 mr-2" />
                   View Analytics
                 </Button>
-                <Button variant="outline" className="w-full" data-testid="button-manage-profile">
-                  <FileText className="w-4 h-4 mr-2" />
-                  Manage Profile
-                </Button>
+                <Dialog open={showProfile} onOpenChange={setShowProfile}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="w-full" data-testid="button-manage-profile">
+                      <FileText className="w-4 h-4 mr-2" />
+                      Teacher Profile
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <FileText className="h-5 w-5" />
+                        Teacher Profile Details
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-6">
+                      {/* Qualifications Section */}
+                      <div>
+                        <h3 className="text-lg font-semibold mb-4 text-blue-700">Educational Qualifications</h3>
+                        {teacherProfile?.qualifications && teacherProfile.qualifications.length > 0 ? (
+                          <div className="grid gap-4">
+                            {teacherProfile.qualifications.map((qual, index) => (
+                              <div key={index} className="border rounded-lg p-4 bg-blue-50">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  <div>
+                                    <span className="text-sm font-medium text-gray-600">Qualification:</span>
+                                    <p className="text-sm mt-1">{qual.qualification || 'Not specified'}</p>
+                                  </div>
+                                  <div>
+                                    <span className="text-sm font-medium text-gray-600">Specialization:</span>
+                                    <p className="text-sm mt-1">{qual.specialization || 'Not specified'}</p>
+                                  </div>
+                                  <div>
+                                    <span className="text-sm font-medium text-gray-600">Score/Grade:</span>
+                                    <p className="text-sm mt-1">{qual.score || 'Not specified'}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-gray-500 bg-gray-50 p-4 rounded-lg">
+                            <p>No qualification details available. Please update your profile during signup.</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Subjects Section */}
+                      <div>
+                        <h3 className="text-lg font-semibold mb-4 text-green-700">Teaching Subjects & Experience</h3>
+                        {teacherProfile?.subjects && teacherProfile.subjects.length > 0 ? (
+                          <div className="grid gap-4">
+                            {teacherProfile.subjects.map((subj, index) => (
+                              <div key={index} className="border rounded-lg p-4 bg-green-50">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div>
+                                    <span className="text-sm font-medium text-gray-600">Subject:</span>
+                                    <p className="text-sm mt-1">{subj.subject || 'Not specified'}</p>
+                                  </div>
+                                  <div>
+                                    <span className="text-sm font-medium text-gray-600">Experience:</span>
+                                    <p className="text-sm mt-1">{subj.experience || 'Not specified'}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-gray-500 bg-gray-50 p-4 rounded-lg">
+                            <p>No subject details available. Please update your profile during signup.</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Additional Profile Info */}
+                      {teacherProfile && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-4 text-purple-700">Additional Information</h3>
+                          <div className="bg-purple-50 border rounded-lg p-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <span className="text-sm font-medium text-gray-600">Profile Complete:</span>
+                                <p className="text-sm mt-1">
+                                  <Badge variant={teacherProfile.isProfileComplete ? "default" : "secondary"}>
+                                    {teacherProfile.isProfileComplete ? "Complete" : "Incomplete"}
+                                  </Badge>
+                                </p>
+                              </div>
+                              <div>
+                                <span className="text-sm font-medium text-gray-600">Teaching Experience:</span>
+                                <p className="text-sm mt-1">{teacherProfile.totalTeachingExperience || 0} years</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </CardContent>
             </Card>
 

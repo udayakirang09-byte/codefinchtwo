@@ -503,8 +503,19 @@ export const courses = pgTable("courses", {
 export const teacherProfiles = pgTable("teacher_profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id).notNull(),
-  // Qualifications
-  highestQualification: varchar("highest_qualification").notNull(), // Masters, Bachelors, PhD, etc.
+  // Qualifications (from signup form)
+  qualifications: jsonb("qualifications").$type<{
+    qualification: string;
+    specialization: string;
+    score: string;
+  }[]>().default([]),
+  // Subjects (from signup form)
+  subjects: jsonb("subjects").$type<{
+    subject: string;
+    experience: string;
+  }[]>().default([]),
+  // Legacy fields (keeping for compatibility)
+  highestQualification: varchar("highest_qualification"), // Masters, Bachelors, PhD, etc.
   qualificationScore: varchar("qualification_score"), // GPA, percentage, etc.
   instituteName: varchar("institute_name"),
   graduationYear: integer("graduation_year"),

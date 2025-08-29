@@ -10,6 +10,7 @@ import {
   videoSessions,
   classFeedback,
   notifications,
+  teacherProfiles,
   type User,
   type InsertUser,
   type Mentor,
@@ -32,6 +33,8 @@ import {
   type InsertClassFeedback,
   type Notification,
   type InsertNotification,
+  type TeacherProfile,
+  type InsertTeacherProfile,
   type MentorWithUser,
   type StudentWithUser,
   type BookingWithDetails,
@@ -95,6 +98,10 @@ export interface IStorage {
   createNotification(notification: InsertNotification): Promise<Notification>;
   getUserNotifications(userId: string): Promise<Notification[]>;
   markNotificationAsRead(notificationId: string): Promise<void>;
+  
+  // Teacher Profile operations
+  createTeacherProfile(profile: InsertTeacherProfile): Promise<TeacherProfile>;
+  getTeacherProfile(userId: string): Promise<TeacherProfile | undefined>;
   
   // Admin operations
   getSystemStats(): Promise<any>;
@@ -437,6 +444,17 @@ export class DatabaseStorage implements IStorage {
       .update(notifications)
       .set({ isRead: true })
       .where(eq(notifications.id, notificationId));
+  }
+
+  // Teacher Profile operations
+  async createTeacherProfile(profileData: InsertTeacherProfile): Promise<TeacherProfile> {
+    const [profile] = await db.insert(teacherProfiles).values(profileData).returning();
+    return profile;
+  }
+
+  async getTeacherProfile(userId: string): Promise<TeacherProfile | undefined> {
+    const [profile] = await db.select().from(teacherProfiles).where(eq(teacherProfiles.userId, userId));
+    return profile;
   }
 
   // Admin operations

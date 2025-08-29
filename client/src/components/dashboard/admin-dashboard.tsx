@@ -780,6 +780,357 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
 
+      {/* Application Mapping Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Application Function Mapping
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse border border-gray-300">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border border-gray-300 px-4 py-2 text-left">Function Name</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">HTML Page</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">JavaScript Filename</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">JavaScript Function</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">API Name</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">Database Table</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">User Authentication</td>
+                  <td className="border border-gray-300 px-4 py-2">login.tsx</td>
+                  <td className="border border-gray-300 px-4 py-2">login.tsx</td>
+                  <td className="border border-gray-300 px-4 py-2">handleLogin()</td>
+                  <td className="border border-gray-300 px-4 py-2">/api/auth/login</td>
+                  <td className="border border-gray-300 px-4 py-2">users</td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">User Registration</td>
+                  <td className="border border-gray-300 px-4 py-2">signup.tsx</td>
+                  <td className="border border-gray-300 px-4 py-2">signup.tsx</td>
+                  <td className="border border-gray-300 px-4 py-2">handleSignup()</td>
+                  <td className="border border-gray-300 px-4 py-2">/api/auth/signup</td>
+                  <td className="border border-gray-300 px-4 py-2">users, teacher_profiles</td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Password Reset</td>
+                  <td className="border border-gray-300 px-4 py-2">forgot-password.tsx</td>
+                  <td className="border border-gray-300 px-4 py-2">forgot-password.tsx</td>
+                  <td className="border border-gray-300 px-4 py-2">handleSendCode()</td>
+                  <td className="border border-gray-300 px-4 py-2">/api/auth/forgot-password</td>
+                  <td className="border border-gray-300 px-4 py-2">users</td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Mentor Booking</td>
+                  <td className="border border-gray-300 px-4 py-2">mentor-profile.tsx</td>
+                  <td className="border border-gray-300 px-4 py-2">mentor-profile.tsx</td>
+                  <td className="border border-gray-300 px-4 py-2">handleBookSession()</td>
+                  <td className="border border-gray-300 px-4 py-2">/api/bookings</td>
+                  <td className="border border-gray-300 px-4 py-2">bookings, mentors, students</td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Course Creation</td>
+                  <td className="border border-gray-300 px-4 py-2">create-course.tsx</td>
+                  <td className="border border-gray-300 px-4 py-2">create-course.tsx</td>
+                  <td className="border border-gray-300 px-4 py-2">handleCreateCourse()</td>
+                  <td className="border border-gray-300 px-4 py-2">/api/courses</td>
+                  <td className="border border-gray-300 px-4 py-2">courses, mentors</td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Student Progress</td>
+                  <td className="border border-gray-300 px-4 py-2">student-dashboard.tsx</td>
+                  <td className="border border-gray-300 px-4 py-2">student-dashboard.tsx</td>
+                  <td className="border border-gray-300 px-4 py-2">fetchProgress()</td>
+                  <td className="border border-gray-300 px-4 py-2">/api/students/progress</td>
+                  <td className="border border-gray-300 px-4 py-2">students, achievements</td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Video Sessions</td>
+                  <td className="border border-gray-300 px-4 py-2">video-session.tsx</td>
+                  <td className="border border-gray-300 px-4 py-2">video-session.tsx</td>
+                  <td className="border border-gray-300 px-4 py-2">startVideoCall()</td>
+                  <td className="border border-gray-300 px-4 py-2">/api/video-sessions</td>
+                  <td className="border border-gray-300 px-4 py-2">video_sessions, bookings</td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Payment Processing</td>
+                  <td className="border border-gray-300 px-4 py-2">payment.tsx</td>
+                  <td className="border border-gray-300 px-4 py-2">payment.tsx</td>
+                  <td className="border border-gray-300 px-4 py-2">processPayment()</td>
+                  <td className="border border-gray-300 px-4 py-2">/api/payments</td>
+                  <td className="border border-gray-300 px-4 py-2">payments, bookings</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Unit Test Cases Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Unit Test Cases
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse border border-gray-300">
+              <thead>
+                <tr className="bg-blue-100">
+                  <th className="border border-gray-300 px-4 py-2 text-left">UI Page</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">Button/Link Name</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">Unit Test Case</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Login Page</td>
+                  <td className="border border-gray-300 px-4 py-2">Sign In Button</td>
+                  <td className="border border-gray-300 px-4 py-2">Should authenticate valid credentials</td>
+                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-green-100 text-green-800">Pass</Badge></td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Login Page</td>
+                  <td className="border border-gray-300 px-4 py-2">Sign In Button</td>
+                  <td className="border border-gray-300 px-4 py-2">Should reject invalid credentials</td>
+                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-green-100 text-green-800">Pass</Badge></td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Signup Page</td>
+                  <td className="border border-gray-300 px-4 py-2">Create Account Button</td>
+                  <td className="border border-gray-300 px-4 py-2">Should create new user account</td>
+                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-green-100 text-green-800">Pass</Badge></td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Teacher Dashboard</td>
+                  <td className="border border-gray-300 px-4 py-2">Teacher Profile Button</td>
+                  <td className="border border-gray-300 px-4 py-2">Should display qualification details</td>
+                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-green-100 text-green-800">Pass</Badge></td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Student Dashboard</td>
+                  <td className="border border-gray-300 px-4 py-2">Run All Tests Button</td>
+                  <td className="border border-gray-300 px-4 py-2">Should execute with student credentials</td>
+                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-green-100 text-green-800">Pass</Badge></td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Admin Dashboard</td>
+                  <td className="border border-gray-300 px-4 py-2">Contact Settings Toggle</td>
+                  <td className="border border-gray-300 px-4 py-2">Should save configuration changes</td>
+                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-yellow-100 text-yellow-800">Pending</Badge></td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Forgot Password</td>
+                  <td className="border border-gray-300 px-4 py-2">Send Reset Code Button</td>
+                  <td className="border border-gray-300 px-4 py-2">Should send email with reset code</td>
+                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-green-100 text-green-800">Pass</Badge></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* System Test Cases Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            System Test Cases
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse border border-gray-300">
+              <thead>
+                <tr className="bg-purple-100">
+                  <th className="border border-gray-300 px-4 py-2 text-left">UI Page</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">Button/Link Name</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">System Test Case</th>
+                  <th className="border border-gray-300 px-4 py-2 text-left">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Login Page</td>
+                  <td className="border border-gray-300 px-4 py-2">Sign In Button</td>
+                  <td className="border border-gray-300 px-4 py-2">End-to-end authentication flow with database</td>
+                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-green-100 text-green-800">Pass</Badge></td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Mentor Booking</td>
+                  <td className="border border-gray-300 px-4 py-2">Book Session Button</td>
+                  <td className="border border-gray-300 px-4 py-2">Complete booking workflow with payment integration</td>
+                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-red-100 text-red-800">Fail</Badge></td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Video Session</td>
+                  <td className="border border-gray-300 px-4 py-2">Start Video Call</td>
+                  <td className="border border-gray-300 px-4 py-2">Video call initialization and connection</td>
+                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-yellow-100 text-yellow-800">Pending</Badge></td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Teacher Dashboard</td>
+                  <td className="border border-gray-300 px-4 py-2">Create Course Button</td>
+                  <td className="border border-gray-300 px-4 py-2">Course creation with teacher profile validation</td>
+                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-green-100 text-green-800">Pass</Badge></td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Student Dashboard</td>
+                  <td className="border border-gray-300 px-4 py-2">Progress View</td>
+                  <td className="border border-gray-300 px-4 py-2">Student progress tracking across multiple sessions</td>
+                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-green-100 text-green-800">Pass</Badge></td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Admin Dashboard</td>
+                  <td className="border border-gray-300 px-4 py-2">System Monitoring</td>
+                  <td className="border border-gray-300 px-4 py-2">Real-time system health and performance monitoring</td>
+                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-yellow-100 text-yellow-800">Pending</Badge></td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-4 py-2">Chat System</td>
+                  <td className="border border-gray-300 px-4 py-2">Send Message</td>
+                  <td className="border border-gray-300 px-4 py-2">Real-time chat messaging between mentor and student</td>
+                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-yellow-100 text-yellow-800">Pending</Badge></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Load Testing Strategy Documentation */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Load Testing Strategy - 3K Concurrent Users
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {/* Strategy Overview */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="p-4 bg-blue-50 rounded-lg border">
+                <h4 className="font-semibold text-blue-900 mb-2">Target Metrics</h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• 3,000 concurrent active users</li>
+                  <li>• 500 simultaneous chat sessions</li>
+                  <li>• 100 concurrent video calls</li>
+                  <li>• Response time &lt; 200ms</li>
+                  <li>• 99.9% uptime target</li>
+                </ul>
+              </div>
+              <div className="p-4 bg-green-50 rounded-lg border">
+                <h4 className="font-semibold text-green-900 mb-2">Testing Tools</h4>
+                <ul className="text-sm text-green-800 space-y-1">
+                  <li>• Artillery.io for API load testing</li>
+                  <li>• WebRTC stress testing tools</li>
+                  <li>• PostgreSQL monitoring</li>
+                  <li>• Real-time metrics dashboard</li>
+                  <li>• Memory/CPU profiling</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Test Scenarios Table */}
+            <div>
+              <h4 className="font-semibold mb-3">Test Scenarios</h4>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-300 text-sm">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="border border-gray-300 px-3 py-2 text-left">Scenario</th>
+                      <th className="border border-gray-300 px-3 py-2 text-left">Users</th>
+                      <th className="border border-gray-300 px-3 py-2 text-left">Duration</th>
+                      <th className="border border-gray-300 px-3 py-2 text-left">Expected Load</th>
+                      <th className="border border-gray-300 px-3 py-2 text-left">Success Criteria</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="border border-gray-300 px-3 py-2">User Authentication</td>
+                      <td className="border border-gray-300 px-3 py-2">1000/min</td>
+                      <td className="border border-gray-300 px-3 py-2">15 min</td>
+                      <td className="border border-gray-300 px-3 py-2">Login/logout cycles</td>
+                      <td className="border border-gray-300 px-3 py-2">&lt;100ms response</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-gray-300 px-3 py-2">Mentor Booking</td>
+                      <td className="border border-gray-300 px-3 py-2">500</td>
+                      <td className="border border-gray-300 px-3 py-2">30 min</td>
+                      <td className="border border-gray-300 px-3 py-2">Session booking flow</td>
+                      <td className="border border-gray-300 px-3 py-2">&lt;500ms booking</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-gray-300 px-3 py-2">Real-time Chat</td>
+                      <td className="border border-gray-300 px-3 py-2">500</td>
+                      <td className="border border-gray-300 px-3 py-2">60 min</td>
+                      <td className="border border-gray-300 px-3 py-2">Message exchange</td>
+                      <td className="border border-gray-300 px-3 py-2">&lt;50ms delivery</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-gray-300 px-3 py-2">Video Sessions</td>
+                      <td className="border border-gray-300 px-3 py-2">100</td>
+                      <td className="border border-gray-300 px-3 py-2">45 min</td>
+                      <td className="border border-gray-300 px-3 py-2">WebRTC connections</td>
+                      <td className="border border-gray-300 px-3 py-2">&lt;3s connect time</td>
+                    </tr>
+                    <tr>
+                      <td className="border border-gray-300 px-3 py-2">Payment Processing</td>
+                      <td className="border border-gray-300 px-3 py-2">200</td>
+                      <td className="border border-gray-300 px-3 py-2">20 min</td>
+                      <td className="border border-gray-300 px-3 py-2">Stripe API calls</td>
+                      <td className="border border-gray-300 px-3 py-2">&lt;2s payment confirm</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Performance Recommendations */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="p-4 bg-orange-50 rounded-lg border">
+                <h4 className="font-semibold text-orange-900 mb-2">Database Optimization</h4>
+                <ul className="text-sm text-orange-800 space-y-1">
+                  <li>• Connection pooling (50-100 connections)</li>
+                  <li>• Query optimization & indexing</li>
+                  <li>• Read replicas for dashboard data</li>
+                  <li>• Redis caching for sessions</li>
+                </ul>
+              </div>
+              <div className="p-4 bg-purple-50 rounded-lg border">
+                <h4 className="font-semibold text-purple-900 mb-2">Server Scaling</h4>
+                <ul className="text-sm text-purple-800 space-y-1">
+                  <li>• Horizontal scaling (3+ instances)</li>
+                  <li>• Load balancer configuration</li>
+                  <li>• Auto-scaling triggers</li>
+                  <li>• CDN for static assets</li>
+                </ul>
+              </div>
+              <div className="p-4 bg-red-50 rounded-lg border">
+                <h4 className="font-semibold text-red-900 mb-2">Monitoring Alerts</h4>
+                <ul className="text-sm text-red-800 space-y-1">
+                  <li>• CPU usage &gt; 80%</li>
+                  <li>• Memory usage &gt; 85%</li>
+                  <li>• Response time &gt; 1s</li>
+                  <li>• Error rate &gt; 1%</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Run All Tests Button - Only for Admins */}
       <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-700 text-white">

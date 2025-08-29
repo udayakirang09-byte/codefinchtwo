@@ -83,8 +83,29 @@ export default function Signup() {
     }
 
     try {
-      // Simulate signup API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Call the signup API
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          password: formData.password,
+          role: formData.role,
+          // Include mentor data if role is mentor or both
+          mentorData: (formData.role === "mentor" || formData.role === "both") ? {
+            qualifications: formData.qualifications.filter(q => q.qualification.trim() !== ""),
+            subjects: formData.subjects.filter(s => s.subject.trim() !== "")
+          } : null
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Signup failed");
+      }
       
       toast({
         title: "Account Created!",
