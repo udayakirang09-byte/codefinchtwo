@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import Navigation from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Video, MessageCircle, Star, BookOpen, Award, Bell, Users, TrendingUp } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
+import { Calendar, Clock, Video, MessageCircle, Star, BookOpen, Award, Bell, Users, TrendingUp, Home, GraduationCap, BarChart3, Mail, User } from "lucide-react";
 import { formatDistanceToNow, isWithinInterval, addHours, addMinutes } from "date-fns";
 
 interface UpcomingClass {
@@ -252,284 +253,275 @@ export default function StudentDashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation />
-      <div className="space-y-6 p-6">
-        {/* Ultra Modern Welcome Section */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-8 rounded-3xl shadow-2xl border border-white/20">
-          <div className="absolute inset-0 bg-gradient-to-r from-black/10 to-transparent"></div>
-          <div className="relative z-10">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-4xl font-bold text-white mb-3 tracking-tight">Welcome Back, Student! 🎓</h1>
-                <p className="text-indigo-100 text-xl font-medium">Continue your coding journey with personalized learning experiences</p>
+    <div className="min-h-screen bg-gradient-to-br from-purple-500 via-indigo-600 to-blue-700 relative overflow-hidden">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-10 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-10 w-80 h-80 bg-purple-300/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/3 w-32 h-32 bg-indigo-300/30 rounded-full blur-2xl"></div>
+      </div>
+      
+      <div className="relative z-10 flex min-h-screen">
+        {/* Sidebar Navigation */}
+        <div className="w-64 bg-gray-900/90 backdrop-blur-sm p-6 flex flex-col">
+          {/* Profile Section */}
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-6">
+              <Avatar className="w-10 h-10">
+                <AvatarImage src="/api/placeholder/40/40" alt="Student" />
+                <AvatarFallback className="bg-purple-600 text-white">S</AvatarFallback>
+              </Avatar>
+              <span className="text-white font-medium text-lg">Student</span>
+            </div>
+          </div>
+
+          {/* Navigation Menu */}
+          <nav className="space-y-2 flex-1">
+            <div 
+              className="flex items-center gap-3 px-4 py-3 text-white bg-purple-600 rounded-lg cursor-pointer"
+              data-testid="nav-home"
+            >
+              <Home size={20} />
+              <span className="font-medium">Home</span>
+            </div>
+            <div 
+              className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg cursor-pointer transition-colors"
+              data-testid="nav-courses"
+              onClick={() => window.location.href = '/courses'}
+            >
+              <BookOpen size={20} />
+              <span className="font-medium">Courses</span>
+            </div>
+            <div 
+              className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg cursor-pointer transition-colors"
+              data-testid="nav-grades"
+              onClick={() => window.location.href = '/student/progress'}
+            >
+              <BarChart3 size={20} />
+              <span className="font-medium">Grades</span>
+            </div>
+            <div 
+              className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg cursor-pointer transition-colors"
+              data-testid="nav-messages"
+            >
+              <Mail size={20} />
+              <span className="font-medium">Messages</span>
+            </div>
+          </nav>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 p-8">
+          <div className="max-w-7xl mx-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-8">
+              <div className="text-white">
+                <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+                <p className="text-white/80">Welcome back! Here's what's happening with your learning.</p>
               </div>
-              <div className="hidden md:flex items-center space-x-6">
-                <div 
-                  className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 text-center min-w-[120px] cursor-pointer hover:bg-white/30 transition-all duration-200"
-                  onClick={() => window.location.href = '/student/active-classes'}
-                  data-testid="card-active-classes"
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  data-testid="button-notifications"
                 >
-                  <div className="text-white text-3xl font-bold">12</div>
-                  <div className="text-indigo-100 text-sm font-medium">Active Classes</div>
+                  <Bell size={16} className="mr-2" />
+                  Notifications
+                </Button>
+                <Avatar className="w-10 h-10">
+                  <AvatarImage src="/api/placeholder/40/40" alt="Student" />
+                  <AvatarFallback className="bg-purple-600 text-white">S</AvatarFallback>
+                </Avatar>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Left Column - Upcoming Classes */}
+              <div className="lg:col-span-2">
+                <h2 className="text-2xl font-bold text-white mb-6">Upcoming Classes</h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                  {/* Sample upcoming classes */}
+                  {upcomingClasses.slice(0, 4).map((upcomingClass, index) => (
+                    <Card 
+                      key={upcomingClass.id} 
+                      className={`${
+                        index === 0 ? 'bg-gradient-to-br from-purple-600 to-indigo-700' : 
+                        index === 1 ? 'bg-gray-100' : 
+                        'bg-gray-100'
+                      } border-none shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer`}
+                      data-testid={`card-class-${upcomingClass.id}`}
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className={`font-bold text-lg ${index === 0 ? 'text-white' : 'text-gray-800'}`}>
+                            {upcomingClass.subject}
+                          </h3>
+                          <div className={`p-2 rounded-full ${index === 0 ? 'bg-white/20' : 'bg-purple-100'}`}>
+                            <Clock size={16} className={index === 0 ? 'text-white' : 'text-purple-600'} />
+                          </div>
+                        </div>
+                        
+                        <p className={`text-sm mb-3 ${index === 0 ? 'text-white/80' : 'text-gray-600'}`}>
+                          {upcomingClass.scheduledAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                        <p className={`text-sm mb-4 ${index === 0 ? 'text-white/90' : 'text-gray-700'}`}>
+                          {upcomingClass.scheduledAt.toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                        </p>
+                        
+                        {isVideoEnabled(upcomingClass.scheduledAt) && (
+                          <Button
+                            size="sm"
+                            className={index === 0 ? 'bg-white/20 hover:bg-white/30 text-white border-white/30' : 'bg-purple-600 hover:bg-purple-700 text-white'}
+                            onClick={() => handleJoinVideo(upcomingClass.id)}
+                            data-testid={`button-join-${upcomingClass.id}`}
+                          >
+                            <Video size={14} className="mr-2" />
+                            Join
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                  
+                  {/* Fill empty slots */}
+                  {[...Array(Math.max(0, 4 - upcomingClasses.length))].map((_, index) => (
+                    <Card key={`empty-${index}`} className="bg-gray-100/50 border-gray-200 border-dashed shadow-sm">
+                      <CardContent className="p-6 text-center">
+                        <div className="text-gray-400 mb-2">
+                          <Calendar size={24} className="mx-auto mb-2" />
+                        </div>
+                        <p className="text-gray-500 text-sm">No class scheduled</p>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-                <div 
-                  className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 text-center min-w-[120px] cursor-pointer hover:bg-white/30 transition-all duration-200"
-                  onClick={() => window.location.href = '/student/learning-hours'}
-                  data-testid="card-hours-learned"
-                >
-                  <div className="text-white text-3xl font-bold">47</div>
-                  <div className="text-indigo-100 text-sm font-medium">Hours Learned</div>
-                </div>
-                <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 text-center min-w-[120px]">
-                  <div className="text-white text-3xl font-bold">94%</div>
-                  <div className="text-indigo-100 text-sm font-medium">Progress Rate</div>
-                </div>
+
+                {/* Progress Tracking */}
+                <Card className="bg-white/95 backdrop-blur-sm border-none shadow-lg mb-6">
+                  <CardContent className="p-6">
+                    <h3 className="text-xl font-bold text-gray-800 mb-6">Progress Tracking</h3>
+                    
+                    {/* Circular Progress - Simplified */}
+                    <div className="flex items-center justify-center mb-6">
+                      <div className="relative w-32 h-32">
+                        <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-indigo-600 rounded-full p-2">
+                          <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
+                            <div className="text-center">
+                              <div className="text-3xl font-bold text-purple-600">124%</div>
+                              <div className="text-xs text-gray-600">3,050 pts</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Subject Progress Bars */}
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-medium text-gray-700">Math</span>
+                          <span className="text-sm text-purple-600 font-medium">8 lvl</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="bg-gradient-to-r from-orange-400 to-red-500 h-2 rounded-full" style={{ width: '75%' }}></div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-medium text-gray-700">English</span>
+                          <span className="text-sm text-purple-600 font-medium">9 lvl</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="bg-gradient-to-r from-blue-400 to-purple-500 h-2 rounded-full" style={{ width: '85%' }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Right Column */}
+              <div className="space-y-6">
+                {/* Notification Panel */}
+                <Card className="bg-white/95 backdrop-blur-sm border-none shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                      <Bell size={20} />
+                      Notification Panel
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <div className="text-sm">
+                          <p className="font-medium text-gray-800">Recent Alerts</p>
+                          <p className="text-gray-600">Your math assignment is due tomorrow</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <div className="text-sm">
+                          <p className="text-gray-600">New message from mentor Sarah</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Mentor Profiles */}
+                <Card className="bg-white/95 backdrop-blur-sm border-none shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-bold text-gray-800">Mentor Profiles</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center p-4 bg-gray-50 rounded-lg">
+                        <Avatar className="w-12 h-12 mx-auto mb-3">
+                          <AvatarImage src="/api/placeholder/48/48" alt="Gucari" />
+                          <AvatarFallback className="bg-blue-600 text-white">G</AvatarFallback>
+                        </Avatar>
+                        <p className="font-semibold text-gray-800 text-sm">Gucari</p>
+                        <p className="text-xs text-gray-600">Mentors</p>
+                      </div>
+                      
+                      <div className="text-center p-4 bg-gray-50 rounded-lg">
+                        <Avatar className="w-12 h-12 mx-auto mb-3">
+                          <AvatarImage src="/api/placeholder/48/48" alt="Atrieyus" />
+                          <AvatarFallback className="bg-purple-600 text-white">A</AvatarFallback>
+                        </Avatar>
+                        <p className="font-semibold text-gray-800 text-sm">Atrieyus</p>
+                        <p className="text-xs text-gray-600">Mentors</p>
+                      </div>
+                      
+                      <div className="text-center p-4 bg-gray-50 rounded-lg">
+                        <Avatar className="w-12 h-12 mx-auto mb-3">
+                          <AvatarImage src="/api/placeholder/48/48" alt="Gontan" />
+                          <AvatarFallback className="bg-green-600 text-white">G</AvatarFallback>
+                        </Avatar>
+                        <p className="font-semibold text-gray-800 text-sm">Gontan</p>
+                        <p className="text-xs text-gray-600">Mentors</p>
+                      </div>
+                      
+                      <div className="text-center p-4 bg-gray-50 rounded-lg">
+                        <Avatar className="w-12 h-12 mx-auto mb-3">
+                          <AvatarImage src="/api/placeholder/48/48" alt="Mentors" />
+                          <AvatarFallback className="bg-orange-600 text-white">M</AvatarFallback>
+                        </Avatar>
+                        <p className="font-semibold text-gray-800 text-sm">Mentors</p>
+                        <p className="text-xs text-gray-600">Mentors</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </div>
-          <div className="absolute -top-6 -right-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-          <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-pink-300/20 rounded-full blur-3xl"></div>
         </div>
-
-        {/* Beautiful Notifications Panel */}
-        {notifications.length > 0 && (
-          <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-amber-500 to-orange-600 text-white">
-              <CardTitle className="flex items-center gap-3 text-xl">
-                <Bell className="h-6 w-6" />
-                Notifications
-                <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30">
-                  {notifications.filter(n => !n.isRead).length} new
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                {notifications.map((notification) => (
-                  <div 
-                    key={notification.id} 
-                    className={`p-4 rounded-xl border-l-4 transition-all duration-200 cursor-pointer hover:shadow-md ${
-                      notification.isRead 
-                        ? 'bg-gray-50 border-gray-300 opacity-70' 
-                        : notification.type === 'class_reminder' 
-                          ? 'bg-blue-50 border-blue-400 hover:bg-blue-100' 
-                          : notification.type === 'feedback_request'
-                            ? 'bg-orange-50 border-orange-400 hover:bg-orange-100'
-                            : 'bg-green-50 border-green-400 hover:bg-green-100'
-                    }`}
-                    onClick={() => markNotificationAsRead(notification.id)}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-800 mb-1">{notification.title}</h4>
-                        <p className="text-sm text-gray-600 leading-relaxed">{notification.message}</p>
-                        <p className="text-xs text-gray-400 mt-2">
-                          {formatDistanceToNow(notification.createdAt, { addSuffix: true })}
-                        </p>
-                      </div>
-                      <div className="ml-4 flex-shrink-0">
-                        {!notification.isRead && (
-                          <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Upcoming Classes - Redesigned */}
-        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
-            <CardTitle className="flex items-center gap-3 text-xl">
-              <Calendar className="h-6 w-6" />
-              Upcoming Classes (Next 72 Hours)
-              <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30">
-                {upcomingClasses.filter(cls => cls.scheduledAt <= addHours(currentTime, 72)).length} classes
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-6">
-              {upcomingClasses
-                .filter(cls => cls.scheduledAt <= addHours(currentTime, 72))
-                .map((upcomingClass) => {
-                  const videoEnabled = isVideoEnabled(upcomingClass.scheduledAt);
-                  const chatEnabled = isChatEnabled(upcomingClass.scheduledAt);
-                  
-                  return (
-                    <div key={upcomingClass.id} className="group border rounded-2xl p-6 bg-gradient-to-r from-white to-blue-50/50 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] border-blue-100">
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h3 className="font-bold text-2xl text-gray-800 mb-1">{upcomingClass.subject}</h3>
-                          <p className="text-blue-600 font-semibold text-lg">with {upcomingClass.mentorName}</p>
-                        </div>
-                        <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300 px-3 py-1">
-                          <Clock className="h-4 w-4 mr-1" />
-                          {upcomingClass.duration} min
-                        </Badge>
-                      </div>
-                      
-                      <div className="flex items-center gap-8 mb-6 text-sm text-gray-600">
-                        <span className="flex items-center font-medium">📅 {upcomingClass.scheduledAt.toLocaleDateString()}</span>
-                        <span className="flex items-center font-medium">🕒 {upcomingClass.scheduledAt.toLocaleTimeString()}</span>
-                        <span className="flex items-center font-semibold text-purple-600">⏰ {formatDistanceToNow(upcomingClass.scheduledAt, { addSuffix: true })}</span>
-                      </div>
-
-                      <div className="flex gap-4">
-                        <Button
-                          size="lg"
-                          variant={videoEnabled ? "default" : "secondary"}
-                          disabled={!videoEnabled}
-                          onClick={() => handleJoinVideo(upcomingClass.id)}
-                          data-testid={`button-video-${upcomingClass.id}`}
-                          className={`flex-1 h-12 text-base font-semibold rounded-xl ${
-                            videoEnabled 
-                              ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg' 
-                              : 'bg-gray-100 text-gray-500'
-                          }`}
-                        >
-                          <Video className="h-5 w-5 mr-2" />
-                          {videoEnabled ? "Join Video Call" : `Video in ${formatDistanceToNow(addMinutes(upcomingClass.scheduledAt, -10))}`}
-                        </Button>
-                        
-                        <Button
-                          size="lg"
-                          variant={chatEnabled ? "outline" : "secondary"}
-                          disabled={!chatEnabled}
-                          onClick={() => handleJoinChat(upcomingClass.id)}
-                          data-testid={`button-chat-${upcomingClass.id}`}
-                          className={`flex-1 h-12 text-base font-semibold rounded-xl border-2 ${
-                            chatEnabled 
-                              ? 'border-blue-600 text-blue-600 hover:bg-blue-50 shadow-md' 
-                              : 'border-gray-300 text-gray-500 bg-gray-50'
-                          }`}
-                        >
-                          <MessageCircle className="h-5 w-5 mr-2" />
-                          {chatEnabled ? "Open Chat" : `Chat in ${formatDistanceToNow(addHours(upcomingClass.scheduledAt, -1))}`}
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Recently Completed Classes - Enhanced */}
-        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white">
-            <CardTitle className="flex items-center gap-3 text-xl">
-              <BookOpen className="h-6 w-6" />
-              Recent Classes - Feedback Available
-              <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30">
-                {visibleCompletedClasses.length} pending
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-6">
-              {visibleCompletedClasses.map((completedClass) => (
-                <div key={completedClass.id} className="border rounded-2xl p-6 bg-gradient-to-r from-emerald-50 to-teal-50/50 border-emerald-200 shadow-lg hover:shadow-xl transition-all duration-300">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="font-bold text-xl text-gray-800 mb-1">{completedClass.subject}</h3>
-                      <p className="text-emerald-600 font-semibold">with {completedClass.mentorName}</p>
-                    </div>
-                    <Badge variant="destructive" className="bg-orange-100 text-orange-800 border-orange-300 animate-pulse">
-                      ⏰ Feedback Pending
-                    </Badge>
-                  </div>
-                  
-                  <div className="flex items-center gap-8 mb-6 text-sm text-gray-600">
-                    <span className="font-medium">✅ Completed: {completedClass.completedAt.toLocaleString()}</span>
-                    <span className="font-semibold text-orange-600">⏰ Feedback expires: {formatDistanceToNow(completedClass.feedbackDeadline, { addSuffix: true })}</span>
-                  </div>
-
-                  <Button
-                    size="lg"
-                    onClick={() => {
-                      handleSubmitFeedback(completedClass.id);
-                      // Mark as submitted for demo purposes
-                      setTimeout(() => handleFeedbackSubmitted(completedClass.id), 1000);
-                    }}
-                    data-testid={`button-feedback-${completedClass.id}`}
-                    className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 h-12 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                  >
-                    <Star className="h-5 w-5 mr-2" />
-                    Submit Feedback Now
-                  </Button>
-                </div>
-              ))}
-              
-              {visibleCompletedClasses.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="text-gray-400 text-8xl mb-6">📚</div>
-                  <h3 className="text-xl font-semibold text-gray-600 mb-2">All caught up!</h3>
-                  <p className="text-gray-500 text-lg">No recent classes requiring feedback</p>
-                  <p className="text-gray-400">Complete some classes to leave feedback!</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Ultra Modern Quick Actions */}
-        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-700 text-white">
-            <CardTitle className="flex items-center gap-3 text-xl">
-              <Award className="h-6 w-6" />
-              Quick Actions
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <Button 
-                variant="outline" 
-                className="h-32 p-6 flex-col hover:bg-blue-50 hover:border-blue-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
-                data-testid="button-find-mentor"
-                onClick={handleFindMentor}
-              >
-                <BookOpen className="h-10 w-10 mb-3 text-blue-600 group-hover:scale-110 transition-transform duration-200" />
-                <span className="font-bold text-lg">Find Mentor</span>
-                <span className="text-xs text-gray-500 mt-1 text-center">Browse experienced teachers</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-32 p-6 flex-col hover:bg-green-50 hover:border-green-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
-                data-testid="button-my-progress"
-                onClick={handleMyProgress}
-              >
-                <TrendingUp className="h-10 w-10 mb-3 text-green-600 group-hover:scale-110 transition-transform duration-200" />
-                <span className="font-bold text-lg">My Progress</span>
-                <span className="text-xs text-gray-500 mt-1 text-center">Track your achievements</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-32 p-6 flex-col hover:bg-purple-50 hover:border-purple-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
-                data-testid="button-browse-courses"
-                onClick={handleBrowseCourses}
-              >
-                <Calendar className="h-10 w-10 mb-3 text-purple-600 group-hover:scale-110 transition-transform duration-200" />
-                <span className="font-bold text-lg">Browse Courses</span>
-                <span className="text-xs text-gray-500 mt-1 text-center">Explore new topics</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-32 p-6 flex-col hover:bg-orange-50 hover:border-orange-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
-                data-testid="button-help-center"
-                onClick={handleHelpCenter}
-              >
-                <Users className="h-10 w-10 mb-3 text-orange-600 group-hover:scale-110 transition-transform duration-200" />
-                <span className="font-bold text-lg">Help Center</span>
-                <span className="text-xs text-gray-500 mt-1 text-center">Get support & guides</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
