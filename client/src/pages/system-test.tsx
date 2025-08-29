@@ -31,6 +31,25 @@ export default function SystemTest() {
     console.log('Current URL:', window.location.href);
     console.log('Pathname:', window.location.pathname);
     
+    // CRITICAL: Global navigation prevention for all links during testing
+    const preventAllNavigation = (e: Event) => {
+      const target = e.target as HTMLElement;
+      const link = target.closest('a[href]') as HTMLAnchorElement;
+      
+      if (link && window.location.pathname === '/system-test') {
+        const href = link.getAttribute('href');
+        if (href && href !== '#' && !href.startsWith('javascript:')) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log(`🧪 GLOBAL: Navigation to "${href}" prevented during testing`);
+          return false;
+        }
+      }
+    };
+    
+    // Add global click prevention
+    document.addEventListener('click', preventAllNavigation, true);
+    
     // Initialize with safe defaults - no automatic execution
     setIsRunning(false);
     setCurrentTest('System test page ready - click "Run All Tests" to begin');
@@ -40,10 +59,16 @@ export default function SystemTest() {
         tests: [
           { name: 'Page Load', status: 'pass', message: 'System test page loaded successfully' },
           { name: 'URL Validation', status: 'pass', message: `Correct URL: ${window.location.pathname}` },
-          { name: 'Ready State', status: 'pass', message: 'Ready to run comprehensive tests' }
+          { name: 'Ready State', status: 'pass', message: 'Ready to run comprehensive tests' },
+          { name: 'Navigation Protection', status: 'pass', message: 'Global navigation prevention enabled' }
         ]
       }
     ]);
+    
+    // Cleanup function
+    return () => {
+      document.removeEventListener('click', preventAllNavigation, true);
+    };
   }, []);
 
   // Test data queries
@@ -149,6 +174,21 @@ export default function SystemTest() {
       if (!element) {
         updateTestResult('Button Functionality', `Click: ${description}`, 'fail', 'Button not found');
         return false;
+      }
+      
+      // CRITICAL: Prevent any navigation during testing
+      const href = element.getAttribute('href');
+      if (href && href !== '#') {
+        // Prevent navigation for link elements
+        const originalClick = element.onclick;
+        element.onclick = (e: MouseEvent) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log(`🧪 Navigation prevented for ${description} during click test - staying on test page`);
+          updateTestResult('Button Functionality', `Click: ${description}`, 'pass', 
+            `Button clickable - intended navigation to "${href}" prevented for testing`);
+          return false;
+        };
       }
       
       // Test if button is clickable and not disabled

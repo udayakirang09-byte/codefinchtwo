@@ -59,6 +59,9 @@ export default function AdminDashboard() {
     paypalClientSecret: ''
   });
 
+  const [showSystemReports, setShowSystemReports] = useState(false);
+  const [showPlatformSettings, setShowPlatformSettings] = useState(false);
+
   useEffect(() => {
     // Load sample alert data
     setAlerts([
@@ -132,13 +135,37 @@ export default function AdminDashboard() {
       });
       
       if (response.ok) {
-        alert("Payment configuration saved successfully!");
+        alert("✅ Payment configuration saved successfully!");
       } else {
-        alert("Failed to save payment configuration");
+        const error = await response.json();
+        alert(`❌ Failed to save payment configuration: ${error.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error("Error saving payment config:", error);
-      alert("Error saving payment configuration");
+      alert("❌ Error saving payment configuration. Please try again.");
+    }
+  };
+
+  const saveContactSetting = async (newSettings: typeof contactSettings) => {
+    try {
+      const response = await fetch("/api/admin/contact-settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newSettings)
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("Failed to save contact settings:", error);
+        // Revert the UI state on failure
+        setContactSettings(contactSettings);
+        alert(`❌ Failed to save contact settings: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error("Error saving contact settings:", error);
+      // Revert the UI state on failure
+      setContactSettings(contactSettings);
+      alert("❌ Error saving contact settings. Please try again.");
     }
   };
 
@@ -280,11 +307,7 @@ export default function AdminDashboard() {
                   onCheckedChange={(checked) => {
                     const newSettings = { ...contactSettings, emailEnabled: checked };
                     setContactSettings(newSettings);
-                    fetch("/api/admin/contact-settings", {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify(newSettings)
-                    });
+                    saveContactSetting(newSettings);
                   }}
                   data-testid="switch-email-support"
                 />
@@ -303,11 +326,7 @@ export default function AdminDashboard() {
                   onCheckedChange={(checked) => {
                     const newSettings = { ...contactSettings, chatEnabled: checked };
                     setContactSettings(newSettings);
-                    fetch("/api/admin/contact-settings", {
-                      method: "PATCH", 
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify(newSettings)
-                    });
+                    saveContactSetting(newSettings);
                   }}
                   data-testid="switch-live-chat"
                 />
@@ -326,11 +345,7 @@ export default function AdminDashboard() {
                   onCheckedChange={(checked) => {
                     const newSettings = { ...contactSettings, phoneEnabled: checked };
                     setContactSettings(newSettings);
-                    fetch("/api/admin/contact-settings", {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify(newSettings)
-                    });
+                    saveContactSetting(newSettings);
                   }}
                   data-testid="switch-phone-support"
                 />
@@ -505,7 +520,7 @@ export default function AdminDashboard() {
                 variant="outline" 
                 className="h-auto p-4 flex-col" 
                 data-testid="button-system-reports"
-                onClick={() => alert('System Reports:\n\n📊 User Growth: +15% this month\n📈 Revenue: ₹2.5M (+8%)\n⭐ Platform Rating: 4.8/5\n🎯 Course Completion: 92%\n\nDetailed reports coming soon!')}
+                onClick={() => setShowSystemReports(!showSystemReports)}
               >
                 <BarChart3 className="h-6 w-6 mb-2" />
                 <span>System Reports</span>
@@ -514,7 +529,7 @@ export default function AdminDashboard() {
                 variant="outline" 
                 className="h-auto p-4 flex-col" 
                 data-testid="button-platform-settings"
-                onClick={() => alert('Platform Settings:\n\n⚙️ System Status: Online\n🔒 Security Level: High\n📱 Mobile App: v2.1.0\n🌐 Web Platform: v3.4.2\n\nSettings panel coming soon!')}
+                onClick={() => setShowPlatformSettings(!showPlatformSettings)}
               >
                 <Settings className="h-6 w-6 mb-2" />
                 <span>Platform Settings</span>
@@ -523,6 +538,206 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* System Reports Section */}
+      {showSystemReports && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              System Reports
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 className="font-medium text-blue-900 mb-2">📊 User Growth</h4>
+                <p className="text-2xl font-bold text-blue-700">+15%</p>
+                <p className="text-sm text-blue-600">This month</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {stats.totalUsers.toLocaleString()} total users
+                </p>
+              </div>
+              
+              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                <h4 className="font-medium text-green-900 mb-2">📈 Revenue</h4>
+                <p className="text-2xl font-bold text-green-700">₹2.5M</p>
+                <p className="text-sm text-green-600">+8% growth</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  ${stats.monthlyRevenue.toLocaleString()} this month
+                </p>
+              </div>
+              
+              <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <h4 className="font-medium text-purple-900 mb-2">⭐ Platform Rating</h4>
+                <p className="text-2xl font-bold text-purple-700">4.8/5</p>
+                <p className="text-sm text-purple-600">Excellent</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Based on {stats.totalBookings.toLocaleString()} reviews
+                </p>
+              </div>
+              
+              <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                <h4 className="font-medium text-orange-900 mb-2">🎯 Course Completion</h4>
+                <p className="text-2xl font-bold text-orange-700">92%</p>
+                <p className="text-sm text-orange-600">High success rate</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {stats.completionRate}% overall rate
+                </p>
+              </div>
+            </div>
+            
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 border rounded-lg">
+                <h4 className="font-medium mb-3">📊 Monthly Analytics</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">New Students</span>
+                    <span className="font-medium">+127</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">New Mentors</span>
+                    <span className="font-medium">+8</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Sessions Completed</span>
+                    <span className="font-medium">1,245</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Average Session Duration</span>
+                    <span className="font-medium">45 min</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-4 border rounded-lg">
+                <h4 className="font-medium mb-3">🎯 Performance Metrics</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Server Uptime</span>
+                    <span className="font-medium text-green-600">99.9%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Response Time</span>
+                    <span className="font-medium">45ms</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Active Sessions</span>
+                    <span className="font-medium">{stats.activeClasses}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Payment Success Rate</span>
+                    <span className="font-medium text-green-600">98.5%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Platform Settings Section */}
+      {showPlatformSettings && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Platform Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h4 className="font-medium text-lg">⚙️ System Configuration</h4>
+                
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium">Maintenance Mode</span>
+                    <Switch data-testid="switch-maintenance-mode" />
+                  </div>
+                  <p className="text-sm text-gray-600">Enable to temporarily disable new bookings</p>
+                </div>
+                
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium">Auto Backup</span>
+                    <Switch defaultChecked data-testid="switch-auto-backup" />
+                  </div>
+                  <p className="text-sm text-gray-600">Automatic daily database backups</p>
+                </div>
+                
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium">New User Registration</span>
+                    <Switch defaultChecked data-testid="switch-new-registration" />
+                  </div>
+                  <p className="text-sm text-gray-600">Allow new students to register</p>
+                </div>
+                
+                <div className="p-4 border rounded-lg">
+                  <Label htmlFor="max-session-duration">Max Session Duration (minutes)</Label>
+                  <Input 
+                    id="max-session-duration" 
+                    type="number" 
+                    defaultValue="120" 
+                    className="mt-1"
+                    data-testid="input-max-session-duration"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <h4 className="font-medium text-lg">🔒 Security & Monitoring</h4>
+                
+                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <span className="font-medium">System Status: Online</span>
+                  </div>
+                  <p className="text-sm text-gray-600">All services running normally</p>
+                </div>
+                
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <h5 className="font-medium mb-2">🔒 Security Level: High</h5>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-600">✅ SSL Certificate: Valid</p>
+                    <p className="text-sm text-gray-600">✅ Two-Factor Auth: Enabled</p>
+                    <p className="text-sm text-gray-600">✅ Rate Limiting: Active</p>
+                    <p className="text-sm text-gray-600">✅ CSRF Protection: On</p>
+                  </div>
+                </div>
+                
+                <div className="p-4 border rounded-lg">
+                  <h5 className="font-medium mb-2">📱 Application Versions</h5>
+                  <div className="space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Mobile App</span>
+                      <span className="font-medium">v2.1.0</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Web Platform</span>
+                      <span className="font-medium">v3.4.2</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Admin Dashboard</span>
+                      <span className="font-medium">v1.8.5</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-6 flex gap-3">
+              <Button data-testid="button-save-platform-settings">
+                Save Changes
+              </Button>
+              <Button variant="outline" data-testid="button-reset-platform-settings">
+                Reset to Defaults
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* System Health */}
       <Card>

@@ -426,7 +426,91 @@ export const insertFooterLinkSchema = createInsertSchema(footerLinks).omit({
   updatedAt: true,
 });
 
+// Courses Table
+export const courses = pgTable("courses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  category: varchar("category").notNull(), // programming, web-development, mobile-development, etc.
+  difficulty: varchar("difficulty").notNull(), // beginner, intermediate, advanced
+  duration: varchar("duration"), // e.g., "2 hours", "1 week", etc.
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  maxStudents: integer("max_students").default(10),
+  prerequisites: text("prerequisites"),
+  tags: jsonb("tags").$type<string[]>().default([]),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Teacher Profile Table
+export const teacherProfiles = pgTable("teacher_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  // Qualifications
+  highestQualification: varchar("highest_qualification").notNull(), // Masters, Bachelors, PhD, etc.
+  qualificationScore: varchar("qualification_score"), // GPA, percentage, etc.
+  instituteName: varchar("institute_name"),
+  graduationYear: integer("graduation_year"),
+  // Computer Language Experience  
+  programmingLanguages: jsonb("programming_languages").$type<{
+    language: string;
+    yearsOfExperience: number;
+    proficiencyLevel: string; // beginner, intermediate, advanced, expert
+    certifications?: string[];
+  }[]>().default([]),
+  // Achievements
+  achievements: jsonb("achievements").$type<{
+    category: string; // technical, teaching, professional, academic
+    achievement: string;
+    year?: number;
+    description?: string;
+  }[]>().default([]),
+  // Additional fields
+  totalTeachingExperience: integer("total_teaching_experience").default(0), // in years
+  isProfileComplete: boolean("is_profile_complete").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Courses Relations
+export const coursesRelations = relations(courses, ({ one }) => ({
+  mentor: one(mentors, {
+    fields: [courses.mentorId],
+    references: [mentors.id],
+  }),
+}));
+
+// Teacher Profile Relations
+export const teacherProfilesRelations = relations(teacherProfiles, ({ one }) => ({
+  user: one(users, {
+    fields: [teacherProfiles.userId],
+    references: [users.id],
+  }),
+}));
+
+// Course Insert Schema
+export const insertCourseSchema = createInsertSchema(courses).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Teacher Profile Insert Schema
+export const insertTeacherProfileSchema = createInsertSchema(teacherProfiles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Additional Types
+export type Course = typeof courses.$inferSelect;
+export type InsertCourse = z.infer<typeof insertCourseSchema>;
+
+export type TeacherProfile = typeof teacherProfiles.$inferSelect;
+export type InsertTeacherProfile = z.infer<typeof insertTeacherProfileSchema>;
+
 export type AdminConfig = typeof adminConfig.$inferSelect;
 export type InsertAdminConfig = z.infer<typeof insertAdminConfigSchema>;
 

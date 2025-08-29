@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { z } from "zod";
 import { eq, desc, and, gte, lte, or } from "drizzle-orm";
 import { db } from "./db";
-import { adminConfig, footerLinks, timeSlots, type InsertAdminConfig, type InsertFooterLink, type InsertTimeSlot } from "@shared/schema";
+import { adminConfig, footerLinks, timeSlots, teacherProfiles, courses, type InsertAdminConfig, type InsertFooterLink, type InsertTimeSlot, type InsertTeacherProfile, type InsertCourse } from "@shared/schema";
 import Stripe from "stripe";
 import {
   insertUserSchema,
@@ -18,6 +18,7 @@ import {
   insertVideoSessionSchema,
   insertClassFeedbackSchema,
   insertNotificationSchema,
+  insertCourseSchema,
 } from "@shared/schema";
 
 // Initialize Stripe
@@ -560,6 +561,200 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching teacher stats:", error);
       res.status(500).json({ message: "Failed to fetch teacher stats" });
+    }
+  });
+
+  // Teacher Profile routes
+  app.get("/api/teacher/profile", async (req, res) => {
+    try {
+      const teacherId = req.query.teacherId as string;
+      if (!teacherId) {
+        return res.status(400).json({ message: "Teacher ID required" });
+      }
+      
+      const [profile] = await db.select().from(teacherProfiles).where(eq(teacherProfiles.userId, teacherId));
+      
+      if (!profile) {
+        return res.status(404).json({ message: "Teacher profile not found" });
+      }
+      
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching teacher profile:", error);
+      res.status(500).json({ message: "Failed to fetch teacher profile" });
+    }
+  });
+
+  app.post("/api/teacher/profile", async (req, res) => {
+    try {
+      const teacherId = req.query.teacherId as string;
+      if (!teacherId) {
+        return res.status(400).json({ message: "Teacher ID required" });
+      }
+      
+      const profileData: InsertTeacherProfile = {
+        userId: teacherId,
+        ...req.body
+      };
+      
+      // Check if profile already exists
+      const [existing] = await db.select().from(teacherProfiles).where(eq(teacherProfiles.userId, teacherId));
+      
+      if (existing) {
+        // Update existing profile
+        const [updated] = await db.update(teacherProfiles)
+          .set({ ...profileData, updatedAt: new Date() })
+          .where(eq(teacherProfiles.userId, teacherId))
+          .returning();
+        res.json(updated);
+      } else {
+        // Create new profile
+        const [created] = await db.insert(teacherProfiles).values(profileData).returning();
+        res.status(201).json(created);
+      }
+    } catch (error) {
+      console.error("Error saving teacher profile:", error);
+      res.status(500).json({ message: "Failed to save teacher profile" });
+    }
+  });
+
+  app.put("/api/teacher/profile", async (req, res) => {
+    try {
+      const teacherId = req.query.teacherId as string;
+      if (!teacherId) {
+        return res.status(400).json({ message: "Teacher ID required" });
+      }
+      
+      const [updated] = await db.update(teacherProfiles)
+        .set({ ...req.body, updatedAt: new Date() })
+        .where(eq(teacherProfiles.userId, teacherId))
+        .returning();
+      
+      if (!updated) {
+        return res.status(404).json({ message: "Teacher profile not found" });
+      }
+      
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating teacher profile:", error);
+      res.status(500).json({ message: "Failed to update teacher profile" });
+    }
+  });
+
+  // Teacher Course routes
+  app.get("/api/teacher/courses", async (req, res) => {
+    try {
+      const teacherId = req.query.teacherId as string;
+      if (!teacherId) {
+        return res.status(400).json({ message: "Teacher ID required" });
+      }
+      
+      const mentor = await storage.getMentorByUserId(teacherId);
+      if (!mentor) {
+        return res.status(404).json({ message: "Mentor not found" });
+      }
+      
+      const teacherCourses = await db.select().from(courses).where(eq(courses.mentorId, mentor.id));
+      res.json(teacherCourses);
+    } catch (error) {
+      console.error("Error fetching teacher courses:", error);
+      res.status(500).json({ message: "Failed to fetch teacher courses" });
+    }
+  });
+
+  app.post("/api/teacher/courses", async (req, res) => {
+    try {
+      const teacherId = req.query.teacherId as string;
+      if (!teacherId) {
+        return res.status(400).json({ message: "Teacher ID required" });
+      }
+      
+      const mentor = await storage.getMentorByUserId(teacherId);
+      if (!mentor) {
+        return res.status(404).json({ message: "Mentor not found" });
+      }
+
+      // Get teacher profile to validate experience
+      const [teacherProfile] = await db.select().from(teacherProfiles).where(eq(teacherProfiles.userId, teacherId));
+      
+      if (!teacherProfile) {
+        return res.status(400).json({ 
+          message: "Teacher profile required. Please complete your profile first to create courses." 
+        });
+      }
+
+      // Validate course data
+      const courseData = insertCourseSchema.parse({
+        ...req.body,
+        mentorId: mentor.id
+      });
+
+      // Validate that teacher has experience in the course category
+      const { category, title } = courseData;
+      let hasExperience = false;
+      let experienceMessage = "";
+
+      if (teacherProfile.programmingLanguages && teacherProfile.programmingLanguages.length > 0) {
+        // Check if the course category matches any programming language experience
+        const languageExperience = teacherProfile.programmingLanguages.find(lang => {
+          const courseCategoryLower = category.toLowerCase();
+          const languageLower = lang.language.toLowerCase();
+          
+          // Check for direct matches or related categories
+          if (courseCategoryLower.includes(languageLower) || languageLower.includes(courseCategoryLower)) {
+            return true;
+          }
+          
+          // Special category matching logic
+          if (courseCategoryLower === 'web-development' && 
+              (languageLower.includes('javascript') || languageLower.includes('html') || 
+               languageLower.includes('css') || languageLower.includes('react') || 
+               languageLower.includes('vue') || languageLower.includes('angular'))) {
+            return true;
+          }
+          
+          if (courseCategoryLower === 'mobile-development' && 
+              (languageLower.includes('react native') || languageLower.includes('flutter') || 
+               languageLower.includes('swift') || languageLower.includes('kotlin'))) {
+            return true;
+          }
+          
+          if (courseCategoryLower === 'data-science' && 
+              (languageLower.includes('python') || languageLower.includes('r') || 
+               languageLower.includes('sql') || languageLower.includes('scala'))) {
+            return true;
+          }
+          
+          return false;
+        });
+
+        if (languageExperience) {
+          hasExperience = true;
+          experienceMessage = `Validated: ${languageExperience.yearsOfExperience} years of ${languageExperience.language} experience (${languageExperience.proficiencyLevel} level)`;
+        }
+      }
+
+      if (!hasExperience) {
+        return res.status(400).json({ 
+          message: `Course creation rejected: No matching experience found for "${category}" category. Please update your teacher profile with relevant programming language experience before creating this course.`
+        });
+      }
+
+      // Create the course
+      const [newCourse] = await db.insert(courses).values(courseData).returning();
+      
+      console.log(`✅ Course created: "${title}" by teacher ${teacherId} - ${experienceMessage}`);
+      res.status(201).json({ 
+        course: newCourse, 
+        validationMessage: experienceMessage 
+      });
+    } catch (error) {
+      console.error("Error creating course:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid course data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to create course" });
+      }
     }
   });
 

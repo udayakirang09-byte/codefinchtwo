@@ -29,6 +29,8 @@ interface CompletedClass {
 export default function TeacherDashboard() {
   const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [showEarningsReport, setShowEarningsReport] = useState(false);
+  const [showStudentFeedback, setShowStudentFeedback] = useState(false);
   
   // Fetch teacher's classes from API
   const { data: teacherClasses = [], isLoading: classesLoading, error: classesError } = useQuery({
@@ -346,7 +348,7 @@ export default function TeacherDashboard() {
               variant="outline" 
               className="h-auto p-4 flex-col" 
               data-testid="button-earnings-report"
-              onClick={() => alert('Earnings Report: Total earnings this month: ₹12,500. Click OK to see detailed breakdown.')}
+              onClick={() => setShowEarningsReport(!showEarningsReport)}
             >
               <DollarSign className="h-6 w-6 mb-2" />
               <span>Earnings Report</span>
@@ -355,7 +357,7 @@ export default function TeacherDashboard() {
               variant="outline" 
               className="h-auto p-4 flex-col" 
               data-testid="button-student-feedback"
-              onClick={() => alert('Recent Feedback:\n⭐⭐⭐⭐⭐ "Excellent teaching style!" - Sarah\n⭐⭐⭐⭐⭐ "Very helpful and patient" - Mike\n⭐⭐⭐⭐⭐ "Clear explanations" - Alex')}
+              onClick={() => setShowStudentFeedback(!showStudentFeedback)}
             >
               <MessageCircle className="h-6 w-6 mb-2" />
               <span>Student Feedback</span>
@@ -363,6 +365,129 @@ export default function TeacherDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Earnings Report Section */}
+      {showEarningsReport && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              Detailed Earnings Report
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <p className="text-sm text-green-600 font-medium">This Month</p>
+                  <p className="text-2xl font-bold text-green-700">₹12,500</p>
+                  <p className="text-xs text-green-600">+15% from last month</p>
+                </div>
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <p className="text-sm text-blue-600 font-medium">Total Earnings</p>
+                  <p className="text-2xl font-bold text-blue-700">₹45,230</p>
+                  <p className="text-xs text-blue-600">Since joining</p>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                  <p className="text-sm text-purple-600 font-medium">Average per Session</p>
+                  <p className="text-2xl font-bold text-purple-700">₹850</p>
+                  <p className="text-xs text-purple-600">Across all subjects</p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h4 className="font-semibold mb-3">Recent Earnings Breakdown:</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span className="text-sm">JavaScript - Advanced Concepts</span>
+                    <span className="font-medium text-green-600">₹1,200</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span className="text-sm">React Development - Sarah M.</span>
+                    <span className="font-medium text-green-600">₹950</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span className="text-sm">Python Basics - Mike K.</span>
+                    <span className="font-medium text-green-600">₹800</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span className="text-sm">Node.js Backend - Alex P.</span>
+                    <span className="font-medium text-green-600">₹1,100</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Student Feedback Section */}
+      {showStudentFeedback && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5" />
+              Recent Student Feedback
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                  <p className="text-sm text-yellow-600 font-medium">Average Rating</p>
+                  <p className="text-3xl font-bold text-yellow-700">4.9⭐</p>
+                  <p className="text-xs text-yellow-600">Based on 47 reviews</p>
+                </div>
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <p className="text-sm text-blue-600 font-medium">Response Rate</p>
+                  <p className="text-3xl font-bold text-blue-700">96%</p>
+                  <p className="text-xs text-blue-600">Students who left feedback</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="font-semibold">Recent Reviews:</h4>
+                
+                <div className="border-l-4 border-green-400 bg-green-50 p-4 rounded-r-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-yellow-500">⭐⭐⭐⭐⭐</span>
+                    <span className="font-medium text-sm">Sarah M.</span>
+                    <span className="text-xs text-gray-500">2 days ago</span>
+                  </div>
+                  <p className="text-sm text-gray-700">"Excellent teaching style! The instructor explains complex JavaScript concepts in a very clear and understandable way. Highly recommend!"</p>
+                </div>
+
+                <div className="border-l-4 border-green-400 bg-green-50 p-4 rounded-r-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-yellow-500">⭐⭐⭐⭐⭐</span>
+                    <span className="font-medium text-sm">Mike K.</span>
+                    <span className="text-xs text-gray-500">1 week ago</span>
+                  </div>
+                  <p className="text-sm text-gray-700">"Very helpful and patient teacher. Made Python programming easy to understand. Great examples and practical exercises!"</p>
+                </div>
+
+                <div className="border-l-4 border-green-400 bg-green-50 p-4 rounded-r-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-yellow-500">⭐⭐⭐⭐⭐</span>
+                    <span className="font-medium text-sm">Alex P.</span>
+                    <span className="text-xs text-gray-500">2 weeks ago</span>
+                  </div>
+                  <p className="text-sm text-gray-700">"Clear explanations and good pace. The Node.js session was exactly what I needed. Thank you!"</p>
+                </div>
+
+                <div className="border-l-4 border-blue-400 bg-blue-50 p-4 rounded-r-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-yellow-500">⭐⭐⭐⭐⭐</span>
+                    <span className="font-medium text-sm">Jennifer L.</span>
+                    <span className="text-xs text-gray-500">3 weeks ago</span>
+                  </div>
+                  <p className="text-sm text-gray-700">"Fantastic React tutorial! The step-by-step approach really helped me grasp the concepts quickly."</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

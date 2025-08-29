@@ -154,8 +154,6 @@ export default function StudentDashboard() {
       },
     ];
 
-    setUpcomingClasses(sampleUpcoming);
-    setCompletedClasses(sampleCompleted);
     setNotifications(sampleNotifications);
 
     return () => clearInterval(timer);
