@@ -66,13 +66,33 @@ export default function ManageSchedule() {
     });
   };
 
+  const deleteSlotMutation = useMutation({
+    mutationFn: async (slotId: string) => {
+      const response = await fetch(`/api/teacher/schedule/${slotId}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Failed to delete slot');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher-schedule'] });
+      toast({
+        title: "Success",
+        description: "Time slot deleted successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete time slot",
+        variant: "destructive",
+      });
+    }
+  });
+
   const deleteTimeSlot = (slotId: string) => {
     if (confirm('Are you sure you want to delete this time slot?')) {
-      // In a real app, this would call an API to delete the slot
-      toast({
-        title: "Time Slot Deleted",
-        description: "The time slot has been removed from your schedule",
-      });
+      deleteSlotMutation.mutate(slotId);
     }
   };
 

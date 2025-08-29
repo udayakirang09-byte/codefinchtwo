@@ -528,6 +528,11 @@ export default function SystemTest() {
       // Test multiple API endpoints for performance
       const performanceTests = [
         { endpoint: '/api/mentors', name: 'Mentors List API' },
+        { endpoint: '/api/classes/upcoming', name: 'Upcoming Classes API' },
+        { endpoint: '/api/classes/completed', name: 'Completed Classes API' },
+        { endpoint: '/api/teacher/schedule', name: 'Teacher Schedule API' },
+        { endpoint: '/api/admin/contact-settings', name: 'Admin Contact Settings API' },
+        { endpoint: '/api/admin/payment-config', name: 'Admin Payment Config API' },
       ];
       
       for (const test of performanceTests) {

@@ -698,6 +698,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Class Management API Endpoints
+  app.get("/api/classes/upcoming", async (req, res) => {
+    try {
+      const currentTime = new Date();
+      const next72Hours = new Date(currentTime.getTime() + 72 * 60 * 60 * 1000);
+      
+      // Sample upcoming classes data
+      const upcomingClasses = [
+        {
+          id: '1',
+          mentorName: 'Sarah Johnson',
+          subject: 'Python Basics',
+          scheduledAt: new Date(Date.now() + 50 * 60 * 1000), // 50 minutes from now
+          duration: 60,
+          videoEnabled: false,
+          chatEnabled: true,
+          feedbackEnabled: false,
+        },
+        {
+          id: '2',
+          mentorName: 'Mike Chen',
+          subject: 'JavaScript Functions',
+          scheduledAt: new Date(Date.now() + 30 * 60 * 60 * 1000), // 30 hours from now
+          duration: 90,
+          videoEnabled: false,
+          chatEnabled: true,
+          feedbackEnabled: false,
+        },
+      ];
+      
+      // Filter for next 72 hours
+      const filtered = upcomingClasses.filter(cls => {
+        const classTime = new Date(cls.scheduledAt);
+        return classTime >= currentTime && classTime <= next72Hours;
+      });
+      
+      res.json(filtered);
+    } catch (error) {
+      console.error("Error loading upcoming classes:", error);
+      res.status(500).json({ error: "Failed to load upcoming classes" });
+    }
+  });
+
+  app.get("/api/classes/completed", async (req, res) => {
+    try {
+      const currentTime = new Date();
+      const last12Hours = new Date(currentTime.getTime() - 12 * 60 * 60 * 1000);
+      
+      // Sample completed classes data
+      const completedClasses = [
+        {
+          id: '3',
+          mentorName: 'Alex Rivera',
+          subject: 'HTML & CSS Intro',
+          completedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+          feedbackDeadline: new Date(Date.now() + 10 * 60 * 60 * 1000), // 10 hours from now
+          hasSubmittedFeedback: false,
+        },
+        {
+          id: '4',
+          mentorName: 'Lisa Wang',
+          subject: 'React Components',
+          completedAt: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
+          feedbackDeadline: new Date(Date.now() + 8 * 60 * 60 * 1000), // 8 hours from now
+          hasSubmittedFeedback: false,
+        },
+      ];
+      
+      // Filter for last 12 hours that need feedback
+      const filtered = completedClasses.filter(cls => {
+        const completedTime = new Date(cls.completedAt);
+        const deadlineTime = new Date(cls.feedbackDeadline);
+        return completedTime >= last12Hours && 
+               !cls.hasSubmittedFeedback && 
+               currentTime <= deadlineTime;
+      });
+      
+      res.json(filtered);
+    } catch (error) {
+      console.error("Error loading completed classes:", error);
+      res.status(500).json({ error: "Failed to load completed classes" });
+    }
+  });
+
+  // Teacher Schedule Management Endpoints
+  app.get("/api/teacher/schedule", async (req, res) => {
+    try {
+      // Sample schedule data with proper API structure
+      const schedule = [
+        { id: '1', dayOfWeek: 'Monday', startTime: '10:00', endTime: '12:00', isAvailable: true, isRecurring: true },
+        { id: '2', dayOfWeek: 'Monday', startTime: '14:00', endTime: '16:00', isAvailable: false, isRecurring: true },
+        { id: '3', dayOfWeek: 'Wednesday', startTime: '10:00', endTime: '12:00', isAvailable: true, isRecurring: true },
+        { id: '4', dayOfWeek: 'Friday', startTime: '15:00', endTime: '17:00', isAvailable: true, isRecurring: true },
+        { id: '5', dayOfWeek: 'Saturday', startTime: '09:00', endTime: '11:00', isAvailable: false, isRecurring: false },
+      ];
+      
+      res.json(schedule);
+    } catch (error) {
+      console.error("Error loading teacher schedule:", error);
+      res.status(500).json({ error: "Failed to load schedule" });
+    }
+  });
+
+  app.patch("/api/teacher/schedule/:slotId", async (req, res) => {
+    try {
+      const { slotId } = req.params;
+      const { isAvailable } = req.body;
+      
+      console.log(`📅 Updating schedule slot ${slotId}: available = ${isAvailable}`);
+      
+      // In real implementation, update database
+      // For now, return success
+      res.json({ 
+        success: true, 
+        message: `Time slot ${slotId} ${isAvailable ? 'unblocked' : 'blocked'} successfully` 
+      });
+    } catch (error) {
+      console.error("Error updating schedule:", error);
+      res.status(500).json({ error: "Failed to update schedule" });
+    }
+  });
+
+  app.delete("/api/teacher/schedule/:slotId", async (req, res) => {
+    try {
+      const { slotId } = req.params;
+      
+      console.log(`🗑️ Deleting schedule slot ${slotId}`);
+      
+      // In real implementation, delete from database
+      res.json({ 
+        success: true, 
+        message: `Time slot ${slotId} deleted successfully` 
+      });
+    } catch (error) {
+      console.error("Error deleting schedule slot:", error);
+      res.status(500).json({ error: "Failed to delete schedule slot" });
+    }
+  });
+
   // Admin Configuration Endpoints
   app.get("/api/admin/contact-settings", async (req, res) => {
     try {
