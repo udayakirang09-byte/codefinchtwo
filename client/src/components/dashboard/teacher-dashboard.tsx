@@ -503,9 +503,23 @@ export default function TeacherDashboard() {
           <div className="text-center">
             <p className="text-gray-600 mb-4">Run comprehensive tests with teacher credentials</p>
             <Button 
-              onClick={() => {
-                console.log('🧪 Running all tests with teacher credentials');
-                // Test functionality for teachers
+              onClick={async () => {
+                console.log('🧪 Running tests for teacher...');
+                try {
+                  const response = await fetch('/api/test/run-all', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userRole: 'teacher', testType: 'comprehensive' })
+                  });
+                  if (response.ok) {
+                    const results = await response.json();
+                    console.log('✅ Teacher test results:', results);
+                    alert(`Tests completed! ${results.summary.passed}/${results.summary.total} passed`);
+                  }
+                } catch (error) {
+                  console.error('Failed to run tests:', error);
+                  alert('❌ Failed to run tests. Check console for details.');
+                }
               }}
               className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 h-12 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
               data-testid="button-run-all-tests-teacher"
