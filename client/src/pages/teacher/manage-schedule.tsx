@@ -1,0 +1,199 @@
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Calendar, Clock, Home, Plus, Edit, Trash2 } from 'lucide-react';
+import { Link } from 'wouter';
+import Navigation from '@/components/navigation';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+
+interface TimeSlot {
+  id: string;
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+  isRecurring: boolean;
+}
+
+export default function ManageSchedule() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: schedule = [], isLoading } = useQuery({
+    queryKey: ['teacher-schedule'],
+    queryFn: async () => {
+      const response = await fetch('/api/teacher/schedule');
+      if (!response.ok) throw new Error('Failed to fetch schedule');
+      return response.json();
+    }
+  });
+
+  const updateSlotMutation = useMutation({
+    mutationFn: async ({ slotId, updates }: { slotId: string; updates: any }) => {
+      const response = await fetch(`/api/teacher/schedule/${slotId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      if (!response.ok) throw new Error('Failed to update slot');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher-schedule'] });
+      toast({
+        title: "Success",
+        description: "Schedule updated successfully",
+      });
+    }
+  });
+
+  const sampleSchedule: TimeSlot[] = [
+    { id: '1', dayOfWeek: 'Monday', startTime: '10:00', endTime: '12:00', isAvailable: true, isRecurring: true },
+    { id: '2', dayOfWeek: 'Monday', startTime: '14:00', endTime: '16:00', isAvailable: false, isRecurring: true },
+    { id: '3', dayOfWeek: 'Wednesday', startTime: '10:00', endTime: '12:00', isAvailable: true, isRecurring: true },
+    { id: '4', dayOfWeek: 'Friday', startTime: '15:00', endTime: '17:00', isAvailable: true, isRecurring: true },
+    { id: '5', dayOfWeek: 'Saturday', startTime: '09:00', endTime: '11:00', isAvailable: false, isRecurring: false },
+  ];
+
+  const scheduleData = schedule.length > 0 ? schedule : sampleSchedule;
+
+  const toggleAvailability = (slotId: string, currentStatus: boolean) => {
+    updateSlotMutation.mutate({ 
+      slotId, 
+      updates: { isAvailable: !currentStatus } 
+    });
+  };
+
+  const groupedByDay = scheduleData.reduce((acc: any, slot: TimeSlot) => {
+    if (!acc[slot.dayOfWeek]) {
+      acc[slot.dayOfWeek] = [];
+    }
+    acc[slot.dayOfWeek].push(slot);
+    return acc;
+  }, {});
+
+  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navigation />
+      
+      <div className="max-w-6xl mx-auto p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Manage Schedule</h1>
+            <p className="text-gray-600 mt-2">Set your availability and manage time slots</p>
+          </div>
+          <div className="flex gap-3">
+            <Button data-testid="button-add-slot">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Time Slot
+            </Button>
+            <Link href="/">
+              <Button variant="outline" data-testid="button-home">
+                <Home className="w-4 h-4 mr-2" />
+                Home
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+            <p className="mt-4 text-gray-600">Loading your schedule...</p>
+          </div>
+        ) : (
+          <div className="grid gap-6">
+            {daysOfWeek.map((day) => (
+              <Card key={day}>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Calendar className="w-5 h-5 mr-2" />
+                    {day}
+                  </CardTitle>
+                  <CardDescription>
+                    {groupedByDay[day] ? `${groupedByDay[day].length} time slots` : 'No slots scheduled'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {groupedByDay[day] ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {groupedByDay[day].map((slot: TimeSlot) => (
+                        <div
+                          key={slot.id}
+                          className={`p-4 rounded-lg border-2 transition-all duration-200 ${
+                            slot.isAvailable 
+                              ? 'border-green-200 bg-green-50 hover:border-green-300' 
+                              : 'border-red-200 bg-red-50 hover:border-red-300'
+                          }`}
+                          data-testid={`slot-${slot.id}`}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center text-gray-700">
+                              <Clock className="w-4 h-4 mr-2" />
+                              <span className="font-medium">
+                                {slot.startTime} - {slot.endTime}
+                              </span>
+                            </div>
+                            <Badge variant={slot.isAvailable ? "default" : "secondary"}>
+                              {slot.isAvailable ? 'Available' : 'Booked'}
+                            </Badge>
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant={slot.isAvailable ? "outline" : "default"}
+                              onClick={() => toggleAvailability(slot.id, slot.isAvailable)}
+                              disabled={updateSlotMutation.isPending}
+                              data-testid={`button-toggle-${slot.id}`}
+                            >
+                              {slot.isAvailable ? 'Block' : 'Unblock'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              data-testid={`button-edit-${slot.id}`}
+                            >
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 hover:text-red-700"
+                              data-testid={`button-delete-${slot.id}`}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                          
+                          {slot.isRecurring && (
+                            <div className="mt-2 text-xs text-gray-500">
+                              📅 Recurring weekly
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                      <p>No time slots for {day}</p>
+                      <Button variant="outline" size="sm" className="mt-3" data-testid={`button-add-${day.toLowerCase()}`}>
+                        <Plus className="w-3 h-3 mr-1" />
+                        Add Slot
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

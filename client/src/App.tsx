@@ -25,8 +25,12 @@ import Payment from "@/pages/payment";
 import PaymentSuccess from "@/pages/payment-success";
 import StudentCommunity from "@/pages/student-community";
 import AchievementBadges from "@/pages/achievement-badges";
-import UserManagement from "@/pages/admin/user-management";
-import MentorApproval from "@/pages/admin/mentor-approval";
+import UserManagement from "./pages/admin/user-management";
+import MentorApproval from "./pages/admin/mentor-approval";
+import ActiveClasses from "./pages/student/active-classes";
+import LearningHours from "./pages/student/learning-hours";
+import CreateCourse from "./pages/teacher/create-course";
+import ManageSchedule from "./pages/teacher/manage-schedule";
 
 function Router() {
   return (
@@ -44,6 +48,10 @@ function Router() {
       <Route path="/help" component={Help} />
       <Route path="/admin/user-management" component={UserManagement} />
       <Route path="/admin/mentor-approval" component={MentorApproval} />
+      <Route path="/student/active-classes" component={ActiveClasses} />
+      <Route path="/student/learning-hours" component={LearningHours} />
+      <Route path="/teacher/create-course" component={CreateCourse} />
+      <Route path="/teacher/manage-schedule" component={ManageSchedule} />
       <Route path="/student/progress" component={StudentProgress} />
       <Route path="/video-class/:id" component={VideoClass} />
       <Route path="/chat/:id" component={ChatClass} />

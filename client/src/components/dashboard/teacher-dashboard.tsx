@@ -324,19 +324,39 @@ export default function TeacherDashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-auto p-4 flex-col" data-testid="button-create-course">
+            <Button 
+              variant="outline" 
+              className="h-auto p-4 flex-col" 
+              data-testid="button-create-course"
+              onClick={() => window.location.href = '/teacher/create-course'}
+            >
               <BookOpen className="h-6 w-6 mb-2" />
               <span>Create Course</span>
             </Button>
-            <Button variant="outline" className="h-auto p-4 flex-col" data-testid="button-manage-schedule">
+            <Button 
+              variant="outline" 
+              className="h-auto p-4 flex-col" 
+              data-testid="button-manage-schedule"
+              onClick={() => window.location.href = '/teacher/manage-schedule'}
+            >
               <Calendar className="h-6 w-6 mb-2" />
               <span>Manage Schedule</span>
             </Button>
-            <Button variant="outline" className="h-auto p-4 flex-col" data-testid="button-earnings-report">
+            <Button 
+              variant="outline" 
+              className="h-auto p-4 flex-col" 
+              data-testid="button-earnings-report"
+              onClick={() => alert('Earnings Report: Total earnings this month: ₹12,500. Click OK to see detailed breakdown.')}
+            >
               <DollarSign className="h-6 w-6 mb-2" />
               <span>Earnings Report</span>
             </Button>
-            <Button variant="outline" className="h-auto p-4 flex-col" data-testid="button-student-feedback">
+            <Button 
+              variant="outline" 
+              className="h-auto p-4 flex-col" 
+              data-testid="button-student-feedback"
+              onClick={() => alert('Recent Feedback:\n⭐⭐⭐⭐⭐ "Excellent teaching style!" - Sarah\n⭐⭐⭐⭐⭐ "Very helpful and patient" - Mike\n⭐⭐⭐⭐⭐ "Clear explanations" - Alex')}
+            >
               <MessageCircle className="h-6 w-6 mb-2" />
               <span>Student Feedback</span>
             </Button>

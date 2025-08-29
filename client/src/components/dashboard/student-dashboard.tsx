@@ -197,11 +197,19 @@ export default function StudentDashboard() {
                 <p className="text-indigo-100 text-xl font-medium">Continue your coding journey with personalized learning experiences</p>
               </div>
               <div className="hidden md:flex items-center space-x-6">
-                <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 text-center min-w-[120px]">
+                <div 
+                  className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 text-center min-w-[120px] cursor-pointer hover:bg-white/30 transition-all duration-200"
+                  onClick={() => window.location.href = '/student/active-classes'}
+                  data-testid="card-active-classes"
+                >
                   <div className="text-white text-3xl font-bold">12</div>
                   <div className="text-indigo-100 text-sm font-medium">Active Classes</div>
                 </div>
-                <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 text-center min-w-[120px]">
+                <div 
+                  className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 text-center min-w-[120px] cursor-pointer hover:bg-white/30 transition-all duration-200"
+                  onClick={() => window.location.href = '/student/learning-hours'}
+                  data-testid="card-hours-learned"
+                >
                   <div className="text-white text-3xl font-bold">47</div>
                   <div className="text-indigo-100 text-sm font-medium">Hours Learned</div>
                 </div>
