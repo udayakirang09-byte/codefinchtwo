@@ -492,7 +492,7 @@ export default function TeacherDashboard() {
       )}
 
       {/* Run All Tests Button - Only for Teachers */}
-      <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+      <Card className="shadow-2xl bg-gradient-to-br from-white via-gray-50 to-blue-50 border-0 rounded-2xl overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-orange-600 to-red-700 text-white">
           <CardTitle className="flex items-center gap-3">
             <TrendingUp className="h-6 w-6" />
