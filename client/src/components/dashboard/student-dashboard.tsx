@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Video, MessageCircle, Star, BookOpen, Award, Bell, Users, TrendingUp } from "lucide-react";
 import { formatDistanceToNow, isWithinInterval, addHours, addMinutes } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
 
 interface UpcomingClass {
   id: string;
@@ -34,11 +35,44 @@ interface Notification {
   createdAt: Date;
 }
 
+interface StudentStats {
+  activeClasses: number;
+  hoursLearned: number;
+  progressRate: number;
+  totalBookings: number;
+  completedClasses: number;
+  achievementsCount: number;
+}
+
 export default function StudentDashboard() {
   const [upcomingClasses, setUpcomingClasses] = useState<UpcomingClass[]>([]);
   const [completedClasses, setCompletedClasses] = useState<CompletedClass[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // For now, we'll use a hardcoded student ID. In a real app, this would come from auth context
+  const studentId = "student123"; // TODO: Get from authenticated user context
+
+  // Fetch student statistics from the database
+  const { data: studentStats, isLoading: statsLoading } = useQuery({
+    queryKey: ['/api/students', studentId, 'stats'],
+    queryFn: async () => {
+      const response = await fetch(`/api/students/${studentId}/stats`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch student stats');
+      }
+      return response.json() as Promise<StudentStats>;
+    },
+    // Default fallback data while loading
+    placeholderData: {
+      activeClasses: 0,
+      hoursLearned: 0,
+      progressRate: 0,
+      totalBookings: 0,
+      completedClasses: 0,
+      achievementsCount: 0
+    }
+  });
 
   useEffect(() => {
     // Update current time every minute
@@ -268,7 +302,9 @@ export default function StudentDashboard() {
                   onClick={() => window.location.href = '/student/active-classes'}
                   data-testid="card-active-classes"
                 >
-                  <div className="text-white text-3xl font-bold">12</div>
+                  <div className="text-white text-3xl font-bold">
+                    {statsLoading ? "..." : studentStats?.activeClasses || 0}
+                  </div>
                   <div className="text-indigo-100 text-sm font-medium">Active Classes</div>
                 </div>
                 <div 
@@ -276,11 +312,15 @@ export default function StudentDashboard() {
                   onClick={() => window.location.href = '/student/learning-hours'}
                   data-testid="card-hours-learned"
                 >
-                  <div className="text-white text-3xl font-bold">47</div>
+                  <div className="text-white text-3xl font-bold">
+                    {statsLoading ? "..." : studentStats?.hoursLearned || 0}
+                  </div>
                   <div className="text-indigo-100 text-sm font-medium">Hours Learned</div>
                 </div>
                 <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 text-center min-w-[120px]">
-                  <div className="text-white text-3xl font-bold">94%</div>
+                  <div className="text-white text-3xl font-bold">
+                    {statsLoading ? "..." : `${studentStats?.progressRate || 0}%`}
+                  </div>
                   <div className="text-indigo-100 text-sm font-medium">Progress Rate</div>
                 </div>
               </div>

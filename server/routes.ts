@@ -587,6 +587,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Student dashboard stats route - real database data
+  app.get("/api/students/:studentId/stats", async (req, res) => {
+    try {
+      const { studentId } = req.params;
+      
+      // Get student from database to verify existence
+      const student = await storage.getStudent(studentId);
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      // Get student's bookings to calculate stats
+      const bookings = await storage.getStudentBookings(studentId);
+      
+      // Calculate active classes (scheduled status)
+      const activeClasses = bookings.filter(booking => booking.status === 'scheduled').length;
+      
+      // Calculate completed classes and total hours
+      const completedBookings = bookings.filter(booking => booking.status === 'completed');
+      const totalHoursLearned = completedBookings.reduce((total, booking) => total + (booking.duration / 60), 0);
+      
+      // Calculate progress rate (percentage of completed vs total bookings)
+      const totalBookings = bookings.length;
+      const progressRate = totalBookings > 0 ? Math.round((completedBookings.length / totalBookings) * 100) : 0;
+      
+      // Get achievements count
+      const achievements = await storage.getAchievementsByStudent(studentId);
+      const achievementsCount = achievements.length;
+
+      const stats = {
+        activeClasses,
+        hoursLearned: Math.round(totalHoursLearned),
+        progressRate,
+        totalBookings,
+        completedClasses: completedBookings.length,
+        achievementsCount
+      };
+
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching student stats:", error);
+      res.status(500).json({ message: "Failed to fetch student stats" });
+    }
+  });
+
   // Student progress route
   app.get("/api/students/:studentId/progress", async (req, res) => {
     try {

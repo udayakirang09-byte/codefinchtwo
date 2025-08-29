@@ -6,7 +6,8 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck, Mail, MessageSquare, Phone, CreditCard, Key, Lock } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck, Mail, MessageSquare, Phone, CreditCard, Key, Lock, X } from "lucide-react";
 
 interface SystemStats {
   totalUsers: number;
@@ -61,6 +62,9 @@ export default function AdminDashboard() {
 
   const [showSystemReports, setShowSystemReports] = useState(false);
   const [showPlatformSettings, setShowPlatformSettings] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [detailCategory, setDetailCategory] = useState<string>('');
+  const [detailData, setDetailData] = useState<any[]>([]);
 
   useEffect(() => {
     // Load sample alert data
@@ -108,8 +112,76 @@ export default function AdminDashboard() {
       .catch(() => console.error("Failed to load payment config"));
   }, []);
 
-  const handleViewDetails = (category: string) => {
+  const handleViewDetails = async (category: string) => {
     console.log(`📊 Viewing ${category} details`);
+    setDetailCategory(category);
+    
+    try {
+      let data = [];
+      
+      switch (category) {
+        case 'users':
+          const usersResponse = await fetch('/api/users');
+          if (usersResponse.ok) {
+            data = await usersResponse.json();
+          } else {
+            // Mock data as fallback
+            data = [
+              { id: '1', firstName: 'Alice', lastName: 'Johnson', email: 'alice@example.com', role: 'student', createdAt: '2024-01-15' },
+              { id: '2', firstName: 'Bob', lastName: 'Smith', email: 'bob@example.com', role: 'mentor', createdAt: '2024-01-14' },
+              { id: '3', firstName: 'Carol', lastName: 'Davis', email: 'carol@example.com', role: 'student', createdAt: '2024-01-13' },
+              { id: '4', firstName: 'David', lastName: 'Wilson', email: 'david@example.com', role: 'admin', createdAt: '2024-01-12' }
+            ];
+          }
+          break;
+          
+        case 'classes':
+          const classesResponse = await fetch('/api/bookings');
+          if (classesResponse.ok) {
+            data = await classesResponse.json();
+          } else {
+            // Mock data as fallback
+            data = [
+              { id: '1', subject: 'JavaScript Basics', mentor: 'Sarah Johnson', student: 'Alice Johnson', scheduledAt: '2024-01-20 10:00', status: 'completed' },
+              { id: '2', subject: 'Python Fundamentals', mentor: 'Mike Chen', student: 'Bob Smith', scheduledAt: '2024-01-21 14:00', status: 'scheduled' },
+              { id: '3', subject: 'HTML & CSS', mentor: 'Alex Rivera', student: 'Carol Davis', scheduledAt: '2024-01-22 16:00', status: 'scheduled' },
+              { id: '4', subject: 'React Components', mentor: 'Emma Watson', student: 'David Wilson', scheduledAt: '2024-01-19 11:00', status: 'completed' }
+            ];
+          }
+          break;
+          
+        case 'revenue':
+          // Mock revenue data
+          data = [
+            { period: 'January 2024', amount: 15680, transactions: 89, avgPerSession: 176 },
+            { period: 'December 2023', amount: 18420, transactions: 102, avgPerSession: 180 },
+            { period: 'November 2023', amount: 12340, transactions: 67, avgPerSession: 184 },
+            { period: 'October 2023', amount: 14560, transactions: 78, avgPerSession: 187 }
+          ];
+          break;
+          
+        case 'performance':
+          // Mock performance data
+          data = [
+            { metric: 'Average Rating', value: '4.7/5', trend: '+0.2 from last month' },
+            { metric: 'Session Completion Rate', value: '94.2%', trend: '+1.5% from last month' },
+            { metric: 'Student Satisfaction', value: '91%', trend: '+3% from last month' },
+            { metric: 'Mentor Response Time', value: '< 2 hours', trend: 'Improved by 30 minutes' }
+          ];
+          break;
+          
+        default:
+          data = [];
+      }
+      
+      setDetailData(data);
+      setShowDetailModal(true);
+    } catch (error) {
+      console.error(`Error fetching ${category} details:`, error);
+      // Show error message or fallback data
+      setDetailData([]);
+      setShowDetailModal(true);
+    }
   };
 
   const handleResolveAlert = (alertId: string) => {
@@ -1155,6 +1227,153 @@ export default function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Detail Modal */}
+      <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span className="capitalize">{detailCategory} Details</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowDetailModal(false)}
+                data-testid="button-close-detail-modal"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="mt-4">
+            {detailCategory === 'users' && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">All Users</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse border border-gray-300">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="border border-gray-300 p-2 text-left">ID</th>
+                        <th className="border border-gray-300 p-2 text-left">Name</th>
+                        <th className="border border-gray-300 p-2 text-left">Email</th>
+                        <th className="border border-gray-300 p-2 text-left">Role</th>
+                        <th className="border border-gray-300 p-2 text-left">Created</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detailData.map((user: any) => (
+                        <tr key={user.id}>
+                          <td className="border border-gray-300 p-2">{user.id}</td>
+                          <td className="border border-gray-300 p-2">{user.firstName} {user.lastName}</td>
+                          <td className="border border-gray-300 p-2">{user.email}</td>
+                          <td className="border border-gray-300 p-2">
+                            <Badge variant={user.role === 'admin' ? 'destructive' : user.role === 'mentor' ? 'default' : 'secondary'}>
+                              {user.role}
+                            </Badge>
+                          </td>
+                          <td className="border border-gray-300 p-2">{user.createdAt}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {detailCategory === 'classes' && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">All Classes</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse border border-gray-300">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="border border-gray-300 p-2 text-left">ID</th>
+                        <th className="border border-gray-300 p-2 text-left">Subject</th>
+                        <th className="border border-gray-300 p-2 text-left">Mentor</th>
+                        <th className="border border-gray-300 p-2 text-left">Student</th>
+                        <th className="border border-gray-300 p-2 text-left">Scheduled</th>
+                        <th className="border border-gray-300 p-2 text-left">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detailData.map((booking: any) => (
+                        <tr key={booking.id}>
+                          <td className="border border-gray-300 p-2">{booking.id}</td>
+                          <td className="border border-gray-300 p-2">{booking.subject}</td>
+                          <td className="border border-gray-300 p-2">{booking.mentor}</td>
+                          <td className="border border-gray-300 p-2">{booking.student}</td>
+                          <td className="border border-gray-300 p-2">{booking.scheduledAt}</td>
+                          <td className="border border-gray-300 p-2">
+                            <Badge variant={booking.status === 'completed' ? 'default' : 'secondary'}>
+                              {booking.status}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {detailCategory === 'revenue' && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Revenue Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {detailData.map((item: any, index: number) => (
+                    <Card key={index}>
+                      <CardHeader>
+                        <CardTitle className="text-lg">{item.period}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Revenue</span>
+                            <span className="font-semibold">${item.amount.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Transactions</span>
+                            <span className="font-semibold">{item.transactions}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Avg Per Session</span>
+                            <span className="font-semibold">${item.avgPerSession}</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {detailCategory === 'performance' && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Performance Metrics</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {detailData.map((metric: any, index: number) => (
+                    <Card key={index}>
+                      <CardContent className="p-4">
+                        <div className="space-y-2">
+                          <h4 className="font-semibold">{metric.metric}</h4>
+                          <div className="text-2xl font-bold text-green-600">{metric.value}</div>
+                          <div className="text-sm text-gray-600">{metric.trend}</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {detailData.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No data available for {detailCategory}</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
       </div>
     </div>
   );
