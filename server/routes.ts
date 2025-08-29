@@ -844,7 +844,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(updated);
       } else {
         // Create new profile
-        const [created] = await db.insert(teacherProfiles).values([profileData]).returning();
+        const [created] = await db.insert(teacherProfiles).values(profileData).returning();
         res.status(201).json(created);
       }
     } catch (error) {
@@ -1283,9 +1283,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const phoneConfig = await db.select().from(adminConfig).where(eq(adminConfig.configKey, 'phone_support_enabled'));
       
       const settings = {
-        emailEnabled: emailConfig[0]?.configValue === 'true' ?? defaultSettings.emailEnabled,
-        chatEnabled: chatConfig[0]?.configValue === 'true' ?? defaultSettings.chatEnabled,
-        phoneEnabled: phoneConfig[0]?.configValue === 'true' ?? defaultSettings.phoneEnabled
+        emailEnabled: emailConfig[0]?.configValue === 'true' || defaultSettings.emailEnabled,
+        chatEnabled: chatConfig[0]?.configValue === 'true' || defaultSettings.chatEnabled,
+        phoneEnabled: phoneConfig[0]?.configValue === 'true' || defaultSettings.phoneEnabled
       };
       
       res.json(settings);
