@@ -391,6 +391,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       
+      // For demo/testing purposes, return mock data for sample student ID
+      if (id === 'sample-student-id') {
+        const progressData = {
+          totalClasses: 15,
+          completedClasses: 12,
+          hoursLearned: 47,
+          achievements: [
+            { 
+              id: 1, 
+              title: "First Steps", 
+              description: "Completed your first coding class", 
+              earned: true, 
+              date: "2024-01-15" 
+            },
+            { 
+              id: 2, 
+              title: "Python Master", 
+              description: "Completed 5 Python classes", 
+              earned: true, 
+              date: "2024-01-20" 
+            },
+            { 
+              id: 3, 
+              title: "Consistent Learner", 
+              description: "Attended classes for 7 days straight", 
+              earned: false, 
+              progress: 5 
+            }
+          ],
+          recentClasses: [
+            { 
+              id: 1, 
+              subject: "HTML & CSS Basics", 
+              mentor: "Alex Rivera", 
+              rating: 5, 
+              completedAt: "2024-01-22" 
+            },
+            { 
+              id: 2, 
+              subject: "JavaScript Functions", 
+              mentor: "Sarah Johnson", 
+              rating: 4, 
+              completedAt: "2024-01-21" 
+            },
+            { 
+              id: 3, 
+              subject: "Python Variables", 
+              mentor: "Mike Chen", 
+              rating: 5, 
+              completedAt: "2024-01-20" 
+            }
+          ],
+          skillLevels: [
+            { skill: "JavaScript", level: 75, classes: 5 },
+            { skill: "Python", level: 60, classes: 4 },
+            { skill: "HTML/CSS", level: 85, classes: 3 }
+          ]
+        };
+        return res.json(progressData);
+      }
+      
       // Get student bookings to calculate progress
       const bookings = await storage.getBookingsByStudent(id);
       const completedBookings = bookings.filter(b => b.status === 'completed');
@@ -455,6 +516,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching success stories:", error);
       res.status(500).json({ message: "Failed to fetch success stories" });
+    }
+  });
+
+  // Student progress route
+  app.get("/api/students/:studentId/progress", async (req, res) => {
+    try {
+      const { studentId } = req.params;
+      
+      // Mock progress data - in production this would fetch from database
+      const progressData = {
+        totalClasses: 15,
+        completedClasses: 12,
+        hoursLearned: 47,
+        achievements: [
+          { 
+            id: 1, 
+            title: "First Steps", 
+            description: "Completed your first coding class", 
+            earned: true, 
+            date: "2024-01-15" 
+          },
+          { 
+            id: 2, 
+            title: "Python Master", 
+            description: "Completed 5 Python classes", 
+            earned: true, 
+            date: "2024-01-20" 
+          },
+          { 
+            id: 3, 
+            title: "Consistent Learner", 
+            description: "Attended classes for 7 days straight", 
+            earned: false, 
+            progress: 5 
+          }
+        ],
+        recentClasses: [
+          { 
+            id: 1, 
+            subject: "HTML & CSS Basics", 
+            mentor: "Alex Rivera", 
+            rating: 5, 
+            completedAt: "2024-01-22" 
+          },
+          { 
+            id: 2, 
+            subject: "JavaScript Functions", 
+            mentor: "Sarah Johnson", 
+            rating: 4, 
+            completedAt: "2024-01-21" 
+          },
+          { 
+            id: 3, 
+            subject: "Python Variables", 
+            mentor: "Mike Chen", 
+            rating: 5, 
+            completedAt: "2024-01-20" 
+          }
+        ],
+        skillLevels: [
+          { skill: "JavaScript", level: 75, classes: 5 },
+          { skill: "Python", level: 60, classes: 4 },
+          { skill: "HTML/CSS", level: 85, classes: 3 }
+        ]
+      };
+
+      res.json(progressData);
+    } catch (error) {
+      console.error("Error fetching student progress:", error);
+      res.status(500).json({ message: "Failed to fetch student progress" });
     }
   });
 
@@ -617,28 +748,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/teacher/stats", async (req, res) => {
     try {
-      const teacherId = req.query.teacherId as string;
-      if (!teacherId) {
-        return res.status(400).json({ message: "Teacher ID required" });
-      }
-      
-      const mentor = await storage.getMentorByUserId(teacherId);
-      if (!mentor) {
-        return res.status(404).json({ message: "Mentor not found" });
-      }
-      
-      const bookings = await storage.getBookingsByMentor(mentor.id);
-      const completedBookings = bookings.filter(b => b.status === 'completed');
-      const totalEarnings = completedBookings.reduce((sum, b) => sum + (b.duration * parseFloat(mentor.hourlyRate || '0') / 60), 0);
-      
-      const stats = {
-        totalStudents: new Set(bookings.map(b => b.studentId)).size,
-        monthlyEarnings: totalEarnings,
-        averageRating: parseFloat(mentor.rating || '0') || 0,
-        completedSessions: completedBookings.length
+      // For demo purposes, return mock stats without requiring teacher ID
+      // In production this would query the database based on authenticated teacher
+      const teacherStats = {
+        totalStudents: 47,
+        monthlyEarnings: 3250,
+        upcomingSessions: 8,
+        completedSessions: 156,
+        averageRating: 4.8,
+        totalHours: 342
       };
       
-      res.json(stats);
+      res.json(teacherStats);
     } catch (error) {
       console.error("Error fetching teacher stats:", error);
       res.status(500).json({ message: "Failed to fetch teacher stats" });
