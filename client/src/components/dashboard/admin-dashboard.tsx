@@ -853,90 +853,90 @@ export default function AdminDashboard() {
       </Card>
 
       {/* Application Mapping Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
+      <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
+          <CardTitle className="flex items-center gap-3 text-xl">
+            <Settings className="h-6 w-6" />
             Application Function Mapping
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse border border-gray-300">
+        <CardContent className="p-6">
+          <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-lg">
+            <table className="w-full border-collapse bg-white">
               <thead>
-                <tr className="bg-gray-100">
-                  <th className="border border-gray-300 px-4 py-2 text-left">Function Name</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left">HTML Page</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left">JavaScript Filename</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left">JavaScript Function</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left">API Name</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left">Database Table</th>
+                <tr className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b-2 border-blue-200">
+                  <th className="px-6 py-4 text-left font-semibold text-blue-900 border-r border-blue-200">Function Name</th>
+                  <th className="px-6 py-4 text-left font-semibold text-blue-900 border-r border-blue-200">HTML Page</th>
+                  <th className="px-6 py-4 text-left font-semibold text-blue-900 border-r border-blue-200">JavaScript Filename</th>
+                  <th className="px-6 py-4 text-left font-semibold text-blue-900 border-r border-blue-200">JavaScript Function</th>
+                  <th className="px-6 py-4 text-left font-semibold text-blue-900 border-r border-blue-200">API Name</th>
+                  <th className="px-6 py-4 text-left font-semibold text-blue-900">Database Table</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">User Authentication</td>
-                  <td className="border border-gray-300 px-4 py-2">login.tsx</td>
-                  <td className="border border-gray-300 px-4 py-2">login.tsx</td>
-                  <td className="border border-gray-300 px-4 py-2">handleLogin()</td>
-                  <td className="border border-gray-300 px-4 py-2">/api/auth/login</td>
-                  <td className="border border-gray-300 px-4 py-2">users</td>
+                <tr className="hover:bg-blue-50 transition-colors duration-200">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">User Authentication</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">login.tsx</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">login.tsx</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200 font-mono text-sm">handleLogin()</td>
+                  <td className="px-6 py-4 text-blue-600 border-r border-gray-200 font-mono text-sm">/api/auth/login</td>
+                  <td className="px-6 py-4 text-green-600 font-mono text-sm">users</td>
                 </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">User Registration</td>
-                  <td className="border border-gray-300 px-4 py-2">signup.tsx</td>
-                  <td className="border border-gray-300 px-4 py-2">signup.tsx</td>
-                  <td className="border border-gray-300 px-4 py-2">handleSignup()</td>
-                  <td className="border border-gray-300 px-4 py-2">/api/auth/signup</td>
-                  <td className="border border-gray-300 px-4 py-2">users, teacher_profiles</td>
+                <tr className="hover:bg-blue-50 transition-colors duration-200 bg-gray-50">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">User Registration</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">signup.tsx</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">signup.tsx</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200 font-mono text-sm">handleSignup()</td>
+                  <td className="px-6 py-4 text-blue-600 border-r border-gray-200 font-mono text-sm">/api/auth/signup</td>
+                  <td className="px-6 py-4 text-green-600 font-mono text-sm">users, teacher_profiles</td>
                 </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Password Reset</td>
-                  <td className="border border-gray-300 px-4 py-2">forgot-password.tsx</td>
-                  <td className="border border-gray-300 px-4 py-2">forgot-password.tsx</td>
-                  <td className="border border-gray-300 px-4 py-2">handleSendCode()</td>
-                  <td className="border border-gray-300 px-4 py-2">/api/auth/forgot-password</td>
-                  <td className="border border-gray-300 px-4 py-2">users</td>
+                <tr className="hover:bg-blue-50 transition-colors duration-200">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">Password Reset</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">forgot-password.tsx</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">forgot-password.tsx</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200 font-mono text-sm">handleSendCode()</td>
+                  <td className="px-6 py-4 text-blue-600 border-r border-gray-200 font-mono text-sm">/api/auth/forgot-password</td>
+                  <td className="px-6 py-4 text-green-600 font-mono text-sm">users</td>
                 </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Mentor Booking</td>
-                  <td className="border border-gray-300 px-4 py-2">mentor-profile.tsx</td>
-                  <td className="border border-gray-300 px-4 py-2">mentor-profile.tsx</td>
-                  <td className="border border-gray-300 px-4 py-2">handleBookSession()</td>
-                  <td className="border border-gray-300 px-4 py-2">/api/bookings</td>
-                  <td className="border border-gray-300 px-4 py-2">bookings, mentors, students</td>
+                <tr className="hover:bg-blue-50 transition-colors duration-200 bg-gray-50">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">Mentor Booking</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">mentor-profile.tsx</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">mentor-profile.tsx</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200 font-mono text-sm">handleBookSession()</td>
+                  <td className="px-6 py-4 text-blue-600 border-r border-gray-200 font-mono text-sm">/api/bookings</td>
+                  <td className="px-6 py-4 text-green-600 font-mono text-sm">bookings, mentors, students</td>
                 </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Course Creation</td>
-                  <td className="border border-gray-300 px-4 py-2">create-course.tsx</td>
-                  <td className="border border-gray-300 px-4 py-2">create-course.tsx</td>
-                  <td className="border border-gray-300 px-4 py-2">handleCreateCourse()</td>
-                  <td className="border border-gray-300 px-4 py-2">/api/courses</td>
-                  <td className="border border-gray-300 px-4 py-2">courses, mentors</td>
+                <tr className="hover:bg-blue-50 transition-colors duration-200">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">Course Creation</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">create-course.tsx</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">create-course.tsx</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200 font-mono text-sm">handleCreateCourse()</td>
+                  <td className="px-6 py-4 text-blue-600 border-r border-gray-200 font-mono text-sm">/api/courses</td>
+                  <td className="px-6 py-4 text-green-600 font-mono text-sm">courses, mentors</td>
                 </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Student Progress</td>
-                  <td className="border border-gray-300 px-4 py-2">student-dashboard.tsx</td>
-                  <td className="border border-gray-300 px-4 py-2">student-dashboard.tsx</td>
-                  <td className="border border-gray-300 px-4 py-2">fetchProgress()</td>
-                  <td className="border border-gray-300 px-4 py-2">/api/students/progress</td>
-                  <td className="border border-gray-300 px-4 py-2">students, achievements</td>
+                <tr className="hover:bg-blue-50 transition-colors duration-200 bg-gray-50">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">Student Progress</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">student-dashboard.tsx</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">student-dashboard.tsx</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200 font-mono text-sm">fetchProgress()</td>
+                  <td className="px-6 py-4 text-blue-600 border-r border-gray-200 font-mono text-sm">/api/students/progress</td>
+                  <td className="px-6 py-4 text-green-600 font-mono text-sm">students, achievements</td>
                 </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Video Sessions</td>
-                  <td className="border border-gray-300 px-4 py-2">video-session.tsx</td>
-                  <td className="border border-gray-300 px-4 py-2">video-session.tsx</td>
-                  <td className="border border-gray-300 px-4 py-2">startVideoCall()</td>
-                  <td className="border border-gray-300 px-4 py-2">/api/video-sessions</td>
-                  <td className="border border-gray-300 px-4 py-2">video_sessions, bookings</td>
+                <tr className="hover:bg-blue-50 transition-colors duration-200">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">Video Sessions</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">video-session.tsx</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">video-session.tsx</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200 font-mono text-sm">startVideoCall()</td>
+                  <td className="px-6 py-4 text-blue-600 border-r border-gray-200 font-mono text-sm">/api/video-sessions</td>
+                  <td className="px-6 py-4 text-green-600 font-mono text-sm">video_sessions, bookings</td>
                 </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Payment Processing</td>
-                  <td className="border border-gray-300 px-4 py-2">payment.tsx</td>
-                  <td className="border border-gray-300 px-4 py-2">payment.tsx</td>
-                  <td className="border border-gray-300 px-4 py-2">processPayment()</td>
-                  <td className="border border-gray-300 px-4 py-2">/api/payments</td>
-                  <td className="border border-gray-300 px-4 py-2">payments, bookings</td>
+                <tr className="hover:bg-blue-50 transition-colors duration-200 bg-gray-50">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">Payment Processing</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">payment.tsx</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">payment.tsx</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200 font-mono text-sm">processPayment()</td>
+                  <td className="px-6 py-4 text-blue-600 border-r border-gray-200 font-mono text-sm">/api/payments</td>
+                  <td className="px-6 py-4 text-green-600 font-mono text-sm">payments, bookings</td>
                 </tr>
               </tbody>
             </table>
@@ -945,66 +945,66 @@ export default function AdminDashboard() {
       </Card>
 
       {/* Unit Test Cases Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
+      <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-700 text-white">
+          <CardTitle className="flex items-center gap-3 text-xl">
+            <Shield className="h-6 w-6" />
             Unit Test Cases
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse border border-gray-300">
+        <CardContent className="p-6">
+          <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-lg">
+            <table className="w-full border-collapse bg-white">
               <thead>
-                <tr className="bg-blue-100">
-                  <th className="border border-gray-300 px-4 py-2 text-left">UI Page</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left">Button/Link Name</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left">Unit Test Case</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left">Status</th>
+                <tr className="bg-gradient-to-r from-green-50 to-emerald-50 border-b-2 border-green-200">
+                  <th className="px-6 py-4 text-left font-semibold text-green-900 border-r border-green-200">UI Page</th>
+                  <th className="px-6 py-4 text-left font-semibold text-green-900 border-r border-green-200">Button/Link Name</th>
+                  <th className="px-6 py-4 text-left font-semibold text-green-900 border-r border-green-200">Unit Test Case</th>
+                  <th className="px-6 py-4 text-left font-semibold text-green-900">Status</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Login Page</td>
-                  <td className="border border-gray-300 px-4 py-2">Sign In Button</td>
-                  <td className="border border-gray-300 px-4 py-2">Should authenticate valid credentials</td>
-                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-green-100 text-green-800">Pass</Badge></td>
+                <tr className="hover:bg-green-50 transition-colors duration-200">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">Login Page</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Sign In Button</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Should authenticate valid credentials</td>
+                  <td className="px-6 py-4"><Badge className="bg-green-100 text-green-800 font-semibold">Pass</Badge></td>
                 </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Login Page</td>
-                  <td className="border border-gray-300 px-4 py-2">Sign In Button</td>
-                  <td className="border border-gray-300 px-4 py-2">Should reject invalid credentials</td>
-                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-green-100 text-green-800">Pass</Badge></td>
+                <tr className="hover:bg-green-50 transition-colors duration-200 bg-gray-50">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">Login Page</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Sign In Button</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Should reject invalid credentials</td>
+                  <td className="px-6 py-4"><Badge className="bg-green-100 text-green-800 font-semibold">Pass</Badge></td>
                 </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Signup Page</td>
-                  <td className="border border-gray-300 px-4 py-2">Create Account Button</td>
-                  <td className="border border-gray-300 px-4 py-2">Should create new user account</td>
-                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-green-100 text-green-800">Pass</Badge></td>
+                <tr className="hover:bg-green-50 transition-colors duration-200">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">Signup Page</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Create Account Button</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Should create new user account</td>
+                  <td className="px-6 py-4"><Badge className="bg-green-100 text-green-800 font-semibold">Pass</Badge></td>
                 </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Teacher Dashboard</td>
-                  <td className="border border-gray-300 px-4 py-2">Teacher Profile Button</td>
-                  <td className="border border-gray-300 px-4 py-2">Should display qualification details</td>
-                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-green-100 text-green-800">Pass</Badge></td>
+                <tr className="hover:bg-green-50 transition-colors duration-200 bg-gray-50">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">Teacher Dashboard</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Teacher Profile Button</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Should display qualification details</td>
+                  <td className="px-6 py-4"><Badge className="bg-green-100 text-green-800 font-semibold">Pass</Badge></td>
                 </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Student Dashboard</td>
-                  <td className="border border-gray-300 px-4 py-2">Run All Tests Button</td>
-                  <td className="border border-gray-300 px-4 py-2">Should execute with student credentials</td>
-                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-green-100 text-green-800">Pass</Badge></td>
+                <tr className="hover:bg-green-50 transition-colors duration-200">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">Student Dashboard</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Run All Tests Button</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Should execute with student credentials</td>
+                  <td className="px-6 py-4"><Badge className="bg-green-100 text-green-800 font-semibold">Pass</Badge></td>
                 </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Admin Dashboard</td>
-                  <td className="border border-gray-300 px-4 py-2">Contact Settings Toggle</td>
-                  <td className="border border-gray-300 px-4 py-2">Should save configuration changes</td>
-                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-yellow-100 text-yellow-800">Pending</Badge></td>
+                <tr className="hover:bg-green-50 transition-colors duration-200 bg-gray-50">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">Admin Dashboard</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Contact Settings Toggle</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Should save configuration changes</td>
+                  <td className="px-6 py-4"><Badge className="bg-yellow-100 text-yellow-800 font-semibold">Pending</Badge></td>
                 </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Forgot Password</td>
-                  <td className="border border-gray-300 px-4 py-2">Send Reset Code Button</td>
-                  <td className="border border-gray-300 px-4 py-2">Should send email with reset code</td>
-                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-green-100 text-green-800">Pass</Badge></td>
+                <tr className="hover:bg-green-50 transition-colors duration-200">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">Forgot Password</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Send Reset Code Button</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Should send email with reset code</td>
+                  <td className="px-6 py-4"><Badge className="bg-green-100 text-green-800 font-semibold">Pass</Badge></td>
                 </tr>
               </tbody>
             </table>
@@ -1013,66 +1013,66 @@ export default function AdminDashboard() {
       </Card>
 
       {/* System Test Cases Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
+      <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-purple-600 to-violet-700 text-white">
+          <CardTitle className="flex items-center gap-3 text-xl">
+            <BarChart3 className="h-6 w-6" />
             System Test Cases
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse border border-gray-300">
+        <CardContent className="p-6">
+          <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-lg">
+            <table className="w-full border-collapse bg-white">
               <thead>
-                <tr className="bg-purple-100">
-                  <th className="border border-gray-300 px-4 py-2 text-left">UI Page</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left">Button/Link Name</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left">System Test Case</th>
-                  <th className="border border-gray-300 px-4 py-2 text-left">Status</th>
+                <tr className="bg-gradient-to-r from-purple-50 to-violet-50 border-b-2 border-purple-200">
+                  <th className="px-6 py-4 text-left font-semibold text-purple-900 border-r border-purple-200">UI Page</th>
+                  <th className="px-6 py-4 text-left font-semibold text-purple-900 border-r border-purple-200">Button/Link Name</th>
+                  <th className="px-6 py-4 text-left font-semibold text-purple-900 border-r border-purple-200">System Test Case</th>
+                  <th className="px-6 py-4 text-left font-semibold text-purple-900">Status</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Login Page</td>
-                  <td className="border border-gray-300 px-4 py-2">Sign In Button</td>
-                  <td className="border border-gray-300 px-4 py-2">End-to-end authentication flow with database</td>
-                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-green-100 text-green-800">Pass</Badge></td>
+                <tr className="hover:bg-purple-50 transition-colors duration-200">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">Login Page</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Sign In Button</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">End-to-end authentication flow with database</td>
+                  <td className="px-6 py-4"><Badge className="bg-green-100 text-green-800 font-semibold">Pass</Badge></td>
                 </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Mentor Booking</td>
-                  <td className="border border-gray-300 px-4 py-2">Book Session Button</td>
-                  <td className="border border-gray-300 px-4 py-2">Complete booking workflow with payment integration</td>
-                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-red-100 text-red-800">Fail</Badge></td>
+                <tr className="hover:bg-purple-50 transition-colors duration-200 bg-gray-50">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">Mentor Booking</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Book Session Button</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Complete booking workflow with payment integration</td>
+                  <td className="px-6 py-4"><Badge className="bg-red-100 text-red-800 font-semibold">Fail</Badge></td>
                 </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Video Session</td>
-                  <td className="border border-gray-300 px-4 py-2">Start Video Call</td>
-                  <td className="border border-gray-300 px-4 py-2">Video call initialization and connection</td>
-                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-yellow-100 text-yellow-800">Pending</Badge></td>
+                <tr className="hover:bg-purple-50 transition-colors duration-200">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">Video Session</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Start Video Call</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Video call initialization and connection</td>
+                  <td className="px-6 py-4"><Badge className="bg-yellow-100 text-yellow-800 font-semibold">Pending</Badge></td>
                 </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Teacher Dashboard</td>
-                  <td className="border border-gray-300 px-4 py-2">Create Course Button</td>
-                  <td className="border border-gray-300 px-4 py-2">Course creation with teacher profile validation</td>
-                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-green-100 text-green-800">Pass</Badge></td>
+                <tr className="hover:bg-purple-50 transition-colors duration-200 bg-gray-50">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">Teacher Dashboard</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Create Course Button</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Course creation with teacher profile validation</td>
+                  <td className="px-6 py-4"><Badge className="bg-green-100 text-green-800 font-semibold">Pass</Badge></td>
                 </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Student Dashboard</td>
-                  <td className="border border-gray-300 px-4 py-2">Progress View</td>
-                  <td className="border border-gray-300 px-4 py-2">Student progress tracking across multiple sessions</td>
-                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-green-100 text-green-800">Pass</Badge></td>
+                <tr className="hover:bg-purple-50 transition-colors duration-200">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">Student Dashboard</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Progress View</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Student progress tracking across multiple sessions</td>
+                  <td className="px-6 py-4"><Badge className="bg-green-100 text-green-800 font-semibold">Pass</Badge></td>
                 </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Admin Dashboard</td>
-                  <td className="border border-gray-300 px-4 py-2">System Monitoring</td>
-                  <td className="border border-gray-300 px-4 py-2">Real-time system health and performance monitoring</td>
-                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-yellow-100 text-yellow-800">Pending</Badge></td>
+                <tr className="hover:bg-purple-50 transition-colors duration-200 bg-gray-50">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">Admin Dashboard</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">System Monitoring</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Real-time system health and performance monitoring</td>
+                  <td className="px-6 py-4"><Badge className="bg-yellow-100 text-yellow-800 font-semibold">Pending</Badge></td>
                 </tr>
-                <tr>
-                  <td className="border border-gray-300 px-4 py-2">Chat System</td>
-                  <td className="border border-gray-300 px-4 py-2">Send Message</td>
-                  <td className="border border-gray-300 px-4 py-2">Real-time chat messaging between mentor and student</td>
-                  <td className="border border-gray-300 px-4 py-2"><Badge className="bg-yellow-100 text-yellow-800">Pending</Badge></td>
+                <tr className="hover:bg-purple-50 transition-colors duration-200">
+                  <td className="px-6 py-4 text-gray-800 border-r border-gray-200 font-medium">Chat System</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Send Message</td>
+                  <td className="px-6 py-4 text-gray-600 border-r border-gray-200">Real-time chat messaging between mentor and student</td>
+                  <td className="px-6 py-4"><Badge className="bg-yellow-100 text-yellow-800 font-semibold">Pending</Badge></td>
                 </tr>
               </tbody>
             </table>

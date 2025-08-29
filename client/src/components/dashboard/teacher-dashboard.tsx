@@ -381,17 +381,17 @@ export default function TeacherDashboard() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                   <p className="text-sm text-green-600 font-medium">This Month</p>
-                  <p className="text-2xl font-bold text-green-700">₹12,500</p>
+                  <p className="text-2xl font-bold text-green-700">${stats.monthlyEarnings || 0}</p>
                   <p className="text-xs text-green-600">+15% from last month</p>
                 </div>
                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                   <p className="text-sm text-blue-600 font-medium">Total Earnings</p>
-                  <p className="text-2xl font-bold text-blue-700">₹45,230</p>
+                  <p className="text-2xl font-bold text-blue-700">${stats.totalEarnings || 0}</p>
                   <p className="text-xs text-blue-600">Since joining</p>
                 </div>
                 <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
                   <p className="text-sm text-purple-600 font-medium">Average per Session</p>
-                  <p className="text-2xl font-bold text-purple-700">₹850</p>
+                  <p className="text-2xl font-bold text-purple-700">${stats.averageSessionEarnings || 0}</p>
                   <p className="text-xs text-purple-600">Across all subjects</p>
                 </div>
               </div>
@@ -399,22 +399,15 @@ export default function TeacherDashboard() {
               <div className="border-t pt-4">
                 <h4 className="font-semibold mb-3">Recent Earnings Breakdown:</h4>
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                    <span className="text-sm">JavaScript - Advanced Concepts</span>
-                    <span className="font-medium text-green-600">₹1,200</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                    <span className="text-sm">React Development - Sarah M.</span>
-                    <span className="font-medium text-green-600">₹950</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                    <span className="text-sm">Python Basics - Mike K.</span>
-                    <span className="font-medium text-green-600">₹800</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                    <span className="text-sm">Node.js Backend - Alex P.</span>
-                    <span className="font-medium text-green-600">₹1,100</span>
-                  </div>
+                  {completedClasses.slice(0, 5).map((completedClass) => (
+                    <div key={completedClass.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                      <span className="text-sm">{completedClass.subject} - {completedClass.studentName}</span>
+                      <span className="font-medium text-green-600">${completedClass.earnings}</span>
+                    </div>
+                  ))}
+                  {completedClasses.length === 0 && (
+                    <p className="text-gray-500 text-center py-4">No completed sessions yet</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -436,12 +429,12 @@ export default function TeacherDashboard() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                   <p className="text-sm text-yellow-600 font-medium">Average Rating</p>
-                  <p className="text-3xl font-bold text-yellow-700">4.9⭐</p>
-                  <p className="text-xs text-yellow-600">Based on 47 reviews</p>
+                  <p className="text-3xl font-bold text-yellow-700">{stats.averageRating || 0}⭐</p>
+                  <p className="text-xs text-yellow-600">Based on {stats.totalReviews || 0} reviews</p>
                 </div>
                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                   <p className="text-sm text-blue-600 font-medium">Response Rate</p>
-                  <p className="text-3xl font-bold text-blue-700">96%</p>
+                  <p className="text-3xl font-bold text-blue-700">{stats.feedbackResponseRate || 0}%</p>
                   <p className="text-xs text-blue-600">Students who left feedback</p>
                 </div>
               </div>
