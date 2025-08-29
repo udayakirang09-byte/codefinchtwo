@@ -358,3 +358,80 @@ export type InsertClassFeedback = z.infer<typeof insertClassFeedbackSchema>;
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+// Admin Configuration Table
+export const adminConfig = pgTable("admin_config", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  configKey: varchar("config_key").unique().notNull(),
+  configValue: text("config_value"),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Time Slots Management Table
+export const timeSlots = pgTable("time_slots", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
+  dayOfWeek: varchar("day_of_week").notNull(), // monday, tuesday, etc.
+  startTime: varchar("start_time").notNull(), // HH:MM format
+  endTime: varchar("end_time").notNull(), // HH:MM format
+  isAvailable: boolean("is_available").default(true),
+  isRecurring: boolean("is_recurring").default(true),
+  isBlocked: boolean("is_blocked").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Footer Links Configuration Table
+export const footerLinks = pgTable("footer_links", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  section: varchar("section").notNull(), // students, mentors, support
+  title: varchar("title").notNull(),
+  url: varchar("url").notNull(),
+  isExternal: boolean("is_external").default(false),
+  sortOrder: integer("sort_order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Additional Relations
+export const adminConfigRelations = relations(adminConfig, ({ }) => ({}));
+
+export const timeSlotsRelations = relations(timeSlots, ({ one }) => ({
+  mentor: one(mentors, {
+    fields: [timeSlots.mentorId],
+    references: [mentors.id],
+  }),
+}));
+
+export const footerLinksRelations = relations(footerLinks, ({ }) => ({}));
+
+// Additional Insert Schemas
+export const insertAdminConfigSchema = createInsertSchema(adminConfig).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export const insertTimeSlotSchema = createInsertSchema(timeSlots).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertFooterLinkSchema = createInsertSchema(footerLinks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Additional Types
+export type AdminConfig = typeof adminConfig.$inferSelect;
+export type InsertAdminConfig = z.infer<typeof insertAdminConfigSchema>;
+
+export type TimeSlot = typeof timeSlots.$inferSelect;
+export type InsertTimeSlot = z.infer<typeof insertTimeSlotSchema>;
+
+export type FooterLink = typeof footerLinks.$inferSelect;
+export type InsertFooterLink = z.infer<typeof insertFooterLinkSchema>;

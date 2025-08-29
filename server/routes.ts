@@ -2,6 +2,9 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
+import { eq, desc, and, gte, lte, or } from "drizzle-orm";
+import { db } from "./db";
+import { adminConfig, footerLinks, timeSlots, type InsertAdminConfig, type InsertFooterLink, type InsertTimeSlot } from "@shared/schema";
 import Stripe from "stripe";
 import {
   insertUserSchema,
@@ -97,10 +100,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/forgot-password", async (req, res) => {
     try {
       const { email } = req.body;
-      // For demo purposes, just return success
-      console.log(`Password reset requested for: ${email}`);
-      res.json({ success: true, message: "Reset code sent to email" });
+      
+      // Generate reset code and store it temporarily
+      const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      // Import email service dynamically to avoid startup errors
+      const { sendEmail, generateResetEmail } = await import('./email');
+      
+      // Generate email content
+      const emailContent = generateResetEmail(email, resetCode);
+      
+      // Send real email
+      const emailSent = await sendEmail({
+        to: email,
+        from: 'noreply@codeconnect.com',
+        subject: emailContent.subject,
+        html: emailContent.html,
+        text: emailContent.text
+      });
+      
+      if (emailSent) {
+        // TODO: Store reset code in database with expiration
+        // For now, we'll use the demo code "123456"
+        console.log(`📧 Password reset email sent to: ${email} with code: ${resetCode}`);
+        res.json({ 
+          success: true, 
+          message: "Reset code sent to your email. Please check your inbox.",
+          demoCode: "123456" // Remove this in production
+        });
+      } else {
+        console.log(`❌ Failed to send email to: ${email}`);
+        res.status(500).json({ message: "Failed to send reset email. Please try again." });
+      }
     } catch (error) {
+      console.error("Forgot password error:", error);
       res.status(500).json({ message: "Failed to send reset code" });
     }
   });
@@ -662,6 +695,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("❌ Error updating contact settings:", error.message);
       res.status(500).json({ message: "Failed to update contact settings" });
+    }
+  });
+
+  // Admin Configuration Endpoints
+  app.get("/api/admin/contact-settings", async (req, res) => {
+    try {
+      // Default contact settings
+      const defaultSettings = {
+        emailEnabled: true,
+        chatEnabled: false,
+        phoneEnabled: false
+      };
+      
+      // In production, load from adminConfig table
+      const emailConfig = await db.select().from(adminConfig).where(eq(adminConfig.configKey, 'email_support_enabled'));
+      const chatConfig = await db.select().from(adminConfig).where(eq(adminConfig.configKey, 'chat_support_enabled'));
+      const phoneConfig = await db.select().from(adminConfig).where(eq(adminConfig.configKey, 'phone_support_enabled'));
+      
+      const settings = {
+        emailEnabled: emailConfig[0]?.configValue === 'true' ?? defaultSettings.emailEnabled,
+        chatEnabled: chatConfig[0]?.configValue === 'true' ?? defaultSettings.chatEnabled,
+        phoneEnabled: phoneConfig[0]?.configValue === 'true' ?? defaultSettings.phoneEnabled
+      };
+      
+      res.json(settings);
+    } catch (error) {
+      console.error("Error loading contact settings:", error);
+      res.status(500).json({ error: "Failed to load contact settings" });
+    }
+  });
+
+  app.patch("/api/admin/contact-settings", async (req, res) => {
+    try {
+      const { emailEnabled, chatEnabled, phoneEnabled } = req.body;
+      
+      // Update or insert contact settings in adminConfig table
+      await Promise.all([
+        db.insert(adminConfig).values({
+          configKey: 'email_support_enabled',
+          configValue: emailEnabled.toString(),
+          description: 'Enable/disable email support feature'
+        }).onConflictDoUpdate({
+          target: adminConfig.configKey,
+          set: { configValue: emailEnabled.toString(), updatedAt: new Date() }
+        }),
+        
+        db.insert(adminConfig).values({
+          configKey: 'chat_support_enabled',
+          configValue: chatEnabled.toString(),
+          description: 'Enable/disable chat support feature'
+        }).onConflictDoUpdate({
+          target: adminConfig.configKey,
+          set: { configValue: chatEnabled.toString(), updatedAt: new Date() }
+        }),
+        
+        db.insert(adminConfig).values({
+          configKey: 'phone_support_enabled',
+          configValue: phoneEnabled.toString(),
+          description: 'Enable/disable phone support feature'
+        }).onConflictDoUpdate({
+          target: adminConfig.configKey,
+          set: { configValue: phoneEnabled.toString(), updatedAt: new Date() }
+        })
+      ]);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error saving contact settings:", error);
+      res.status(500).json({ error: "Failed to save contact settings" });
+    }
+  });
+
+  app.get("/api/admin/payment-config", async (req, res) => {
+    try {
+      // Load payment configuration from adminConfig table
+      const configs = await db.select().from(adminConfig).where(
+        or(
+          eq(adminConfig.configKey, 'stripe_enabled'),
+          eq(adminConfig.configKey, 'stripe_publishable_key'),
+          eq(adminConfig.configKey, 'stripe_secret_key'),
+          eq(adminConfig.configKey, 'razorpay_enabled'),
+          eq(adminConfig.configKey, 'razorpay_key_id'),
+          eq(adminConfig.configKey, 'razorpay_key_secret')
+        )
+      );
+      
+      const configMap = configs.reduce((acc, config) => {
+        acc[config.configKey] = config.configValue;
+        return acc;
+      }, {} as Record<string, string | null>);
+      
+      const paymentConfig = {
+        stripeEnabled: configMap['stripe_enabled'] === 'true',
+        stripePublishableKey: configMap['stripe_publishable_key'] || '',
+        stripeSecretKey: configMap['stripe_secret_key'] || '',
+        razorpayEnabled: configMap['razorpay_enabled'] === 'true',
+        razorpayKeyId: configMap['razorpay_key_id'] || '',
+        razorpayKeySecret: configMap['razorpay_key_secret'] || ''
+      };
+      
+      res.json(paymentConfig);
+    } catch (error) {
+      console.error("Error loading payment config:", error);
+      res.status(500).json({ error: "Failed to load payment configuration" });
+    }
+  });
+
+  app.patch("/api/admin/payment-config", async (req, res) => {
+    try {
+      const { 
+        stripeEnabled, stripePublishableKey, stripeSecretKey,
+        razorpayEnabled, razorpayKeyId, razorpayKeySecret
+      } = req.body;
+      
+      // Update payment configuration in adminConfig table
+      const configUpdates = [
+        { key: 'stripe_enabled', value: stripeEnabled.toString() },
+        { key: 'stripe_publishable_key', value: stripePublishableKey },
+        { key: 'stripe_secret_key', value: stripeSecretKey },
+        { key: 'razorpay_enabled', value: razorpayEnabled.toString() },
+        { key: 'razorpay_key_id', value: razorpayKeyId },
+        { key: 'razorpay_key_secret', value: razorpayKeySecret }
+      ];
+      
+      await Promise.all(configUpdates.map(config =>
+        db.insert(adminConfig).values({
+          configKey: config.key,
+          configValue: config.value,
+          description: `Payment configuration for ${config.key}`
+        }).onConflictDoUpdate({
+          target: adminConfig.configKey,
+          set: { configValue: config.value, updatedAt: new Date() }
+        })
+      ));
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error saving payment config:", error);
+      res.status(500).json({ error: "Failed to save payment configuration" });
     }
   });
 

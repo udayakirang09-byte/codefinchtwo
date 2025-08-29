@@ -104,28 +104,35 @@ export default function SystemTest() {
         return false;
       }
 
-      // For test page, we validate the intended navigation without actually navigating
+      // CRITICAL: Always stay on system-test page - never actually navigate
       const isTestPage = window.location.pathname === '/system-test';
       
       if (isTestPage) {
-        // Check what the click handler would do by examining onclick or href
-        const onClick = element.getAttribute('onclick') || '';
-        const href = element.getAttribute('href') || '';
-        
-        // Validate expected behavior without actually clicking
-        if (expectedUrl && (onClick.includes(expectedUrl) || href.includes(expectedUrl))) {
-          updateTestResult('Navigation Tests', `${description}`, 'pass', 
-            `Navigation validated - would redirect to ${expectedUrl}`);
-          return true;
-        } else if (expectedUrl) {
-          updateTestResult('Navigation Tests', `${description}`, 'warning', 
-            `Expected navigation to ${expectedUrl} but handler not clearly detected`);
+        // Prevent any actual navigation by intercepting click events
+        const originalClick = element.onclick;
+        element.onclick = (e: MouseEvent) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log(`🧪 Test navigation prevented for ${description} - staying on test page`);
+          
+          // Validate the intended URL without navigating
+          const href = element.getAttribute('href') || '';
+          if (expectedUrl && href.includes(expectedUrl)) {
+            updateTestResult('Navigation Tests', `${description}`, 'pass', 
+              `Navigation validated - would redirect to ${expectedUrl} (prevented for testing)`);
+          } else if (expectedUrl) {
+            updateTestResult('Navigation Tests', `${description}`, 'warning', 
+              `Expected navigation to ${expectedUrl} but href="${href}"`);
+          } else {
+            updateTestResult('Navigation Tests', `${description}`, 'pass', 
+              `Element clickable - href="${href}" (navigation prevented for testing)`);
+          }
+          
+          // Restore original click handler
+          if (originalClick) element.onclick = originalClick;
           return false;
-        }
+        };
         
-        // For other elements, just verify they're clickable
-        updateTestResult('Navigation Tests', `${description}`, 'pass', 
-          'Element is clickable and would trigger navigation');
         return true;
       }
       

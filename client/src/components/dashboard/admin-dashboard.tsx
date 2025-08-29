@@ -3,7 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck, Mail, MessageSquare, Phone } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck, Mail, MessageSquare, Phone, CreditCard, Key, Lock } from "lucide-react";
 
 interface SystemStats {
   totalUsers: number;
@@ -44,6 +47,18 @@ export default function AdminDashboard() {
     phoneEnabled: false,
   });
 
+  const [paymentConfig, setPaymentConfig] = useState({
+    stripeEnabled: false,
+    stripePublishableKey: '',
+    stripeSecretKey: '',
+    razorpayEnabled: false,
+    razorpayKeyId: '',
+    razorpayKeySecret: '',
+    paypalEnabled: false,
+    paypalClientId: '',
+    paypalClientSecret: ''
+  });
+
   useEffect(() => {
     // Load sample alert data
     setAlerts([
@@ -82,6 +97,12 @@ export default function AdminDashboard() {
       .then((res) => res.json())
       .then((settings) => setContactSettings(settings))
       .catch(() => console.error("Failed to load contact settings"));
+    
+    // Load payment configuration
+    fetch("/api/admin/payment-config")
+      .then((res) => res.json())
+      .then((config) => setPaymentConfig(config))
+      .catch(() => console.error("Failed to load payment config"));
   }, []);
 
   const handleViewDetails = (category: string) => {
@@ -99,6 +120,25 @@ export default function AdminDashboard() {
       case 'warning': return 'bg-yellow-50 border-yellow-400 text-yellow-800';
       case 'info': return 'bg-blue-50 border-blue-400 text-blue-800';
       default: return 'bg-gray-50 border-gray-400 text-gray-800';
+    }
+  };
+
+  const savePaymentConfig = async () => {
+    try {
+      const response = await fetch("/api/admin/payment-config", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(paymentConfig)
+      });
+      
+      if (response.ok) {
+        alert("Payment configuration saved successfully!");
+      } else {
+        alert("Failed to save payment configuration");
+      }
+    } catch (error) {
+      console.error("Error saving payment config:", error);
+      alert("Error saving payment configuration");
     }
   };
 
@@ -211,40 +251,22 @@ export default function AdminDashboard() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Activities */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              Recent Activities
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
-                  <div>
-                    <p className="text-sm font-medium">{activity.action}</p>
-                    <p className="text-xs text-gray-600">{activity.user}</p>
-                  </div>
-                  <p className="text-xs text-gray-500">{activity.time}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Contact Settings Control */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Contact Features Control
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+      {/* Admin Configuration Tabs */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Admin Configuration
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="contact" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="contact">Contact Settings</TabsTrigger>
+              <TabsTrigger value="payment">Payment Configuration</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="contact" className="space-y-4">
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <Mail className="h-5 w-5 text-blue-600" />
@@ -313,6 +335,140 @@ export default function AdminDashboard() {
                   data-testid="switch-phone-support"
                 />
               </div>
+            </TabsContent>
+            
+            <TabsContent value="payment" className="space-y-6">
+              {/* Stripe Configuration */}
+              <div className="border rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <CreditCard className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <p className="font-medium">Stripe Payment Gateway</p>
+                      <p className="text-sm text-gray-600">International card payments</p>
+                    </div>
+                  </div>
+                  <Switch 
+                    checked={paymentConfig.stripeEnabled}
+                    onCheckedChange={(checked) => 
+                      setPaymentConfig(prev => ({ ...prev, stripeEnabled: checked }))
+                    }
+                    data-testid="switch-stripe-enabled"
+                  />
+                </div>
+                
+                {paymentConfig.stripeEnabled && (
+                  <div className="space-y-3 ml-8">
+                    <div>
+                      <Label htmlFor="stripe-publishable">Publishable Key</Label>
+                      <Input
+                        id="stripe-publishable"
+                        placeholder="pk_test_..."
+                        value={paymentConfig.stripePublishableKey}
+                        onChange={(e) => setPaymentConfig(prev => ({ 
+                          ...prev, stripePublishableKey: e.target.value 
+                        }))}
+                        data-testid="input-stripe-publishable-key"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="stripe-secret">Secret Key</Label>
+                      <Input
+                        id="stripe-secret"
+                        type="password"
+                        placeholder="sk_test_..."
+                        value={paymentConfig.stripeSecretKey}
+                        onChange={(e) => setPaymentConfig(prev => ({ 
+                          ...prev, stripeSecretKey: e.target.value 
+                        }))}
+                        data-testid="input-stripe-secret-key"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Razorpay Configuration */}
+              <div className="border rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <CreditCard className="h-5 w-5 text-green-600" />
+                    <div>
+                      <p className="font-medium">Razorpay (UPI & Cards)</p>
+                      <p className="text-sm text-gray-600">Indian payment methods</p>
+                    </div>
+                  </div>
+                  <Switch 
+                    checked={paymentConfig.razorpayEnabled}
+                    onCheckedChange={(checked) => 
+                      setPaymentConfig(prev => ({ ...prev, razorpayEnabled: checked }))
+                    }
+                    data-testid="switch-razorpay-enabled"
+                  />
+                </div>
+                
+                {paymentConfig.razorpayEnabled && (
+                  <div className="space-y-3 ml-8">
+                    <div>
+                      <Label htmlFor="razorpay-key-id">Key ID</Label>
+                      <Input
+                        id="razorpay-key-id"
+                        placeholder="rzp_test_..."
+                        value={paymentConfig.razorpayKeyId}
+                        onChange={(e) => setPaymentConfig(prev => ({ 
+                          ...prev, razorpayKeyId: e.target.value 
+                        }))}
+                        data-testid="input-razorpay-key-id"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="razorpay-secret">Key Secret</Label>
+                      <Input
+                        id="razorpay-secret"
+                        type="password"
+                        placeholder="..."
+                        value={paymentConfig.razorpayKeySecret}
+                        onChange={(e) => setPaymentConfig(prev => ({ 
+                          ...prev, razorpayKeySecret: e.target.value 
+                        }))}
+                        data-testid="input-razorpay-key-secret"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end">
+                <Button onClick={savePaymentConfig} data-testid="button-save-payment-config">
+                  <Lock className="h-4 w-4 mr-2" />
+                  Save Payment Configuration
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Activities */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5" />
+              Recent Activities
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {recentActivities.map((activity) => (
+                <div key={activity.id} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
+                  <div>
+                    <p className="text-sm font-medium">{activity.action}</p>
+                    <p className="text-xs text-gray-600">{activity.user}</p>
+                  </div>
+                  <p className="text-xs text-gray-500">{activity.time}</p>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

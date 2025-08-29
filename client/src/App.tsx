@@ -35,6 +35,10 @@ import ManageSchedule from "./pages/teacher/manage-schedule";
 import Terms from "./pages/terms";
 import Privacy from "./pages/privacy";
 import AutomatedTest from "./pages/automated-test";
+import TeacherResources from "./pages/teacher-resources";
+import MentorCommunity from "./pages/mentor-community";
+import SuccessStories from "./pages/success-stories";
+import SafetyGuidelines from "./pages/safety-guidelines";
 
 function Router() {
   return (
@@ -69,6 +73,10 @@ function Router() {
       <Route path="/comprehensive-test" component={ComprehensiveSystemTest} />
       <Route path="/simple-test" component={SimpleTest} />
       <Route path="/automated-test" component={AutomatedTest} />
+      <Route path="/teacher-resources" component={TeacherResources} />
+      <Route path="/mentor-community" component={MentorCommunity} />
+      <Route path="/success-stories" component={SuccessStories} />
+      <Route path="/safety-guidelines" component={SafetyGuidelines} />
       <Route component={NotFound} />
     </Switch>
   );
