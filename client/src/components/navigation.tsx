@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Code, Menu, X, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Navigation() {
+  const [location] = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState('');
+  
+  // Only show community navigation on the main/launch page
+  const isMainPage = location === '/' || location === '';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -89,36 +93,38 @@ export default function Navigation() {
             </div>
           )}
 
-          <div className="hidden md:flex items-center space-x-8">
-            <button
-              onClick={() => scrollToSection("discover")}
-              className="text-muted-foreground hover:text-primary transition-colors"
-              data-testid="button-discover"
-            >
-              Discover
-            </button>
-            <button
-              onClick={() => scrollToSection("how-it-works")}
-              className="text-muted-foreground hover:text-primary transition-colors"
-              data-testid="button-how-it-works"
-            >
-              How It Works
-            </button>
-            <button
-              onClick={() => scrollToSection("community")}
-              className="text-muted-foreground hover:text-primary transition-colors"
-              data-testid="button-community"
-            >
-              Community
-            </button>
-            <button
-              onClick={() => scrollToSection("success-stories")}
-              className="text-muted-foreground hover:text-primary transition-colors"
-              data-testid="button-success-stories"
-            >
-              Success Stories
-            </button>
-          </div>
+          {isMainPage && (
+            <div className="hidden md:flex items-center space-x-8">
+              <button
+                onClick={() => scrollToSection("discover")}
+                className="text-muted-foreground hover:text-primary transition-colors"
+                data-testid="button-discover"
+              >
+                Discover
+              </button>
+              <button
+                onClick={() => scrollToSection("how-it-works")}
+                className="text-muted-foreground hover:text-primary transition-colors"
+                data-testid="button-how-it-works"
+              >
+                How It Works
+              </button>
+              <button
+                onClick={() => scrollToSection("community")}
+                className="text-muted-foreground hover:text-primary transition-colors"
+                data-testid="button-community"
+              >
+                Community
+              </button>
+              <button
+                onClick={() => scrollToSection("success-stories")}
+                className="text-muted-foreground hover:text-primary transition-colors"
+                data-testid="button-success-stories"
+              >
+                Success Stories
+              </button>
+            </div>
+          )}
 
           <div className="hidden md:flex items-center space-x-4">
             {isAuthenticated ? (
@@ -194,34 +200,38 @@ export default function Navigation() {
         {isMobileMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-              <button
-                onClick={() => scrollToSection("discover")}
-                className="block px-3 py-2 text-muted-foreground hover:text-primary transition-colors"
-                data-testid="button-mobile-discover"
-              >
-                Discover
-              </button>
-              <button
-                onClick={() => scrollToSection("how-it-works")}
-                className="block px-3 py-2 text-muted-foreground hover:text-primary transition-colors"
-                data-testid="button-mobile-how-it-works"
-              >
-                How It Works
-              </button>
-              <button
-                onClick={() => scrollToSection("community")}
-                className="block px-3 py-2 text-muted-foreground hover:text-primary transition-colors"
-                data-testid="button-mobile-community"
-              >
-                Community
-              </button>
-              <button
-                onClick={() => scrollToSection("success-stories")}
-                className="block px-3 py-2 text-muted-foreground hover:text-primary transition-colors"
-                data-testid="button-mobile-success-stories"
-              >
-                Success Stories
-              </button>
+              {isMainPage && (
+                <>
+                  <button
+                    onClick={() => scrollToSection("discover")}
+                    className="block px-3 py-2 text-muted-foreground hover:text-primary transition-colors"
+                    data-testid="button-mobile-discover"
+                  >
+                    Discover
+                  </button>
+                  <button
+                    onClick={() => scrollToSection("how-it-works")}
+                    className="block px-3 py-2 text-muted-foreground hover:text-primary transition-colors"
+                    data-testid="button-mobile-how-it-works"
+                  >
+                    How It Works
+                  </button>
+                  <button
+                    onClick={() => scrollToSection("community")}
+                    className="block px-3 py-2 text-muted-foreground hover:text-primary transition-colors"
+                    data-testid="button-mobile-community"
+                  >
+                    Community
+                  </button>
+                  <button
+                    onClick={() => scrollToSection("success-stories")}
+                    className="block px-3 py-2 text-muted-foreground hover:text-primary transition-colors"
+                    data-testid="button-mobile-success-stories"
+                  >
+                    Success Stories
+                  </button>
+                </>
+              )}
               <div className="pt-4 pb-3 border-t border-border">
                 <Button 
                   variant="ghost" 

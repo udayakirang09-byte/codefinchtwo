@@ -1,31 +1,63 @@
 import { useState, useEffect } from "react";
+import { useQuery } from '@tanstack/react-query';
 import Navigation from "@/components/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Trophy, Target, Calendar, BookOpen, Star, TrendingUp } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function StudentProgress() {
-  const [progressData, setProgressData] = useState({
-    totalClasses: 15,
-    completedClasses: 12,
-    hoursLearned: 47,
-    achievements: [
-      { id: 1, title: "First Steps", description: "Completed your first coding class", earned: true, date: "2024-01-15" },
-      { id: 2, title: "Python Master", description: "Completed 5 Python classes", earned: true, date: "2024-01-20" },
-      { id: 3, title: "Consistent Learner", description: "Attended classes for 7 days straight", earned: false, progress: 5 }
-    ],
-    recentClasses: [
-      { id: 1, subject: "HTML & CSS Basics", mentor: "Alex Rivera", rating: 5, completedAt: "2024-01-22" },
-      { id: 2, subject: "JavaScript Functions", mentor: "Sarah Johnson", rating: 4, completedAt: "2024-01-21" },
-      { id: 3, subject: "Python Variables", mentor: "Mike Chen", rating: 5, completedAt: "2024-01-20" }
-    ],
-    skillLevels: [
-      { skill: "JavaScript", level: 75, classes: 5 },
-      { skill: "Python", level: 60, classes: 4 },
-      { skill: "HTML/CSS", level: 85, classes: 3 }
-    ]
+  // Use a sample student ID for demo - in real app this would come from auth context
+  const studentId = "sample-student-id";
+  
+  // Fetch real progress data from API
+  const { data: progressData, isLoading } = useQuery({
+    queryKey: ['student-progress', studentId],
+    queryFn: async () => {
+      try {
+        const result = await apiRequest('GET', `/api/students/${studentId}/progress`);
+        return result;
+      } catch (error) {
+        console.warn('Using mock data due to API error:', error);
+        // Fallback to mock data if API fails
+        return {
+          totalClasses: 15,
+          completedClasses: 12,
+          hoursLearned: 47,
+          achievements: [
+            { id: 1, title: "First Steps", description: "Completed your first coding class", earned: true, date: "2024-01-15" },
+            { id: 2, title: "Python Master", description: "Completed 5 Python classes", earned: true, date: "2024-01-20" },
+            { id: 3, title: "Consistent Learner", description: "Attended classes for 7 days straight", earned: false, progress: 5 }
+          ],
+          recentClasses: [
+            { id: 1, subject: "HTML & CSS Basics", mentor: "Alex Rivera", rating: 5, completedAt: "2024-01-22" },
+            { id: 2, subject: "JavaScript Functions", mentor: "Sarah Johnson", rating: 4, completedAt: "2024-01-21" },
+            { id: 3, subject: "Python Variables", mentor: "Mike Chen", rating: 5, completedAt: "2024-01-20" }
+          ],
+          skillLevels: [
+            { skill: "JavaScript", level: 75, classes: 5 },
+            { skill: "Python", level: 60, classes: 4 },
+            { skill: "HTML/CSS", level: 85, classes: 3 }
+          ]
+        };
+      }
+    },
   });
+
+  if (isLoading || !progressData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8 max-w-6xl">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+            <span className="ml-3">Loading your progress...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">

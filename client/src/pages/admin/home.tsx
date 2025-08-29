@@ -18,7 +18,11 @@ import {
   Database,
   Lock,
   CheckCircle,
-  XCircle
+  XCircle,
+  TestTube,
+  Cog,
+  Map,
+  Zap
 } from 'lucide-react';
 import { Link } from 'wouter';
 import Navigation from '@/components/navigation';
@@ -142,53 +146,61 @@ export default function AdminHome() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white cursor-pointer hover:shadow-lg transition-shadow duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
               <Users className="h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" data-testid="total-users">{stats.totalUsers.toLocaleString()}</div>
-              <p className="text-xs opacity-90">
-                <TrendingUp className="inline h-3 w-3 mr-1" />
-                +8% from last month
-              </p>
+              <Link href="/admin/user-management">
+                <div className="text-2xl font-bold" data-testid="total-users">{stats.totalUsers.toLocaleString()}</div>
+                <p className="text-xs opacity-90">
+                  <TrendingUp className="inline h-3 w-3 mr-1" />
+                  +8% from last month
+                </p>
+              </Link>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
+          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white cursor-pointer hover:shadow-lg transition-shadow duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
               <DollarSign className="h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" data-testid="total-revenue">${stats.totalRevenue.toLocaleString()}</div>
-              <p className="text-xs opacity-90">
-                <TrendingUp className="inline h-3 w-3 mr-1" />
-                +24% from last month
-              </p>
+              <Link href="/admin/analytics">
+                <div className="text-2xl font-bold" data-testid="total-revenue">${stats.totalRevenue.toLocaleString()}</div>
+                <p className="text-xs opacity-90">
+                  <TrendingUp className="inline h-3 w-3 mr-1" />
+                  +24% from last month
+                </p>
+              </Link>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+          <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white cursor-pointer hover:shadow-lg transition-shadow duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">System Uptime</CardTitle>
               <Activity className="h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" data-testid="system-uptime">{stats.systemUptime}%</div>
-              <p className="text-xs opacity-90">Last 30 days</p>
+              <Link href="/admin/cloud-deployments">
+                <div className="text-2xl font-bold" data-testid="system-uptime">{stats.systemUptime}%</div>
+                <p className="text-xs opacity-90">Last 30 days</p>
+              </Link>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+          <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white cursor-pointer hover:shadow-lg transition-shadow duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pending Approvals</CardTitle>
               <AlertTriangle className="h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" data-testid="pending-approvals">{stats.pendingApprovals}</div>
-              <p className="text-xs opacity-90">Teacher applications</p>
+              <Link href="/admin/mentor-approval">
+                <div className="text-2xl font-bold" data-testid="pending-approvals">{stats.pendingApprovals}</div>
+                <p className="text-xs opacity-90">Teacher applications</p>
+              </Link>
             </CardContent>
           </Card>
         </div>
@@ -280,6 +292,22 @@ export default function AdminHome() {
                     Cloud Deployments
                   </Button>
                 </Link>
+                <Link href="/admin/code-mapping">
+                  <Button variant="outline" className="w-full" data-testid="button-code-mapping">
+                    <Map className="w-4 h-4 mr-2" />
+                    Code Mapping
+                  </Button>
+                </Link>
+                <Link href="/admin/test-management">
+                  <Button variant="outline" className="w-full" data-testid="button-test-management">
+                    <TestTube className="w-4 h-4 mr-2" />
+                    Unit & System Tests
+                  </Button>
+                </Link>
+                <Button variant="outline" className="w-full" data-testid="button-load-testing">
+                  <Zap className="w-4 h-4 mr-2" />
+                  Load Testing
+                </Button>
               </CardContent>
             </Card>
 

@@ -102,6 +102,20 @@ export const teacherSubjects = pgTable("teacher_subjects", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Success Stories table
+export const successStories = pgTable("success_stories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  studentName: varchar("student_name").notNull(),
+  mentorName: varchar("mentor_name").notNull(),
+  studentAge: integer("student_age").notNull(),
+  programmingLanguage: varchar("programming_language").notNull(),
+  achievementTitle: varchar("achievement_title").notNull(),
+  story: text("story").notNull(),
+  imageUrl: varchar("image_url"),
+  featured: boolean("featured").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one }) => ({
   mentor: one(mentors, {
@@ -801,6 +815,11 @@ export const insertQuantumTaskSchema = createInsertSchema(quantumTasks).omit({
   createdAt: true,
 });
 
+export const insertSuccessStorySchema = createInsertSchema(successStories).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types for new tables
 export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
 export type InsertAnalyticsEvent = z.infer<typeof insertAnalyticsEventSchema>;
@@ -831,3 +850,6 @@ export type InsertTechnologyStack = z.infer<typeof insertTechnologyStackSchema>;
 
 export type QuantumTask = typeof quantumTasks.$inferSelect;
 export type InsertQuantumTask = z.infer<typeof insertQuantumTaskSchema>;
+
+export type SuccessStory = typeof successStories.$inferSelect;
+export type InsertSuccessStory = z.infer<typeof insertSuccessStorySchema>;

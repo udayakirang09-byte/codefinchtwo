@@ -10,6 +10,7 @@ import {
   timeSlots, 
   teacherProfiles, 
   courses,
+  successStories,
   analyticsEvents,
   aiInsights,
   businessMetrics,
@@ -386,6 +387,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/students/:id/progress", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Get student bookings to calculate progress
+      const bookings = await storage.getBookingsByStudent(id);
+      const completedBookings = bookings.filter(b => b.status === 'completed');
+      
+      // Get student achievements
+      const achievements = await storage.getAchievementsByStudent(id);
+      
+      // Calculate hours learned (assuming 60 minutes per booking)
+      const hoursLearned = completedBookings.reduce((total, booking) => total + (booking.duration / 60), 0);
+      
+      // Mock skill levels for now - in real app this would come from detailed tracking
+      const skillLevels = [
+        { skill: "JavaScript", level: Math.min(completedBookings.length * 15, 100), classes: completedBookings.length },
+        { skill: "Python", level: Math.min(completedBookings.length * 12, 100), classes: Math.floor(completedBookings.length * 0.8) },
+        { skill: "HTML/CSS", level: Math.min(completedBookings.length * 18, 100), classes: Math.floor(completedBookings.length * 0.6) }
+      ];
+
+      const progressData = {
+        totalClasses: bookings.length,
+        completedClasses: completedBookings.length,
+        hoursLearned: Math.round(hoursLearned),
+        achievements: achievements.map(a => ({
+          ...a,
+          earned: true,
+          date: a.earnedAt
+        })),
+        recentClasses: completedBookings.slice(0, 3).map(booking => ({
+          id: booking.id,
+          subject: `Class with Mentor`,
+          mentor: "Coding Mentor",
+          rating: 5,
+          completedAt: booking.scheduledAt
+        })),
+        skillLevels
+      };
+
+      res.json(progressData);
+    } catch (error) {
+      console.error("Error fetching student progress:", error);
+      res.status(500).json({ message: "Failed to fetch student progress" });
+    }
+  });
+
   app.post("/api/achievements", async (req, res) => {
     try {
       const achievementData = insertAchievementSchema.parse(req.body);
@@ -394,6 +442,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating achievement:", error);
       res.status(400).json({ message: "Invalid achievement data" });
+    }
+  });
+
+  // Success Stories routes
+  app.get("/api/success-stories", async (req, res) => {
+    try {
+      const stories = await db.select()
+        .from(successStories)
+        .orderBy(desc(successStories.createdAt));
+      res.json(stories);
+    } catch (error) {
+      console.error("Error fetching success stories:", error);
+      res.status(500).json({ message: "Failed to fetch success stories" });
     }
   });
 

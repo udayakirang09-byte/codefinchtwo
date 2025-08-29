@@ -45,9 +45,17 @@ export default function CloudDeployments() {
   });
 
   // Fetch deployments
-  const { data: deployments = [], isLoading, error } = useQuery<any[]>({
+  const { data: deployments = [], isLoading, error } = useQuery({
     queryKey: ['cloud-deployments'],
-    queryFn: () => apiRequest('GET', '/api/admin/cloud-deployments'),
+    queryFn: async () => {
+      try {
+        const result = await apiRequest('GET', '/api/admin/cloud-deployments');
+        return Array.isArray(result) ? result : [];
+      } catch (error) {
+        console.error('Failed to fetch deployments:', error);
+        return [];
+      }
+    },
   });
 
   // Deploy mutation
@@ -237,9 +245,9 @@ export default function CloudDeployments() {
                   <Server className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold" data-testid="total-deployments">{deployments.length}</div>
+                  <div className="text-2xl font-bold" data-testid="total-deployments">{deployments?.length || 0}</div>
                   <p className="text-xs text-muted-foreground">
-                    Across {new Set(deployments.map(d => d.provider)).size} cloud providers
+                    Across {new Set(deployments?.map((d: any) => d.provider) || []).size} cloud providers
                   </p>
                 </CardContent>
               </Card>
@@ -251,7 +259,7 @@ export default function CloudDeployments() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold" data-testid="monthly-cost">
-                    ${deployments.reduce((sum, d) => sum + parseFloat(d.actualCost || d.costEstimate || '0'), 0).toFixed(2)}
+                    ${deployments?.reduce((sum: number, d: any) => sum + parseFloat(d.actualCost || d.costEstimate || '0'), 0).toFixed(2) || '0.00'}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Estimated operational costs
@@ -284,9 +292,9 @@ export default function CloudDeployments() {
                     <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" />
                     <span className="ml-3">Loading deployments...</span>
                   </div>
-                ) : deployments.length > 0 ? (
+                ) : deployments?.length > 0 ? (
                   <div className="space-y-4">
-                    {deployments.map((deployment: any, index: number) => (
+                    {deployments?.map((deployment: any, index: number) => (
                       <div key={deployment.id || index} className="border rounded-lg p-4" data-testid={`deployment-${index}`}>
                         <div className="flex items-start justify-between mb-3">
                           <div>
