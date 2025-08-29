@@ -75,8 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             description: 'Experienced programming mentor',
             experience: 5,
             specialties: ['JavaScript', 'Python'],
-            hourlyRate: 35,
-            rating: 4.8,
+            hourlyRate: '35.00',
             availableSlots: []
           });
         }
@@ -548,7 +547,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const bookings = await storage.getBookingsByMentor(mentor.id);
       const completedBookings = bookings.filter(b => b.status === 'completed');
-      const totalEarnings = completedBookings.reduce((sum, b) => sum + (b.amount || 0), 0);
+      const totalEarnings = completedBookings.reduce((sum, b) => sum + (b.duration * parseFloat(mentor.hourlyRate || '0') / 60), 0);
       
       const stats = {
         totalStudents: new Set(bookings.map(b => b.studentId)).size,
@@ -603,13 +602,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (existing) {
         // Update existing profile
         const [updated] = await db.update(teacherProfiles)
-          .set({ ...profileData, updatedAt: new Date() })
+          .set(profileData)
           .where(eq(teacherProfiles.userId, teacherId))
           .returning();
         res.json(updated);
       } else {
         // Create new profile
-        const [created] = await db.insert(teacherProfiles).values(profileData).returning();
+        const [created] = await db.insert(teacherProfiles).values([profileData]).returning();
         res.status(201).json(created);
       }
     } catch (error) {

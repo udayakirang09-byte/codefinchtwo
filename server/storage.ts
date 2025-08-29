@@ -121,13 +121,6 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async updateUser(id: string, updates: Partial<User>): Promise<void> {
-    await db.update(users).set(updates).where(eq(users.id, id));
-  }
-
-  async deleteUser(id: string): Promise<void> {
-    await db.delete(users).where(eq(users.id, id));
-  }
 
   async getMentorApplications(status?: string): Promise<any[]> {
     // Return sample data for now
@@ -188,7 +181,7 @@ export class DatabaseStorage implements IStorage {
 
 
   async createMentor(mentorData: InsertMentor): Promise<Mentor> {
-    const [mentor] = await db.insert(mentors).values(mentorData).returning();
+    const [mentor] = await db.insert(mentors).values([mentorData]).returning();
     return mentor;
   }
 
@@ -225,7 +218,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createStudent(studentData: InsertStudent): Promise<Student> {
-    const [student] = await db.insert(students).values(studentData).returning();
+    const [student] = await db.insert(students).values([studentData]).returning();
     return student;
   }
 
