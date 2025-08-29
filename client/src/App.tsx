@@ -25,6 +25,8 @@ import Payment from "@/pages/payment";
 import PaymentSuccess from "@/pages/payment-success";
 import StudentCommunity from "@/pages/student-community";
 import AchievementBadges from "@/pages/achievement-badges";
+import UserManagement from "@/pages/admin/user-management";
+import MentorApproval from "@/pages/admin/mentor-approval";
 
 function Router() {
   return (
@@ -40,6 +42,8 @@ function Router() {
       <Route path="/student-community" component={StudentCommunity} />
       <Route path="/achievement-badges" component={AchievementBadges} />
       <Route path="/help" component={Help} />
+      <Route path="/admin/user-management" component={UserManagement} />
+      <Route path="/admin/mentor-approval" component={MentorApproval} />
       <Route path="/student/progress" component={StudentProgress} />
       <Route path="/video-class/:id" component={VideoClass} />
       <Route path="/chat/:id" component={ChatClass} />

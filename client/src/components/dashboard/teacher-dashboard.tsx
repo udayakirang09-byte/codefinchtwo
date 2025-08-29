@@ -31,9 +31,15 @@ export default function TeacherDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
   
   // Fetch teacher's classes from API
-  const { data: teacherClasses = [], isLoading: classesLoading } = useQuery({
+  const { data: teacherClasses = [], isLoading: classesLoading, error: classesError } = useQuery({
     queryKey: ['teacher-classes', user?.id],
-    queryFn: () => fetch(`/api/teacher/classes?teacherId=${user?.id}`).then(res => res.json()),
+    queryFn: async () => {
+      const response = await fetch(`/api/teacher/classes?teacherId=${user?.id}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch classes: ${response.status}`);
+      }
+      return response.json();
+    },
     enabled: !!user?.id
   });
   
@@ -43,13 +49,19 @@ export default function TeacherDashboard() {
     monthlyEarnings: 0,
     averageRating: 0,
     completedSessions: 0
-  }, isLoading: statsLoading } = useQuery({
+  }, isLoading: statsLoading, error: statsError } = useQuery({
     queryKey: ['teacher-stats', user?.id],
-    queryFn: () => fetch(`/api/teacher/stats?teacherId=${user?.id}`).then(res => res.json()),
+    queryFn: async () => {
+      const response = await fetch(`/api/teacher/stats?teacherId=${user?.id}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch stats: ${response.status}`);
+      }
+      return response.json();
+    },
     enabled: !!user?.id
   });
   
-  const upcomingClasses = teacherClasses.filter((booking: any) => 
+  const upcomingClasses = Array.isArray(teacherClasses) ? teacherClasses.filter((booking: any) => 
     booking.status === 'scheduled' && new Date(booking.scheduledAt) > new Date()
   ).map((booking: any) => ({
     id: booking.id,
@@ -60,9 +72,9 @@ export default function TeacherDashboard() {
     videoEnabled: true,
     chatEnabled: true,
     rate: booking.amount
-  }));
+  })) : [];
   
-  const completedClasses = teacherClasses.filter((booking: any) => 
+  const completedClasses = Array.isArray(teacherClasses) ? teacherClasses.filter((booking: any) => 
     booking.status === 'completed'
   ).map((booking: any) => ({
     id: booking.id,
@@ -70,7 +82,7 @@ export default function TeacherDashboard() {
     subject: booking.subject,
     completedAt: new Date(booking.scheduledAt),
     earnings: booking.amount
-  }));
+  })) : [];
   
   const notifications = [
     { id: 1, message: "Class with student starts soon", type: "reminder" },

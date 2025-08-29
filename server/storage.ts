@@ -116,6 +116,41 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
+  async updateUser(id: string, updates: Partial<User>): Promise<void> {
+    await db.update(users).set(updates).where(eq(users.id, id));
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
+  }
+
+  async getMentorApplications(status?: string): Promise<any[]> {
+    // Return sample data for now
+    const sampleApplications = [
+      {
+        id: "app1",
+        user: {
+          firstName: "John",
+          lastName: "Doe", 
+          email: "john.doe@example.com"
+        },
+        bio: "Experienced software engineer with 5+ years",
+        expertise: ["JavaScript", "React", "Node.js"],
+        experience: "Senior developer at tech startup",
+        pricing: 50,
+        languages: ["English", "Spanish"],
+        status: status || "pending",
+        appliedAt: new Date().toISOString()
+      }
+    ];
+    return sampleApplications.filter(app => !status || app.status === status);
+  }
+
+  async updateMentorApplicationStatus(id: string, status: string, feedback?: string): Promise<void> {
+    // Implementation would update application status
+    console.log(`Updated application ${id} to ${status} with feedback: ${feedback}`);
+  }
+
   // Mentor operations
   async getMentors(): Promise<MentorWithUser[]> {
     const result = await db
@@ -230,6 +265,12 @@ export class DatabaseStorage implements IStorage {
       student: { ...result.students!, user: result.users! },
       mentor: { ...result.mentors!, user: result.users! },
     };
+  }
+
+  // Method to get mentor by user email
+  async getMentorByUserId(userId: string): Promise<Mentor | undefined> {
+    const [mentor] = await db.select().from(mentors).where(eq(mentors.email, userId));
+    return mentor;
   }
 
   async getBookingsByStudent(studentId: string): Promise<BookingWithDetails[]> {

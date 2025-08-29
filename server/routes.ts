@@ -450,6 +450,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/admin/users/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      await storage.updateUser(id, updates);
+      res.json({ message: "User updated successfully" });
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  app.delete("/api/admin/users/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteUser(id);
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
+  app.get("/api/admin/mentor-applications", async (req, res) => {
+    try {
+      const { status } = req.query;
+      const applications = await storage.getMentorApplications(status as string);
+      res.json(applications);
+    } catch (error) {
+      console.error("Error fetching mentor applications:", error);
+      res.status(500).json({ message: "Failed to fetch applications" });
+    }
+  });
+
+  app.patch("/api/admin/mentor-applications/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, feedback } = req.body;
+      await storage.updateMentorApplicationStatus(id, status, feedback);
+      res.json({ message: "Application status updated successfully" });
+    } catch (error) {
+      console.error("Error updating application:", error);
+      res.status(500).json({ message: "Failed to update application" });
+    }
+  });
+
   // Stripe Payment Routes
   // Non-Stripe payment processing
   app.post("/api/process-payment", async (req, res) => {
