@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import Navigation from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -252,9 +251,8 @@ export default function StudentDashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation />
-      <div className="space-y-6 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+      <div className="space-y-8 p-6 max-w-7xl mx-auto">
         {/* Ultra Modern Welcome Section */}
         <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-8 rounded-3xl shadow-2xl border border-white/20">
           <div className="absolute inset-0 bg-gradient-to-r from-black/10 to-transparent"></div>

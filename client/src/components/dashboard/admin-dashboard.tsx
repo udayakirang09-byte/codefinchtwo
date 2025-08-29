@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import Navigation from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -171,9 +170,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation />
-      <div className="space-y-6 p-6">
+    <div className="space-y-6 p-6">
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-red-50 to-orange-100 p-6 rounded-lg border">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Admin Dashboard 🛡️</h2>
@@ -781,7 +778,6 @@ export default function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
-      </div>
     </div>
   );
 }
