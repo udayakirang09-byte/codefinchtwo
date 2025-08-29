@@ -39,6 +39,8 @@ import TeacherResources from "./pages/teacher-resources";
 import MentorCommunity from "./pages/mentor-community";
 import SuccessStories from "./pages/success-stories";
 import SafetyGuidelines from "./pages/safety-guidelines";
+import AdminAnalytics from "./pages/admin/analytics";
+import CloudDeployments from "./pages/admin/cloud-deployments";
 
 function Router() {
   return (
@@ -56,6 +58,8 @@ function Router() {
       <Route path="/help" component={Help} />
       <Route path="/admin/user-management" component={UserManagement} />
       <Route path="/admin/mentor-approval" component={MentorApproval} />
+      <Route path="/admin/analytics" component={AdminAnalytics} />
+      <Route path="/admin/cloud-deployments" component={CloudDeployments} />
       <Route path="/student/active-classes" component={ActiveClasses} />
       <Route path="/student/learning-hours" component={LearningHours} />
       <Route path="/teacher/create-course" component={CreateCourse} />

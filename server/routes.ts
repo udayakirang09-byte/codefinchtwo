@@ -4,7 +4,28 @@ import { storage } from "./storage";
 import { z } from "zod";
 import { eq, desc, and, gte, lte, or } from "drizzle-orm";
 import { db } from "./db";
-import { adminConfig, footerLinks, timeSlots, teacherProfiles, courses, type InsertAdminConfig, type InsertFooterLink, type InsertTimeSlot, type InsertTeacherProfile, type InsertCourse } from "@shared/schema";
+import { 
+  adminConfig, 
+  footerLinks, 
+  timeSlots, 
+  teacherProfiles, 
+  courses,
+  analyticsEvents,
+  aiInsights,
+  businessMetrics,
+  complianceMonitoring,
+  chatAnalytics,
+  audioAnalytics,
+  cloudDeployments,
+  technologyStack,
+  quantumTasks,
+  type InsertAdminConfig, 
+  type InsertFooterLink, 
+  type InsertTimeSlot, 
+  type InsertTeacherProfile, 
+  type InsertCourse 
+} from "@shared/schema";
+import { aiAnalytics } from "./ai-analytics";
 import Stripe from "stripe";
 import {
   insertUserSchema,
@@ -1167,6 +1188,305 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error saving payment config:", error);
       res.status(500).json({ error: "Failed to save payment configuration" });
+    }
+  });
+
+  // AI Analytics & Business Intelligence Routes
+  app.get("/api/admin/ai-insights", async (req, res) => {
+    try {
+      const { timeRange = '7d' } = req.query;
+      const startDate = new Date();
+      const days = timeRange === '1d' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
+      startDate.setDate(startDate.getDate() - days);
+
+      const insights = await db.select()
+        .from(aiInsights)
+        .where(gte(aiInsights.createdAt, startDate))
+        .orderBy(desc(aiInsights.createdAt));
+
+      res.json(insights);
+    } catch (error) {
+      console.error("Error fetching AI insights:", error);
+      res.status(500).json({ message: "Failed to fetch AI insights" });
+    }
+  });
+
+  app.get("/api/admin/business-metrics", async (req, res) => {
+    try {
+      const { timeRange = '7d' } = req.query;
+      const startDate = new Date();
+      const days = timeRange === '1d' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
+      startDate.setDate(startDate.getDate() - days);
+
+      const metrics = await db.select()
+        .from(businessMetrics)
+        .where(gte(businessMetrics.date, startDate))
+        .orderBy(desc(businessMetrics.date));
+
+      res.json(metrics);
+    } catch (error) {
+      console.error("Error fetching business metrics:", error);
+      res.status(500).json({ message: "Failed to fetch business metrics" });
+    }
+  });
+
+  app.get("/api/admin/compliance-monitoring", async (req, res) => {
+    try {
+      const compliance = await db.select()
+        .from(complianceMonitoring)
+        .where(eq(complianceMonitoring.status, 'non_compliant'))
+        .orderBy(desc(complianceMonitoring.detectedAt));
+
+      res.json(compliance);
+    } catch (error) {
+      console.error("Error fetching compliance data:", error);
+      res.status(500).json({ message: "Failed to fetch compliance data" });
+    }
+  });
+
+  app.get("/api/admin/chat-analytics", async (req, res) => {
+    try {
+      const { timeRange = '7d' } = req.query;
+      const startDate = new Date();
+      const days = timeRange === '1d' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
+      startDate.setDate(startDate.getDate() - days);
+
+      const analytics = await db.select()
+        .from(chatAnalytics)
+        .where(gte(chatAnalytics.createdAt, startDate))
+        .orderBy(desc(chatAnalytics.createdAt));
+
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching chat analytics:", error);
+      res.status(500).json({ message: "Failed to fetch chat analytics" });
+    }
+  });
+
+  app.get("/api/admin/audio-analytics", async (req, res) => {
+    try {
+      const { timeRange = '7d' } = req.query;
+      const startDate = new Date();
+      const days = timeRange === '1d' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
+      startDate.setDate(startDate.getDate() - days);
+
+      const analytics = await db.select()
+        .from(audioAnalytics)
+        .where(gte(audioAnalytics.createdAt, startDate))
+        .orderBy(desc(audioAnalytics.createdAt));
+
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching audio analytics:", error);
+      res.status(500).json({ message: "Failed to fetch audio analytics" });
+    }
+  });
+
+  app.get("/api/admin/cloud-deployments", async (req, res) => {
+    try {
+      const deployments = await db.select()
+        .from(cloudDeployments)
+        .orderBy(desc(cloudDeployments.createdAt));
+
+      res.json(deployments);
+    } catch (error) {
+      console.error("Error fetching cloud deployments:", error);
+      res.status(500).json({ message: "Failed to fetch cloud deployments" });
+    }
+  });
+
+  app.get("/api/admin/technology-stack", async (req, res) => {
+    try {
+      const stack = await db.select()
+        .from(technologyStack)
+        .orderBy(desc(technologyStack.updatedAt));
+
+      res.json(stack);
+    } catch (error) {
+      console.error("Error fetching technology stack:", error);
+      res.status(500).json({ message: "Failed to fetch technology stack" });
+    }
+  });
+
+  app.get("/api/admin/quantum-tasks", async (req, res) => {
+    try {
+      const tasks = await db.select()
+        .from(quantumTasks)
+        .orderBy(desc(quantumTasks.createdAt));
+
+      res.json(tasks);
+    } catch (error) {
+      console.error("Error fetching quantum tasks:", error);
+      res.status(500).json({ message: "Failed to fetch quantum tasks" });
+    }
+  });
+
+  app.post("/api/admin/refresh-analytics", async (req, res) => {
+    try {
+      console.log("🤖 Running AI analytics refresh...");
+      
+      // Generate comprehensive insights
+      const dashboardData = await aiAnalytics.generateDashboardInsights();
+      
+      // Store insights
+      if (dashboardData.insights.length > 0) {
+        await db.insert(aiInsights).values(dashboardData.insights);
+      }
+      
+      // Store metrics
+      if (dashboardData.metrics.length > 0) {
+        await db.insert(businessMetrics).values(dashboardData.metrics);
+      }
+      
+      console.log(`✅ Generated ${dashboardData.insights.length} insights and ${dashboardData.metrics.length} metrics`);
+      
+      res.json({ 
+        success: true, 
+        insightsGenerated: dashboardData.insights.length,
+        metricsCalculated: dashboardData.metrics.length
+      });
+    } catch (error) {
+      console.error("Error refreshing analytics:", error);
+      res.status(500).json({ message: "Failed to refresh analytics" });
+    }
+  });
+
+  app.post("/api/admin/quantum-optimization", async (req, res) => {
+    try {
+      const { problemType, data } = req.body;
+      
+      const quantumTask = await aiAnalytics.createQuantumOptimizationTask(problemType, data);
+      const task = await db.insert(quantumTasks).values(quantumTask).returning();
+      
+      res.json(task[0]);
+    } catch (error) {
+      console.error("Error creating quantum task:", error);
+      res.status(500).json({ message: "Failed to create quantum task" });
+    }
+  });
+
+  app.post("/api/admin/analyze-compliance", async (req, res) => {
+    try {
+      const { entity, entityType } = req.body;
+      
+      const complianceIssues = await aiAnalytics.scanForComplianceIssues(entity, entityType);
+      
+      if (complianceIssues.length > 0) {
+        await db.insert(complianceMonitoring).values(complianceIssues);
+      }
+      
+      res.json({ issuesFound: complianceIssues.length, issues: complianceIssues });
+    } catch (error) {
+      console.error("Error analyzing compliance:", error);
+      res.status(500).json({ message: "Failed to analyze compliance" });
+    }
+  });
+
+  // Cloud Deployment Management Routes
+  app.post("/api/admin/deploy/:provider", async (req, res) => {
+    try {
+      const { provider } = req.params;
+      const { region, environment, serviceName, resourceConfig } = req.body;
+      
+      const deployment = {
+        provider: provider as string,
+        region: region as string,
+        environment: environment as string,
+        serviceName: serviceName as string,
+        deploymentStatus: 'pending' as const,
+        resourceConfig: resourceConfig || {},
+        healthStatus: 'unknown' as const,
+        costEstimate: "0.00"
+      };
+      
+      const createdDeployment = await db.insert(cloudDeployments).values(deployment).returning();
+      
+      // Simulate deployment process
+      setTimeout(async () => {
+        await db.update(cloudDeployments)
+          .set({ 
+            deploymentStatus: 'active', 
+            healthStatus: 'healthy',
+            deployedAt: new Date() 
+          })
+          .where(eq(cloudDeployments.id, createdDeployment[0].id));
+      }, 5000);
+      
+      res.json(createdDeployment[0]);
+    } catch (error) {
+      console.error("Error creating deployment:", error);
+      res.status(500).json({ message: "Failed to create deployment" });
+    }
+  });
+
+  // Technology Stack Monitoring
+  app.post("/api/admin/check-tech-stack", async (req, res) => {
+    try {
+      // Mock technology stack data - in production this would check actual versions
+      const technologies = [
+        {
+          component: 'frontend',
+          technology: 'react',
+          currentVersion: '18.2.0',
+          latestVersion: '18.2.0',
+          status: 'current' as const,
+          securityScore: "0.95",
+          performanceScore: "0.92"
+        },
+        {
+          component: 'backend',
+          technology: 'node.js',
+          currentVersion: '20.10.0',
+          latestVersion: '21.0.0',
+          status: 'outdated' as const,
+          securityScore: "0.88",
+          performanceScore: "0.90",
+          upgradeRecommendation: 'Consider upgrading to Node.js 21 for improved performance'
+        },
+        {
+          component: 'database',
+          technology: 'postgresql',
+          currentVersion: '15.4',
+          latestVersion: '16.0',
+          status: 'outdated' as const,
+          securityScore: "0.93",
+          performanceScore: "0.95",
+          upgradeRecommendation: 'Upgrade to PostgreSQL 16 for better query performance'
+        }
+      ];
+      
+      // Clear existing and insert new data
+      await db.delete(technologyStack);
+      await db.insert(technologyStack).values(technologies);
+      
+      res.json({ technologies, updated: technologies.length });
+    } catch (error) {
+      console.error("Error checking tech stack:", error);
+      res.status(500).json({ message: "Failed to check technology stack" });
+    }
+  });
+
+  // Analytics Event Tracking
+  app.post("/api/analytics/track", async (req, res) => {
+    try {
+      const { eventType, eventName, properties, userId } = req.body;
+      
+      const event = {
+        userId: userId || null,
+        sessionId: req.headers['session-id'] as string || null,
+        eventType,
+        eventName,
+        properties: properties || {},
+        url: req.headers.referer || null,
+        userAgent: req.headers['user-agent'] || null,
+        ipAddress: req.ip || null
+      };
+      
+      await db.insert(analyticsEvents).values(event);
+      res.json({ tracked: true });
+    } catch (error) {
+      console.error("Error tracking event:", error);
+      res.status(500).json({ message: "Failed to track event" });
     }
   });
 

@@ -20,7 +20,10 @@ export default function CreateCourse() {
   // Fetch existing courses
   const { data: existingCourses = [], isLoading } = useQuery({
     queryKey: ['teacher-courses'],
-    queryFn: () => apiRequest('GET', '/api/teacher/courses'),
+    queryFn: () => {
+      const teacherId = 'teacher@codeconnect.com';
+      return apiRequest('GET', `/api/teacher/courses?teacherId=${teacherId}`);
+    },
   });
 
   const [formData, setFormData] = useState({
@@ -36,7 +39,9 @@ export default function CreateCourse() {
 
   const createCourseMutation = useMutation({
     mutationFn: async (courseData: any) => {
-      return apiRequest('POST', '/api/teacher/courses', courseData);
+      // For now, using a demo teacher ID. In production, this would come from authentication
+      const teacherId = 'teacher@codeconnect.com';
+      return apiRequest('POST', `/api/teacher/courses?teacherId=${teacherId}`, courseData);
     },
     onSuccess: () => {
       toast({

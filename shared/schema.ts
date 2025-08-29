@@ -519,3 +519,274 @@ export type InsertTimeSlot = z.infer<typeof insertTimeSlotSchema>;
 
 export type FooterLink = typeof footerLinks.$inferSelect;
 export type InsertFooterLink = z.infer<typeof insertFooterLinkSchema>;
+
+// AI Analytics and Business Intelligence Tables
+export const analyticsEvents = pgTable("analytics_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  sessionId: varchar("session_id"),
+  eventType: varchar("event_type").notNull(), // page_view, button_click, booking_created, course_completed, etc.
+  eventName: varchar("event_name").notNull(),
+  properties: jsonb("properties").$type<Record<string, any>>().default({}),
+  url: varchar("url"),
+  userAgent: varchar("user_agent"),
+  ipAddress: varchar("ip_address"),
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+export const aiInsights = pgTable("ai_insights", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  insightType: varchar("insight_type").notNull(), // pattern_recognition, prediction, anomaly_detection, recommendation
+  category: varchar("category").notNull(), // user_behavior, business_metrics, compliance, performance
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  data: jsonb("data").$type<Record<string, any>>().default({}),
+  confidenceScore: decimal("confidence_score", { precision: 3, scale: 2 }),
+  priority: varchar("priority").notNull().default("medium"), // low, medium, high, critical
+  status: varchar("status").notNull().default("active"), // active, dismissed, resolved
+  actionRequired: boolean("action_required").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const businessMetrics = pgTable("business_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  metricName: varchar("metric_name").notNull(),
+  metricValue: decimal("metric_value", { precision: 15, scale: 2 }).notNull(),
+  metricType: varchar("metric_type").notNull(), // revenue, users, sessions, conversion_rate, etc.
+  period: varchar("period").notNull(), // hourly, daily, weekly, monthly
+  date: timestamp("date").notNull(),
+  metadata: jsonb("metadata").$type<Record<string, any>>().default({}),
+  calculatedAt: timestamp("calculated_at").defaultNow(),
+});
+
+export const complianceMonitoring = pgTable("compliance_monitoring", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  complianceType: varchar("compliance_type").notNull(), // gdpr, coppa, data_security, content_moderation
+  ruleId: varchar("rule_id").notNull(),
+  ruleName: varchar("rule_name").notNull(),
+  description: text("description").notNull(),
+  severity: varchar("severity").notNull(), // info, warning, violation, critical
+  status: varchar("status").notNull(), // compliant, non_compliant, under_review, resolved
+  relatedEntity: varchar("related_entity"), // user_id, booking_id, content_id, etc.
+  details: jsonb("details").$type<Record<string, any>>().default({}),
+  detectedAt: timestamp("detected_at").defaultNow(),
+  resolvedAt: timestamp("resolved_at"),
+});
+
+export const chatAnalytics = pgTable("chat_analytics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  chatSessionId: varchar("chat_session_id").references(() => chatSessions.id).notNull(),
+  messageCount: integer("message_count").default(0),
+  avgResponseTime: decimal("avg_response_time", { precision: 10, scale: 2 }), // in seconds
+  sentimentScore: decimal("sentiment_score", { precision: 3, scale: 2 }), // -1 to 1
+  topicsTags: jsonb("topics_tags").$type<string[]>().default([]),
+  languageUsed: varchar("language_used").default("english"),
+  qualityScore: decimal("quality_score", { precision: 3, scale: 2 }), // 0 to 1
+  engagementScore: decimal("engagement_score", { precision: 3, scale: 2 }), // 0 to 1
+  aiAnalysis: jsonb("ai_analysis").$type<Record<string, any>>().default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const audioAnalytics = pgTable("audio_analytics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  videoSessionId: varchar("video_session_id").references(() => videoSessions.id).notNull(),
+  duration: integer("duration"), // in seconds
+  speakingTimeRatio: decimal("speaking_time_ratio", { precision: 3, scale: 2 }), // mentor vs student speaking time
+  audioQuality: decimal("audio_quality", { precision: 3, scale: 2 }), // 0 to 1
+  backgroundNoise: decimal("background_noise", { precision: 3, scale: 2 }), // 0 to 1
+  emotionalTone: jsonb("emotional_tone").$type<Record<string, number>>().default({}), // excited, confused, engaged, etc.
+  keyTopics: jsonb("key_topics").$type<string[]>().default([]),
+  teachingEffectiveness: decimal("teaching_effectiveness", { precision: 3, scale: 2 }), // 0 to 1
+  aiTranscription: text("ai_transcription"),
+  aiSummary: text("ai_summary"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const predictiveModels = pgTable("predictive_models", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  modelName: varchar("model_name").notNull(),
+  modelType: varchar("model_type").notNull(), // churn_prediction, demand_forecasting, price_optimization, etc.
+  version: varchar("version").notNull(),
+  accuracy: decimal("accuracy", { precision: 5, scale: 4 }), // 0 to 1
+  trainingData: jsonb("training_data").$type<Record<string, any>>().default({}),
+  features: jsonb("features").$type<string[]>().default([]),
+  predictions: jsonb("predictions").$type<Record<string, any>>().default({}),
+  isActive: boolean("is_active").default(true),
+  lastTrained: timestamp("last_trained").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const cloudDeployments = pgTable("cloud_deployments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  provider: varchar("provider").notNull(), // aws, azure, gcp
+  region: varchar("region").notNull(),
+  environment: varchar("environment").notNull(), // development, staging, production
+  serviceName: varchar("service_name").notNull(),
+  deploymentStatus: varchar("deployment_status").notNull(), // pending, deploying, active, failed, terminated
+  resourceConfig: jsonb("resource_config").$type<Record<string, any>>().default({}),
+  healthStatus: varchar("health_status").default("unknown"), // healthy, warning, critical, unknown
+  costEstimate: decimal("cost_estimate", { precision: 10, scale: 2 }),
+  actualCost: decimal("actual_cost", { precision: 10, scale: 2 }),
+  deployedAt: timestamp("deployed_at"),
+  lastHealthCheck: timestamp("last_health_check"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const technologyStack = pgTable("technology_stack", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  component: varchar("component").notNull(), // database, frontend, backend, cache, etc.
+  technology: varchar("technology").notNull(), // postgresql, react, node.js, redis, etc.
+  currentVersion: varchar("current_version").notNull(),
+  latestVersion: varchar("latest_version"),
+  status: varchar("status").notNull().default("current"), // current, outdated, deprecated, vulnerable
+  securityScore: decimal("security_score", { precision: 3, scale: 2 }), // 0 to 1
+  performanceScore: decimal("performance_score", { precision: 3, scale: 2 }), // 0 to 1
+  upgradeRecommendation: text("upgrade_recommendation"),
+  upgradePriority: varchar("upgrade_priority").default("medium"), // low, medium, high, critical
+  lastChecked: timestamp("last_checked").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Quantum Computing Integration Table (for competitive advantage)
+export const quantumTasks = pgTable("quantum_tasks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  taskType: varchar("task_type").notNull(), // optimization, machine_learning, cryptography, simulation
+  algorithm: varchar("algorithm").notNull(), // qaoa, vqe, grover, shor, etc.
+  problemDescription: text("problem_description").notNull(),
+  inputData: jsonb("input_data").$type<Record<string, any>>().default({}),
+  quantumCircuit: text("quantum_circuit"), // QASM or circuit description
+  classicalPreprocessing: text("classical_preprocessing"),
+  quantumProcessing: text("quantum_processing"),
+  classicalPostprocessing: text("classical_postprocessing"),
+  results: jsonb("results").$type<Record<string, any>>().default({}),
+  executionTime: decimal("execution_time", { precision: 10, scale: 4 }), // in seconds
+  quantumAdvantage: decimal("quantum_advantage", { precision: 5, scale: 2 }), // speedup factor
+  status: varchar("status").notNull().default("pending"), // pending, running, completed, failed
+  provider: varchar("provider").default("ibm"), // ibm, google, rigetti, aws_braket, etc.
+  qubitsUsed: integer("qubits_used"),
+  gateCount: integer("gate_count"),
+  createdAt: timestamp("created_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
+// Relations for new tables
+export const analyticsEventsRelations = relations(analyticsEvents, ({ one }) => ({
+  user: one(users, {
+    fields: [analyticsEvents.userId],
+    references: [users.id],
+  }),
+}));
+
+export const aiInsightsRelations = relations(aiInsights, ({ }) => ({}));
+
+export const businessMetricsRelations = relations(businessMetrics, ({ }) => ({}));
+
+export const complianceMonitoringRelations = relations(complianceMonitoring, ({ }) => ({}));
+
+export const chatAnalyticsRelations = relations(chatAnalytics, ({ one }) => ({
+  chatSession: one(chatSessions, {
+    fields: [chatAnalytics.chatSessionId],
+    references: [chatSessions.id],
+  }),
+}));
+
+export const audioAnalyticsRelations = relations(audioAnalytics, ({ one }) => ({
+  videoSession: one(videoSessions, {
+    fields: [audioAnalytics.videoSessionId],
+    references: [videoSessions.id],
+  }),
+}));
+
+export const predictiveModelsRelations = relations(predictiveModels, ({ }) => ({}));
+
+export const cloudDeploymentsRelations = relations(cloudDeployments, ({ }) => ({}));
+
+export const technologyStackRelations = relations(technologyStack, ({ }) => ({}));
+
+export const quantumTasksRelations = relations(quantumTasks, ({ }) => ({}));
+
+// Insert Schemas for new tables
+export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents).omit({
+  id: true,
+  timestamp: true,
+});
+
+export const insertAiInsightSchema = createInsertSchema(aiInsights).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertBusinessMetricSchema = createInsertSchema(businessMetrics).omit({
+  id: true,
+  calculatedAt: true,
+});
+
+export const insertComplianceMonitoringSchema = createInsertSchema(complianceMonitoring).omit({
+  id: true,
+  detectedAt: true,
+});
+
+export const insertChatAnalyticsSchema = createInsertSchema(chatAnalytics).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAudioAnalyticsSchema = createInsertSchema(audioAnalytics).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPredictiveModelSchema = createInsertSchema(predictiveModels).omit({
+  id: true,
+  lastTrained: true,
+  createdAt: true,
+});
+
+export const insertCloudDeploymentSchema = createInsertSchema(cloudDeployments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertTechnologyStackSchema = createInsertSchema(technologyStack).omit({
+  id: true,
+  lastChecked: true,
+  updatedAt: true,
+});
+
+export const insertQuantumTaskSchema = createInsertSchema(quantumTasks).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types for new tables
+export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
+export type InsertAnalyticsEvent = z.infer<typeof insertAnalyticsEventSchema>;
+
+export type AiInsight = typeof aiInsights.$inferSelect;
+export type InsertAiInsight = z.infer<typeof insertAiInsightSchema>;
+
+export type BusinessMetric = typeof businessMetrics.$inferSelect;
+export type InsertBusinessMetric = z.infer<typeof insertBusinessMetricSchema>;
+
+export type ComplianceMonitoring = typeof complianceMonitoring.$inferSelect;
+export type InsertComplianceMonitoring = z.infer<typeof insertComplianceMonitoringSchema>;
+
+export type ChatAnalytics = typeof chatAnalytics.$inferSelect;
+export type InsertChatAnalytics = z.infer<typeof insertChatAnalyticsSchema>;
+
+export type AudioAnalytics = typeof audioAnalytics.$inferSelect;
+export type InsertAudioAnalytics = z.infer<typeof insertAudioAnalyticsSchema>;
+
+export type PredictiveModel = typeof predictiveModels.$inferSelect;
+export type InsertPredictiveModel = z.infer<typeof insertPredictiveModelSchema>;
+
+export type CloudDeployment = typeof cloudDeployments.$inferSelect;
+export type InsertCloudDeployment = z.infer<typeof insertCloudDeploymentSchema>;
+
+export type TechnologyStack = typeof technologyStack.$inferSelect;
+export type InsertTechnologyStack = z.infer<typeof insertTechnologyStackSchema>;
+
+export type QuantumTask = typeof quantumTasks.$inferSelect;
+export type InsertQuantumTask = z.infer<typeof insertQuantumTaskSchema>;

@@ -74,6 +74,12 @@ export default function Navigation() {
           {/* Debug: Add test links for development */}
           {(window.location.hostname === 'localhost' || window.location.hostname.includes('replit')) && (
             <div className="flex gap-2">
+              <Link href="/admin/analytics" className="ml-4 text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded" data-testid="link-admin-analytics">
+                🤖 AI Analytics
+              </Link>
+              <Link href="/admin/cloud-deployments" className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded" data-testid="link-cloud-deployments">
+                ☁️ Cloud Deploy
+              </Link>
               <Link href="/simple-test" className="ml-4 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded" data-testid="link-simple-test">
                 🔧 Simple Test
               </Link>
