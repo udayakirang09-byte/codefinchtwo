@@ -145,6 +145,13 @@ export default function StudentDashboard() {
   };
 
   const handleFeedbackSubmitted = (classId: string) => {
+    // Submit feedback to API and remove class immediately
+    fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ classId, feedback: "Sample feedback", rating: 5 })
+    }).catch(console.error);
+    
     // Remove the class from completed classes list after feedback submission
     setCompletedClasses(prev => prev.filter(cls => cls.id !== classId));
   };

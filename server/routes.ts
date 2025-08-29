@@ -155,6 +155,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.body.scheduledAt = new Date(req.body.scheduledAt);
       }
       
+      // Convert duration string to number if needed
+      if (req.body.duration && typeof req.body.duration === 'string') {
+        req.body.duration = parseInt(req.body.duration);
+      }
+      
       const bookingData = insertBookingSchema.parse(req.body);
       
       // Ensure student exists before creating booking

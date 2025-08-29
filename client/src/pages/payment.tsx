@@ -65,8 +65,73 @@ export default function Payment() {
 
   const course = courses.find(c => c.id === courseId) || courses[0];
 
+  const validatePaymentForm = () => {
+    if (!paymentMethod) {
+      toast({
+        title: "Payment Method Required",
+        description: "Please select a payment method to continue",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (paymentMethod === "upi" && !formData.upiId) {
+      toast({
+        title: "UPI ID Required",
+        description: "Please enter your UPI ID (e.g., yourname@paytm, yourname@phonepe)",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (paymentMethod === "card") {
+      if (!formData.cardNumber || !formData.cardExpiry || !formData.cardCvv || !formData.cardName) {
+        toast({
+          title: "Complete Card Details Required",
+          description: "Please fill in all card information: number, expiry, CVV, and cardholder name",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      if (formData.cardNumber.replace(/\s/g, '').length !== 16) {
+        toast({
+          title: "Invalid Card Number",
+          description: "Please enter a valid 16-digit card number",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      if (!/^\d{2}\/\d{2}$/.test(formData.cardExpiry)) {
+        toast({
+          title: "Invalid Expiry Date",
+          description: "Please enter expiry date in MM/YY format",
+          variant: "destructive",
+        });
+        return false;
+      }
+    }
+
+    if (paymentMethod === "netbanking" && !formData.accountNumber) {
+      toast({
+        title: "Bank Account Required",
+        description: "Please enter your bank account number",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validatePaymentForm()) {
+      return;
+    }
+    
     setProcessing(true);
 
     // Simulate payment processing
