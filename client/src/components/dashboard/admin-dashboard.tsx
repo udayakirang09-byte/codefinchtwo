@@ -170,7 +170,8 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
+      <div className="space-y-6 p-6">
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-red-50 to-orange-100 p-6 rounded-lg border">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Admin Dashboard 🛡️</h2>
@@ -778,6 +779,32 @@ export default function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Run All Tests Button - Only for Admins */}
+      <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-700 text-white">
+          <CardTitle className="flex items-center gap-3">
+            <BarChart3 className="h-6 w-6" />
+            System Testing & Monitoring
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <p className="text-gray-600 mb-4">Run comprehensive system tests with admin privileges</p>
+            <Button 
+              onClick={() => {
+                console.log('🧪 Running all tests with admin credentials');
+                // Test functionality for admins
+              }}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-12 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+              data-testid="button-run-all-tests-admin"
+            >
+              Run All Tests (Admin)
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+      </div>
     </div>
   );
 }

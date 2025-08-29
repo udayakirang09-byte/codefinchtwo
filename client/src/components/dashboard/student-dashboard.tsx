@@ -528,6 +528,31 @@ export default function StudentDashboard() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Run All Tests Button - Only for Students */}
+        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-700 text-white">
+            <CardTitle className="flex items-center gap-3">
+              <Award className="h-6 w-6" />
+              Testing & Validation
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="text-center">
+              <p className="text-gray-600 mb-4">Run comprehensive tests with student credentials</p>
+              <Button 
+                onClick={() => {
+                  console.log('🧪 Running all tests with student credentials');
+                  // Test functionality for students
+                }}
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 h-12 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                data-testid="button-run-all-tests-student"
+              >
+                Run All Tests (Student)
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

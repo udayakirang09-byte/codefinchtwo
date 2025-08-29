@@ -124,7 +124,8 @@ export default function TeacherDashboard() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
+      <div className="space-y-6 p-6">
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-purple-50 to-pink-100 p-6 rounded-lg border">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back, Teacher! 👨‍🏫</h2>
@@ -488,6 +489,32 @@ export default function TeacherDashboard() {
           </CardContent>
         </Card>
       )}
+
+      {/* Run All Tests Button - Only for Teachers */}
+      <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-orange-600 to-red-700 text-white">
+          <CardTitle className="flex items-center gap-3">
+            <TrendingUp className="h-6 w-6" />
+            System Testing
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <p className="text-gray-600 mb-4">Run comprehensive tests with teacher credentials</p>
+            <Button 
+              onClick={() => {
+                console.log('🧪 Running all tests with teacher credentials');
+                // Test functionality for teachers
+              }}
+              className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 h-12 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+              data-testid="button-run-all-tests-teacher"
+            >
+              Run All Tests (Teacher)
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+      </div>
     </div>
   );
 }

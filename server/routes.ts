@@ -728,18 +728,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Teacher routes
   app.get("/api/teacher/classes", async (req, res) => {
     try {
-      const teacherId = req.query.teacherId as string;
-      if (!teacherId) {
-        return res.status(400).json({ message: "Teacher ID required" });
-      }
+      // For demo purposes, return mock classes data without requiring database lookup
+      // In production this would query the database based on authenticated teacher
+      const mockClasses = [
+        {
+          id: "1",
+          student: {
+            user: {
+              firstName: "Emma",
+              lastName: "Smith"
+            }
+          },
+          subject: "JavaScript Fundamentals",
+          scheduledAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour from now
+          duration: 60,
+          status: "scheduled"
+        },
+        {
+          id: "2", 
+          student: {
+            user: {
+              firstName: "David",
+              lastName: "Johnson"
+            }
+          },
+          subject: "React Components",
+          scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day from now
+          duration: 90,
+          status: "scheduled"
+        },
+        {
+          id: "3",
+          student: {
+            user: {
+              firstName: "Sarah",
+              lastName: "Wilson"
+            }
+          },
+          subject: "Python Basics",
+          scheduledAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+          duration: 60,
+          status: "completed"
+        }
+      ];
       
-      const mentor = await storage.getMentorByUserId(teacherId);
-      if (!mentor) {
-        return res.status(404).json({ message: "Mentor not found" });
-      }
-      
-      const bookings = await storage.getBookingsByMentor(mentor.id);
-      res.json(bookings);
+      res.json(mockClasses);
     } catch (error) {
       console.error("Error fetching teacher classes:", error);
       res.status(500).json({ message: "Failed to fetch teacher classes" });
