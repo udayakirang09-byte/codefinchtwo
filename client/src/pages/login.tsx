@@ -19,20 +19,19 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // Check credentials against test users (trim whitespace)
-      const validCredentials = [
-        { email: "udayakirang09@gmail.com", password: "Hello111" },
-        { email: "teacher@codeconnect.com", password: "Hello111" },
-        { email: "admin@codeconnect.com", password: "Hello111" }
-      ];
+      console.log('🔐 Login attempt:', { email: email.trim(), password: password.trim() });
       
-      console.log('Login attempt:', { email: email.trim(), password: password.trim() });
+      // Call backend login API
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: email.trim(), 
+          password: password.trim() 
+        })
+      });
       
-      const validUser = validCredentials.find(cred => 
-        cred.email === email.trim() && cred.password === password.trim()
-      );
-      
-      if (!validUser) {
+      if (!response.ok) {
         toast({
           title: "Login Failed",
           description: "Invalid email or password. Try: udayakirang09@gmail.com, teacher@codeconnect.com, or admin@codeconnect.com with password Hello111",
@@ -41,37 +40,32 @@ export default function Login() {
         setLoading(false);
         return;
       }
-
-      // Simulate login API call
-      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Store authentication state (in a real app, this would be handled by proper auth)
+      const userData = await response.json();
+      
+      // Store authentication state
       localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('userEmail', email.trim());
-      // For demo: set role based on email
-      if (email.includes('teacher') || email.includes('mentor')) {
-        localStorage.setItem('userRole', 'mentor');
-      } else if (email.includes('admin')) {
-        localStorage.setItem('userRole', 'admin');
-      } else {
-        localStorage.setItem('userRole', 'student');
-      }
+      localStorage.setItem('userEmail', userData.user.email);
+      localStorage.setItem('userRole', userData.user.role);
+      localStorage.setItem('userId', userData.user.id);
+      localStorage.setItem('userName', `${userData.user.firstName} ${userData.user.lastName}`);
       
-      console.log('✅ Authentication stored, redirecting to home page...');
+      console.log('✅ Authentication stored:', userData.user);
       
       toast({
         title: "Login Successful",
-        description: "Welcome back to CodeConnect! Redirecting...",
+        description: `Welcome back to CodeConnect, ${userData.user.firstName}!`,
         variant: "default",
       });
       
-      // Redirect to home page immediately after successful login
+      // Redirect to home page
       setTimeout(() => {
         console.log('🏠 Redirecting to home page now...');
         window.location.href = "/";
       }, 500);
       
     } catch (error) {
+      console.error('Login error:', error);
       toast({
         title: "Login Failed",
         description: "There was an error logging in. Please try again.",

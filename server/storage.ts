@@ -105,6 +105,11 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
 
   async createUser(userData: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(userData).returning();
@@ -181,10 +186,6 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getMentorByUserId(userId: string): Promise<Mentor | undefined> {
-    const [mentor] = await db.select().from(mentors).where(eq(mentors.userId, userId));
-    return mentor;
-  }
 
   async createMentor(mentorData: InsertMentor): Promise<Mentor> {
     const [mentor] = await db.insert(mentors).values(mentorData).returning();
@@ -267,10 +268,17 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  // Method to get mentor by user ID
   async getMentorByUserId(userId: string): Promise<Mentor | undefined> {
-    const result = await db.select().from(mentors).where(eq(mentors.userId, userId));
-    return result[0];
+    const [mentor] = await db.select().from(mentors).where(eq(mentors.userId, userId));
+    return mentor;
+  }
+  
+  async updateUser(id: string, updates: any): Promise<void> {
+    await db.update(users).set(updates).where(eq(users.id, id));
+  }
+  
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
   }
 
   async getBookingsByStudent(studentId: string): Promise<BookingWithDetails[]> {

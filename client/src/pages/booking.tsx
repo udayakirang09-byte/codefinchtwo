@@ -108,16 +108,24 @@ export default function Booking() {
 
     const scheduledAt = new Date(`${formData.selectedDate}T${formData.selectedTime}`);
     
-    // For demo purposes, we'll create a dummy student ID
-    // In a real app, this would come from authentication
-    const dummyStudentId = "student-" + Math.random().toString(36).substr(2, 9);
+    // Get authenticated user info
+    const userEmail = localStorage.getItem('userEmail');
+    if (!userEmail) {
+      toast({
+        title: "Authentication Required",
+        description: "Please login to book a session.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     const bookingData = {
-      studentId: dummyStudentId,
+      userEmail: userEmail,
       mentorId,
-      scheduledAt: scheduledAt,  // Send as Date object, not string
+      scheduledAt: scheduledAt,
       duration: parseInt(formData.duration),
       notes: formData.notes,
+      studentAge: parseInt(formData.studentAge) || null,
     };
     
     console.log('Booking data:', bookingData);

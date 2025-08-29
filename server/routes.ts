@@ -27,6 +27,84 @@ const stripe = process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY !=
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // Authentication routes
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      // Check credentials against test users
+      const validCredentials = [
+        { email: "udayakirang09@gmail.com", password: "Hello111", role: "student" },
+        { email: "teacher@codeconnect.com", password: "Hello111", role: "mentor" },
+        { email: "admin@codeconnect.com", password: "Hello111", role: "admin" }
+      ];
+      
+      const validUser = validCredentials.find(cred => 
+        cred.email === email.trim() && cred.password === password.trim()
+      );
+      
+      if (!validUser) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      
+      // Check if user exists in database, if not create them
+      let user = await storage.getUserByEmail(email.trim());
+      if (!user) {
+        user = await storage.createUser({
+          email: email.trim(),
+          firstName: validUser.email.split('@')[0],
+          lastName: 'User',
+          role: validUser.role
+        });
+        
+        // Create corresponding student/mentor record
+        if (validUser.role === 'student') {
+          await storage.createStudent({
+            userId: user.id,
+            age: 16,
+            interests: ['programming']
+          });
+        } else if (validUser.role === 'mentor') {
+          await storage.createMentor({
+            userId: user.id,
+            title: 'Programming Mentor',
+            description: 'Experienced programming mentor',
+            experience: 5,
+            specialties: ['JavaScript', 'Python'],
+            hourlyRate: 35,
+            rating: 4.8,
+            availableSlots: []
+          });
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          role: user.role,
+          firstName: user.firstName,
+          lastName: user.lastName
+        } 
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+  
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      // For demo purposes, just return success
+      console.log(`Password reset requested for: ${email}`);
+      res.json({ success: true, message: "Reset code sent to email" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to send reset code" });
+    }
+  });
+  
   // Mentor routes
   app.get("/api/mentors", async (req, res) => {
     try {
@@ -160,13 +238,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.body.duration = parseInt(req.body.duration);
       }
       
-      const bookingData = insertBookingSchema.parse(req.body);
-      
-      // Ensure student exists before creating booking
-      const student = await storage.getStudentByUserId(bookingData.studentId);
-      if (!student) {
-        return res.status(400).json({ message: "Student not found. Please register as a student first." });
+      // Get user info from request
+      const userEmail = req.body.userEmail; // We'll get this from the frontend
+      if (!userEmail) {
+        return res.status(400).json({ message: "User not authenticated" });
       }
+      
+      // Find user and their student record
+      const user = await storage.getUserByEmail(userEmail);
+      if (!user) {
+        return res.status(400).json({ message: "User not found" });
+      }
+      
+      let student = await storage.getStudentByUserId(user.id);
+      if (!student) {
+        // Auto-create student record if doesn't exist
+        student = await storage.createStudent({
+          userId: user.id,
+          age: req.body.studentAge || null,
+          interests: ['programming']
+        });
+      }
+      
+      const bookingData = {
+        studentId: student.id,
+        mentorId: req.body.mentorId,
+        scheduledAt: req.body.scheduledAt,
+        duration: req.body.duration,
+        notes: req.body.notes || ''
+      };
       
       const booking = await storage.createBooking(bookingData);
       res.status(201).json(booking);
