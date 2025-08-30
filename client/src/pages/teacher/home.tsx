@@ -35,7 +35,12 @@ export default function TeacherHome() {
   }, []);
 
   // Fetch teacher profile data
-  const { data: teacherProfile } = useQuery({
+  const { data: teacherProfile } = useQuery<{
+    qualifications?: { qualification: string; specialization: string; score: string; }[];
+    subjects?: { subject: string; experience: string; }[];
+    isProfileComplete?: boolean;
+    totalTeachingExperience?: number;
+  }>({
     queryKey: ['/api/teacher/profile', { teacherId: 'teacher@codeconnect.com' }],
     retry: false,
   });
@@ -300,7 +305,7 @@ export default function TeacherHome() {
                         <h3 className="text-lg font-semibold mb-4 text-blue-700">Educational Qualifications</h3>
                         {teacherProfile?.qualifications && teacherProfile.qualifications.length > 0 ? (
                           <div className="grid gap-4">
-                            {teacherProfile.qualifications.map((qual, index) => (
+                            {teacherProfile.qualifications.map((qual: { qualification: string; specialization: string; score: string; }, index: number) => (
                               <div key={index} className="border rounded-lg p-4 bg-blue-50">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                   <div>
@@ -331,7 +336,7 @@ export default function TeacherHome() {
                         <h3 className="text-lg font-semibold mb-4 text-green-700">Teaching Subjects & Experience</h3>
                         {teacherProfile?.subjects && teacherProfile.subjects.length > 0 ? (
                           <div className="grid gap-4">
-                            {teacherProfile.subjects.map((subj, index) => (
+                            {teacherProfile.subjects.map((subj: { subject: string; experience: string; }, index: number) => (
                               <div key={index} className="border rounded-lg p-4 bg-green-50">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                   <div>
@@ -362,14 +367,14 @@ export default function TeacherHome() {
                               <div>
                                 <span className="text-sm font-medium text-gray-600">Profile Complete:</span>
                                 <p className="text-sm mt-1">
-                                  <Badge variant={teacherProfile.isProfileComplete ? "default" : "secondary"}>
-                                    {teacherProfile.isProfileComplete ? "Complete" : "Incomplete"}
+                                  <Badge variant={teacherProfile?.isProfileComplete ? "default" : "secondary"}>
+                                    {teacherProfile?.isProfileComplete ? "Complete" : "Incomplete"}
                                   </Badge>
                                 </p>
                               </div>
                               <div>
                                 <span className="text-sm font-medium text-gray-600">Teaching Experience:</span>
-                                <p className="text-sm mt-1">{teacherProfile.totalTeachingExperience || 0} years</p>
+                                <p className="text-sm mt-1">{teacherProfile?.totalTeachingExperience || 0} years</p>
                               </div>
                             </div>
                           </div>
