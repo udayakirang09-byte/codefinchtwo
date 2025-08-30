@@ -131,39 +131,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { email, password } = req.body;
       
-      // Check credentials against test users
-      const validCredentials = [
-        { email: "udayakirang09@gmail.com", password: "Hello111", role: "student" },
-        { email: "teacher@codeconnect.com", password: "Hello111", role: "mentor" },
-        { email: "admin@codeconnect.com", password: "Hello111", role: "admin" }
-      ];
+      // Check credentials against database users
+      const user = await storage.getUserByEmail(email.trim());
       
-      const validUser = validCredentials.find(cred => 
-        cred.email === email.trim() && cred.password === password.trim()
-      );
-      
-      if (!validUser) {
+      if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
-      // Check if user exists in database, if not create them
-      let user = await storage.getUserByEmail(email.trim());
-      if (!user) {
-        user = await storage.createUser({
-          email: email.trim(),
-          firstName: validUser.email.split('@')[0],
-          lastName: 'User',
-          role: validUser.role
-        });
-        
-        // Create corresponding student/mentor record
-        if (validUser.role === 'student') {
+      // Check password (using plain text comparison for now - in production use bcrypt)
+      if (user.password !== password.trim()) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      
+      // Create corresponding student/mentor record if they don't exist
+      if (user.role === 'student') {
+        try {
+          await storage.getStudentByUserId(user.id);
+        } catch (error) {
+          // Student record doesn't exist, create it
           await storage.createStudent({
             userId: user.id,
             age: 16,
             interests: ['programming']
           });
-        } else if (validUser.role === 'mentor') {
+        }
+      } else if (user.role === 'mentor') {
+        try {
+          await storage.getMentorByUserId(user.id);
+        } catch (error) {
+          // Mentor record doesn't exist, create it
           await storage.createMentor({
             userId: user.id,
             title: 'Programming Mentor',
