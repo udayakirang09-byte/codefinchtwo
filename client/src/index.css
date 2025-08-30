@@ -120,4 +120,35 @@
   .dark .sticky-nav {
     background: rgba(55, 65, 81, 0.8);
   }
+
+  .modern-card {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+    border: 0 !important;
+    border-radius: 1rem !important;
+    background-image: linear-gradient(to bottom right, var(--tw-gradient-stops)) !important;
+  }
+
+  .modern-card-blue {
+    --tw-gradient-from: #ffffff !important;
+    --tw-gradient-to: #dbeafe !important;
+    --tw-gradient-stops: var(--tw-gradient-from), #f0f9ff, var(--tw-gradient-to) !important;
+  }
+
+  .modern-card-green {
+    --tw-gradient-from: #ffffff !important;
+    --tw-gradient-to: #d1fae5 !important;
+    --tw-gradient-stops: var(--tw-gradient-from), #ecfdf5, var(--tw-gradient-to) !important;
+  }
+
+  .modern-card-purple {
+    --tw-gradient-from: #ffffff !important;
+    --tw-gradient-to: #e9d5ff !important;
+    --tw-gradient-stops: var(--tw-gradient-from), #f3e8ff, var(--tw-gradient-to) !important;
+  }
+
+  .modern-card-red {
+    --tw-gradient-from: #ffffff !important;
+    --tw-gradient-to: #fecaca !important;
+    --tw-gradient-stops: var(--tw-gradient-from), #fef2f2, var(--tw-gradient-to) !important;
+  }
 }

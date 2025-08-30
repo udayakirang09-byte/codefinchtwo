@@ -284,7 +284,7 @@ export default function AdminDashboard() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="!shadow-2xl !bg-gradient-to-br !from-white !via-blue-50 !to-indigo-50 !border-0 !rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleViewDetails('users')}>
+        <Card className="modern-card modern-card-blue overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleViewDetails('users')}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-blue-600" />
@@ -299,7 +299,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
         
-        <Card className="!shadow-2xl !bg-gradient-to-br !from-white !via-green-50 !to-emerald-50 !border-0 !rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleViewDetails('classes')}>
+        <Card className="modern-card modern-card-green overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleViewDetails('classes')}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-green-600" />
@@ -314,7 +314,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
         
-        <Card className="!shadow-2xl !bg-gradient-to-br !from-white !via-purple-50 !to-violet-50 !border-0 !rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleViewDetails('revenue')}>
+        <Card className="modern-card modern-card-purple overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleViewDetails('revenue')}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-purple-600" />
@@ -327,7 +327,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
         
-        <Card className="!shadow-2xl !bg-gradient-to-br !from-white !via-orange-50 !to-amber-50 !border-0 !rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleViewDetails('performance')}>
+        <Card className="modern-card modern-card-green overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleViewDetails('performance')}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-orange-600" />
@@ -345,7 +345,7 @@ export default function AdminDashboard() {
 
       {/* Alerts & Issues */}
       {alerts.length > 0 && (
-        <Card className="!shadow-2xl !bg-gradient-to-br !from-white !via-gray-50 !to-red-50 !border-0 !rounded-2xl overflow-hidden">
+        <Card className="modern-card modern-card-red overflow-hidden">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5" />
@@ -384,7 +384,7 @@ export default function AdminDashboard() {
       )}
 
       {/* Admin Configuration Tabs */}
-      <Card className="!shadow-2xl !bg-gradient-to-br !from-white !via-gray-50 !to-blue-50 !border-0 !rounded-2xl overflow-hidden">
+      <Card className="modern-card modern-card-blue overflow-hidden">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
@@ -571,7 +571,7 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Activities */}
-        <Card className="!shadow-2xl !bg-gradient-to-br !from-white !via-gray-50 !to-blue-50 !border-0 !rounded-2xl overflow-hidden">
+        <Card className="modern-card modern-card-blue overflow-hidden">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Bell className="h-5 w-5" />
@@ -594,7 +594,7 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Quick Actions */}
-        <Card className="!shadow-2xl !bg-gradient-to-br !from-white !via-gray-50 !to-green-50 !border-0 !rounded-2xl overflow-hidden">
+        <Card className="modern-card modern-card-green overflow-hidden">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
@@ -845,7 +845,7 @@ export default function AdminDashboard() {
       )}
 
       {/* System Health */}
-      <Card className="!shadow-2xl !bg-gradient-to-br !from-white !via-gray-50 !to-emerald-50 !border-0 !rounded-2xl overflow-hidden">
+      <Card className="modern-card modern-card-green overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white">
           <CardTitle className="flex items-center gap-3 text-xl">
             <TrendingUp className="h-6 w-6" />
@@ -881,7 +881,7 @@ export default function AdminDashboard() {
       </Card>
 
       {/* Application Mapping Table */}
-      <Card className="!shadow-2xl !bg-gradient-to-br !from-white !via-gray-50 !to-purple-50 !border-0 !rounded-2xl overflow-hidden">
+      <Card className="modern-card modern-card-purple overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
           <CardTitle className="flex items-center gap-3 text-xl">
             <Settings className="h-6 w-6" />
@@ -973,7 +973,7 @@ export default function AdminDashboard() {
       </Card>
 
       {/* Unit Test Cases Table */}
-      <Card className="!shadow-2xl !border-0 !bg-white/90 backdrop-blur-sm !rounded-2xl overflow-hidden">
+      <Card className="modern-card modern-card-blue backdrop-blur-sm overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-700 text-white">
           <CardTitle className="flex items-center gap-3 text-xl">
             <Shield className="h-6 w-6" />
@@ -1041,7 +1041,7 @@ export default function AdminDashboard() {
       </Card>
 
       {/* System Test Cases Table */}
-      <Card className="!shadow-2xl !border-0 !bg-white/90 backdrop-blur-sm !rounded-2xl overflow-hidden">
+      <Card className="modern-card modern-card-blue backdrop-blur-sm overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-purple-600 to-violet-700 text-white">
           <CardTitle className="flex items-center gap-3 text-xl">
             <BarChart3 className="h-6 w-6" />
@@ -1109,7 +1109,7 @@ export default function AdminDashboard() {
       </Card>
 
       {/* Load Testing Strategy Documentation */}
-      <Card className="!shadow-2xl !border-0 !bg-white/90 backdrop-blur-sm !rounded-2xl overflow-hidden">
+      <Card className="modern-card modern-card-blue backdrop-blur-sm overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-orange-600 to-red-700 text-white">
           <CardTitle className="flex items-center gap-3 text-xl">
             <TrendingUp className="h-6 w-6" />
@@ -1232,7 +1232,7 @@ export default function AdminDashboard() {
       </Card>
 
       {/* Run All Tests Button - Only for Admins */}
-      <Card className="!shadow-2xl !border-0 !bg-white/90 backdrop-blur-sm !rounded-2xl overflow-hidden">
+      <Card className="modern-card modern-card-blue backdrop-blur-sm overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-700 text-white">
           <CardTitle className="flex items-center gap-3">
             <BarChart3 className="h-6 w-6" />
