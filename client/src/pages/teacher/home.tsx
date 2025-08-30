@@ -203,7 +203,7 @@ export default function TeacherHome() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Upcoming Sessions */}
           <div className="lg:col-span-2">
-            <Card className="modern-card modern-card-blue overflow-hidden">
+            <Card className="bg-gradient-to-br from-white via-gray-50 to-blue-50 shadow-2xl border-0 rounded-2xl overflow-hidden">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5" />
@@ -256,7 +256,7 @@ export default function TeacherHome() {
           {/* Activity Feed & Quick Actions */}
           <div className="space-y-6">
             {/* Quick Actions */}
-            <Card className="modern-card modern-card-purple overflow-hidden">
+            <Card className="bg-gradient-to-br from-white via-gray-50 to-purple-50 shadow-2xl border-0 rounded-2xl overflow-hidden">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Settings className="h-5 w-5" />
@@ -382,7 +382,7 @@ export default function TeacherHome() {
             </Card>
 
             {/* Recent Activity */}
-            <Card className="modern-card modern-card-green overflow-hidden">
+            <Card className="bg-gradient-to-br from-white via-gray-50 to-green-50 shadow-2xl border-0 rounded-2xl overflow-hidden">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Bell className="h-5 w-5" />
@@ -407,7 +407,7 @@ export default function TeacherHome() {
             </Card>
 
             {/* System Testing */}
-            <Card className="modern-card modern-card-orange text-white overflow-hidden">
+            <Card className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white shadow-2xl border-0 rounded-2xl overflow-hidden">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TestTube className="h-5 w-5" />
@@ -450,7 +450,7 @@ export default function TeacherHome() {
             </Card>
 
             {/* Performance Overview */}
-            <Card className="modern-card modern-card-blue overflow-hidden">
+            <Card className="bg-gradient-to-br from-white via-gray-50 to-blue-50 shadow-2xl border-0 rounded-2xl overflow-hidden">
               <CardHeader>
                 <CardTitle>Performance Overview</CardTitle>
               </CardHeader>
