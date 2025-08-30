@@ -345,7 +345,7 @@ export default function AdminDashboard() {
 
       {/* Alerts & Issues */}
       {alerts.length > 0 && (
-        <Card>
+        <Card className="shadow-2xl bg-gradient-to-br from-white via-gray-50 to-red-50 border-0 rounded-2xl overflow-hidden">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5" />
@@ -384,7 +384,7 @@ export default function AdminDashboard() {
       )}
 
       {/* Admin Configuration Tabs */}
-      <Card className="shadow-2xl bg-gradient-to-br from-white via-gray-50 to-slate-50 border-0 rounded-2xl overflow-hidden">
+      <Card className="shadow-2xl bg-gradient-to-br from-white via-gray-50 to-blue-50 border-0 rounded-2xl overflow-hidden">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
@@ -571,7 +571,7 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Activities */}
-        <Card>
+        <Card className="shadow-2xl bg-gradient-to-br from-white via-gray-50 to-blue-50 border-0 rounded-2xl overflow-hidden">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Bell className="h-5 w-5" />
@@ -594,7 +594,7 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Quick Actions */}
-        <Card>
+        <Card className="shadow-2xl bg-gradient-to-br from-white via-gray-50 to-green-50 border-0 rounded-2xl overflow-hidden">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
@@ -845,7 +845,7 @@ export default function AdminDashboard() {
       )}
 
       {/* System Health */}
-      <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+      <Card className="shadow-2xl bg-gradient-to-br from-white via-gray-50 to-emerald-50 border-0 rounded-2xl overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white">
           <CardTitle className="flex items-center gap-3 text-xl">
             <TrendingUp className="h-6 w-6" />
@@ -881,7 +881,7 @@ export default function AdminDashboard() {
       </Card>
 
       {/* Application Mapping Table */}
-      <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+      <Card className="shadow-2xl bg-gradient-to-br from-white via-gray-50 to-purple-50 border-0 rounded-2xl overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
           <CardTitle className="flex items-center gap-3 text-xl">
             <Settings className="h-6 w-6" />
