@@ -274,123 +274,170 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
-      <div className="space-y-6 p-6">
-      {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-red-50 to-orange-100 p-6 rounded-lg border">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Admin Dashboard 🛡️</h2>
-        <p className="text-gray-700">Monitor system performance, manage users, and oversee platform operations.</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50">
+      <div className="space-y-8 p-6 max-w-7xl mx-auto">
+        {/* Ultra Modern Welcome Section */}
+        <div className="relative overflow-hidden bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 p-8 rounded-3xl shadow-2xl border border-white/20">
+          <div className="absolute inset-0 bg-gradient-to-r from-black/10 to-transparent"></div>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-4xl font-bold text-white mb-3 tracking-tight">Admin Dashboard 🛡️</h1>
+                <p className="text-orange-100 text-xl font-medium">Monitor system performance, manage users, and oversee platform operations</p>
+              </div>
+              <div className="hidden md:flex items-center space-x-6">
+                <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 text-center min-w-[120px]">
+                  <div className="text-white text-3xl font-bold">
+                    {stats?.totalUsers || 0}
+                  </div>
+                  <div className="text-orange-100 text-sm font-medium">Total Users</div>
+                </div>
+                <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 text-center min-w-[120px]">
+                  <div className="text-white text-3xl font-bold">
+                    {stats?.activeClasses || 0}
+                  </div>
+                  <div className="text-orange-100 text-sm font-medium">Active Classes</div>
+                </div>
+                <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 text-center min-w-[120px]">
+                  <div className="text-white text-3xl font-bold">
+                    ${stats?.monthlyRevenue || 0}
+                  </div>
+                  <div className="text-orange-100 text-sm font-medium">Monthly Revenue</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="absolute -top-6 -right-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+          <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-yellow-300/20 rounded-full blur-3xl"></div>
+        </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="modern-card modern-card-blue overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleViewDetails('users')}>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold">{stats.totalUsers?.toLocaleString() || '0'}</p>
-                <p className="text-xs text-gray-500">
-                  {stats.totalMentors} mentors, {stats.totalStudents} students
-                </p>
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="shadow-xl border-0 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl overflow-hidden cursor-pointer hover:shadow-2xl transform hover:scale-105 transition-all duration-300" onClick={() => handleViewDetails('users')}>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="bg-blue-600 rounded-2xl p-4">
+                  <Users className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Users</p>
+                  <p className="text-3xl font-bold text-gray-800">{stats.totalUsers?.toLocaleString() || '0'}</p>
+                  <p className="text-xs text-blue-600 font-medium">
+                    {stats.totalMentors} mentors, {stats.totalStudents} students
+                  </p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="modern-card modern-card-green overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleViewDetails('classes')}>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="text-sm text-gray-600">Active Classes</p>
-                <p className="text-2xl font-bold">{stats.activeClasses}</p>
-                <p className="text-xs text-gray-500">
-                  {stats.totalBookings?.toLocaleString() || '0'} total bookings
-                </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="shadow-xl border-0 bg-gradient-to-br from-green-50 to-emerald-100 rounded-2xl overflow-hidden cursor-pointer hover:shadow-2xl transform hover:scale-105 transition-all duration-300" onClick={() => handleViewDetails('classes')}>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="bg-green-600 rounded-2xl p-4">
+                  <BookOpen className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Active Classes</p>
+                  <p className="text-3xl font-bold text-gray-800">{stats.activeClasses}</p>
+                  <p className="text-xs text-green-600 font-medium">
+                    {stats.totalBookings?.toLocaleString() || '0'} total bookings
+                  </p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="modern-card modern-card-purple overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleViewDetails('revenue')}>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-purple-600" />
-              <div>
-                <p className="text-sm text-gray-600">Monthly Revenue</p>
-                <p className="text-2xl font-bold">${stats.monthlyRevenue?.toLocaleString() || '0'}</p>
-                <p className="text-xs text-green-600">+12% from last month</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="shadow-xl border-0 bg-gradient-to-br from-purple-50 to-pink-100 rounded-2xl overflow-hidden cursor-pointer hover:shadow-2xl transform hover:scale-105 transition-all duration-300" onClick={() => handleViewDetails('revenue')}>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="bg-purple-600 rounded-2xl p-4">
+                  <DollarSign className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Monthly Revenue</p>
+                  <p className="text-3xl font-bold text-gray-800">${stats.monthlyRevenue?.toLocaleString() || '0'}</p>
+                  <p className="text-xs text-green-600 font-medium">+12% from last month</p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="modern-card modern-card-green overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleViewDetails('performance')}>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-orange-600" />
-              <div>
-                <p className="text-sm text-gray-600">Completion Rate</p>
-                <p className="text-2xl font-bold">{stats.completionRate}%</p>
-                <p className="text-xs text-gray-500">
-                  Avg rating: {stats.averageRating}⭐
-                </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="shadow-xl border-0 bg-gradient-to-br from-orange-50 to-red-100 rounded-2xl overflow-hidden cursor-pointer hover:shadow-2xl transform hover:scale-105 transition-all duration-300" onClick={() => handleViewDetails('performance')}>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="bg-orange-600 rounded-2xl p-4">
+                  <TrendingUp className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Completion Rate</p>
+                  <p className="text-3xl font-bold text-gray-800">{stats.completionRate}%</p>
+                  <p className="text-xs text-orange-600 font-medium">
+                    Avg rating: {stats.averageRating}⭐
+                  </p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
 
-      {/* Alerts & Issues */}
-      {alerts.length > 0 && (
-        <Card className="modern-card modern-card-red overflow-hidden">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" />
-              System Alerts ({alerts.length})
+        {/* Alerts & Issues */}
+        {alerts.length > 0 && (
+          <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-red-600 to-pink-700 text-white">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <AlertTriangle className="h-6 w-6" />
+                System Alerts
+                <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30">
+                  {alerts.length} active
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                {alerts.map((alert) => (
+                  <div 
+                    key={alert.id} 
+                    className={`p-6 rounded-2xl border-l-4 shadow-lg hover:shadow-xl transition-all duration-300 ${
+                      alert.type === 'error' ? 'bg-gradient-to-r from-red-50 to-pink-50 border-red-400' :
+                      alert.type === 'warning' ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-400' :
+                      'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-400'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h4 className="font-bold text-lg text-gray-800 mb-2">{alert.title}</h4>
+                        <p className="text-gray-700 leading-relaxed mb-3">{alert.message}</p>
+                        <div className="bg-white/70 px-3 py-2 rounded-lg w-fit">
+                          <p className="text-xs font-medium text-gray-600">
+                            {alert.timestamp.toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      <Button 
+                        size="lg" 
+                        variant="outline"
+                        onClick={() => handleResolveAlert(alert.id)}
+                        className="ml-4 hover:bg-green-50 hover:border-green-300 hover:text-green-700 rounded-xl"
+                        data-testid={`button-resolve-alert-${alert.id}`}
+                      >
+                        Resolve
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Admin Configuration Tabs */}
+        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-indigo-600 to-purple-700 text-white">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <Settings className="h-6 w-6" />
+              Admin Configuration
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {alerts.map((alert) => (
-                <div 
-                  key={alert.id} 
-                  className={`p-4 rounded-lg border-l-4 ${getAlertColor(alert.type)}`}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-semibold">{alert.title}</h4>
-                      <p className="text-sm mt-1">{alert.message}</p>
-                      <p className="text-xs mt-2 opacity-70">
-                        {alert.timestamp.toLocaleString()}
-                      </p>
-                    </div>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => handleResolveAlert(alert.id)}
-                      data-testid={`button-resolve-alert-${alert.id}`}
-                    >
-                      Resolve
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Admin Configuration Tabs */}
-      <Card className="modern-card modern-card-blue overflow-hidden">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Admin Configuration
-          </CardTitle>
-        </CardHeader>
         <CardContent>
           <Tabs defaultValue="contact" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
@@ -569,80 +616,87 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Activities */}
-        <Card className="modern-card modern-card-blue overflow-hidden">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              Recent Activities
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
-                  <div>
-                    <p className="text-sm font-medium">{activity.action}</p>
-                    <p className="text-xs text-gray-600">{activity.user}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent Activities */}
+          <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-teal-600 to-cyan-700 text-white">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <Bell className="h-6 w-6" />
+                Recent Activities
+                <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30">
+                  {recentActivities.length} recent
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                {recentActivities.map((activity) => (
+                  <div key={activity.id} className="bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-200 rounded-xl p-4 hover:shadow-md transition-all duration-200">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="font-bold text-gray-800 mb-1">{activity.action}</p>
+                        <p className="text-sm text-teal-600 font-medium">{activity.user}</p>
+                      </div>
+                      <div className="bg-white/70 px-3 py-1 rounded-lg">
+                        <p className="text-xs font-medium text-gray-600">{activity.time}</p>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-500">{activity.time}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Quick Actions */}
-        <Card className="modern-card modern-card-green overflow-hidden">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Admin Actions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              <Button 
-                variant="outline" 
-                className="h-auto p-4 flex-col" 
-                data-testid="button-user-management"
-                onClick={() => window.location.href = '/admin/user-management'}
-              >
-                <UserCheck className="h-6 w-6 mb-2" />
-                <span>User Management</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-auto p-4 flex-col" 
-                data-testid="button-mentor-approval"
-                onClick={() => window.location.href = '/admin/mentor-approval'}
-              >
-                <Shield className="h-6 w-6 mb-2" />
-                <span>Mentor Approval</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-auto p-4 flex-col" 
-                data-testid="button-system-reports"
-                onClick={() => setShowSystemReports(!showSystemReports)}
-              >
-                <BarChart3 className="h-6 w-6 mb-2" />
-                <span>System Reports</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-auto p-4 flex-col" 
-                data-testid="button-platform-settings"
-                onClick={() => setShowPlatformSettings(!showPlatformSettings)}
-              >
-                <Settings className="h-6 w-6 mb-2" />
-                <span>Platform Settings</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          {/* Quick Actions */}
+          <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-emerald-600 to-green-700 text-white">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <Settings className="h-6 w-6" />
+                Admin Actions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-2 gap-4">
+                <Button 
+                  variant="outline" 
+                  className="h-24 p-4 flex-col hover:bg-blue-50 hover:border-blue-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                  data-testid="button-user-management"
+                  onClick={() => window.location.href = '/admin/user-management'}
+                >
+                  <UserCheck className="h-8 w-8 mb-2 text-blue-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold">User Management</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-24 p-4 flex-col hover:bg-purple-50 hover:border-purple-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                  data-testid="button-mentor-approval"
+                  onClick={() => window.location.href = '/admin/mentor-approval'}
+                >
+                  <Shield className="h-8 w-8 mb-2 text-purple-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold">Mentor Approval</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-24 p-4 flex-col hover:bg-green-50 hover:border-green-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                  data-testid="button-system-reports"
+                  onClick={() => setShowSystemReports(!showSystemReports)}
+                >
+                  <BarChart3 className="h-8 w-8 mb-2 text-green-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold">System Reports</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-24 p-4 flex-col hover:bg-orange-50 hover:border-orange-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                  data-testid="button-platform-settings"
+                  onClick={() => setShowPlatformSettings(!showPlatformSettings)}
+                >
+                  <Settings className="h-8 w-8 mb-2 text-orange-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold">Platform Settings</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
       {/* System Reports Section */}
       {showSystemReports && (
@@ -1231,54 +1285,64 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
 
-      {/* Run All Tests Button - Only for Admins */}
-      <Card className="modern-card modern-card-blue backdrop-blur-sm overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-700 text-white">
-          <CardTitle className="flex items-center gap-3">
-            <BarChart3 className="h-6 w-6" />
-            System Testing & Monitoring
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="text-center">
-            <p className="text-gray-600 mb-4">Run comprehensive system tests with admin privileges</p>
-            <Button 
-              onClick={async () => {
-                setIsRunningTests(true);
-                setTestResults(null);
-                
-                try {
-                  const response = await fetch('/api/test/run-all', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ 
-                      testType: 'system', 
-                      userRole: 'admin' 
-                    }),
-                  });
+        {/* System Testing */}
+        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-700 text-white">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <BarChart3 className="h-6 w-6" />
+              System Testing & Monitoring
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-6 mb-6">
+              <p className="text-gray-700 font-medium mb-4">Run comprehensive system tests with admin privileges to ensure all platform features work properly</p>
+              <Button 
+                onClick={async () => {
+                  setIsRunningTests(true);
+                  setTestResults(null);
                   
-                  if (response.ok) {
-                    const results = await response.json();
-                    setTestResults(results);
-                    console.log('🧪 Test results:', results);
+                  try {
+                    const response = await fetch('/api/test/run-all', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({ 
+                        testType: 'system', 
+                        userRole: 'admin' 
+                      }),
+                    });
+                    
+                    if (response.ok) {
+                      const results = await response.json();
+                      setTestResults(results);
+                      console.log('🧪 Test results:', results);
+                    }
+                  } catch (error) {
+                    console.error('Failed to run tests:', error);
+                  } finally {
+                    setIsRunningTests(false);
                   }
-                } catch (error) {
-                  console.error('Failed to run tests:', error);
-                } finally {
-                  setIsRunningTests(false);
-                }
-              }}
-              disabled={isRunningTests}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-12 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
-              data-testid="button-run-all-tests-admin"
-            >
-              {isRunningTests ? 'Running Tests...' : 'Run All Tests (Admin)'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+                }}
+                disabled={isRunningTests}
+                className="w-full h-14 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 rounded-xl disabled:opacity-50"
+                data-testid="button-run-all-tests-admin"
+              >
+                {isRunningTests ? (
+                  <>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
+                    <span>Running comprehensive tests...</span>
+                  </>
+                ) : (
+                  <>
+                    <BarChart3 className="h-6 w-6 mr-3" />
+                    Run All Tests (Admin)
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
       {/* Detail Modal */}
       <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>

@@ -146,248 +146,288 @@ export default function TeacherDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
-      <div className="space-y-6 p-6">
-      {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-purple-50 to-pink-100 p-6 rounded-lg border">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back, Teacher! 👨‍🏫</h2>
-        <p className="text-gray-700">Manage your classes, track earnings, and connect with your students.</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+      <div className="space-y-8 p-6 max-w-7xl mx-auto">
+        {/* Ultra Modern Welcome Section */}
+        <div className="relative overflow-hidden bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 p-8 rounded-3xl shadow-2xl border border-white/20">
+          <div className="absolute inset-0 bg-gradient-to-r from-black/10 to-transparent"></div>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-4xl font-bold text-white mb-3 tracking-tight">Welcome Back, Teacher! 👨‍🏫</h1>
+                <p className="text-purple-100 text-xl font-medium">Manage your classes, track earnings, and connect with your students</p>
+              </div>
+              <div className="hidden md:flex items-center space-x-6">
+                <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 text-center min-w-[120px]">
+                  <div className="text-white text-3xl font-bold">
+                    {statsLoading ? "..." : stats?.totalStudents || 0}
+                  </div>
+                  <div className="text-purple-100 text-sm font-medium">Total Students</div>
+                </div>
+                <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 text-center min-w-[120px]">
+                  <div className="text-white text-3xl font-bold">
+                    {statsLoading ? "..." : `$${stats?.monthlyEarnings || 0}`}
+                  </div>
+                  <div className="text-purple-100 text-sm font-medium">Monthly Earnings</div>
+                </div>
+                <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 text-center min-w-[120px]">
+                  <div className="text-white text-3xl font-bold">
+                    {statsLoading ? "..." : `${stats?.averageRating || 0}⭐`}
+                  </div>
+                  <div className="text-purple-100 text-sm font-medium">Average Rating</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="absolute -top-6 -right-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+          <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-blue-300/20 rounded-full blur-3xl"></div>
+        </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-600">Total Students</p>
-                <p className="text-2xl font-bold">{stats.totalStudents}</p>
+        {/* Beautiful Notifications Panel */}
+        {notifications.length > 0 && (
+          <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <Bell className="h-6 w-6" />
+                Notifications
+                <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30">
+                  {notifications.filter((n: any) => !n.isRead).length} new
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                {notifications.map((notification: any) => (
+                  <div 
+                    key={notification.id} 
+                    className={`p-4 rounded-xl border-l-4 transition-all duration-200 cursor-pointer hover:shadow-md ${
+                      notification.isRead 
+                        ? 'bg-gray-50 border-gray-300 opacity-70' 
+                        : notification.type === 'reminder' 
+                          ? 'bg-blue-50 border-blue-400 hover:bg-blue-100' 
+                          : notification.type === 'message'
+                            ? 'bg-green-50 border-green-400 hover:bg-green-100'
+                            : 'bg-orange-50 border-orange-400 hover:bg-orange-100'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-600 leading-relaxed">{notification.message}</p>
+                        <p className="text-xs text-gray-400 mt-2">
+                          {formatDistanceToNow(notification.timestamp || new Date(), { addSuffix: true })}
+                        </p>
+                      </div>
+                      <div className="ml-4 flex-shrink-0">
+                        {!notification.isRead && (
+                          <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="text-sm text-gray-600">Monthly Earnings</p>
-                <p className="text-2xl font-bold">${stats.monthlyEarnings}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-yellow-600" />
-              <div>
-                <p className="text-sm text-gray-600">Average Rating</p>
-                <p className="text-2xl font-bold">{stats.averageRating}⭐</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-purple-600" />
-              <div>
-                <p className="text-sm text-gray-600">Completed Sessions</p>
-                <p className="text-2xl font-bold">{stats.completedSessions}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Notifications */}
-      {notifications.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              Notifications
+        {/* Upcoming Classes - Redesigned */}
+        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <Calendar className="h-6 w-6" />
+              Upcoming Classes
+              <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30">
+                {upcomingClasses.length} scheduled
+              </Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {notifications.map((notification: any) => (
-                <div 
-                  key={notification.id} 
-                  className={`p-3 rounded-lg border-l-4 ${
-                    notification.type === 'reminder' ? 'bg-blue-50 border-blue-400' : 
-                    notification.type === 'message' ? 'bg-green-50 border-green-400' :
-                    'bg-orange-50 border-orange-400'
-                  }`}
-                >
-                  <p className="text-sm">{notification.message}</p>
+          <CardContent className="p-6">
+            <div className="space-y-6">
+              {upcomingClasses.map((upcomingClass) => {
+                const videoEnabled = isVideoEnabled(upcomingClass.scheduledAt);
+                const chatEnabled = isChatEnabled(upcomingClass.scheduledAt);
+                
+                return (
+                  <div key={upcomingClass.id} className="bg-gradient-to-r from-slate-50 to-blue-50 border border-blue-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="font-bold text-xl text-gray-800 mb-1">{upcomingClass.subject}</h3>
+                        <p className="text-blue-600 font-medium">with {upcomingClass.studentName}</p>
+                      </div>
+                      <div className="text-right">
+                        <Badge variant="outline" className="mb-2 bg-blue-100 text-blue-700 border-blue-300">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {upcomingClass.duration} min
+                        </Badge>
+                        <p className="text-lg text-green-600 font-bold">${upcomingClass.rate}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-6 mb-4 text-sm">
+                      <div className="flex items-center gap-2 bg-white/70 px-3 py-2 rounded-lg">
+                        <Calendar className="h-4 w-4 text-blue-600" />
+                        <span className="font-medium">{upcomingClass.scheduledAt.toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center gap-2 bg-white/70 px-3 py-2 rounded-lg">
+                        <Clock className="h-4 w-4 text-purple-600" />
+                        <span className="font-medium">{upcomingClass.scheduledAt.toLocaleTimeString()}</span>
+                      </div>
+                      <div className="flex items-center gap-2 bg-white/70 px-3 py-2 rounded-lg">
+                        <TrendingUp className="h-4 w-4 text-green-600" />
+                        <span className="font-medium">{formatDistanceToNow(upcomingClass.scheduledAt, { addSuffix: true })}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <Button
+                        size="lg"
+                        variant={videoEnabled ? "default" : "secondary"}
+                        disabled={!videoEnabled}
+                        onClick={() => handleJoinVideo(upcomingClass.id)}
+                        className={`${videoEnabled ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg' : ''} rounded-xl`}
+                        data-testid={`button-teacher-video-${upcomingClass.id}`}
+                      >
+                        <Video className="h-5 w-5 mr-2" />
+                        {videoEnabled ? "Start Class" : `Available in ${formatDistanceToNow(addMinutes(upcomingClass.scheduledAt, -10))}`}
+                      </Button>
+                      
+                      <Button
+                        size="lg"
+                        variant={chatEnabled ? "outline" : "secondary"}
+                        disabled={!chatEnabled}
+                        onClick={() => handleJoinChat(upcomingClass.id)}
+                        className={`${chatEnabled ? 'border-blue-300 text-blue-700 hover:bg-blue-50' : ''} rounded-xl`}
+                        data-testid={`button-teacher-chat-${upcomingClass.id}`}
+                      >
+                        <MessageCircle className="h-5 w-5 mr-2" />
+                        {chatEnabled ? "Chat" : `Chat in ${formatDistanceToNow(addHours(upcomingClass.scheduledAt, -1))}`}
+                      </Button>
+
+                      <Button
+                        size="lg"
+                        variant="ghost"
+                        onClick={() => handleManageClass(upcomingClass.id)}
+                        className="hover:bg-gray-100 rounded-xl"
+                        data-testid={`button-manage-class-${upcomingClass.id}`}
+                      >
+                        Manage
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+              {upcomingClasses.length === 0 && (
+                <div className="text-center py-12">
+                  <div className="bg-blue-50 rounded-2xl p-8 border border-blue-200">
+                    <Calendar className="h-16 w-16 text-blue-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">No Upcoming Classes</h3>
+                    <p className="text-gray-600">Your schedule is clear! Time to connect with new students.</p>
+                  </div>
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
-      )}
 
-      {/* Upcoming Classes */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Upcoming Classes
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {upcomingClasses.map((upcomingClass) => {
-              const videoEnabled = isVideoEnabled(upcomingClass.scheduledAt);
-              const chatEnabled = isChatEnabled(upcomingClass.scheduledAt);
-              
-              return (
-                <div key={upcomingClass.id} className="border rounded-lg p-4 bg-white shadow-sm">
+        {/* Recently Completed Classes */}
+        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-700 text-white">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <BookOpen className="h-6 w-6" />
+              Recently Completed Classes
+              <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30">
+                {completedClasses.length} completed
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              {completedClasses.map((completedClass) => (
+                <div key={completedClass.id} className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h3 className="font-semibold text-lg">{upcomingClass.subject}</h3>
-                      <p className="text-gray-600">with {upcomingClass.studentName}</p>
+                      <h3 className="font-bold text-xl text-gray-800 mb-1">{completedClass.subject}</h3>
+                      <p className="text-emerald-600 font-medium">with {completedClass.studentName}</p>
                     </div>
-                    <div className="text-right">
-                      <Badge variant="outline" className="mb-2">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {upcomingClass.duration} min
-                      </Badge>
-                      <p className="text-sm text-green-600 font-medium">${upcomingClass.rate}</p>
-                    </div>
+                    <Badge className="bg-green-600 hover:bg-green-700 text-white shadow-lg">
+                      Earned ${completedClass.earnings}
+                    </Badge>
                   </div>
                   
-                  <div className="flex items-center gap-4 mb-3 text-sm text-gray-600">
-                    <span>📅 {upcomingClass.scheduledAt.toLocaleDateString()}</span>
-                    <span>🕒 {upcomingClass.scheduledAt.toLocaleTimeString()}</span>
-                    <span>⏰ {formatDistanceToNow(upcomingClass.scheduledAt, { addSuffix: true })}</span>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant={videoEnabled ? "default" : "secondary"}
-                      disabled={!videoEnabled}
-                      onClick={() => handleJoinVideo(upcomingClass.id)}
-                      data-testid={`button-teacher-video-${upcomingClass.id}`}
-                    >
-                      <Video className="h-4 w-4 mr-2" />
-                      {videoEnabled ? "Start Class" : `Available in ${formatDistanceToNow(addMinutes(upcomingClass.scheduledAt, -10))}`}
-                    </Button>
-                    
-                    <Button
-                      size="sm"
-                      variant={chatEnabled ? "outline" : "secondary"}
-                      disabled={!chatEnabled}
-                      onClick={() => handleJoinChat(upcomingClass.id)}
-                      data-testid={`button-teacher-chat-${upcomingClass.id}`}
-                    >
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      {chatEnabled ? "Chat" : `Chat in ${formatDistanceToNow(addHours(upcomingClass.scheduledAt, -1))}`}
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleManageClass(upcomingClass.id)}
-                      data-testid={`button-manage-class-${upcomingClass.id}`}
-                    >
-                      Manage
-                    </Button>
+                  <div className="flex items-center gap-2 bg-white/70 px-3 py-2 rounded-lg w-fit">
+                    <Clock className="h-4 w-4 text-green-600" />
+                    <span className="text-sm font-medium text-gray-700">
+                      Completed: {completedClass.completedAt.toLocaleString()}
+                    </span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recently Completed Classes */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5" />
-            Recently Completed Classes
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {completedClasses.map((completedClass) => (
-              <div key={completedClass.id} className="border rounded-lg p-4 bg-green-50 border-green-200">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h3 className="font-semibold">{completedClass.subject}</h3>
-                    <p className="text-gray-600">with {completedClass.studentName}</p>
+              ))}
+              {completedClasses.length === 0 && (
+                <div className="text-center py-12">
+                  <div className="bg-green-50 rounded-2xl p-8 border border-green-200">
+                    <BookOpen className="h-16 w-16 text-green-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">No Completed Classes Yet</h3>
+                    <p className="text-gray-600">Your completed sessions will appear here once you finish teaching.</p>
                   </div>
-                  <Badge variant="default" className="bg-green-600">
-                    Earned ${completedClass.earnings}
-                  </Badge>
                 </div>
-                
-                <p className="text-sm text-gray-600">
-                  ✅ Completed: {completedClass.completedAt.toLocaleString()}
-                </p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Quick Actions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button 
-              variant="outline" 
-              className="h-auto p-4 flex-col" 
-              data-testid="button-create-course"
-              onClick={() => window.location.href = '/teacher/create-course'}
-            >
-              <BookOpen className="h-6 w-6 mb-2" />
-              <span>Create Course</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="h-auto p-4 flex-col" 
-              data-testid="button-manage-schedule"
-              onClick={() => window.location.href = '/teacher/manage-schedule'}
-            >
-              <Calendar className="h-6 w-6 mb-2" />
-              <span>Manage Schedule</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="h-auto p-4 flex-col" 
-              data-testid="button-earnings-report"
-              onClick={() => setShowEarningsReport(!showEarningsReport)}
-            >
-              <DollarSign className="h-6 w-6 mb-2" />
-              <span>Earnings Report</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="h-auto p-4 flex-col" 
-              data-testid="button-student-feedback"
-              onClick={() => setShowStudentFeedback(!showStudentFeedback)}
-            >
-              <MessageCircle className="h-6 w-6 mb-2" />
-              <span>Student Feedback</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Quick Actions */}
+        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-700 text-white">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <Users className="h-6 w-6" />
+              Quick Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <Button 
+                variant="outline" 
+                className="h-32 p-6 flex-col hover:bg-green-50 hover:border-green-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                data-testid="button-create-course"
+                onClick={() => window.location.href = '/teacher/create-course'}
+              >
+                <BookOpen className="h-10 w-10 mb-3 text-green-600 group-hover:scale-110 transition-transform duration-200" />
+                <span className="font-bold text-lg">Create Course</span>
+                <span className="text-xs text-gray-500 mt-1 text-center">Design new curriculum</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-32 p-6 flex-col hover:bg-blue-50 hover:border-blue-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                data-testid="button-manage-schedule"
+                onClick={() => window.location.href = '/teacher/manage-schedule'}
+              >
+                <Calendar className="h-10 w-10 mb-3 text-blue-600 group-hover:scale-110 transition-transform duration-200" />
+                <span className="font-bold text-lg">Manage Schedule</span>
+                <span className="text-xs text-gray-500 mt-1 text-center">Set availability times</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-32 p-6 flex-col hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                data-testid="button-earnings-report"
+                onClick={() => setShowEarningsReport(!showEarningsReport)}
+              >
+                <DollarSign className="h-10 w-10 mb-3 text-emerald-600 group-hover:scale-110 transition-transform duration-200" />
+                <span className="font-bold text-lg">Earnings Report</span>
+                <span className="text-xs text-gray-500 mt-1 text-center">Track your income</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-32 p-6 flex-col hover:bg-purple-50 hover:border-purple-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                data-testid="button-student-feedback"
+                onClick={() => setShowStudentFeedback(!showStudentFeedback)}
+              >
+                <MessageCircle className="h-10 w-10 mb-3 text-purple-600 group-hover:scale-110 transition-transform duration-200" />
+                <span className="font-bold text-lg">Student Feedback</span>
+                <span className="text-xs text-gray-500 mt-1 text-center">View reviews & ratings</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
       {/* Earnings Report Section */}
       {showEarningsReport && (
