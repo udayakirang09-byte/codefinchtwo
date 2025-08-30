@@ -151,4 +151,15 @@
     --tw-gradient-to: #fecaca !important;
     --tw-gradient-stops: var(--tw-gradient-from), #fef2f2, var(--tw-gradient-to) !important;
   }
+
+  /* Force override shadcn Card component defaults */
+  [class*="bg-gradient-to"] {
+    background: linear-gradient(to bottom right, var(--tw-gradient-stops)) !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+    border: 0 !important;
+  }
+  
+  [class*="shadow-2xl"] {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  }
 }
