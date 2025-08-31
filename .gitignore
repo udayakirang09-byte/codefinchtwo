@@ -1,6 +1,31 @@
-node_modules
-dist
+# root
+node_modules/
+dist/
+*.log
+.env
+.env.*
+.replit
+replit.*
 .DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+Thumbs.db
+*.zip
+
+# replit-generated assets (big/noisy)
+attached_assets/
+attached_assets/**
+
+# client: keep src/public, ignore generated stuff
+client/node_modules/
+client/dist/
+client/build/
+client/.vite/
+client/.cache/
+client/.env
+client/.env.*
+
+# server
+server/node_modules/
+server/public/     # we copy build here; don't track it
+server/dist/
+server/.env
+server/.env.*

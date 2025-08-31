@@ -5,8 +5,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
-    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
-    "start": "NODE_ENV=production node dist/index.js",
+    "build": "vite build",
+    "start": "tsx server/index.ts",
     "check": "tsc",
     "db:push": "drizzle-kit push"
   },
@@ -82,7 +82,9 @@
     "wouter": "^3.3.5",
     "ws": "^8.18.0",
     "zod": "^3.24.2",
-    "zod-validation-error": "^3.4.0"
+    "zod-validation-error": "^3.4.0",
+    "tsx": "^4.7.0",
+    "compression": "^1.7.4"
   },
   "devDependencies": {
     "@replit/vite-plugin-cartographer": "^0.3.0",
@@ -110,5 +112,8 @@
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
