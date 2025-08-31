@@ -1,0 +1,32 @@
+name: Build root Vite & Deploy server to Azure
+on:
+  push: { branches: [ "main" ] }
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '18', cache: 'npm' }
+      - name: Install deps
+        run: npm ci
+      - name: Build (root Vite -> ./dist)
+        run: npm run build
+      - name: Prepare deploy bundle
+        run: |
+          set -e
+          rm -rf deploy && mkdir -p deploy
+          rsync -a server/ deploy/server/
+          mkdir -p deploy/server/public
+          rsync -a dist/ deploy/server/public/
+          cp -f package.json deploy/
+          if [ -f package-lock.json ]; then cp -f package-lock.json deploy/; fi
+          (cd deploy && npm ci)
+          (cd deploy && zip -r ../app.zip .)
+      - name: Deploy to Azure
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: kidzaimathapp30237
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+          package: app.zip
