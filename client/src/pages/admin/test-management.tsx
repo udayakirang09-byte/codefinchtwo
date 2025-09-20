@@ -250,7 +250,7 @@ export default function TestManagement() {
     return tests.filter(test => {
       const matchesSearch = searchTerm === '' || 
         Object.values(test).some(value => 
-          value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+          String(value).toLowerCase().includes(searchTerm.toLowerCase())
         );
       const matchesStatus = statusFilter === 'all' || test.status === statusFilter;
       return matchesSearch && matchesStatus;
@@ -266,8 +266,8 @@ export default function TestManagement() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
+  const getStatusBadge = (status: string): "outline" | "default" | "destructive" | "secondary" => {
+    const variants: Record<string, "outline" | "default" | "destructive" | "secondary"> = {
       passed: 'default',
       failed: 'destructive', 
       pending: 'secondary'
