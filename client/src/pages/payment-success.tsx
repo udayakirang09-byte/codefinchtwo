@@ -5,10 +5,10 @@ import { CheckCircle, BookOpen, Users, Calendar } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 export default function PaymentSuccess() {
-  const [, params] = useLocation();
+  const [location] = useLocation();
   const [courseData, setCourseData] = useState<any>(null);
   
-  const urlParams = new URLSearchParams(params || '');
+  const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const courseId = urlParams.get('course') || '1';
 
   useEffect(() => {
