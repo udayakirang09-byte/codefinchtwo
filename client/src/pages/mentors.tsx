@@ -43,7 +43,7 @@ export default function Mentors() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {(mentors || []).map((mentor: any) => (
+            {Array.isArray(mentors) ? mentors.map((mentor: any) => (
               <Card key={mentor.id} className="group hover:shadow-xl transition-all duration-300 transform hover:scale-105 bg-white border-0">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between mb-3">
@@ -111,7 +111,11 @@ export default function Mentors() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            )) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No mentors available at the moment.</p>
+              </div>
+            )}
           </div>
         )}
       </div>
