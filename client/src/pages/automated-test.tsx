@@ -146,7 +146,7 @@ export default function AutomatedTest() {
           });
           
           // Prevent actual navigation for testing
-          el.addEventListener('click', (e) => {
+          el.addEventListener('click', (e: MouseEvent) => {
             e.preventDefault();
             e.stopPropagation();
           }, { once: true });
