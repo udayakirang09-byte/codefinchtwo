@@ -18,12 +18,8 @@ export default function CreateCourse() {
   const [showCreateForm, setShowCreateForm] = useState(true);
   
   // Fetch existing courses
-  const { data: existingCourses = [], isLoading } = useQuery({
-    queryKey: ['teacher-courses'],
-    queryFn: () => {
-      const teacherId = 'teacher@codeconnect.com';
-      return apiRequest('GET', `/api/teacher/courses?teacherId=${teacherId}`);
-    },
+  const { data: existingCourses = [], isLoading } = useQuery<any[]>({
+    queryKey: [`/api/teacher/courses?teacherId=teacher@codeconnect.com`],
   });
 
   const [formData, setFormData] = useState({
