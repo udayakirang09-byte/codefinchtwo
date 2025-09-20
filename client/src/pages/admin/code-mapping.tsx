@@ -224,7 +224,7 @@ export default function CodeMapping() {
     }
   ];
 
-  const categories = ['all', ...new Set(mappingData.map(item => item.category))];
+  const categories = ['all', ...Array.from(new Set(mappingData.map(item => item.category)))];
   
   const filteredData = mappingData.filter(item => {
     const matchesSearch = searchTerm === '' || 
@@ -236,7 +236,7 @@ export default function CodeMapping() {
   });
 
   const getCategoryColor = (category: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       'Authentication': 'bg-red-100 text-red-800',
       'Registration': 'bg-blue-100 text-blue-800',
       'Discovery': 'bg-green-100 text-green-800',

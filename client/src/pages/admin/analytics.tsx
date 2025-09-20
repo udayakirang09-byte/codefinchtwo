@@ -50,12 +50,12 @@ export default function AdminAnalytics() {
 
   // AI Insights Query
   const { data: aiInsights = [], isLoading: insightsLoading } = useQuery<any[]>({
-    queryKey: ['/api/admin/ai-insights', `timeRange=${selectedTimeRange}`],
+    queryKey: [`/api/admin/ai-insights?timeRange=${selectedTimeRange}`],
   });
 
   // Business Metrics Query
   const { data: businessMetrics = [], isLoading: metricsLoading } = useQuery<any[]>({
-    queryKey: ['/api/admin/business-metrics', `timeRange=${selectedTimeRange}`],
+    queryKey: [`/api/admin/business-metrics?timeRange=${selectedTimeRange}`],
   });
 
   // Compliance Monitoring Query
@@ -65,12 +65,12 @@ export default function AdminAnalytics() {
 
   // Chat Analytics Query
   const { data: chatAnalytics = [], isLoading: chatLoading } = useQuery<any[]>({
-    queryKey: ['/api/admin/chat-analytics', `timeRange=${selectedTimeRange}`],
+    queryKey: [`/api/admin/chat-analytics?timeRange=${selectedTimeRange}`],
   });
 
   // Audio Analytics Query
   const { data: audioAnalytics = [], isLoading: audioLoading } = useQuery<any[]>({
-    queryKey: ['/api/admin/audio-analytics', `timeRange=${selectedTimeRange}`],
+    queryKey: [`/api/admin/audio-analytics?timeRange=${selectedTimeRange}`],
   });
 
   // Cloud Deployments Query
