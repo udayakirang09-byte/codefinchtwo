@@ -1215,7 +1215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         duration: validatedData.duration,
         maxStudents: validatedData.maxStudents,
         prerequisites: validatedData.prerequisites,
-        tags: validatedData.tags,
+        tags: validatedData.tags ? Array.from(validatedData.tags as string[]) : [],
         isActive: validatedData.isActive
       };
       const [newCourse] = await db.insert(courses).values(courseRecord).returning();

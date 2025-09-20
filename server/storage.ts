@@ -193,7 +193,12 @@ export class DatabaseStorage implements IStorage {
 
 
   async createMentor(mentorData: InsertMentor): Promise<Mentor> {
-    const [mentor] = await db.insert(mentors).values([mentorData]).returning();
+    const processedData = {
+      ...mentorData,
+      specialties: mentorData.specialties ? Array.from(mentorData.specialties as string[]) : [],
+      availableSlots: mentorData.availableSlots ? Array.from(mentorData.availableSlots as any[]) : []
+    };
+    const [mentor] = await db.insert(mentors).values([processedData]).returning();
     return mentor;
   }
 
@@ -230,7 +235,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createStudent(studentData: InsertStudent): Promise<Student> {
-    const [student] = await db.insert(students).values([studentData]).returning();
+    const processedData = {
+      ...studentData,
+      interests: studentData.interests ? Array.from(studentData.interests as string[]) : []
+    };
+    const [student] = await db.insert(students).values([processedData]).returning();
     return student;
   }
 
@@ -448,7 +457,23 @@ export class DatabaseStorage implements IStorage {
 
   // Teacher Profile operations
   async createTeacherProfile(profileData: InsertTeacherProfile): Promise<TeacherProfile> {
-    const [profile] = await db.insert(teacherProfiles).values(profileData).returning();
+    const processedData: any = { ...profileData };
+    
+    // Process array fields safely
+    if (processedData.achievements) {
+      processedData.achievements = Array.from(processedData.achievements as any[]);
+    }
+    if (processedData.qualifications) {
+      processedData.qualifications = Array.from(processedData.qualifications as any[]);
+    }
+    if (processedData.programmingLanguages) {
+      processedData.programmingLanguages = Array.from(processedData.programmingLanguages as any[]);
+    }
+    if (processedData.subjects) {
+      processedData.subjects = Array.from(processedData.subjects as any[]);
+    }
+    
+    const [profile] = await db.insert(teacherProfiles).values(processedData).returning();
     return profile;
   }
 
