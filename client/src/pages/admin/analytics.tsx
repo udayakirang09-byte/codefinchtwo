@@ -50,50 +50,42 @@ export default function AdminAnalytics() {
 
   // AI Insights Query
   const { data: aiInsights = [], isLoading: insightsLoading } = useQuery<any[]>({
-    queryKey: ['ai-insights', selectedTimeRange],
-    queryFn: () => apiRequest('GET', `/api/admin/ai-insights?timeRange=${selectedTimeRange}`),
+    queryKey: ['/api/admin/ai-insights', `timeRange=${selectedTimeRange}`],
   });
 
   // Business Metrics Query
   const { data: businessMetrics = [], isLoading: metricsLoading } = useQuery<any[]>({
-    queryKey: ['business-metrics', selectedTimeRange],
-    queryFn: () => apiRequest('GET', `/api/admin/business-metrics?timeRange=${selectedTimeRange}`),
+    queryKey: ['/api/admin/business-metrics', `timeRange=${selectedTimeRange}`],
   });
 
   // Compliance Monitoring Query
   const { data: complianceData = [], isLoading: complianceLoading } = useQuery<any[]>({
-    queryKey: ['compliance-monitoring'],
-    queryFn: () => apiRequest('GET', '/api/admin/compliance-monitoring'),
+    queryKey: ['/api/admin/compliance-monitoring'],
   });
 
   // Chat Analytics Query
   const { data: chatAnalytics = [], isLoading: chatLoading } = useQuery<any[]>({
-    queryKey: ['chat-analytics', selectedTimeRange],
-    queryFn: () => apiRequest('GET', `/api/admin/chat-analytics?timeRange=${selectedTimeRange}`),
+    queryKey: ['/api/admin/chat-analytics', `timeRange=${selectedTimeRange}`],
   });
 
   // Audio Analytics Query
   const { data: audioAnalytics = [], isLoading: audioLoading } = useQuery<any[]>({
-    queryKey: ['audio-analytics', selectedTimeRange],
-    queryFn: () => apiRequest('GET', `/api/admin/audio-analytics?timeRange=${selectedTimeRange}`),
+    queryKey: ['/api/admin/audio-analytics', `timeRange=${selectedTimeRange}`],
   });
 
   // Cloud Deployments Query
   const { data: cloudDeployments = [], isLoading: cloudLoading } = useQuery<any[]>({
-    queryKey: ['cloud-deployments'],
-    queryFn: () => apiRequest('GET', '/api/admin/cloud-deployments'),
+    queryKey: ['/api/admin/cloud-deployments'],
   });
 
   // Technology Stack Query
   const { data: techStack = [], isLoading: techLoading } = useQuery<any[]>({
-    queryKey: ['technology-stack'],
-    queryFn: () => apiRequest('GET', '/api/admin/technology-stack'),
+    queryKey: ['/api/admin/technology-stack'],
   });
 
   // Quantum Tasks Query
   const { data: quantumTasks = [], isLoading: quantumLoading } = useQuery<any[]>({
-    queryKey: ['quantum-tasks'],
-    queryFn: () => apiRequest('GET', '/api/admin/quantum-tasks'),
+    queryKey: ['/api/admin/quantum-tasks'],
   });
 
   const handleRefreshAnalytics = async () => {
@@ -448,7 +440,7 @@ export default function AdminAnalytics() {
                       <div className="animate-spin w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full" />
                       <span className="ml-3">Analyzing chat data...</span>
                     </div>
-                  ) : chatAnalytics.length > 0 ? (
+                  ) : Array.isArray(chatAnalytics) && chatAnalytics.length > 0 ? (
                     chatAnalytics.map((chat: any, index: number) => (
                       <div key={chat.id || index} className="border rounded-lg p-4" data-testid={`chat-analytics-${index}`}>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -514,7 +506,7 @@ export default function AdminAnalytics() {
                       <div className="animate-spin w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full" />
                       <span className="ml-3">Processing audio data...</span>
                     </div>
-                  ) : audioAnalytics.length > 0 ? (
+                  ) : Array.isArray(audioAnalytics) && audioAnalytics.length > 0 ? (
                     audioAnalytics.map((audio: any, index: number) => (
                       <div key={audio.id || index} className="border rounded-lg p-4" data-testid={`audio-analytics-${index}`}>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
