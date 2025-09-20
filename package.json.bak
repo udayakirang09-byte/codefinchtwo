@@ -8,10 +8,7 @@
     "build": "vite build",
     "start": "tsx server/index.ts",
     "check": "tsc",
-    "db:push": "drizzle-kit push",
-    "dev:client": "vite",
-    "typecheck": "tsc --noEmit",
-    "typecheck:watch": "tsc --noEmit -w"
+    "db:push": "drizzle-kit push"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -52,7 +49,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
-    "compression": "^1.7.4",
     "connect-pg-simple": "^10.0.0",
     "date-fns": "^3.6.0",
     "drizzle-orm": "^0.39.1",
@@ -81,13 +77,14 @@
     "stripe": "^18.5.0",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
-    "tsx": "^4.7.0",
     "tw-animate-css": "^1.2.5",
     "vaul": "^1.1.2",
     "wouter": "^3.3.5",
     "ws": "^8.18.0",
     "zod": "^3.24.2",
-    "zod-validation-error": "^3.4.0"
+    "zod-validation-error": "^3.4.0",
+    "tsx": "^4.7.0",
+    "compression": "^1.7.4"
   },
   "devDependencies": {
     "@replit/vite-plugin-cartographer": "^0.3.0",
@@ -111,8 +108,7 @@
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.1",
     "typescript": "5.6.3",
-    "vite": "^5.4.19",
-    "vite-plugin-checker": "^0.10.3"
+    "vite": "^5.4.19"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
