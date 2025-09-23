@@ -35,7 +35,7 @@ jobs:
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
     
-    - name: Create deployment archive
+    - name: Create deployment package
       run: |
         # Create a clean deployment package
         mkdir -p deploy
@@ -43,11 +43,10 @@ jobs:
         cp package.production.json deploy/package.json
         cp start-production.sh deploy/
         cp web.config deploy/
-        cd deploy && tar -czf ../deploy.tar.gz .
     
     - name: Deploy to Azure App Service
       uses: azure/webapps-deploy@v2
       with:
         app-name: kidzaimathapp30237
         publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
-        package: deploy.tar.gz
+        package: deploy
