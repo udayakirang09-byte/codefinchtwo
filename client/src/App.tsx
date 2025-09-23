@@ -8,6 +8,8 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import MentorProfile from "@/pages/mentor-profile";
 import Booking from "@/pages/booking";
+import BookingCheckout from "@/pages/booking-checkout";
+import BookingSuccess from "@/pages/booking-success";
 import Courses from "@/pages/courses";
 import Help from "@/pages/help";
 import SystemTest from "@/pages/system-test";
@@ -54,6 +56,8 @@ function Router() {
       <Route path="/mentors" component={Mentors} />
       <Route path="/mentors/:id" component={MentorProfile} />
       <Route path="/booking/:mentorId" component={Booking} />
+      <Route path="/booking-checkout" component={BookingCheckout} />
+      <Route path="/booking-success" component={BookingSuccess} />
       <Route path="/courses" component={Courses} />
       <Route path="/checkout" component={Checkout} />
       <Route path="/payment" component={Payment} />

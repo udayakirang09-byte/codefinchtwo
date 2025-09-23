@@ -139,18 +139,30 @@ export default function Booking() {
       return;
     }
     
-    const bookingData = {
+    // Calculate session cost based on duration and mentor's hourly rate
+    const duration = parseInt(formData.duration);
+    const hourlyRate = (typeof mentor.hourlyRate === 'number' ? mentor.hourlyRate : parseInt(String(mentor.hourlyRate))) || 500; // Default rate if not set
+    const sessionCost = Math.round((duration / 60) * hourlyRate);
+    
+    // Prepare booking details for payment
+    const bookingDetails = {
       userEmail: userEmail,
       mentorId,
-      scheduledAt: scheduledAt,
-      duration: parseInt(formData.duration),
+      mentorName: `${mentor.user.firstName} ${mentor.user.lastName}`,
+      scheduledAt: scheduledAt.toISOString(),
+      duration: duration,
       notes: formData.notes,
       studentAge: parseInt(formData.studentAge) || null,
+      studentName: formData.studentName,
+      parentEmail: formData.parentEmail,
+      sessionCost: sessionCost
     };
     
-    console.log('Booking data:', bookingData);
-
-    bookingMutation.mutate(bookingData);
+    // Store booking details in sessionStorage for checkout page
+    sessionStorage.setItem('pendingBooking', JSON.stringify(bookingDetails));
+    
+    // Redirect to checkout page for payment
+    navigate(`/booking-checkout?mentorId=${mentorId}&amount=${sessionCost}`);
   };
 
   const handleInputChange = (field: string, value: string) => {

@@ -1500,6 +1500,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Stripe payment intent for secure payments
+  app.post("/api/create-payment-intent", async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(503).json({ 
+          message: "Payment system not configured. Please contact support." 
+        });
+      }
+
+      const { amount, courseId, courseName, mentorId, bookingDetails } = req.body;
+      
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ message: "Invalid amount provided" });
+      }
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents/paise
+        currency: "inr", // Indian Rupees for the Indian market
+        metadata: {
+          ...(courseId && { courseId }),
+          ...(courseName && { courseName }),
+          ...(mentorId && { mentorId }),
+          ...(bookingDetails && { bookingDetails: JSON.stringify(bookingDetails) })
+        }
+      });
+
+      console.log(`💳 Payment intent created for ₹${amount} - ID: ${paymentIntent.id}`);
+      
+      res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id
+      });
+    } catch (error: any) {
+      console.error("❌ Stripe payment intent creation failed:", error.message);
+      res.status(500).json({ 
+        message: "Failed to create payment intent: " + error.message 
+      });
+    }
+  });
+
   // Admin Contact Features Toggle Routes
   app.get("/api/admin/contact-settings", async (req, res) => {
     try {
