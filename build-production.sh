@@ -8,7 +8,7 @@ rm -rf dist
 
 # Build frontend
 echo "Building frontend..."
-vite build
+npx vite build
 
 # Build backend
 echo "Building backend..."
