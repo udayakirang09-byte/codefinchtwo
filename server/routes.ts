@@ -291,6 +291,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get student by user email
+  app.get("/api/users/:email/student", async (req, res) => {
+    try {
+      const { email } = req.params;
+      const decodedEmail = decodeURIComponent(email);
+      
+      // Find user by email
+      const user = await storage.getUserByEmail(decodedEmail);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Find student by user ID
+      const student = await storage.getStudentByUserId(user.id);
+      if (!student) {
+        return res.status(404).json({ message: "Student profile not found" });
+      }
+      
+      res.json(student);
+    } catch (error) {
+      console.error("Error fetching student by email:", error);
+      res.status(500).json({ message: "Failed to fetch student" });
+    }
+  });
+
   // User routes
   app.post("/api/users", async (req, res) => {
     try {

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Video, MessageCircle, Star, BookOpen, Award, Bell, Users, TrendingUp } from "lucide-react";
 import { formatDistanceToNow, isWithinInterval, addHours, addMinutes } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
 
 interface UpcomingClass {
   id: string;
@@ -50,19 +51,35 @@ export default function StudentDashboard() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // For now, we'll use a hardcoded student ID. In a real app, this would come from auth context
-  const studentId = "student123"; // TODO: Get from authenticated user context
+  // Get authenticated user from auth context
+  const { user, isAuthenticated } = useAuth();
+  
+  // Get the actual student ID from the database using the user's email
+  const { data: studentData, isLoading: studentLoading } = useQuery({
+    queryKey: ['/api/users', user?.email, 'student'],
+    queryFn: async () => {
+      if (!user?.email) throw new Error('No user email');
+      const response = await fetch(`/api/users/${encodeURIComponent(user.email)}/student`);
+      if (!response.ok) throw new Error('Failed to fetch student data');
+      return response.json();
+    },
+    enabled: !!user?.email && isAuthenticated,
+  });
+  
+  const studentId = studentData?.id;
 
   // Fetch student statistics from the database
   const { data: studentStats, isLoading: statsLoading } = useQuery({
     queryKey: ['/api/students', studentId, 'stats'],
     queryFn: async () => {
+      if (!studentId) throw new Error('No student ID available');
       const response = await fetch(`/api/students/${studentId}/stats`);
       if (!response.ok) {
         throw new Error('Failed to fetch student stats');
       }
       return response.json() as Promise<StudentStats>;
     },
+    enabled: !!studentId,
     // Default fallback data while loading
     placeholderData: {
       activeClasses: 0,
@@ -74,124 +91,113 @@ export default function StudentDashboard() {
     }
   });
 
+  // Fetch notifications for the authenticated user
+  const { data: userNotifications, isLoading: notificationsLoading } = useQuery({
+    queryKey: ['/api/users', user?.id, 'notifications'], 
+    queryFn: async () => {
+      if (!user?.id) throw new Error('No user ID available');
+      const response = await fetch(`/api/users/${user.id}/notifications`);
+      if (!response.ok) throw new Error('Failed to fetch notifications');
+      return response.json();
+    },
+    enabled: !!user?.id && isAuthenticated,
+  });
+
+  // Fetch upcoming classes for the student
+  const { data: upcomingClassesData, isLoading: upcomingLoading } = useQuery({
+    queryKey: ['/api/students', studentId, 'bookings'],
+    queryFn: async () => {
+      if (!studentId) throw new Error('No student ID available');
+      const response = await fetch(`/api/students/${studentId}/bookings`);
+      if (!response.ok) throw new Error('Failed to fetch bookings');
+      return response.json();
+    },
+    enabled: !!studentId,
+  });
+
+  // Process upcoming classes from bookings data
+  const processUpcomingClasses = () => {
+    if (upcomingClassesData) {
+      const now = new Date();
+      const next72Hours = addHours(now, 72);
+      
+      const upcoming = upcomingClassesData
+        .filter((booking: any) => {
+          const scheduledTime = new Date(booking.scheduledAt);
+          return booking.status === 'scheduled' && scheduledTime >= now && scheduledTime <= next72Hours;
+        })
+        .map((booking: any) => ({
+          id: booking.id,
+          mentorName: `${booking.mentor.user.firstName} ${booking.mentor.user.lastName}`,
+          subject: booking.notes || 'Programming Session',
+          scheduledAt: new Date(booking.scheduledAt),
+          duration: booking.duration,
+          videoEnabled: true,
+          chatEnabled: true,
+          feedbackEnabled: false,
+        }));
+      
+      setUpcomingClasses(upcoming);
+    }
+  };
+
+  // Process completed classes from bookings data
+  const processCompletedClasses = () => {
+    if (upcomingClassesData) {
+      const now = new Date();
+      const twelveHoursAgo = addHours(now, -12);
+      
+      const completed = upcomingClassesData
+        .filter((booking: any) => {
+          const scheduledTime = new Date(booking.scheduledAt);
+          return booking.status === 'completed' && scheduledTime >= twelveHoursAgo;
+        })
+        .map((booking: any) => ({
+          id: booking.id,
+          mentorName: `${booking.mentor.user.firstName} ${booking.mentor.user.lastName}`,
+          subject: booking.notes || 'Programming Session',
+          completedAt: new Date(booking.scheduledAt),
+          feedbackDeadline: addHours(new Date(booking.scheduledAt), 12),
+          hasSubmittedFeedback: false, // TODO: Check if feedback exists
+        }));
+      
+      setCompletedClasses(completed);
+    }
+  };
+
+  // Process notifications from API data
+  const processNotifications = () => {
+    if (userNotifications) {
+      const processedNotifications = userNotifications.map((notif: any) => ({
+        id: notif.id,
+        title: notif.title,
+        message: notif.message,
+        type: notif.type,
+        isRead: notif.isRead,
+        createdAt: new Date(notif.createdAt),
+      }));
+      setNotifications(processedNotifications);
+    }
+  };
+
   useEffect(() => {
     // Update current time every minute
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 60000);
 
-    // Load real data from API with proper time filtering
-    const loadUpcomingClasses = async () => {
-      try {
-        const response = await fetch('/api/classes/upcoming');
-        if (response.ok) {
-          const classes = await response.json();
-          // Filter for next 72 hours
-          const next72Hours = addHours(currentTime, 72);
-          const filtered = classes.filter((cls: any) => {
-            const classTime = new Date(cls.scheduledAt);
-            return classTime >= currentTime && classTime <= next72Hours;
-          });
-          setUpcomingClasses(filtered);
-        } else {
-          // Fallback to sample data
-          const sampleUpcoming: UpcomingClass[] = [
-            {
-              id: '1',
-              mentorName: 'Sarah Johnson',
-              subject: 'Python Basics',
-              scheduledAt: new Date(Date.now() + 50 * 60 * 1000), // 50 minutes from now
-              duration: 60,
-              videoEnabled: false,
-              chatEnabled: true,
-              feedbackEnabled: false,
-            },
-            {
-              id: '2',
-              mentorName: 'Mike Chen',
-              subject: 'JavaScript Functions',
-              scheduledAt: new Date(Date.now() + 30 * 60 * 60 * 1000), // 30 hours from now
-              duration: 90,
-              videoEnabled: false,
-              chatEnabled: true,
-              feedbackEnabled: false,
-            },
-          ];
-          setUpcomingClasses(sampleUpcoming);
-        }
-      } catch (error) {
-        console.error('Failed to load upcoming classes:', error);
-      }
-    };
-
-    const loadCompletedClasses = async () => {
-      try {
-        const response = await fetch('/api/classes/completed');
-        if (response.ok) {
-          const classes = await response.json();
-          // Filter for last 12 hours that need feedback
-          const last12Hours = addHours(currentTime, -12);
-          const filtered = classes.filter((cls: any) => {
-            const completedTime = new Date(cls.completedAt);
-            const deadlineTime = new Date(cls.feedbackDeadline);
-            return completedTime >= last12Hours && 
-                   !cls.hasSubmittedFeedback && 
-                   currentTime <= deadlineTime;
-          });
-          setCompletedClasses(filtered);
-        } else {
-          // Fallback to sample data
-          const sampleCompleted: CompletedClass[] = [
-            {
-              id: '3',
-              mentorName: 'Alex Rivera',
-              subject: 'HTML & CSS Intro',
-              completedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-              feedbackDeadline: new Date(Date.now() + 10 * 60 * 60 * 1000), // 10 hours from now
-              hasSubmittedFeedback: false,
-            },
-          ];
-          setCompletedClasses(sampleCompleted);
-        }
-      } catch (error) {
-        console.error('Failed to load completed classes:', error);
-      }
-    };
-
-    loadUpcomingClasses();
-    loadCompletedClasses();
-
-    const sampleNotifications: Notification[] = [
-      { 
-        id: '1', 
-        title: 'Class Reminder', 
-        message: 'Python Basics class starts in 2 hours', 
-        type: 'class_reminder', 
-        isRead: false,
-        createdAt: new Date(Date.now() - 30 * 60 * 1000)
-      },
-      { 
-        id: '2', 
-        title: 'Feedback Request', 
-        message: 'Please submit feedback for HTML & CSS class', 
-        type: 'feedback_request', 
-        isRead: false,
-        createdAt: new Date(Date.now() - 45 * 60 * 1000)
-      },
-      { 
-        id: '3', 
-        title: 'Achievement Unlocked', 
-        message: 'You earned the "First Steps" badge!', 
-        type: 'achievement', 
-        isRead: true,
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000)
-      },
-    ];
-
-    setNotifications(sampleNotifications);
-
     return () => clearInterval(timer);
   }, []);
+
+  // Process data when it loads
+  useEffect(() => {
+    processUpcomingClasses();
+    processCompletedClasses();
+  }, [upcomingClassesData]);
+
+  useEffect(() => {
+    processNotifications();
+  }, [userNotifications]);
 
   const isVideoEnabled = (scheduledAt: Date) => {
     const tenMinutesBefore = addMinutes(scheduledAt, -10);
