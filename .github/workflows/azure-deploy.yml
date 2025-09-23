@@ -43,6 +43,10 @@ jobs:
         cp package.production.json deploy/package.json
         cp start-production.sh deploy/
         cp web.config deploy/
+        
+        # Install production dependencies for Azure
+        cd deploy
+        npm install --only=production --no-dev
     
     - name: Deploy to Azure App Service
       uses: azure/webapps-deploy@v2
