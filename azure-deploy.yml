@@ -1,0 +1,46 @@
+# Azure App Service deployment configuration
+# Place this in .github/workflows/ directory for GitHub Actions deployment
+
+name: Deploy to Azure App Service
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build application
+      run: |
+        npm run typecheck
+        ./build-production.sh
+    
+    - name: Create deployment archive
+      run: |
+        # Create a clean deployment package
+        mkdir -p deploy
+        cp -r dist deploy/
+        cp package*.json deploy/
+        cp start-production.sh deploy/
+        cd deploy && tar -czf ../deploy.tar.gz .
+    
+    - name: Deploy to Azure App Service
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ secrets.AZURE_APP_NAME }}
+        publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+        package: deploy.tar.gz

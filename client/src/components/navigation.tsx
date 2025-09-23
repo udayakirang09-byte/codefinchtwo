@@ -27,7 +27,6 @@ export default function Navigation() {
     const checkAuthStatus = () => {
       const authStatus = localStorage.getItem('isAuthenticated') === 'true';
       const email = localStorage.getItem('userEmail') || '';
-      console.log('🔍 Checking auth status:', { authStatus, email });
       setIsAuthenticated(authStatus);
       setUserEmail(email);
     };
@@ -38,8 +37,10 @@ export default function Navigation() {
     window.addEventListener('storage', checkAuthStatus);
     window.addEventListener('focus', checkAuthStatus);
     
-    // Also check periodically in case localStorage was updated in same tab
-    const interval = setInterval(checkAuthStatus, 1000);
+    // Check less frequently and only in development
+    const interval = process.env.NODE_ENV === 'development' 
+      ? setInterval(checkAuthStatus, 5000) // Every 5 seconds in dev
+      : setInterval(checkAuthStatus, 30000); // Every 30 seconds in production
     
     return () => {
       window.removeEventListener('storage', checkAuthStatus);
