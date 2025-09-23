@@ -275,14 +275,63 @@ export default function StudentDashboard() {
     window.location.href = '/help';
   };
 
-  const markNotificationAsRead = (notificationId: string) => {
+  const handleNotificationClick = (notification: Notification) => {
+    // Mark as read
     setNotifications(prev => 
       prev.map(notif => 
-        notif.id === notificationId 
+        notif.id === notification.id 
           ? { ...notif, isRead: true }
           : notif
       )
     );
+
+    // Navigate based on notification type
+    switch (notification.type) {
+      case 'class_reminder':
+        // Find the related class and scroll to it or navigate to classes page
+        console.log(`🔔 Class reminder clicked - showing upcoming classes`);
+        const classesSection = document.querySelector('[data-testid="section-upcoming-classes"]');
+        if (classesSection) {
+          classesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          window.location.href = '/student/classes';
+        }
+        break;
+
+      case 'feedback_request':
+        // Scroll to completed classes section for feedback
+        console.log(`📝 Feedback request clicked - showing feedback section`);
+        const feedbackSection = document.querySelector('[data-testid="section-completed-classes"]');
+        if (feedbackSection) {
+          feedbackSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          window.location.href = '/student/feedback';
+        }
+        break;
+
+      case 'achievement':
+        // Navigate to achievements/progress page
+        console.log(`🏆 Achievement notification clicked - showing progress`);
+        window.location.href = '/student/progress';
+        break;
+
+      case 'booking_confirmation':
+        // Navigate to bookings page
+        console.log(`✅ Booking confirmation clicked - showing bookings`);
+        window.location.href = '/student/bookings';
+        break;
+
+      case 'payment_success':
+        // Navigate to payment history
+        console.log(`💳 Payment notification clicked - showing payment history`);
+        window.location.href = '/student/payments';
+        break;
+
+      default:
+        console.log(`📌 General notification clicked: ${notification.type}`);
+        // For unknown types, just mark as read (already done above)
+        break;
+    }
   };
 
   // Filter classes that need feedback and are still visible
@@ -362,7 +411,7 @@ export default function StudentDashboard() {
                             ? 'bg-orange-50 border-orange-400 hover:bg-orange-100'
                             : 'bg-green-50 border-green-400 hover:bg-green-100'
                     }`}
-                    onClick={() => markNotificationAsRead(notification.id)}
+                    onClick={() => handleNotificationClick(notification)}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -386,7 +435,7 @@ export default function StudentDashboard() {
         )}
 
         {/* Upcoming Classes - Redesigned */}
-        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden" data-testid="section-upcoming-classes">
           <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
             <CardTitle className="flex items-center gap-3 text-xl">
               <Calendar className="h-6 w-6" />
@@ -464,7 +513,7 @@ export default function StudentDashboard() {
         </Card>
 
         {/* Recently Completed Classes - Enhanced */}
-        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden" data-testid="section-completed-classes">
           <CardHeader className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white">
             <CardTitle className="flex items-center gap-3 text-xl">
               <BookOpen className="h-6 w-6" />
