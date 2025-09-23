@@ -7,11 +7,9 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, CreditCard, Smartphone, Shield } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
-// Load Stripe
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
-}
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+// Load Stripe (optional - disable if not configured)
+const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+const stripePromise = stripePublicKey ? loadStripe(stripePublicKey) : null;
 
 const CheckoutForm = ({ courseData }: { courseData: any }) => {
   const stripe = useStripe();
@@ -256,9 +254,35 @@ export default function Checkout() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Elements stripe={stripePromise} options={{ clientSecret }}>
-                <CheckoutForm courseData={courseData} />
-              </Elements>
+              {stripePromise && clientSecret ? (
+                <Elements stripe={stripePromise} options={{ clientSecret }}>
+                  <CheckoutForm courseData={courseData} />
+                </Elements>
+              ) : (
+                <div className="text-center py-8 space-y-4">
+                  <div className="text-6xl">🚧</div>
+                  <h3 className="text-xl font-semibold text-gray-700">Payment System Under Maintenance</h3>
+                  <p className="text-gray-600">
+                    Our payment system is currently being configured. 
+                    Please contact our support team to enroll in this course.
+                  </p>
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mt-6">
+                    <h4 className="font-semibold text-blue-800 mb-2">Alternative Enrollment Options:</h4>
+                    <div className="space-y-2 text-sm text-blue-700">
+                      <p>📧 Email: support@codeconnect.com</p>
+                      <p>📱 WhatsApp: +91 98765 43210</p>
+                      <p>🕐 Support Hours: 9 AM - 6 PM (Mon-Fri)</p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => window.location.href = '/courses'}
+                    className="mt-4"
+                    data-testid="button-back-courses"
+                  >
+                    Back to Courses
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
