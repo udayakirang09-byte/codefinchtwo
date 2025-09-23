@@ -14,6 +14,10 @@ vite build
 echo "Building backend..."
 tsc --project tsconfig.server.json
 
+# Fix ESM imports for Node.js compatibility
+echo "Fixing ESM imports for Node.js..."
+node fix-esm-imports.js
+
 echo "Production build complete!"
 echo "Frontend built to: dist/public"
 echo "Backend built to: dist/server"
