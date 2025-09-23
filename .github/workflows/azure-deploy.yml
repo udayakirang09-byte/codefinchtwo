@@ -34,8 +34,9 @@ jobs:
         # Create a clean deployment package
         mkdir -p deploy
         cp -r dist deploy/
-        cp package*.json deploy/
+        cp package.production.json deploy/package.json
         cp start-production.sh deploy/
+        cp web.config deploy/
         cd deploy && tar -czf ../deploy.tar.gz .
     
     - name: Deploy to Azure App Service
