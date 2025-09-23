@@ -27,6 +27,7 @@ jobs:
     - name: Build application
       run: |
         npm run typecheck
+        chmod +x build-production.sh start-production.sh
         ./build-production.sh
     
     - name: Deploy database schema
