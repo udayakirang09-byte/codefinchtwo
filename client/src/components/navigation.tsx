@@ -71,9 +71,21 @@ export default function Navigation() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link href="/" className="flex items-center space-x-2" data-testid="link-logo">
-            <Code className="text-primary" size={28} />
-            <span className="text-2xl font-bold text-gradient">CodeConnect</span>
+          <Link 
+            href="/" 
+            className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 ${
+              location === '/' || location === '' 
+                ? 'bg-primary/10 border-2 border-primary/20 shadow-sm' 
+                : 'hover:bg-primary/5'
+            }`} 
+            data-testid="link-logo"
+          >
+            <Code className={`${location === '/' || location === '' ? 'text-primary' : 'text-primary'}`} size={28} />
+            <span className={`text-2xl font-bold text-gradient ${
+              location === '/' || location === '' ? 'drop-shadow-sm' : ''
+            }`}>
+              CodeConnect
+            </span>
           </Link>
           
           {/* Debug: Add test links for development */}
