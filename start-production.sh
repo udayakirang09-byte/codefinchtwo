@@ -10,8 +10,8 @@ echo "Static files directory: $(pwd)/dist/public"
 
 # Fix import paths for Node.js ESM (add .js extensions)
 echo "Fixing import paths for Node.js ESM compatibility..."
-find dist/server -name "*.js" -type f -exec sed -i "s/from '\\.\\//from '.\\/\\/g; s/from '\\.\\.\\//from '..\\/\\/g; s/'$/'.js'/g" {} \;
-find dist/server -name "*.js" -type f -exec sed -i "s/from '\\.\\//from '.\\/'/g; s/\\([^.js]\\)';$/\\1.js';/g" {} \;
+find dist/server -name "*.js" -type f -exec sed -i 's|from "\./|from "./|g; s|from "\.\./|from "../|g; s|"$|.js"|g' {} \;
+find dist/shared -name "*.js" -type f -exec sed -i 's|from "\./|from "./|g; s|from "\.\./|from "../|g; s|"$|.js"|g' {} \;
 
 # Start the production server
 node dist/server/index.js
