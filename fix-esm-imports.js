@@ -30,7 +30,9 @@ function fixImportsInFile(filePath) {
       } else {
         return `from "./${importPath}.js";`;
       }
-    });
+    })
+    // Fix static file path for production
+    .replace(/path\.resolve\(import\.meta\.dirname,\s*["']public["']\)/g, 'path.resolve(import.meta.dirname, "../public")');
   
   if (content !== fixedContent) {
     fs.writeFileSync(filePath, fixedContent);
