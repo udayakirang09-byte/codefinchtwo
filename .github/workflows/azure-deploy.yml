@@ -35,6 +35,11 @@ jobs:
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
     
+    - name: Seed database with sample data
+      run: npx tsx server/seed.ts
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    
     - name: Create deployment package
       run: |
         # Create a clean deployment package
