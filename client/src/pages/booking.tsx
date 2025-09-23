@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Calendar, Clock, User, Mail, MessageSquare } from "lucide-react";
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 import type { MentorWithUser } from "@shared/schema";
@@ -20,6 +21,7 @@ export default function Booking() {
   const mentorId = params?.mentorId;
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const [formData, setFormData] = useState({
     studentName: "",
@@ -35,6 +37,24 @@ export default function Booking() {
     queryKey: ["/api/mentors", mentorId],
     enabled: !!mentorId,
   });
+
+  // Fetch student details for auto-population
+  const { data: studentData, isLoading: studentLoading } = useQuery<any>({
+    queryKey: ["/api/users", user?.email, "student"],
+    enabled: !!user?.email,
+  });
+
+  // Auto-populate form fields when student data loads
+  useEffect(() => {
+    if (studentData && user) {
+      setFormData(prev => ({
+        ...prev,
+        studentName: studentData.user ? `${studentData.user.firstName} ${studentData.user.lastName}` : "",
+        studentAge: studentData.age?.toString() || "",
+        parentEmail: studentData.parentEmail || user.email,
+      }));
+    }
+  }, [studentData, user]);
 
   const bookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {

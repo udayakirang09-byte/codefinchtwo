@@ -309,7 +309,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Student profile not found" });
       }
       
-      res.json(student);
+      // Return student with user details for auto-population
+      res.json({
+        ...student,
+        user: user
+      });
     } catch (error) {
       console.error("Error fetching student by email:", error);
       res.status(500).json({ message: "Failed to fetch student" });
