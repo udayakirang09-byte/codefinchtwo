@@ -29,6 +29,11 @@ jobs:
         npm run typecheck
         ./build-production.sh
     
+    - name: Deploy database schema
+      run: npm run db:push --force
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    
     - name: Create deployment archive
       run: |
         # Create a clean deployment package
