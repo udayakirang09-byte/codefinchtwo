@@ -41,6 +41,6 @@ jobs:
     - name: Deploy to Azure App Service
       uses: azure/webapps-deploy@v2
       with:
-        app-name: ${{ secrets.AZURE_APP_NAME }}
+        app-name: kidzaimathapp30237
         publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
         package: deploy.tar.gz
