@@ -3,44 +3,13 @@ import Footer from "@/components/footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Users, Star } from "lucide-react";
+import { Clock, Users, Star, User } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Courses() {
-  const courses = [
-    {
-      id: 1,
-      title: "Python for Kids",
-      description: "Learn Python programming through fun games and projects",
-      duration: "8 weeks",
-      students: 245,
-      rating: 4.8,
-      difficulty: "Beginner",
-      price: 2999,
-      image: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
-    },
-    {
-      id: 2,
-      title: "Web Development Basics",
-      description: "Build your first website with HTML, CSS, and JavaScript",
-      duration: "10 weeks",
-      students: 189,
-      rating: 4.9,
-      difficulty: "Beginner",
-      price: 3999,
-      image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
-    },
-    {
-      id: 3,
-      title: "Scratch Programming",
-      description: "Create animations and games with block-based coding",
-      duration: "6 weeks",
-      students: 367,
-      rating: 4.7,
-      difficulty: "Beginner",
-      price: 2499,
-      image: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
-    }
-  ];
+  const { data: courses, isLoading } = useQuery({
+    queryKey: ["/api/courses"]
+  });
 
   return (
     <div className="min-h-screen">
@@ -55,8 +24,20 @@ export default function Courses() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {courses.map((course) => (
+        {isLoading ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-white rounded-xl p-6 shadow-lg animate-pulse">
+                <div className="h-48 bg-gray-200 rounded mb-4"></div>
+                <div className="h-6 bg-gray-200 rounded mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+                <div className="h-10 bg-gray-200 rounded"></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {Array.isArray(courses) ? courses.map((course: any) => (
             <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow" data-testid={`course-card-${course.id}`}>
               <div className="relative">
                 <img 
@@ -78,18 +59,26 @@ export default function Courses() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 mb-4">
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
                     <div className="flex items-center" data-testid={`course-duration-${course.id}`}>
                       <Clock size={16} className="mr-1" />
                       {course.duration}
                     </div>
-                    <div className="flex items-center" data-testid={`course-students-${course.id}`}>
-                      <Users size={16} className="mr-1" />
-                      {course.students} students
+                    <div className="flex items-center" data-testid={`course-mentor-${course.id}`}>
+                      <User size={16} className="mr-1" />
+                      {course.mentor?.user?.firstName} {course.mentor?.user?.lastName}
                     </div>
-                    <div className="flex items-center" data-testid={`course-rating-${course.id}`}>
-                      <Star size={16} className="mr-1 text-accent" />
-                      {course.rating}
+                  </div>
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <div className="flex items-center" data-testid={`course-category-${course.id}`}>
+                      <Badge variant="outline" className="text-xs">
+                        {course.category}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center" data-testid={`course-mentor-title-${course.id}`}>
+                      <span className="text-blue-600 font-medium">
+                        {course.mentor?.title}
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
@@ -104,15 +93,20 @@ export default function Courses() {
                   data-testid={`button-enroll-${course.id}`}
                   onClick={() => {
                     console.log(`🛒 Enrolling in course ${course.id}: ${course.title}`);
-                    window.location.href = `/payment?courseId=${course.id}`;
+                    window.location.href = `/booking/${course.mentorId}?courseId=${course.id}`;
                   }}
                 >
                   Enroll Now - ₹{course.price}
                 </Button>
               </CardContent>
             </Card>
-          ))}
-        </div>
+          )) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No courses available at the moment.</p>
+            </div>
+          )}
+          </div>
+        )}
 
         <div className="text-center mt-16">
           <h2 className="text-2xl font-bold text-foreground mb-4">Can't find what you're looking for?</h2>

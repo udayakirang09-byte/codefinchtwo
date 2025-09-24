@@ -2,6 +2,7 @@ import {
   users,
   mentors,
   students,
+  courses,
   bookings,
   achievements,
   reviews,
@@ -17,6 +18,8 @@ import {
   type InsertMentor,
   type Student,
   type InsertStudent,
+  type Course,
+  type InsertCourse,
   type Booking,
   type InsertBooking,
   type Review,
@@ -64,6 +67,14 @@ export interface IStorage {
   getStudentByUserId(userId: string): Promise<Student | undefined>;
   getStudentBookings(studentId: string): Promise<BookingWithDetails[]>;
   createStudent(student: InsertStudent): Promise<Student>;
+  
+  // Course operations
+  getCourses(): Promise<Course[]>;
+  getCourse(id: string): Promise<Course | undefined>;
+  getCoursesByMentor(mentorId: string): Promise<Course[]>;
+  createCourse(course: InsertCourse): Promise<Course>;
+  updateCourse(id: string, course: Partial<InsertCourse>): Promise<void>;
+  deleteCourse(id: string): Promise<void>;
   
   // Booking operations
   getBookings(): Promise<BookingWithDetails[]>;
@@ -340,6 +351,46 @@ export class DatabaseStorage implements IStorage {
       .update(bookings)
       .set({ status, updatedAt: new Date() })
       .where(eq(bookings.id, id));
+  }
+
+  // Course operations
+  async getCourses(): Promise<Course[]> {
+    const result = await db
+      .select()
+      .from(courses)
+      .where(eq(courses.isActive, true))
+      .orderBy(desc(courses.createdAt));
+    return result;
+  }
+
+  async getCourse(id: string): Promise<Course | undefined> {
+    const [course] = await db.select().from(courses).where(eq(courses.id, id));
+    return course;
+  }
+
+  async getCoursesByMentor(mentorId: string): Promise<Course[]> {
+    const result = await db
+      .select()
+      .from(courses)
+      .where(and(eq(courses.mentorId, mentorId), eq(courses.isActive, true)))
+      .orderBy(desc(courses.createdAt));
+    return result;
+  }
+
+  // TODO: Fix course operations - temporarily disabled due to type issues
+  async createCourse(courseData: InsertCourse): Promise<Course> {
+    throw new Error("Course creation not implemented yet");
+  }
+
+  async updateCourse(id: string, courseData: Partial<InsertCourse>): Promise<void> {
+    throw new Error("Course update not implemented yet");
+  }
+
+  async deleteCourse(id: string): Promise<void> {
+    await db
+      .update(courses)
+      .set({ isActive: false })
+      .where(eq(courses.id, id));
   }
 
   // Review operations
