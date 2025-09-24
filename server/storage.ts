@@ -12,6 +12,11 @@ import {
   classFeedback,
   notifications,
   teacherProfiles,
+  paymentMethods,
+  transactionFeeConfig,
+  paymentTransactions,
+  unsettledFinances,
+  paymentWorkflows,
   type User,
   type InsertUser,
   type Mentor,
@@ -38,6 +43,16 @@ import {
   type InsertNotification,
   type TeacherProfile,
   type InsertTeacherProfile,
+  type PaymentMethod,
+  type InsertPaymentMethod,
+  type TransactionFeeConfig,
+  type InsertTransactionFeeConfig,
+  type PaymentTransaction,
+  type InsertPaymentTransaction,
+  type UnsettledFinance,
+  type InsertUnsettledFinance,
+  type PaymentWorkflow,
+  type InsertPaymentWorkflow,
   type MentorWithUser,
   type StudentWithUser,
   type BookingWithDetails,
@@ -115,8 +130,48 @@ export interface IStorage {
   createTeacherProfile(profile: InsertTeacherProfile): Promise<TeacherProfile>;
   getTeacherProfile(userId: string): Promise<TeacherProfile | undefined>;
   
+  // Payment Method operations
+  createPaymentMethod(paymentMethod: InsertPaymentMethod): Promise<PaymentMethod>;
+  getUserPaymentMethods(userId: string): Promise<PaymentMethod[]>;
+  getPaymentMethod(id: string): Promise<PaymentMethod | undefined>;
+  updatePaymentMethod(id: string, updates: Partial<InsertPaymentMethod>): Promise<void>;
+  deletePaymentMethod(id: string): Promise<void>;
+  setDefaultPaymentMethod(userId: string, paymentMethodId: string): Promise<void>;
+  
+  // Transaction Fee Configuration operations
+  getActiveTransactionFeeConfig(): Promise<TransactionFeeConfig | undefined>;
+  createTransactionFeeConfig(config: InsertTransactionFeeConfig): Promise<TransactionFeeConfig>;
+  updateTransactionFeeConfig(id: string, updates: Partial<InsertTransactionFeeConfig>): Promise<void>;
+  deactivateOldFeeConfigs(): Promise<void>;
+  
+  // Payment Transaction operations
+  createPaymentTransaction(transaction: InsertPaymentTransaction): Promise<PaymentTransaction>;
+  getPaymentTransaction(id: string): Promise<PaymentTransaction | undefined>;
+  updatePaymentTransactionStatus(id: string, status: string, workflowStage?: string): Promise<void>;
+  getTransactionsByUser(userId: string): Promise<PaymentTransaction[]>;
+  getPendingTeacherPayouts(): Promise<PaymentTransaction[]>;
+  
+  // Unsettled Finance operations
+  createUnsettledFinance(unsettledFinance: InsertUnsettledFinance): Promise<UnsettledFinance>;
+  getUnsettledFinancesByStatus(status: string): Promise<UnsettledFinance[]>;
+  resolveUnsettledFinance(id: string, resolution: { action: string; amount: number; notes: string }): Promise<void>;
+  
+  // Payment Workflow operations
+  createPaymentWorkflow(workflow: InsertPaymentWorkflow): Promise<PaymentWorkflow>;
+  getActivePaymentWorkflows(): Promise<PaymentWorkflow[]>;
+  updatePaymentWorkflowStage(id: string, stage: string, nextActionAt?: Date): Promise<void>;
+  
   // Admin operations
   getSystemStats(): Promise<any>;
+  getFinanceAnalytics(): Promise<{
+    totalAdminRevenue: number;
+    totalTeacherPayouts: number;
+    totalRefunds: number;
+    totalTransactionFees: number;
+    conflictAmount: number;
+    studentsCount: number;
+    teachersCount: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -532,6 +587,253 @@ export class DatabaseStorage implements IStorage {
   async getTeacherProfile(userId: string): Promise<TeacherProfile | undefined> {
     const [profile] = await db.select().from(teacherProfiles).where(eq(teacherProfiles.userId, userId));
     return profile;
+  }
+
+  // Payment Method operations
+  async createPaymentMethod(paymentMethodData: InsertPaymentMethod): Promise<PaymentMethod> {
+    const [paymentMethod] = await db.insert(paymentMethods).values(paymentMethodData).returning();
+    return paymentMethod;
+  }
+
+  async getUserPaymentMethods(userId: string): Promise<PaymentMethod[]> {
+    return await db
+      .select()
+      .from(paymentMethods)
+      .where(and(eq(paymentMethods.userId, userId), eq(paymentMethods.isActive, true)))
+      .orderBy(desc(paymentMethods.isDefault), desc(paymentMethods.createdAt));
+  }
+
+  async getPaymentMethod(id: string): Promise<PaymentMethod | undefined> {
+    const [paymentMethod] = await db.select().from(paymentMethods).where(eq(paymentMethods.id, id));
+    return paymentMethod;
+  }
+
+  async updatePaymentMethod(id: string, updates: Partial<InsertPaymentMethod>): Promise<void> {
+    await db
+      .update(paymentMethods)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(paymentMethods.id, id));
+  }
+
+  async deletePaymentMethod(id: string): Promise<void> {
+    await db
+      .update(paymentMethods)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(paymentMethods.id, id));
+  }
+
+  async setDefaultPaymentMethod(userId: string, paymentMethodId: string): Promise<void> {
+    // First, unset all default payment methods for the user
+    await db
+      .update(paymentMethods)
+      .set({ isDefault: false, updatedAt: new Date() })
+      .where(eq(paymentMethods.userId, userId));
+    
+    // Then set the new default
+    await db
+      .update(paymentMethods)
+      .set({ isDefault: true, updatedAt: new Date() })
+      .where(eq(paymentMethods.id, paymentMethodId));
+  }
+
+  // Transaction Fee Configuration operations
+  async getActiveTransactionFeeConfig(): Promise<TransactionFeeConfig | undefined> {
+    const [config] = await db
+      .select()
+      .from(transactionFeeConfig)
+      .where(eq(transactionFeeConfig.isActive, true))
+      .orderBy(desc(transactionFeeConfig.createdAt))
+      .limit(1);
+    return config;
+  }
+
+  async createTransactionFeeConfig(configData: InsertTransactionFeeConfig): Promise<TransactionFeeConfig> {
+    // Deactivate old configs first
+    await this.deactivateOldFeeConfigs();
+    
+    const [config] = await db.insert(transactionFeeConfig).values(configData).returning();
+    return config;
+  }
+
+  async updateTransactionFeeConfig(id: string, updates: Partial<InsertTransactionFeeConfig>): Promise<void> {
+    await db
+      .update(transactionFeeConfig)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(transactionFeeConfig.id, id));
+  }
+
+  async deactivateOldFeeConfigs(): Promise<void> {
+    await db
+      .update(transactionFeeConfig)
+      .set({ isActive: false, updatedAt: new Date() });
+  }
+
+  // Payment Transaction operations
+  async createPaymentTransaction(transactionData: InsertPaymentTransaction): Promise<PaymentTransaction> {
+    const [transaction] = await db.insert(paymentTransactions).values(transactionData).returning();
+    return transaction;
+  }
+
+  async getPaymentTransaction(id: string): Promise<PaymentTransaction | undefined> {
+    const [transaction] = await db.select().from(paymentTransactions).where(eq(paymentTransactions.id, id));
+    return transaction;
+  }
+
+  async updatePaymentTransactionStatus(id: string, status: string, workflowStage?: string): Promise<void> {
+    const updateData: any = { status, updatedAt: new Date() };
+    if (workflowStage) {
+      updateData.workflowStage = workflowStage;
+    }
+    if (status === 'completed') {
+      updateData.completedAt = new Date();
+    }
+    
+    await db
+      .update(paymentTransactions)
+      .set(updateData)
+      .where(eq(paymentTransactions.id, id));
+  }
+
+  async getTransactionsByUser(userId: string): Promise<PaymentTransaction[]> {
+    return await db
+      .select()
+      .from(paymentTransactions)
+      .where(eq(paymentTransactions.fromUserId, userId))
+      .orderBy(desc(paymentTransactions.createdAt));
+  }
+
+  async getPendingTeacherPayouts(): Promise<PaymentTransaction[]> {
+    return await db
+      .select()
+      .from(paymentTransactions)
+      .where(and(
+        eq(paymentTransactions.workflowStage, 'admin_to_teacher'),
+        eq(paymentTransactions.status, 'pending')
+      ));
+  }
+
+  // Unsettled Finance operations
+  async createUnsettledFinance(unsettledFinanceData: InsertUnsettledFinance): Promise<UnsettledFinance> {
+    const [unsettledFinance] = await db.insert(unsettledFinances).values(unsettledFinanceData).returning();
+    return unsettledFinance;
+  }
+
+  async getUnsettledFinancesByStatus(status: string): Promise<UnsettledFinance[]> {
+    return await db
+      .select()
+      .from(unsettledFinances)
+      .where(eq(unsettledFinances.status, status))
+      .orderBy(desc(unsettledFinances.createdAt));
+  }
+
+  async resolveUnsettledFinance(id: string, resolution: { action: string; amount: number; notes: string }): Promise<void> {
+    await db
+      .update(unsettledFinances)
+      .set({
+        status: 'resolved',
+        resolutionAction: resolution.action,
+        resolutionAmount: resolution.amount.toString(),
+        resolutionNotes: resolution.notes,
+        resolutionDate: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(unsettledFinances.id, id));
+  }
+
+  // Payment Workflow operations
+  async createPaymentWorkflow(workflowData: InsertPaymentWorkflow): Promise<PaymentWorkflow> {
+    // Ensure processingErrors is a proper array
+    const processedData = {
+      ...workflowData,
+      processingErrors: workflowData.processingErrors ? Array.from(workflowData.processingErrors as string[]) : []
+    };
+    const [workflow] = await db.insert(paymentWorkflows).values(processedData).returning();
+    return workflow;
+  }
+
+  async getActivePaymentWorkflows(): Promise<PaymentWorkflow[]> {
+    return await db
+      .select()
+      .from(paymentWorkflows)
+      .where(eq(paymentWorkflows.status, 'active'))
+      .orderBy(paymentWorkflows.nextActionAt);
+  }
+
+  async updatePaymentWorkflowStage(id: string, stage: string, nextActionAt?: Date): Promise<void> {
+    const updateData: any = { 
+      currentStage: stage,
+      lastProcessedAt: new Date(),
+      updatedAt: new Date() 
+    };
+    if (nextActionAt) {
+      updateData.nextActionAt = nextActionAt;
+    }
+    
+    await db
+      .update(paymentWorkflows)
+      .set(updateData)
+      .where(eq(paymentWorkflows.id, id));
+  }
+
+  async getFinanceAnalytics(): Promise<{
+    totalAdminRevenue: number;
+    totalTeacherPayouts: number;
+    totalRefunds: number;
+    totalTransactionFees: number;
+    conflictAmount: number;
+    studentsCount: number;
+    teachersCount: number;
+  }> {
+    // Get all completed transactions
+    const transactions = await db
+      .select()
+      .from(paymentTransactions)
+      .where(eq(paymentTransactions.status, 'completed'));
+
+    // Get unsettled finance conflicts
+    const conflicts = await db
+      .select()
+      .from(unsettledFinances)
+      .where(eq(unsettledFinances.status, 'open'));
+
+    // Get user counts
+    const allUsers = await db.select().from(users);
+    const studentsCount = allUsers.filter(u => u.role === 'student').length;
+    const teachersCount = allUsers.filter(u => u.role === 'mentor').length;
+
+    // Calculate financial metrics
+    let totalAdminRevenue = 0;
+    let totalTeacherPayouts = 0;
+    let totalRefunds = 0;
+    let totalTransactionFees = 0;
+
+    for (const transaction of transactions) {
+      const amount = parseFloat(transaction.amount);
+      const fee = parseFloat(transaction.transactionFee || '0');
+
+      if (transaction.transactionType === 'booking_payment' || transaction.transactionType === 'course_payment') {
+        totalAdminRevenue += amount;
+        totalTransactionFees += fee;
+      } else if (transaction.transactionType === 'teacher_payout') {
+        totalTeacherPayouts += amount;
+      } else if (transaction.transactionType === 'refund') {
+        totalRefunds += amount;
+      }
+    }
+
+    const conflictAmount = conflicts.reduce((sum, conflict) => {
+      return sum + parseFloat(conflict.conflictAmount);
+    }, 0);
+
+    return {
+      totalAdminRevenue,
+      totalTeacherPayouts,
+      totalRefunds,
+      totalTransactionFees,
+      conflictAmount,
+      studentsCount,
+      teachersCount,
+    };
   }
 
   // Admin operations

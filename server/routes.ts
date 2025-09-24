@@ -2573,6 +2573,181 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========================================
+  // PAYMENT SYSTEM API ROUTES
+  // ========================================
+
+  // Payment Methods API Routes
+  app.get('/api/payment-methods/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      console.log(`💳 Fetching payment methods for user: ${userId}`);
+      const paymentMethods = await storage.getUserPaymentMethods(userId);
+      res.json(paymentMethods);
+    } catch (error: any) {
+      console.error('❌ Error fetching payment methods:', error);
+      res.status(500).json({ message: 'Failed to fetch payment methods' });
+    }
+  });
+
+  app.post('/api/payment-methods', async (req, res) => {
+    try {
+      const paymentMethodData = req.body;
+      console.log(`💳 Creating payment method for user: ${paymentMethodData.userId}`);
+      
+      // Validate required fields
+      if (!paymentMethodData.userId) {
+        return res.status(400).json({ 
+          message: 'User ID is required to create a payment method',
+          error: 'MISSING_USER_ID' 
+        });
+      }
+
+      const paymentMethod = await storage.createPaymentMethod(paymentMethodData);
+      console.log(`✅ Payment method created successfully for user: ${paymentMethodData.userId}`);
+      res.json(paymentMethod);
+    } catch (error: any) {
+      console.error('❌ Error creating payment method:', error);
+      
+      // Handle specific database constraint errors
+      if (error.code === '23503') {
+        // Foreign key constraint violation
+        if (error.constraint && error.constraint.includes('user_id')) {
+          return res.status(400).json({ 
+            message: 'Invalid user - please ensure you have a valid account before adding payment methods',
+            error: 'USER_NOT_FOUND' 
+          });
+        }
+      }
+      
+      // Handle duplicate key errors
+      if (error.code === '23505') {
+        return res.status(409).json({ 
+          message: 'A payment method with this information already exists',
+          error: 'DUPLICATE_PAYMENT_METHOD' 
+        });
+      }
+      
+      // Generic error for other cases
+      res.status(500).json({ 
+        message: 'Failed to create payment method. Please try again.',
+        error: 'INTERNAL_ERROR'
+      });
+    }
+  });
+
+  app.post('/api/payment-methods/:paymentMethodId/set-default', async (req, res) => {
+    try {
+      const { paymentMethodId } = req.params;
+      const { userId } = req.body;
+      console.log(`💳 Setting default payment method: ${paymentMethodId} for user: ${userId}`);
+      await storage.setDefaultPaymentMethod(userId, paymentMethodId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('❌ Error setting default payment method:', error);
+      res.status(500).json({ message: 'Failed to set default payment method' });
+    }
+  });
+
+  // Transaction Fee Configuration API Routes
+  app.get('/api/admin/transaction-fee-config', async (req, res) => {
+    try {
+      console.log('💰 Fetching active transaction fee configuration');
+      const feeConfig = await storage.getActiveTransactionFeeConfig();
+      
+      if (!feeConfig) {
+        // Return default configuration if none exists
+        const defaultConfig = {
+          id: 'default',
+          feePercentage: '2.00',
+          minimumFee: '0.50',
+          maximumFee: null,
+          isActive: true,
+          description: 'Default 2% transaction fee'
+        };
+        console.log('💰 No fee config found, returning default configuration');
+        res.json(defaultConfig);
+      } else {
+        console.log(`💰 Found fee config: ${feeConfig.feePercentage}% fee`);
+        res.json(feeConfig);
+      }
+    } catch (error: any) {
+      console.error('❌ Error fetching transaction fee config:', error);
+      res.status(500).json({ message: 'Failed to fetch transaction fee config' });
+    }
+  });
+
+  app.post('/api/admin/transaction-fee-config', async (req, res) => {
+    try {
+      const feeConfigData = req.body;
+      console.log(`💰 Creating new fee configuration: ${feeConfigData.feePercentage}%`);
+      const feeConfig = await storage.createTransactionFeeConfig(feeConfigData);
+      res.json(feeConfig);
+    } catch (error: any) {
+      console.error('❌ Error creating transaction fee config:', error);
+      res.status(500).json({ message: 'Failed to create transaction fee config' });
+    }
+  });
+
+  // Finance Analytics API Routes
+  app.get('/api/admin/finance-analytics', async (req, res) => {
+    try {
+      console.log('📊 Fetching finance analytics...');
+      const analytics = await storage.getFinanceAnalytics();
+      
+      console.log('💰 Finance analytics:', {
+        totalAdminRevenue: analytics.totalAdminRevenue,
+        totalTransactionFees: analytics.totalTransactionFees,
+        studentsCount: analytics.studentsCount,
+        teachersCount: analytics.teachersCount,
+        conflictAmount: analytics.conflictAmount
+      });
+      
+      res.json(analytics);
+    } catch (error: any) {
+      console.error('❌ Error fetching finance analytics:', error);
+      // Return default analytics on error
+      const defaultAnalytics = {
+        totalAdminRevenue: 0,
+        totalTeacherPayouts: 0,
+        totalRefunds: 0,
+        totalTransactionFees: 0,
+        conflictAmount: 0,
+        studentsCount: 0,
+        teachersCount: 0
+      };
+      res.status(200).json(defaultAnalytics); // Return 200 with default data
+    }
+  });
+
+  // Payment Transaction API Routes
+  app.post('/api/payment-transactions', async (req, res) => {
+    try {
+      const transactionData = req.body;
+      console.log(`💸 Creating payment transaction: ${transactionData.transactionType}`);
+      const transaction = await storage.createPaymentTransaction(transactionData);
+      res.json(transaction);
+    } catch (error: any) {
+      console.error('❌ Error creating payment transaction:', error);
+      res.status(500).json({ message: 'Failed to create payment transaction' });
+    }
+  });
+
+  // Unsettled Finances API Routes
+  app.get('/api/admin/unsettled-finances', async (req, res) => {
+    try {
+      const { status = 'open' } = req.query;
+      console.log(`⚠️ Fetching unsettled finances with status: ${status}`);
+      const unsettledFinances = await storage.getUnsettledFinancesByStatus(status as string);
+      res.json(unsettledFinances);
+    } catch (error: any) {
+      console.error('❌ Error fetching unsettled finances:', error);
+      res.status(500).json({ message: 'Failed to fetch unsettled finances' });
+    }
+  });
+
+  console.log('✅ Payment system API routes registered successfully!');
+
   const httpServer = createServer(app);
   return httpServer;
 }

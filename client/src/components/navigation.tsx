@@ -94,6 +94,9 @@ export default function Navigation() {
               <Link href="/admin/analytics" className="ml-4 text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded" data-testid="link-admin-analytics">
                 🤖 AI Analytics
               </Link>
+              <Link href="/admin/payment-config" className="ml-2 text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded" data-testid="link-admin-payment-config">
+                💰 Payment Config
+              </Link>
               <Link href="/admin/cloud-deployments" className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded" data-testid="link-cloud-deployments">
                 ☁️ Cloud Deploy
               </Link>

@@ -48,6 +48,7 @@ import AdminHome from "./pages/admin/home";
 import CodeMapping from "./pages/admin/code-mapping";
 import TestManagement from "./pages/admin/test-management";
 import LoadTestingGuide from "./pages/admin/load-testing-guide";
+import PaymentConfig from "./pages/admin/payment-config";
 
 function Router() {
   return (
@@ -68,6 +69,7 @@ function Router() {
       <Route path="/admin/user-management" component={UserManagement} />
       <Route path="/admin/mentor-approval" component={MentorApproval} />
       <Route path="/admin/analytics" component={AdminAnalytics} />
+      <Route path="/admin/payment-config" component={PaymentConfig} />
       <Route path="/admin/cloud-deployments" component={CloudDeployments} />
       <Route path="/admin/code-mapping" component={CodeMapping} />
       <Route path="/admin/test-management" component={TestManagement} />
