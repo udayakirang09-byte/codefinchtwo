@@ -286,7 +286,7 @@ export default function Courses() {
               </CardContent>
             </Card>
           ))
-            )}
+            }
           </div>
         )}
 
