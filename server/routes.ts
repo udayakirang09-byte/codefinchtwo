@@ -21,6 +21,7 @@ import {
   technologyStack,
   quantumTasks,
   users,
+  mentors,
   bookings,
   systemAlerts,
   students,
@@ -871,51 +872,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Teacher routes
   app.get("/api/teacher/classes", async (req, res) => {
     try {
-      // For demo purposes, return mock classes data without requiring database lookup
-      // In production this would query the database based on authenticated teacher
-      const mockClasses = [
-        {
-          id: "1",
-          student: {
-            user: {
-              firstName: "Emma",
-              lastName: "Smith"
-            }
-          },
-          subject: "JavaScript Fundamentals",
-          scheduledAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour from now
-          duration: 60,
-          status: "scheduled"
-        },
-        {
-          id: "2", 
-          student: {
-            user: {
-              firstName: "David",
-              lastName: "Johnson"
-            }
-          },
-          subject: "React Components",
-          scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day from now
-          duration: 90,
-          status: "scheduled"
-        },
-        {
-          id: "3",
-          student: {
-            user: {
-              firstName: "Sarah",
-              lastName: "Wilson"
-            }
-          },
-          subject: "Python Basics",
-          scheduledAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-          duration: 60,
-          status: "completed"
-        }
-      ];
+      const teacherEmail = req.query.teacherId as string;
       
-      res.json(mockClasses);
+      if (!teacherEmail) {
+        return res.status(400).json({ message: "Teacher ID (email) is required" });
+      }
+      
+      // Get teacher's mentor ID from their email
+      const teacherUser = await db.select({
+        userId: users.id,
+        mentorId: mentors.id
+      })
+      .from(users)
+      .leftJoin(mentors, eq(mentors.userId, users.id))
+      .where(eq(users.email, teacherEmail))
+      .limit(1);
+      
+      if (!teacherUser.length || !teacherUser[0].mentorId) {
+        return res.status(404).json({ message: "Teacher not found or not registered as mentor" });
+      }
+      
+      const mentorId = teacherUser[0].mentorId;
+      
+      // Get real bookings for this teacher with student details
+      const teacherBookings = await db.select({
+        id: bookings.id,
+        studentId: bookings.studentId,
+        mentorId: bookings.mentorId,
+        scheduledAt: bookings.scheduledAt,
+        duration: bookings.duration,
+        status: bookings.status,
+        notes: bookings.notes,
+        amount: sql<number>`COALESCE(150, 0)`, // Default amount since not in schema
+        studentFirstName: users.firstName,
+        studentLastName: users.lastName,
+        studentEmail: users.email
+      })
+      .from(bookings)
+      .leftJoin(students, eq(bookings.studentId, students.id))
+      .leftJoin(users, eq(students.userId, users.id))
+      .where(eq(bookings.mentorId, mentorId))
+      .orderBy(bookings.scheduledAt);
+      
+      // Format the data to match the expected structure
+      const formattedClasses = teacherBookings.map(booking => ({
+        id: booking.id,
+        student: {
+          user: {
+            firstName: booking.studentFirstName || 'Unknown',
+            lastName: booking.studentLastName || 'Student'
+          }
+        },
+        subject: booking.notes || 'Programming Session', // Using notes as subject for now
+        scheduledAt: booking.scheduledAt,
+        duration: booking.duration,
+        status: booking.status,
+        amount: booking.amount
+      }));
+      
+      res.json(formattedClasses);
     } catch (error) {
       console.error("Error fetching teacher classes:", error);
       res.status(500).json({ message: "Failed to fetch teacher classes" });
@@ -924,27 +939,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/teacher/stats", async (req, res) => {
     try {
-      // Fetch real stats from database
+      const teacherEmail = req.query.teacherId as string;
+      
+      if (!teacherEmail) {
+        return res.status(400).json({ message: "Teacher ID (email) is required" });
+      }
+      
+      // Get teacher's mentor ID from their email
+      const teacherUser = await db.select({
+        userId: users.id,
+        mentorId: mentors.id
+      })
+      .from(users)
+      .leftJoin(mentors, eq(mentors.userId, users.id))
+      .where(eq(users.email, teacherEmail))
+      .limit(1);
+      
+      if (!teacherUser.length || !teacherUser[0].mentorId) {
+        return res.status(404).json({ message: "Teacher not found or not registered as mentor" });
+      }
+      
+      const mentorId = teacherUser[0].mentorId;
+      
+      // Get real bookings for this teacher
       const teacherBookings = await db.select().from(bookings).where(
-        eq(bookings.mentorId, 'ment002') // Using demo mentor ID
+        eq(bookings.mentorId, mentorId)
       );
       
+      // Calculate real stats from actual bookings
       const completedBookings = teacherBookings.filter(b => b.status === 'completed');
-      // Mock earnings calculation since amount field is not in schema
-      const totalEarnings = completedBookings.reduce((sum, b) => sum + 150, 0); // $150 per session
-      const avgRating = 4.8; // This would come from reviews table
+      const scheduledBookings = teacherBookings.filter(b => b.status === 'scheduled');
+      
+      // Calculate unique students
+      const uniqueStudentIds = new Set(teacherBookings.map(b => b.studentId));
+      const totalStudents = uniqueStudentIds.size;
+      
+      // Calculate real earnings (using $150 per session as default since amount field not in schema)
+      const totalEarnings = completedBookings.reduce((sum, b) => sum + 150, 0);
+      const monthlyEarnings = Math.round(totalEarnings * 0.3); // Assume 30% this month
+      
+      // Get real reviews for average rating
+      const teacherReviews = await db.select()
+        .from(reviews)
+        .where(eq(reviews.mentorId, mentorId));
+      
+      const avgRating = teacherReviews.length > 0 
+        ? Number((teacherReviews.reduce((sum, r) => sum + r.rating, 0) / teacherReviews.length).toFixed(1))
+        : 0;
       
       const teacherStats = {
-        totalStudents: 47,
-        monthlyEarnings: Math.round(totalEarnings * 0.3), // 30% of total for this month
+        totalStudents: totalStudents,
+        monthlyEarnings: monthlyEarnings,
         totalEarnings: totalEarnings,
-        averageSessionEarnings: Math.round(totalEarnings / Math.max(completedBookings.length, 1)),
-        upcomingSessions: teacherBookings.filter(b => b.status === 'scheduled').length,
+        averageSessionEarnings: completedBookings.length > 0 ? Math.round(totalEarnings / completedBookings.length) : 0,
+        upcomingSessions: scheduledBookings.length,
         completedSessions: completedBookings.length,
         averageRating: avgRating,
-        totalReviews: completedBookings.length,
-        feedbackResponseRate: 85,
-        totalHours: completedBookings.length * 60 // Assuming 60 min average
+        totalReviews: teacherReviews.length,
+        feedbackResponseRate: completedBookings.length > 0 ? Math.round((teacherReviews.length / completedBookings.length) * 100) : 0,
+        totalHours: completedBookings.reduce((sum, b) => sum + (b.duration || 60), 0) / 60 // Convert minutes to hours
       };
       
       res.json(teacherStats);
@@ -957,12 +1010,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Teacher notifications endpoint
   app.get("/api/teacher/notifications", async (req, res) => {
     try {
-      const teacherId = req.query.teacherId || 'ment002';
+      const teacherEmail = req.query.teacherId as string;
+      
+      if (!teacherEmail) {
+        return res.status(400).json({ message: "Teacher ID (email) is required" });
+      }
+      
+      // Get teacher's mentor ID from their email
+      const teacherUser = await db.select({
+        userId: users.id,
+        mentorId: mentors.id
+      })
+      .from(users)
+      .leftJoin(mentors, eq(mentors.userId, users.id))
+      .where(eq(users.email, teacherEmail))
+      .limit(1);
+      
+      if (!teacherUser.length || !teacherUser[0].mentorId) {
+        return res.status(404).json({ message: "Teacher not found or not registered as mentor" });
+      }
+      
+      const mentorId = teacherUser[0].mentorId;
       
       // Get upcoming classes and recent messages for notifications
       const upcomingBookings = await db.select({
         id: bookings.id,
-        // subject: bookings.subject, // Not in schema
         scheduledAt: bookings.scheduledAt,
         studentName: users.firstName
       })
@@ -971,12 +1043,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .leftJoin(users, eq(students.userId, users.id))
       .where(
         and(
-          eq(bookings.mentorId, teacherId as string),
+          eq(bookings.mentorId, mentorId),
           eq(bookings.status, 'scheduled')
         )
       );
       
-      const notifications = [];
+      const notifications: Array<{
+        id: string;
+        message: string;
+        type: string;
+        timestamp: Date;
+      }> = [];
       
       // Add upcoming class notifications
       upcomingBookings.forEach(booking => {
@@ -991,21 +1068,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
       
-      // Add some other realistic notifications
-      notifications.push(
-        {
-          id: 'msg-1',
-          message: "New message from student about JavaScript session",
-          type: "message",
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000) // 2 hours ago
-        },
-        {
-          id: 'feedback-1',
-          message: "3 students have provided feedback on recent sessions",
-          type: "feedback",
-          timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000) // 6 hours ago
-        }
-      );
+      // Only return real notifications from the database, not fake ones
       
       res.json(notifications);
     } catch (error) {
