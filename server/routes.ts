@@ -1998,10 +1998,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`✅ Found ${availableTimes.length} available time slots`);
       
+      // Deduplicate times for booking form (same time can appear on multiple days)
+      const timeSet = new Set(availableTimes.map(slot => slot.time));
+      const uniqueTimes = Array.from(timeSet).sort();
+
       res.json({
         timeSlots: availableTimes, // For booking form
         availableSlots: availableSlots, // For mentor profile display
-        rawTimes: availableTimes.map(slot => slot.time) // Just the times array
+        rawTimes: uniqueTimes // Deduplicated and sorted times array
       });
     } catch (error) {
       console.error("Error getting available times:", error);

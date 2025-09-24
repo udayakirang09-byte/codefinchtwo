@@ -44,6 +44,16 @@ export default function Booking() {
     enabled: !!user?.email,
   });
 
+  // Fetch available time slots from mentor's real schedule - MUST be before conditional returns
+  const { data: availabilityData } = useQuery<{
+    timeSlots: Array<{id: string, time: string, dayOfWeek: string}>,
+    availableSlots: Array<{day: string, times: string[]}>,
+    rawTimes: string[]
+  }>({
+    queryKey: ["/api/mentors", mentorId, "available-times"],
+    enabled: !!mentorId,
+  });
+
   // Auto-populate form fields when student data loads
   useEffect(() => {
     if (studentData && user) {
@@ -172,16 +182,6 @@ export default function Booking() {
   const getInitials = (firstName: string | null, lastName: string | null) => {
     return `${firstName?.charAt(0) || ""}${lastName?.charAt(0) || ""}`.toUpperCase();
   };
-
-  // Fetch available time slots from mentor's real schedule
-  const { data: availabilityData } = useQuery<{
-    timeSlots: Array<{id: string, time: string, dayOfWeek: string}>,
-    availableSlots: Array<{day: string, times: string[]}>,
-    rawTimes: string[]
-  }>({
-    queryKey: ["/api/mentors", mentorId, "available-times"],
-    enabled: !!mentorId,
-  });
 
   // Use real mentor availability or fallback to default times
   const timeSlots = availabilityData?.rawTimes || [
