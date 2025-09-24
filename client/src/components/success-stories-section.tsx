@@ -65,10 +65,22 @@ export default function SuccessStoriesSection() {
               </p>
               
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-1 text-accent" data-testid={`rating-student-${story.id}`}>
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={16} fill="currentColor" />
-                  ))}
+                <div className="flex items-center space-x-1" data-testid={`rating-student-${story.id}`}>
+                  {[...Array(5)].map((_, i) => {
+                    // Default to 5 stars for success stories
+                    const rating = 5;
+                    const isFilled = i < Math.floor(rating);
+                    const isPartial = i === Math.floor(rating) && rating % 1 !== 0;
+                    
+                    return (
+                      <Star 
+                        key={i} 
+                        size={16} 
+                        className={`${isFilled || isPartial ? 'text-accent' : 'text-muted-foreground'}`}
+                        fill={isFilled || isPartial ? "currentColor" : "none"}
+                      />
+                    );
+                  })}
                 </div>
                 <span className="text-sm text-muted-foreground" data-testid={`text-time-ago-${story.id}`}>
                   {story.timeAgo}

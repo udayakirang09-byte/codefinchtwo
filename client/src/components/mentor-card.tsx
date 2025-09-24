@@ -55,7 +55,22 @@ export default function MentorCard({ mentor }: MentorCardProps) {
       
       <div className="flex items-center space-x-4 mb-4 text-sm text-muted-foreground">
         <div className="flex items-center" data-testid={`stat-rating-${mentor.id}`}>
-          <Star className="text-accent mr-1" size={16} />
+          <div className="flex items-center mr-2">
+            {[...Array(5)].map((_, i) => {
+              const rating = parseFloat(mentor.rating || "0");
+              const isFilled = i < Math.floor(rating);
+              const isPartial = i === Math.floor(rating) && rating % 1 !== 0;
+              
+              return (
+                <Star 
+                  key={i} 
+                  size={16} 
+                  className={`${isFilled || isPartial ? 'text-accent' : 'text-muted-foreground'}`}
+                  fill={isFilled || isPartial ? "currentColor" : "none"}
+                />
+              );
+            })}
+          </div>
           <span>{parseFloat(mentor.rating || "0").toFixed(1)}</span>
         </div>
         <div className="flex items-center" data-testid={`stat-students-${mentor.id}`}>
