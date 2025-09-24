@@ -88,6 +88,19 @@ export default function TeacherDashboard() {
     },
     enabled: !!user?.id
   });
+
+  // Fetch teacher courses from API
+  const { data: teacherCourses = [], isLoading: coursesLoading } = useQuery({
+    queryKey: ['teacher-courses', user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/teacher/courses?teacherId=${user?.id}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch courses: ${response.status}`);
+      }
+      return response.json();
+    },
+    enabled: !!user?.id
+  });
   
   const upcomingClasses = Array.isArray(teacherClasses) ? teacherClasses.filter((booking: any) => 
     booking.status === 'scheduled' && new Date(booking.scheduledAt) > new Date()
@@ -385,6 +398,91 @@ export default function TeacherDashboard() {
                     <p className="text-gray-600">Your completed sessions will appear here once you finish teaching.</p>
                   </div>
                 </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Teacher Courses */}
+        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-orange-600 to-red-700 text-white">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <BookOpen className="h-6 w-6" />
+              My Courses
+              <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30">
+                {teacherCourses.length} courses
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              {coursesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-gray-500">Loading courses...</div>
+                </div>
+              ) : teacherCourses.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="bg-orange-50 rounded-2xl p-8 border border-orange-200">
+                    <BookOpen className="h-16 w-16 text-orange-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">No Courses Created Yet</h3>
+                    <p className="text-gray-600 mb-4">Start creating courses to teach your expertise to students.</p>
+                    <Button 
+                      onClick={() => window.location.href = '/teacher/create-course'}
+                      className="bg-orange-600 hover:bg-orange-700"
+                    >
+                      Create Your First Course
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                teacherCourses.map((course: any) => (
+                  <div key={course.id} className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-bold text-xl text-gray-800 mb-2">{course.title}</h3>
+                        <p className="text-gray-600 mb-3 leading-relaxed">{course.description}</p>
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          <Badge className="bg-orange-100 text-orange-800 border-orange-200">
+                            {course.category}
+                          </Badge>
+                          <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                            {course.difficulty}
+                          </Badge>
+                          {course.duration && (
+                            <Badge className="bg-green-100 text-green-800 border-green-200">
+                              {course.duration}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right ml-4">
+                        <div className="text-2xl font-bold text-green-600 mb-1">
+                          ${course.price}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          Max: {course.maxStudents} students
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between bg-white/70 px-4 py-3 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${course.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                        <span className="text-sm font-medium text-gray-700">
+                          {course.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" className="text-orange-600 border-orange-200 hover:bg-orange-50">
+                          Edit Course
+                        </Button>
+                        <Button size="sm" className="bg-orange-600 hover:bg-orange-700">
+                          View Details
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </CardContent>
