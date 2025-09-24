@@ -49,6 +49,7 @@ import CodeMapping from "./pages/admin/code-mapping";
 import TestManagement from "./pages/admin/test-management";
 import LoadTestingGuide from "./pages/admin/load-testing-guide";
 import PaymentConfig from "./pages/admin/payment-config";
+import TeacherPaymentConfig from "./pages/teacher/payment-config";
 
 function Router() {
   return (
@@ -75,6 +76,7 @@ function Router() {
       <Route path="/admin/test-management" component={TestManagement} />
       <Route path="/admin/load-testing" component={LoadTestingGuide} />
       <Route path="/teacher/home" component={TeacherHome} />
+      <Route path="/teacher/payment-config" component={TeacherPaymentConfig} />
       <Route path="/admin/home" component={AdminHome} />
       <Route path="/student/active-classes" component={ActiveClasses} />
       <Route path="/student/learning-hours" component={LearningHours} />

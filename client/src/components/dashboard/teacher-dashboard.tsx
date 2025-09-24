@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Video, MessageCircle, Users, BookOpen, DollarSign, Bell, TrendingUp } from "lucide-react";
+import { Calendar, Clock, Video, MessageCircle, Users, BookOpen, DollarSign, Bell, TrendingUp, CreditCard } from "lucide-react";
 import { formatDistanceToNow, addHours, addMinutes } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -497,7 +497,7 @@ export default function TeacherDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
               <Button 
                 variant="outline" 
                 className="h-32 p-6 flex-col hover:bg-green-50 hover:border-green-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
@@ -537,6 +537,16 @@ export default function TeacherDashboard() {
                 <MessageCircle className="h-10 w-10 mb-3 text-purple-600 group-hover:scale-110 transition-transform duration-200" />
                 <span className="font-bold text-lg">Student Feedback</span>
                 <span className="text-xs text-gray-500 mt-1 text-center">View reviews & ratings</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-32 p-6 flex-col hover:bg-orange-50 hover:border-orange-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                data-testid="button-payment-config"
+                onClick={() => window.location.href = '/teacher/payment-config'}
+              >
+                <CreditCard className="h-10 w-10 mb-3 text-orange-600 group-hover:scale-110 transition-transform duration-200" />
+                <span className="font-bold text-lg">Payment Setup</span>
+                <span className="text-xs text-gray-500 mt-1 text-center">Configure payment methods</span>
               </Button>
             </div>
           </CardContent>
