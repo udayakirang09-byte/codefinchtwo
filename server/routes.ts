@@ -2733,6 +2733,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/payment-transactions/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      console.log(`💸 Fetching payment transaction: ${id}`);
+      const transaction = await storage.getPaymentTransaction(id);
+      if (!transaction) {
+        return res.status(404).json({ message: 'Payment transaction not found' });
+      }
+      res.json(transaction);
+    } catch (error: any) {
+      console.error('❌ Error fetching payment transaction:', error);
+      res.status(500).json({ message: 'Failed to fetch payment transaction' });
+    }
+  });
+
   // Unsettled Finances API Routes
   app.get('/api/admin/unsettled-finances', async (req, res) => {
     try {
@@ -2743,6 +2758,293 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('❌ Error fetching unsettled finances:', error);
       res.status(500).json({ message: 'Failed to fetch unsettled finances' });
+    }
+  });
+
+  // Payment Workflow Automation API Routes (ADMIN ONLY)
+  app.post('/api/payment-workflows', async (req, res) => {
+    try {
+      // TODO: Add proper authentication check for admin role
+      // if (req.user?.role !== 'admin') {
+      //   return res.status(403).json({ message: 'Admin access required' });
+      // }
+      
+      // TODO: Add proper Zod validation
+      // const validatedData = insertPaymentWorkflowSchema.parse(req.body);
+      
+      const workflowData = req.body;
+      console.log(`🤖 Creating payment workflow: ${workflowData.workflowType}`);
+      const workflow = await storage.createPaymentWorkflow(workflowData);
+      res.json(workflow);
+    } catch (error: any) {
+      console.error('❌ Error creating payment workflow:', error);
+      res.status(500).json({ message: 'Failed to create payment workflow' });
+    }
+  });
+
+  app.get('/api/payment-workflows/active', async (req, res) => {
+    try {
+      console.log('📋 Fetching active payment workflows...');
+      const workflows = await storage.getActivePaymentWorkflows();
+      res.json(workflows);
+    } catch (error: any) {
+      console.error('❌ Error fetching active workflows:', error);
+      res.status(500).json({ message: 'Failed to fetch active workflows' });
+    }
+  });
+
+  app.put('/api/payment-workflows/:id/stage', async (req, res) => {
+    try {
+      // TODO: Add proper authentication check for admin role
+      // if (req.user?.role !== 'admin') {
+      //   return res.status(403).json({ message: 'Admin access required' });
+      // }
+      
+      const { id } = req.params;
+      const { stage, nextActionAt } = req.body;
+      
+      // Basic input validation
+      if (!stage || typeof stage !== 'string') {
+        return res.status(400).json({ message: 'Valid stage required' });
+      }
+      
+      console.log(`🔄 Updating workflow ${id} stage to: ${stage}`);
+      await storage.updatePaymentWorkflowStage(id, stage, nextActionAt ? new Date(nextActionAt) : undefined);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('❌ Error updating workflow stage:', error);
+      res.status(500).json({ message: 'Failed to update workflow stage' });
+    }
+  });
+
+  // Automated Payment Processing Engine (ADMIN ONLY)
+  app.post('/api/payment-workflows/process', async (req, res) => {
+    try {
+      // TODO: Add proper authentication check for admin role
+      // if (req.user?.role !== 'admin') {
+      //   return res.status(403).json({ message: 'Admin access required' });
+      // }
+      
+      console.log('⚡ Starting automated payment workflow processing...');
+      const now = new Date();
+      
+      // Get all active workflows that need processing
+      const activeWorkflows = await storage.getActivePaymentWorkflows();
+      const workflowsToProcess = activeWorkflows.filter(workflow => 
+        workflow.nextActionAt && new Date(workflow.nextActionAt) <= now
+      );
+      
+      let processedCount = 0;
+      const errors = [];
+
+      for (const workflow of workflowsToProcess) {
+        try {
+          console.log(`⚙️ Processing workflow ${workflow.id}: ${workflow.currentStage}`);
+          
+          // Get the associated transaction to check timing
+          const transaction = await storage.getPaymentTransaction(workflow.transactionId);
+          if (!transaction) {
+            errors.push({ workflowId: workflow.id, error: 'Associated transaction not found' });
+            continue;
+          }
+          
+          // Process based on current stage with proper timing validation
+          switch (workflow.currentStage) {
+            case 'payment_received':
+              // Student has paid, waiting for class completion
+              // Move to waiting_24h only after class scheduled time
+              if (!workflow.nextActionAt) break;
+              
+              const classEndTime = new Date(workflow.nextActionAt);
+              if (now >= classEndTime) {
+                // Class is complete, now wait 24 hours for teacher payout
+                const payoutEligibleAt = new Date(classEndTime);
+                payoutEligibleAt.setHours(payoutEligibleAt.getHours() + 24); // 24 hours after class
+                
+                await storage.updatePaymentWorkflowStage(workflow.id, 'waiting_24h', payoutEligibleAt);
+                console.log(`✅ Workflow ${workflow.id}: Class completed, teacher payout eligible at ${payoutEligibleAt}`);
+                processedCount++;
+              }
+              break;
+              
+            case 'waiting_24h':
+              // Check if 24 hours have passed since class completion
+              if (!transaction.teacherPayoutEligibleAt) {
+                errors.push({ workflowId: workflow.id, error: 'No teacher payout eligible time set' });
+                continue;
+              }
+              
+              const payoutEligibleAt = new Date(transaction.teacherPayoutEligibleAt);
+              if (now >= payoutEligibleAt) {
+                // 24 hours have passed, release payment to teacher
+                await storage.updatePaymentWorkflowStage(workflow.id, 'teacher_payout', undefined);
+                await storage.updatePaymentTransactionStatus(workflow.transactionId, 'processing', 'admin_to_teacher');
+                console.log(`💰 Workflow ${workflow.id}: 24h elapsed, releasing payment to teacher`);
+                
+                // In production, trigger actual payment transfer here
+                // For now, mark as completed after brief delay
+                const completionTime = new Date(now.getTime() + 60000); // 1 minute processing time
+                await storage.updatePaymentWorkflowStage(workflow.id, 'completed', completionTime);
+                processedCount++;
+              }
+              break;
+              
+            case 'teacher_payout':
+              // Teacher payout processing complete
+              await storage.updatePaymentWorkflowStage(workflow.id, 'completed', undefined);
+              await storage.updatePaymentTransactionStatus(workflow.transactionId, 'completed');
+              console.log(`🎉 Workflow ${workflow.id}: Payment completed successfully`);
+              processedCount++;
+              break;
+          }
+          
+        } catch (error: any) {
+          console.error(`❌ Error processing workflow ${workflow.id}:`, error);
+          errors.push({ workflowId: workflow.id, error: error.message });
+        }
+      }
+      
+      console.log(`✅ Processed ${processedCount} payment workflows`);
+      res.json({ 
+        processedCount, 
+        totalWorkflows: workflowsToProcess.length,
+        errors: errors 
+      });
+    } catch (error: any) {
+      console.error('❌ Error in payment workflow processing:', error);
+      res.status(500).json({ message: 'Failed to process payment workflows' });
+    }
+  });
+
+  // Create payment for booking (STUDENT ONLY - for own bookings)
+  app.post('/api/bookings/:bookingId/payment', async (req, res) => {
+    try {
+      // TODO: Add proper authentication check for student role
+      // if (req.user?.role !== 'student') {
+      //   return res.status(403).json({ message: 'Student access required' });
+      // }
+      // TODO: Verify booking belongs to authenticated student
+      
+      const { bookingId } = req.params;
+      const { amount, studentId, teacherId, paymentMethodId } = req.body;
+      
+      // Basic input validation
+      if (!amount || !studentId || !teacherId || !paymentMethodId) {
+        return res.status(400).json({ message: 'Missing required payment fields' });
+      }
+      
+      if (typeof amount !== 'number' || amount <= 0) {
+        return res.status(400).json({ message: 'Invalid amount' });
+      }
+      
+      console.log(`💳 Creating payment for booking ${bookingId}`);
+      
+      // Calculate transaction fee (2% default)
+      const feePercentage = 0.02;
+      const transactionFee = parseFloat((amount * feePercentage).toFixed(2));
+      const netAmount = parseFloat((amount - transactionFee).toFixed(2));
+      
+      // Create payment transaction
+      const transaction = await storage.createPaymentTransaction({
+        bookingId: bookingId,
+        transactionType: 'booking_payment',
+        amount: amount.toString(),
+        transactionFee: transactionFee.toString(),
+        netAmount: netAmount.toString(),
+        fromUserId: studentId,
+        toUserId: teacherId,
+        fromPaymentMethod: paymentMethodId,
+        status: 'pending',
+        workflowStage: 'student_to_admin',
+        scheduledAt: new Date(),
+        cancellationDeadline: new Date(Date.now() + 5 * 60 * 60 * 1000), // 5 hours from now
+        teacherPayoutEligibleAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours from now
+      });
+      
+      // Create automated workflow
+      const workflow = await storage.createPaymentWorkflow({
+        transactionId: transaction.id,
+        workflowType: 'class_booking',
+        currentStage: 'payment_received',
+        nextStage: 'waiting_24h',
+        nextActionAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour (simulating class completion)
+        cancellationWindowHours: 5,
+        teacherPayoutDelayHours: 24
+      });
+      
+      console.log(`✅ Created payment workflow ${workflow.id} for booking ${bookingId}`);
+      
+      res.json({
+        transaction,
+        workflow,
+        message: 'Payment workflow created successfully'
+      });
+    } catch (error: any) {
+      console.error('❌ Error creating booking payment:', error);
+      res.status(500).json({ message: 'Failed to create booking payment' });
+    }
+  });
+
+  // Handle payment cancellation (STUDENT ONLY - within 5-hour window)
+  app.post('/api/bookings/:bookingId/cancel', async (req, res) => {
+    try {
+      // TODO: Add proper authentication check for student role
+      // if (req.user?.role !== 'student') {
+      //   return res.status(403).json({ message: 'Student access required' });
+      // }
+      // TODO: Verify booking belongs to authenticated student
+      
+      const { bookingId } = req.params;
+      const { reason, userId } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ message: 'User ID required' });
+      }
+      
+      console.log(`❌ Processing cancellation for booking ${bookingId}`);
+      
+      // Find the payment transaction
+      const transactions = await storage.getTransactionsByUser(userId);
+      const transaction = transactions.find(t => t.bookingId === bookingId);
+      
+      if (!transaction) {
+        return res.status(404).json({ message: 'Payment transaction not found' });
+      }
+      
+      // Check if within cancellation window
+      const now = new Date();
+      if (!transaction.cancellationDeadline) {
+        return res.status(400).json({ message: 'No cancellation deadline set for this transaction' });
+      }
+      const cancellationDeadline = new Date(transaction.cancellationDeadline);
+      
+      if (now > cancellationDeadline) {
+        return res.status(400).json({ 
+          message: 'Cancellation deadline has passed (5-hour window expired)' 
+        });
+      }
+      
+      // Update transaction to cancelled
+      await storage.updatePaymentTransactionStatus(transaction.id, 'cancelled', 'refund_to_student');
+      
+      // Update any associated workflow
+      const workflows = await storage.getActivePaymentWorkflows();
+      const workflow = workflows.find(w => w.transactionId === transaction.id);
+      
+      if (workflow) {
+        await storage.updatePaymentWorkflowStage(workflow.id, 'completed', undefined);
+      }
+      
+      console.log(`✅ Cancelled booking ${bookingId} and initiated refund`);
+      
+      res.json({
+        message: 'Booking cancelled and refund initiated',
+        refundAmount: transaction.amount,
+        refundTime: '3-5 business days'
+      });
+    } catch (error: any) {
+      console.error('❌ Error cancelling booking:', error);
+      res.status(500).json({ message: 'Failed to cancel booking' });
     }
   });
 
