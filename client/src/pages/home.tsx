@@ -23,16 +23,23 @@ export default function Home() {
       setIsAuthenticated(authStatus);
       setUserEmail(email);
       setUserRole(role);
-      
-      if (authStatus) {
-        console.log('🏠 Home page loaded for authenticated user:', email, 'Role:', role);
-      }
     };
 
+    // Only check once on component mount
     checkAuthStatus();
-    const interval = setInterval(checkAuthStatus, 500);
     
-    return () => clearInterval(interval);
+    // Listen for storage changes instead of polling
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'isAuthenticated' || e.key === 'userEmail' || e.key === 'userRole') {
+        checkAuthStatus();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   // If user is authenticated, show role-based dashboard

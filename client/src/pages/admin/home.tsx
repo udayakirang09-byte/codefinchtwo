@@ -1,5 +1,31 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+
+// TypeScript interfaces
+interface AdminStats {
+  totalUsers: number;
+  activeTeachers: number;
+  totalRevenue: number;
+  systemUptime: number;
+  pendingApprovals: number;
+  securityAlerts: number;
+}
+
+interface SystemAlert {
+  id: number;
+  type: string;
+  message: string;
+  time: string;
+  status: string;
+}
+
+interface RecentActivity {
+  id: number;
+  type: string;
+  message: string;
+  time: string;
+  icon: React.ReactNode;
+}
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -36,70 +62,64 @@ export default function AdminHome() {
     return () => clearInterval(timer);
   }, []);
 
-  // Mock data - in production this would come from real APIs
-  const stats = {
-    totalUsers: 1247,
-    activeTeachers: 89,
-    totalRevenue: 45750,
-    systemUptime: 99.8,
-    pendingApprovals: 12,
-    securityAlerts: 3
+  // Fetch real admin adminStats from API
+  const { data: adminStats = {
+    totalUsers: 0,
+    activeTeachers: 0,
+    totalRevenue: 0,
+    systemUptime: 0,
+    pendingApprovals: 0,
+    securityAlerts: 0
+  }, isLoading: adminStatsLoading } = useQuery({
+    queryKey: ['admin-adminStats'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/adminStats');
+      if (!response.ok) throw new Error('Failed to fetch admin adminStats');
+      return response.json() as Promise<AdminStats>;
+    }
+  });
+
+  // Fetch system alerts from API
+  const { data: systemAlerts = [] as SystemAlert[], isLoading: alertsLoading } = useQuery<SystemAlert[]>({
+    queryKey: ['admin-alerts'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/alerts');
+      if (!response.ok) throw new Error('Failed to fetch alerts');
+      return response.json();
+    }
+  });
+
+  // Helper function to get appropriate icon for activity type
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'user_registration':
+        return <Users className="h-4 w-4" />;
+      case 'security_event':
+        return <Lock className="h-4 w-4" />;
+      case 'system_update':
+        return <Database className="h-4 w-4" />;
+      case 'payment_processed':
+        return <DollarSign className="h-4 w-4" />;
+      default:
+        return <Activity className="h-4 w-4" />;
+    }
   };
 
-  const systemAlerts = [
-    {
-      id: 1,
-      type: "warning",
-      message: "High CPU usage detected on server-2",
-      time: "15 minutes ago",
-      status: "investigating"
-    },
-    {
-      id: 2,
-      type: "info",
-      message: "Database backup completed successfully",
-      time: "2 hours ago",
-      status: "resolved"
-    },
-    {
-      id: 3,
-      type: "error",
-      message: "Payment gateway timeout issue",
-      time: "4 hours ago",
-      status: "resolved"
+  // Fetch recent activities from API
+  const { data: recentActivityData = [] as any[], isLoading: activitiesLoading } = useQuery<any[]>({
+    queryKey: ['admin-activities'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/activities');
+      if (!response.ok) throw new Error('Failed to fetch activities');
+      return response.json();
     }
-  ];
+  });
 
-  const recentActivity = [
-    {
-      id: 1,
-      type: "user_registration",
-      message: "New teacher registration: Emily Johnson",
-      time: "30 minutes ago",
-      icon: <Users className="h-4 w-4" />
-    },
-    {
-      id: 2,
-      type: "security_event",
-      message: "Failed login attempts detected",
-      time: "1 hour ago",
-      icon: <Lock className="h-4 w-4" />
-    },
-    {
-      id: 3,
-      type: "system_update",
-      message: "System backup completed",
-      time: "2 hours ago",
-      icon: <Database className="h-4 w-4" />
-    },
-    {
-      id: 4,
-      type: "payment_processed",
-      message: "Monthly revenue milestone reached",
-      time: "3 hours ago",
-      icon: <DollarSign className="h-4 w-4" />
-    }
-  ];
+  // Transform activities to add icons
+  const recentActivity: RecentActivity[] = recentActivityData.map((activity: any) => ({
+    ...activity,
+    icon: getActivityIcon(activity.type)
+  }));
 
   const quickStats = [
     { label: "Active Sessions", value: "156", change: "+12%", color: "text-green-600" },
@@ -153,7 +173,7 @@ export default function AdminHome() {
             </CardHeader>
             <CardContent>
               <Link href="/admin/user-management">
-                <div className="text-2xl font-bold" data-testid="total-users">{stats.totalUsers.toLocaleString()}</div>
+                <div className="text-2xl font-bold" data-testid="total-users">{adminStats.totalUsers.toLocaleString()}</div>
                 <p className="text-xs opacity-90">
                   <TrendingUp className="inline h-3 w-3 mr-1" />
                   +8% from last month
@@ -169,7 +189,7 @@ export default function AdminHome() {
             </CardHeader>
             <CardContent>
               <Link href="/admin/analytics">
-                <div className="text-2xl font-bold" data-testid="total-revenue">${stats.totalRevenue.toLocaleString()}</div>
+                <div className="text-2xl font-bold" data-testid="total-revenue">${adminStats.totalRevenue.toLocaleString()}</div>
                 <p className="text-xs opacity-90">
                   <TrendingUp className="inline h-3 w-3 mr-1" />
                   +24% from last month
@@ -185,7 +205,7 @@ export default function AdminHome() {
             </CardHeader>
             <CardContent>
               <Link href="/admin/cloud-deployments">
-                <div className="text-2xl font-bold" data-testid="system-uptime">{stats.systemUptime}%</div>
+                <div className="text-2xl font-bold" data-testid="system-uptime">{adminStats.systemUptime}%</div>
                 <p className="text-xs opacity-90">Last 30 days</p>
               </Link>
             </CardContent>
@@ -198,7 +218,7 @@ export default function AdminHome() {
             </CardHeader>
             <CardContent>
               <Link href="/admin/mentor-approval">
-                <div className="text-2xl font-bold" data-testid="pending-approvals">{stats.pendingApprovals}</div>
+                <div className="text-2xl font-bold" data-testid="pending-approvals">{adminStats.pendingApprovals}</div>
                 <p className="text-xs opacity-90">Teacher applications</p>
               </Link>
             </CardContent>
