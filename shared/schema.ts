@@ -587,6 +587,134 @@ export type InsertTimeSlot = z.infer<typeof insertTimeSlotSchema>;
 export type FooterLink = typeof footerLinks.$inferSelect;
 export type InsertFooterLink = z.infer<typeof insertFooterLinkSchema>;
 
+// Payment Methods Configuration (Admin UPI, Teacher UPI/Card)
+export const paymentMethods = pgTable("payment_methods", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  type: varchar("type").notNull(), // "upi", "card", "bank_account"
+  isActive: boolean("is_active").default(true),
+  // UPI Details
+  upiId: varchar("upi_id"),
+  upiProvider: varchar("upi_provider"), // gpay, phonepe, paytm, etc.
+  // Card Details
+  cardToken: varchar("card_token"), // Tokenized card for security
+  cardLast4: varchar("card_last4"),
+  cardBrand: varchar("card_brand"), // visa, mastercard, etc.
+  // Bank Account Details  
+  accountNumber: varchar("account_number"),
+  ifscCode: varchar("ifsc_code"),
+  bankName: varchar("bank_name"),
+  accountHolderName: varchar("account_holder_name"),
+  // Metadata
+  displayName: varchar("display_name"), // User-friendly name
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Transaction Fee Configuration (Admin configurable)
+export const transactionFeeConfig = pgTable("transaction_fee_config", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  feePercentage: decimal("fee_percentage", { precision: 5, scale: 2 }).default("2.00"), // 2% default
+  minimumFee: decimal("minimum_fee", { precision: 10, scale: 2 }).default("0.50"), // Minimum fee amount
+  maximumFee: decimal("maximum_fee", { precision: 10, scale: 2 }), // Optional maximum cap
+  isActive: boolean("is_active").default(true),
+  description: text("description"),
+  updatedBy: varchar("updated_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Payment Transactions (All payments flow through this)
+export const paymentTransactions = pgTable("payment_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  // Transaction Details
+  bookingId: varchar("booking_id").references(() => bookings.id),
+  courseId: varchar("course_id").references(() => courses.id),
+  transactionType: varchar("transaction_type").notNull(), // "booking_payment", "course_payment", "refund", "teacher_payout", "admin_fee"
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  transactionFee: decimal("transaction_fee", { precision: 10, scale: 2 }).default("0.00"),
+  netAmount: decimal("net_amount", { precision: 10, scale: 2 }).notNull(), // amount - transactionFee
+  currency: varchar("currency").default("INR"),
+  
+  // Flow Participants (Student -> Admin -> Teacher)
+  fromUserId: varchar("from_user_id").references(() => users.id),
+  toUserId: varchar("to_user_id").references(() => users.id),
+  fromPaymentMethod: varchar("from_payment_method").references(() => paymentMethods.id),
+  toPaymentMethod: varchar("to_payment_method").references(() => paymentMethods.id),
+  
+  // Transaction Status and Workflow
+  status: varchar("status").notNull().default("pending"), // pending, processing, completed, failed, refunded, cancelled
+  workflowStage: varchar("workflow_stage").notNull(), // "student_to_admin", "admin_to_teacher", "refund_to_student"
+  
+  // Timing Controls (5hr cancellation, 24hr teacher payout)
+  scheduledAt: timestamp("scheduled_at"), // When the class/course is scheduled
+  cancellationDeadline: timestamp("cancellation_deadline"), // 5 hours before scheduled time
+  teacherPayoutEligibleAt: timestamp("teacher_payout_eligible_at"), // 24 hours after class completion
+  
+  // External Payment References  
+  stripePaymentIntentId: varchar("stripe_payment_intent_id"),
+  stripeTransferId: varchar("stripe_transfer_id"),
+  razorpayPaymentId: varchar("razorpay_payment_id"),
+  
+  // Metadata and Tracking
+  failureReason: text("failure_reason"),
+  retryCount: integer("retry_count").default(0),
+  maxRetries: integer("max_retries").default(3),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
+// Unsettled Finances (Conflict Resolution and Pending Settlements)
+export const unsettledFinances = pgTable("unsettled_finances", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  transactionId: varchar("transaction_id").references(() => paymentTransactions.id).notNull(),
+  conflictType: varchar("conflict_type").notNull(), // "failed_transfer", "disputed_refund", "missing_payout", "double_payment"
+  conflictAmount: decimal("conflict_amount", { precision: 10, scale: 2 }).notNull(),
+  description: text("description").notNull(),
+  
+  // Resolution Details
+  status: varchar("status").notNull().default("open"), // open, investigating, resolved, escalated
+  priority: varchar("priority").notNull().default("medium"), // low, medium, high, critical
+  assignedTo: varchar("assigned_to").references(() => users.id), // Admin user handling the case
+  
+  // Resolution Actions
+  resolutionAction: varchar("resolution_action"), // "manual_transfer", "refund_issued", "dispute_resolved"
+  resolutionAmount: decimal("resolution_amount", { precision: 10, scale: 2 }),
+  resolutionNotes: text("resolution_notes"),
+  resolutionDate: timestamp("resolution_date"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Payment Workflow Automation (Handles timing and automated transfers)
+export const paymentWorkflows = pgTable("payment_workflows", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  transactionId: varchar("transaction_id").references(() => paymentTransactions.id).notNull(),
+  workflowType: varchar("workflow_type").notNull(), // "class_booking", "course_purchase", "cancellation_refund"
+  currentStage: varchar("current_stage").notNull(), // "payment_received", "waiting_for_class", "waiting_24h", "teacher_payout", "completed"
+  nextStage: varchar("next_stage"),
+  
+  // Automated Timing
+  nextActionAt: timestamp("next_action_at"), // When the next automatic action should occur
+  lastProcessedAt: timestamp("last_processed_at"),
+  isAutomated: boolean("is_automated").default(true),
+  
+  // Workflow Rules Applied
+  cancellationWindowHours: integer("cancellation_window_hours").default(5),
+  teacherPayoutDelayHours: integer("teacher_payout_delay_hours").default(24),
+  
+  // Processing Status
+  status: varchar("status").notNull().default("active"), // active, paused, completed, failed
+  processingErrors: jsonb("processing_errors").$type<string[]>().default([]),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // AI Analytics and Business Intelligence Tables
 export const analyticsEvents = pgTable("analytics_events", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -747,6 +875,72 @@ export const quantumTasks = pgTable("quantum_tasks", {
   completedAt: timestamp("completed_at"),
 });
 
+// Payment System Relations
+export const paymentMethodsRelations = relations(paymentMethods, ({ one, many }) => ({
+  user: one(users, {
+    fields: [paymentMethods.userId],
+    references: [users.id],
+  }),
+  fromTransactions: many(paymentTransactions, { relationName: "fromPaymentMethod" }),
+  toTransactions: many(paymentTransactions, { relationName: "toPaymentMethod" }),
+}));
+
+export const transactionFeeConfigRelations = relations(transactionFeeConfig, ({ one }) => ({
+  updatedByUser: one(users, {
+    fields: [transactionFeeConfig.updatedBy],
+    references: [users.id],
+  }),
+}));
+
+export const paymentTransactionsRelations = relations(paymentTransactions, ({ one }) => ({
+  booking: one(bookings, {
+    fields: [paymentTransactions.bookingId],
+    references: [bookings.id],
+  }),
+  course: one(courses, {
+    fields: [paymentTransactions.courseId],
+    references: [courses.id],
+  }),
+  fromUser: one(users, {
+    fields: [paymentTransactions.fromUserId],
+    references: [users.id],
+    relationName: "fromUser",
+  }),
+  toUser: one(users, {
+    fields: [paymentTransactions.toUserId],
+    references: [users.id],
+    relationName: "toUser",
+  }),
+  fromPaymentMethod: one(paymentMethods, {
+    fields: [paymentTransactions.fromPaymentMethod],
+    references: [paymentMethods.id],
+    relationName: "fromPaymentMethod",
+  }),
+  toPaymentMethod: one(paymentMethods, {
+    fields: [paymentTransactions.toPaymentMethod],
+    references: [paymentMethods.id],
+    relationName: "toPaymentMethod",
+  }),
+}));
+
+export const unsettledFinancesRelations = relations(unsettledFinances, ({ one }) => ({
+  transaction: one(paymentTransactions, {
+    fields: [unsettledFinances.transactionId],
+    references: [paymentTransactions.id],
+  }),
+  assignedToUser: one(users, {
+    fields: [unsettledFinances.assignedTo],
+    references: [users.id],
+  }),
+}));
+
+export const paymentWorkflowsRelations = relations(paymentWorkflows, ({ one }) => ({
+  transaction: one(paymentTransactions, {
+    fields: [paymentWorkflows.transactionId],
+    references: [paymentTransactions.id],
+  }),
+}));
+
 // Relations for new tables
 export const analyticsEventsRelations = relations(analyticsEvents, ({ one }) => ({
   user: one(users, {
@@ -782,6 +976,37 @@ export const cloudDeploymentsRelations = relations(cloudDeployments, ({ }) => ({
 export const technologyStackRelations = relations(technologyStack, ({ }) => ({}));
 
 export const quantumTasksRelations = relations(quantumTasks, ({ }) => ({}));
+
+// Payment System Insert Schemas
+export const insertPaymentMethodSchema = createInsertSchema(paymentMethods).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTransactionFeeConfigSchema = createInsertSchema(transactionFeeConfig).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPaymentTransactionSchema = createInsertSchema(paymentTransactions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUnsettledFinanceSchema = createInsertSchema(unsettledFinances).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPaymentWorkflowSchema = createInsertSchema(paymentWorkflows).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 // Insert Schemas for new tables
 export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents).omit({
@@ -841,6 +1066,22 @@ export const insertSuccessStorySchema = createInsertSchema(successStories).omit(
   id: true,
   createdAt: true,
 });
+
+// Payment System Types
+export type PaymentMethod = typeof paymentMethods.$inferSelect;
+export type InsertPaymentMethod = z.infer<typeof insertPaymentMethodSchema>;
+
+export type TransactionFeeConfig = typeof transactionFeeConfig.$inferSelect;
+export type InsertTransactionFeeConfig = z.infer<typeof insertTransactionFeeConfigSchema>;
+
+export type PaymentTransaction = typeof paymentTransactions.$inferSelect;
+export type InsertPaymentTransaction = z.infer<typeof insertPaymentTransactionSchema>;
+
+export type UnsettledFinance = typeof unsettledFinances.$inferSelect;
+export type InsertUnsettledFinance = z.infer<typeof insertUnsettledFinanceSchema>;
+
+export type PaymentWorkflow = typeof paymentWorkflows.$inferSelect;
+export type InsertPaymentWorkflow = z.infer<typeof insertPaymentWorkflowSchema>;
 
 // Types for new tables
 export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
