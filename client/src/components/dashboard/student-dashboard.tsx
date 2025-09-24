@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Video, MessageCircle, Star, BookOpen, Award, Bell, Users, TrendingUp } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Calendar, Clock, Video, MessageCircle, Star, BookOpen, Award, Bell, Users, TrendingUp, Search, Filter, X } from "lucide-react";
 import { formatDistanceToNow, isWithinInterval, addHours, addMinutes } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -50,6 +51,8 @@ export default function StudentDashboard() {
   const [completedClasses, setCompletedClasses] = useState<CompletedClass[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [teacherFilter, setTeacherFilter] = useState("");
+  const [courseFilter, setCourseFilter] = useState("");
 
   // Get authenticated user from auth context
   const { user, isAuthenticated } = useAuth();
@@ -334,10 +337,14 @@ export default function StudentDashboard() {
     }
   };
 
-  // Filter classes that need feedback and are still visible
-  const visibleCompletedClasses = completedClasses.filter(cls => 
-    isFeedbackVisible(cls.completedAt, cls.feedbackDeadline, cls.hasSubmittedFeedback)
-  );
+  // Filter classes that need feedback and are still visible, plus additional filtering by teacher name and course
+  const visibleCompletedClasses = completedClasses.filter(cls => {
+    const needsFeedback = isFeedbackVisible(cls.completedAt, cls.feedbackDeadline, cls.hasSubmittedFeedback);
+    const matchesTeacher = teacherFilter === "" || cls.mentorName.toLowerCase().includes(teacherFilter.toLowerCase());
+    const matchesCourse = courseFilter === "" || cls.subject.toLowerCase().includes(courseFilter.toLowerCase());
+    
+    return needsFeedback && matchesTeacher && matchesCourse;
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
@@ -522,6 +529,53 @@ export default function StudentDashboard() {
                 {visibleCompletedClasses.length} pending
               </Badge>
             </CardTitle>
+            
+            {/* Filter Controls */}
+            <div className="mt-4 flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Filter by teacher name..."
+                  value={teacherFilter}
+                  onChange={(e) => setTeacherFilter(e.target.value)}
+                  className="pl-10 bg-white/90 border-white/30 placeholder-gray-500 text-gray-800 h-10"
+                  data-testid="input-teacher-filter"
+                />
+                {teacherFilter && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setTeacherFilter("")}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                    data-testid="button-clear-teacher-filter"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              
+              <div className="relative flex-1">
+                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Filter by course/subject..."
+                  value={courseFilter}
+                  onChange={(e) => setCourseFilter(e.target.value)}
+                  className="pl-10 bg-white/90 border-white/30 placeholder-gray-500 text-gray-800 h-10"
+                  data-testid="input-course-filter"
+                />
+                {courseFilter && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setCourseFilter("")}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                    data-testid="button-clear-course-filter"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-6">
