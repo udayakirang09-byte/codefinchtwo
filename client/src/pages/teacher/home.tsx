@@ -45,45 +45,60 @@ export default function TeacherHome() {
     retry: false,
   });
 
-  // Mock data - in production this would come from real APIs
-  const stats = {
-    totalStudents: 47,
-    monthlyEarnings: 3250,
-    upcomingSessions: 8,
-    completedSessions: 156,
-    averageRating: 4.8,
-    totalHours: 342
-  };
-
-  const upcomingSessions = [
-    {
-      id: 1,
-      studentName: "Alex Johnson",
-      subject: "React.js Fundamentals",
-      time: "2:00 PM",
-      date: "Today",
-      type: "video",
-      duration: "60 min"
-    },
-    {
-      id: 2,
-      studentName: "Sarah Chen",
-      subject: "Python Data Structures",
-      time: "4:30 PM",
-      date: "Today",
-      type: "chat",
-      duration: "45 min"
-    },
-    {
-      id: 3,
-      studentName: "Mike Rodriguez",
-      subject: "JavaScript ES6",
-      time: "10:00 AM",
-      date: "Tomorrow",
-      type: "video",
-      duration: "90 min"
+  // Fetch real teacher stats from API
+  const { data: stats = {
+    totalStudents: 0,
+    monthlyEarnings: 0,
+    upcomingSessions: 0,
+    completedSessions: 0,
+    averageRating: 0,
+    totalHours: 0
+  }, isLoading: statsLoading } = useQuery({
+    queryKey: ['teacher-stats', 'teacher@codeconnect.com'], // Use authenticated user email
+    queryFn: async () => {
+      const response = await fetch('/api/teacher/stats?teacherId=teacher@codeconnect.com');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch stats: ${response.status}`);
+      }
+      return response.json();
     }
-  ];
+  });
+
+  // Fetch real teacher classes from API
+  const { data: teacherClasses = [], isLoading: classesLoading } = useQuery({
+    queryKey: ['teacher-classes', 'teacher@codeconnect.com'], // Use authenticated user email
+    queryFn: async () => {
+      const response = await fetch('/api/teacher/classes?teacherId=teacher@codeconnect.com');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch classes: ${response.status}`);
+      }
+      return response.json();
+    }
+  });
+
+  // Process upcoming sessions from real data
+  const upcomingSessions = Array.isArray(teacherClasses) ? teacherClasses
+    .filter((booking: any) => booking.status === 'scheduled' && new Date(booking.scheduledAt) > new Date())
+    .slice(0, 3) // Show only first 3 upcoming sessions
+    .map((booking: any) => {
+      const scheduledDate = new Date(booking.scheduledAt);
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      const isToday = scheduledDate.toDateString() === today.toDateString();
+      const isTomorrow = scheduledDate.toDateString() === tomorrow.toDateString();
+      
+      return {
+        id: booking.id,
+        studentName: booking.student?.user?.firstName + ' ' + (booking.student?.user?.lastName || ''),
+        subject: booking.subject || 'Programming Session',
+        time: scheduledDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        date: isToday ? 'Today' : isTomorrow ? 'Tomorrow' : scheduledDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        type: "video", // Default to video for now
+        duration: `${booking.duration || 60} min`
+      };
+    }) : [];
 
   const recentActivity = [
     {
@@ -160,7 +175,7 @@ export default function TeacherHome() {
               <Users className="h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" data-testid="total-students">{stats.totalStudents}</div>
+              <div className="text-2xl font-bold" data-testid="total-students">{statsLoading ? "..." : stats.totalStudents}</div>
               <p className="text-xs opacity-90">
                 <TrendingUp className="inline h-3 w-3 mr-1" />
                 +12% from last month
@@ -174,7 +189,7 @@ export default function TeacherHome() {
               <DollarSign className="h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" data-testid="monthly-earnings">${stats.monthlyEarnings}</div>
+              <div className="text-2xl font-bold" data-testid="monthly-earnings">{statsLoading ? "..." : `$${stats.monthlyEarnings || 0}`}</div>
               <p className="text-xs opacity-90">
                 <TrendingUp className="inline h-3 w-3 mr-1" />
                 +18% from last month
@@ -188,7 +203,7 @@ export default function TeacherHome() {
               <Clock className="h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" data-testid="upcoming-sessions">{stats.upcomingSessions}</div>
+              <div className="text-2xl font-bold" data-testid="upcoming-sessions">{statsLoading ? "..." : stats.upcomingSessions || 0}</div>
               <p className="text-xs opacity-90">Next session in 2 hours</p>
             </CardContent>
           </Card>
@@ -199,8 +214,8 @@ export default function TeacherHome() {
               <Star className="h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" data-testid="average-rating">{stats.averageRating}</div>
-              <p className="text-xs opacity-90">Based on {stats.completedSessions} sessions</p>
+              <div className="text-2xl font-bold" data-testid="average-rating">{statsLoading ? "..." : stats.averageRating || 0}</div>
+              <p className="text-xs opacity-90">Based on {statsLoading ? "..." : stats.completedSessions || 0} sessions</p>
             </CardContent>
           </Card>
         </div>
@@ -218,7 +233,16 @@ export default function TeacherHome() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {upcomingSessions.map((session, index) => (
+                  {classesLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-gray-500">Loading upcoming sessions...</div>
+                    </div>
+                  ) : upcomingSessions.length === 0 ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-gray-500">No upcoming sessions scheduled</div>
+                    </div>
+                  ) : (
+                    upcomingSessions.map((session, index) => (
                     <div key={session.id} className="flex items-center justify-between p-4 border rounded-lg" data-testid={`session-${index}`}>
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
@@ -244,7 +268,7 @@ export default function TeacherHome() {
                         </Button>
                       </div>
                     </div>
-                  ))}
+                  )))}
                 </div>
                 
                 <div className="mt-6 pt-4 border-t">
