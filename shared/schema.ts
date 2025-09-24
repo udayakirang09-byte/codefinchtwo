@@ -875,6 +875,48 @@ export const quantumTasks = pgTable("quantum_tasks", {
   completedAt: timestamp("completed_at"),
 });
 
+// KADB Help System Tables
+export const helpTickets = pgTable("help_tickets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  subject: varchar("subject").notNull(),
+  description: text("description").notNull(),
+  category: varchar("category").notNull().default("general"), // general, technical, payment, account, course
+  priority: varchar("priority").notNull().default("medium"), // low, medium, high, urgent
+  status: varchar("status").notNull().default("open"), // open, in_progress, resolved, closed
+  aiResponse: text("ai_response"),
+  humanResponse: text("human_response"),
+  emailSent: boolean("email_sent").default(false),
+  contactEmail: varchar("contact_email"),
+  satisfactionRating: integer("satisfaction_rating"), // 1-5 stars
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const helpKnowledgeBase = pgTable("help_knowledge_base", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  content: text("content").notNull(),
+  category: varchar("category").notNull(),
+  tags: jsonb("tags").$type<string[]>().default([]),
+  searchKeywords: text("search_keywords"),
+  viewCount: integer("view_count").default(0),
+  isPublic: boolean("is_public").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const helpTicketMessages = pgTable("help_ticket_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ticketId: varchar("ticket_id").references(() => helpTickets.id).notNull(),
+  senderId: varchar("sender_id").references(() => users.id),
+  senderType: varchar("sender_type").notNull(), // user, ai, admin
+  message: text("message").notNull(),
+  isInternal: boolean("is_internal").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Payment System Relations
 export const paymentMethodsRelations = relations(paymentMethods, ({ one, many }) => ({
   user: one(users, {
@@ -977,6 +1019,28 @@ export const technologyStackRelations = relations(technologyStack, ({ }) => ({})
 
 export const quantumTasksRelations = relations(quantumTasks, ({ }) => ({}));
 
+// Help System Relations
+export const helpTicketsRelations = relations(helpTickets, ({ one, many }) => ({
+  user: one(users, {
+    fields: [helpTickets.userId],
+    references: [users.id],
+  }),
+  messages: many(helpTicketMessages),
+}));
+
+export const helpKnowledgeBaseRelations = relations(helpKnowledgeBase, ({ }) => ({}));
+
+export const helpTicketMessagesRelations = relations(helpTicketMessages, ({ one }) => ({
+  ticket: one(helpTickets, {
+    fields: [helpTicketMessages.ticketId],
+    references: [helpTickets.id],
+  }),
+  sender: one(users, {
+    fields: [helpTicketMessages.senderId],
+    references: [users.id],
+  }),
+}));
+
 // Payment System Insert Schemas
 export const insertPaymentMethodSchema = createInsertSchema(paymentMethods).omit({
   id: true,
@@ -1067,6 +1131,24 @@ export const insertSuccessStorySchema = createInsertSchema(successStories).omit(
   createdAt: true,
 });
 
+// Help System Insert Schemas
+export const insertHelpTicketSchema = createInsertSchema(helpTickets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertHelpKnowledgeBaseSchema = createInsertSchema(helpKnowledgeBase).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertHelpTicketMessageSchema = createInsertSchema(helpTicketMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Payment System Types
 export type PaymentMethod = typeof paymentMethods.$inferSelect;
 export type InsertPaymentMethod = z.infer<typeof insertPaymentMethodSchema>;
@@ -1116,3 +1198,13 @@ export type InsertQuantumTask = z.infer<typeof insertQuantumTaskSchema>;
 
 export type SuccessStory = typeof successStories.$inferSelect;
 export type InsertSuccessStory = z.infer<typeof insertSuccessStorySchema>;
+
+// Help System Types
+export type HelpTicket = typeof helpTickets.$inferSelect;
+export type InsertHelpTicket = z.infer<typeof insertHelpTicketSchema>;
+
+export type HelpKnowledgeBase = typeof helpKnowledgeBase.$inferSelect;
+export type InsertHelpKnowledgeBase = z.infer<typeof insertHelpKnowledgeBaseSchema>;
+
+export type HelpTicketMessage = typeof helpTicketMessages.$inferSelect;
+export type InsertHelpTicketMessage = z.infer<typeof insertHelpTicketMessageSchema>;
