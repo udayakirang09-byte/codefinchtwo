@@ -134,15 +134,30 @@ export default function TeacherDashboard() {
   };
 
   const handleJoinVideo = (classId: string) => {
-    console.log(`🎥 Starting video class ${classId} as teacher`);
+    // Navigate to video page for this class
+    window.location.href = `/video-class/${classId}`;
   };
 
   const handleJoinChat = (classId: string) => {
-    console.log(`💬 Opening teacher chat for class ${classId}`);
+    // Navigate to chat page for this class
+    window.location.href = `/chat/${classId}`;
   };
 
   const handleManageClass = (classId: string) => {
-    console.log(`⚙️ Managing class ${classId}`);
+    // For now, show a confirmation dialog with options
+    const action = window.confirm(
+      `Manage Class ${classId}\n\n` +
+      `Choose an action:\n` +
+      `• OK: Reschedule class\n` +
+      `• Cancel: Close this dialog\n\n` +
+      `(More management options will be available soon)`
+    );
+    
+    if (action) {
+      // Handle reschedule action
+      alert(`Reschedule functionality for class ${classId} will be implemented soon.`);
+      // TODO: Implement reschedule dialog/modal
+    }
   };
 
   return (
