@@ -1755,14 +1755,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Teacher Schedule Management Endpoints
   app.get("/api/teacher/schedule", async (req, res) => {
     try {
-      // Sample schedule data with proper API structure
-      const schedule = [
-        { id: '1', dayOfWeek: 'Monday', startTime: '10:00', endTime: '12:00', isAvailable: true, isRecurring: true },
-        { id: '2', dayOfWeek: 'Monday', startTime: '14:00', endTime: '16:00', isAvailable: false, isRecurring: true },
-        { id: '3', dayOfWeek: 'Wednesday', startTime: '10:00', endTime: '12:00', isAvailable: true, isRecurring: true },
-        { id: '4', dayOfWeek: 'Friday', startTime: '15:00', endTime: '17:00', isAvailable: true, isRecurring: true },
-        { id: '5', dayOfWeek: 'Saturday', startTime: '09:00', endTime: '11:00', isAvailable: false, isRecurring: false },
-      ];
+      const { teacherId } = req.query;
+      const email = teacherId || 'teacher@codeconnect.com'; // Default for demo
+      
+      // Get user by email first, then mentor
+      const user = await storage.getUserByEmail(email as string);
+      if (!user) {
+        console.log(`No user found for email: ${email}`);
+        // Return sample data if no user found
+        const sampleSchedule = [
+          { id: '1', dayOfWeek: 'Monday', startTime: '10:00', endTime: '12:00', isAvailable: true, isRecurring: true },
+          { id: '2', dayOfWeek: 'Monday', startTime: '14:00', endTime: '16:00', isAvailable: false, isRecurring: true },
+          { id: '3', dayOfWeek: 'Wednesday', startTime: '10:00', endTime: '12:00', isAvailable: true, isRecurring: true },
+          { id: '4', dayOfWeek: 'Friday', startTime: '15:00', endTime: '17:00', isAvailable: true, isRecurring: true },
+          { id: '5', dayOfWeek: 'Saturday', startTime: '09:00', endTime: '11:00', isAvailable: false, isRecurring: false },
+        ];
+        return res.json(sampleSchedule);
+      }
+      
+      // Get mentor for this user
+      const mentor = await db.select().from(mentors).where(eq(mentors.userId, user.id)).limit(1);
+      if (mentor.length === 0) {
+        console.log(`No mentor found for user: ${user.id}`);
+        // Return sample data if no mentor found
+        const sampleSchedule = [
+          { id: '1', dayOfWeek: 'Monday', startTime: '10:00', endTime: '12:00', isAvailable: true, isRecurring: true },
+          { id: '2', dayOfWeek: 'Monday', startTime: '14:00', endTime: '16:00', isAvailable: false, isRecurring: true },
+          { id: '3', dayOfWeek: 'Wednesday', startTime: '10:00', endTime: '12:00', isAvailable: true, isRecurring: true },
+          { id: '4', dayOfWeek: 'Friday', startTime: '15:00', endTime: '17:00', isAvailable: true, isRecurring: true },
+          { id: '5', dayOfWeek: 'Saturday', startTime: '09:00', endTime: '11:00', isAvailable: false, isRecurring: false },
+        ];
+        return res.json(sampleSchedule);
+      }
+      
+      // Get time slots from database
+      const mentorTimeSlots = await db.select().from(timeSlots).where(eq(timeSlots.mentorId, mentor[0].id));
+      
+      console.log(`📅 Retrieved ${mentorTimeSlots.length} time slots for mentor ${mentor[0].id}`);
+      
+      // Transform to expected format
+      const schedule = mentorTimeSlots.map(slot => ({
+        id: slot.id,
+        dayOfWeek: slot.dayOfWeek,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        isAvailable: slot.isAvailable && !slot.isBlocked,
+        isRecurring: slot.isRecurring
+      }));
       
       res.json(schedule);
     } catch (error) {
@@ -1778,8 +1817,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`📅 Updating schedule slot ${slotId}: available = ${isAvailable}`);
       
-      // In real implementation, update database
-      // For now, return success
+      // Update database
+      const updated = await db.update(timeSlots)
+        .set({ 
+          isAvailable: isAvailable,
+          isBlocked: !isAvailable,
+          updatedAt: new Date()
+        })
+        .where(eq(timeSlots.id, slotId))
+        .returning();
+      
+      if (updated.length === 0) {
+        return res.status(404).json({ error: "Time slot not found" });
+      }
+      
       res.json({ 
         success: true, 
         message: `Time slot ${slotId} ${isAvailable ? 'unblocked' : 'blocked'} successfully` 
@@ -1796,7 +1847,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`🗑️ Deleting schedule slot ${slotId}`);
       
-      // In real implementation, delete from database
+      // Delete from database
+      const deleted = await db.delete(timeSlots)
+        .where(eq(timeSlots.id, slotId))
+        .returning();
+      
+      if (deleted.length === 0) {
+        return res.status(404).json({ error: "Time slot not found" });
+      }
+      
       res.json({ 
         success: true, 
         message: `Time slot ${slotId} deleted successfully` 
