@@ -6,10 +6,25 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Trophy, Target, Calendar, BookOpen, Star, TrendingUp } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function StudentProgress() {
-  // Use a sample student ID for demo - in real app this would come from auth context
-  const studentId = "sample-student-id";
+  // Get authenticated user from auth context
+  const { user, isAuthenticated } = useAuth();
+  
+  // Get the actual student ID from the database using the user's email
+  const { data: studentData, isLoading: studentLoading } = useQuery({
+    queryKey: ['/api/users', user?.email, 'student'],
+    queryFn: async () => {
+      if (!user?.email) throw new Error('No user email');
+      const response = await fetch(`/api/users/${encodeURIComponent(user.email)}/student`);
+      if (!response.ok) throw new Error('Failed to fetch student data');
+      return response.json();
+    },
+    enabled: !!user?.email && isAuthenticated,
+  });
+  
+  const studentId = studentData?.id;
   
   // Define types for the progress data
   type ProgressData = {
@@ -39,12 +54,45 @@ export default function StudentProgress() {
   };
 
   // Fetch real progress data from API
-  const { data: progressData, isLoading } = useQuery<ProgressData>({
+  const { data: progressData, isLoading: progressLoading } = useQuery<ProgressData>({
     queryKey: ['student-progress', studentId],
-    queryFn: () => fetch(`/api/students/${studentId}/progress`).then(res => res.json()),
+    queryFn: async () => {
+      if (!studentId) throw new Error('No student ID available');
+      const response = await fetch(`/api/students/${studentId}/progress`);
+      if (!response.ok) throw new Error('Failed to fetch progress data');
+      return response.json();
+    },
+    enabled: !!studentId,
+    // Default fallback data when student has no progress yet
+    placeholderData: {
+      totalClasses: 0,
+      completedClasses: 0,
+      hoursLearned: 0,
+      achievements: [],
+      recentClasses: [],
+      skillLevels: []
+    }
   });
 
-  if (isLoading || !progressData) {
+  const isLoading = studentLoading || progressLoading;
+  
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8 max-w-6xl">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Please log in to view your progress</h2>
+              <p className="text-gray-600">You need to be logged in as a student to access your learning progress.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
         <Navigation />
@@ -57,6 +105,16 @@ export default function StudentProgress() {
       </div>
     );
   }
+
+  // Provide safe defaults if progressData is undefined
+  const safeProgressData = progressData || {
+    totalClasses: 0,
+    completedClasses: 0,
+    hoursLearned: 0,
+    achievements: [],
+    recentClasses: [],
+    skillLevels: []
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
@@ -74,7 +132,7 @@ export default function StudentProgress() {
           <Card className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0">
             <CardContent className="p-6 text-center">
               <BookOpen className="h-8 w-8 mx-auto mb-2" />
-              <div className="text-3xl font-bold">{progressData.completedClasses}</div>
+              <div className="text-3xl font-bold">{safeProgressData.completedClasses}</div>
               <div className="text-blue-100">Classes Completed</div>
             </CardContent>
           </Card>
@@ -82,7 +140,7 @@ export default function StudentProgress() {
           <Card className="bg-gradient-to-r from-green-500 to-teal-600 text-white border-0">
             <CardContent className="p-6 text-center">
               <Calendar className="h-8 w-8 mx-auto mb-2" />
-              <div className="text-3xl font-bold">{progressData.hoursLearned}</div>
+              <div className="text-3xl font-bold">{safeProgressData.hoursLearned}</div>
               <div className="text-green-100">Hours Learned</div>
             </CardContent>
           </Card>
@@ -90,7 +148,7 @@ export default function StudentProgress() {
           <Card className="bg-gradient-to-r from-yellow-500 to-orange-600 text-white border-0">
             <CardContent className="p-6 text-center">
               <Trophy className="h-8 w-8 mx-auto mb-2" />
-              <div className="text-3xl font-bold">{progressData.achievements.filter(a => a.earned).length}</div>
+              <div className="text-3xl font-bold">{safeProgressData.achievements.filter(a => a.earned).length}</div>
               <div className="text-yellow-100">Achievements</div>
             </CardContent>
           </Card>
@@ -98,7 +156,7 @@ export default function StudentProgress() {
           <Card className="bg-gradient-to-r from-purple-500 to-pink-600 text-white border-0">
             <CardContent className="p-6 text-center">
               <TrendingUp className="h-8 w-8 mx-auto mb-2" />
-              <div className="text-3xl font-bold">{Math.round((progressData.completedClasses / progressData.totalClasses) * 100)}%</div>
+              <div className="text-3xl font-bold">{safeProgressData.totalClasses > 0 ? Math.round((safeProgressData.completedClasses / safeProgressData.totalClasses) * 100) : 0}%</div>
               <div className="text-purple-100">Overall Progress</div>
             </CardContent>
           </Card>
@@ -115,7 +173,7 @@ export default function StudentProgress() {
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-6">
-                {progressData.skillLevels.map((skill) => (
+                {safeProgressData.skillLevels.map((skill) => (
                   <div key={skill.skill} className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="font-medium text-gray-800">{skill.skill}</span>
@@ -141,7 +199,7 @@ export default function StudentProgress() {
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-4">
-                {progressData.achievements.map((achievement) => (
+                {safeProgressData.achievements.map((achievement) => (
                   <div 
                     key={achievement.id} 
                     className={`p-4 rounded-lg border-2 ${
@@ -189,7 +247,7 @@ export default function StudentProgress() {
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-4">
-              {progressData.recentClasses.map((cls) => (
+              {safeProgressData.recentClasses.map((cls) => (
                 <div key={cls.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-white to-green-50 rounded-lg border border-green-100">
                   <div>
                     <h3 className="font-semibold text-gray-800">{cls.subject}</h3>
