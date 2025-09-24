@@ -55,9 +55,12 @@ export default function Mentors() {
                       {mentor.rating || '4.8'}
                     </Badge>
                   </div>
-                  <CardTitle className="text-xl font-bold text-gray-800">
-                    {mentor.title || 'Expert Coding Mentor'}
+                  <CardTitle className="text-xl font-bold text-gray-800" data-testid={`text-mentor-name-${mentor.id}`}>
+                    {mentor.user ? `${mentor.user.firstName} ${mentor.user.lastName}` : 'Expert Coding Mentor'}
                   </CardTitle>
+                  <p className="text-sm font-medium text-blue-600 mb-2" data-testid={`text-mentor-title-${mentor.id}`}>
+                    {mentor.title || 'Expert Coding Mentor'}
+                  </p>
                   <p className="text-gray-600 line-clamp-2">
                     {mentor.description || 'Experienced developer ready to help you master programming skills'}
                   </p>
