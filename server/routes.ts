@@ -1208,7 +1208,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Teacher ID required" });
       }
       
-      const mentor = await storage.getMentorByUserId(teacherId);
+      // First get user by email (since teacherId could be email)
+      let userId = teacherId;
+      if (teacherId.includes('@')) {
+        const user = await storage.getUserByEmail(teacherId);
+        if (!user) {
+          return res.status(404).json({ message: "Teacher not found" });
+        }
+        userId = user.id;
+      }
+      
+      const mentor = await storage.getMentorByUserId(userId);
       if (!mentor) {
         return res.status(404).json({ message: "Mentor not found" });
       }
@@ -1228,13 +1238,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Teacher ID required" });
       }
       
-      const mentor = await storage.getMentorByUserId(teacherId);
+      // First get user by email (since teacherId could be email)
+      let userId = teacherId;
+      if (teacherId.includes('@')) {
+        const user = await storage.getUserByEmail(teacherId);
+        if (!user) {
+          return res.status(404).json({ message: "Teacher not found" });
+        }
+        userId = user.id;
+      }
+      
+      const mentor = await storage.getMentorByUserId(userId);
       if (!mentor) {
         return res.status(404).json({ message: "Mentor not found" });
       }
 
       // Get teacher profile to validate experience
-      const [teacherProfile] = await db.select().from(teacherProfiles).where(eq(teacherProfiles.userId, teacherId));
+      const [teacherProfile] = await db.select().from(teacherProfiles).where(eq(teacherProfiles.userId, userId));
       
       if (!teacherProfile) {
         return res.status(400).json({ 
@@ -1242,8 +1262,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Validate course data
-      const validatedData = insertCourseSchema.parse(req.body);
+      // Add mentorId to course data and validate
+      const courseDataWithMentor = {
+        ...req.body,
+        mentorId: mentor.id
+      };
+      const validatedData = insertCourseSchema.parse(courseDataWithMentor);
 
       // Validate that teacher has experience in the course category
       const { category, title } = validatedData;
@@ -1262,6 +1286,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           
           // Special category matching logic
+          if (courseCategoryLower === 'programming' && 
+              (languageLower.includes('javascript') || languageLower.includes('python') || 
+               languageLower.includes('java') || languageLower.includes('c++') || 
+               languageLower.includes('c#') || languageLower.includes('go') || 
+               languageLower.includes('rust') || languageLower.includes('php') || 
+               languageLower.includes('ruby') || languageLower.includes('swift') || 
+               languageLower.includes('kotlin') || languageLower.includes('typescript'))) {
+            return true;
+          }
+          
           if (courseCategoryLower === 'web-development' && 
               (languageLower.includes('javascript') || languageLower.includes('html') || 
                languageLower.includes('css') || languageLower.includes('react') || 

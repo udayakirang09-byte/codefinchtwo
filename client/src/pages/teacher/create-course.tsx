@@ -39,19 +39,23 @@ export default function CreateCourse() {
       const teacherId = 'teacher@codeconnect.com';
       return apiRequest('POST', `/api/teacher/courses?teacherId=${teacherId}`, courseData);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Course creation successful:', data);
       toast({
         title: "Success",
         description: "Course created successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: ['teacher-courses'] });
+      // Fix: Use the correct query key that matches the existing query
+      queryClient.invalidateQueries({ queryKey: [`/api/teacher/courses?teacherId=teacher@codeconnect.com`] });
       // Reset form
       setFormData({
         title: '', description: '', category: '', duration: '', 
         price: '', difficulty: '', maxStudents: '', prerequisites: ''
       });
+      console.log('✅ Toast triggered and form reset');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('❌ Course creation failed:', error);
       toast({
         title: "Error",
         description: "Failed to create course. Please try again.",
@@ -74,7 +78,7 @@ export default function CreateCourse() {
 
     createCourseMutation.mutate({
       ...formData,
-      price: parseFloat(formData.price) || 0,
+      price: formData.price || "0", // Keep price as string for decimal field
       maxStudents: parseInt(formData.maxStudents) || 10
     });
   };
