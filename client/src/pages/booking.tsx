@@ -173,10 +173,22 @@ export default function Booking() {
     return `${firstName?.charAt(0) || ""}${lastName?.charAt(0) || ""}`.toUpperCase();
   };
 
-  // Generate available time slots
-  const timeSlots = [
+  // Fetch available time slots from mentor's real schedule
+  const { data: availabilityData } = useQuery<{
+    timeSlots: Array<{id: string, time: string, dayOfWeek: string}>,
+    availableSlots: Array<{day: string, times: string[]}>,
+    rawTimes: string[]
+  }>({
+    queryKey: ["/api/mentors", mentorId, "available-times"],
+    enabled: !!mentorId,
+  });
+
+  // Use real mentor availability or fallback to default times
+  const timeSlots = availabilityData?.rawTimes || [
     "09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"
   ];
+
+  console.log("📅 Available time slots for booking:", timeSlots);
 
   return (
     <div className="min-h-screen">
@@ -309,7 +321,7 @@ export default function Booking() {
                         <SelectValue placeholder="Select time" />
                       </SelectTrigger>
                       <SelectContent>
-                        {timeSlots.map((time) => (
+                        {timeSlots.map((time: string) => (
                           <SelectItem key={time} value={time}>
                             {time}
                           </SelectItem>

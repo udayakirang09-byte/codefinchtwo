@@ -1866,6 +1866,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add new time slot endpoint
+  app.post("/api/teacher/schedule", async (req, res) => {
+    try {
+      const { teacherId, dayOfWeek, startTime, endTime, isRecurring } = req.body;
+      const email = teacherId || 'teacher@codeconnect.com'; // Default for demo
+      
+      // Get user by email first, then mentor
+      const user = await storage.getUserByEmail(email as string);
+      if (!user) {
+        return res.status(404).json({ error: "Teacher not found" });
+      }
+      
+      // Get mentor for this user
+      const mentor = await db.select().from(mentors).where(eq(mentors.userId, user.id)).limit(1);
+      if (mentor.length === 0) {
+        return res.status(404).json({ error: "Mentor profile not found for teacher" });
+      }
+      
+      console.log(`🔄 Creating time slot for mentor ${mentor[0].id}: ${dayOfWeek} ${startTime}-${endTime}`);
+      
+      // Create new time slot
+      const newSlot = await db.insert(timeSlots).values({
+        mentorId: mentor[0].id,
+        dayOfWeek: dayOfWeek,
+        startTime: startTime,
+        endTime: endTime,
+        isAvailable: true,
+        isRecurring: isRecurring ?? true,
+        isBlocked: false
+      }).returning();
+      
+      console.log(`✅ Created new time slot with ID ${newSlot[0].id} for mentor ${mentor[0].id}: ${dayOfWeek} ${startTime}-${endTime}`);
+      
+      res.status(201).json(newSlot[0]);
+    } catch (error) {
+      console.error("Error creating time slot:", error);
+      res.status(500).json({ error: "Failed to create time slot" });
+    }
+  });
+
+  // Get available time slots for booking
+  app.get("/api/mentors/:mentorId/available-times", async (req, res) => {
+    try {
+      const { mentorId } = req.params;
+      const { date } = req.query; // Optional: filter by date
+      
+      console.log(`📅 Getting available times for mentor: ${mentorId}`);
+      
+      // Get time slots for this mentor
+      const mentorTimeSlots = await db.select().from(timeSlots)
+        .where(and(
+          eq(timeSlots.mentorId, mentorId),
+          eq(timeSlots.isAvailable, true),
+          eq(timeSlots.isBlocked, false)
+        ));
+      
+      // Transform to format needed by booking pages
+      const availableTimes = mentorTimeSlots.map(slot => ({
+        id: slot.id,
+        dayOfWeek: slot.dayOfWeek,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        time: slot.startTime // For compatibility with booking page
+      }));
+      
+      // Group by day of week
+      const groupedByDay = availableTimes.reduce((acc: any, slot) => {
+        if (!acc[slot.dayOfWeek]) {
+          acc[slot.dayOfWeek] = [];
+        }
+        acc[slot.dayOfWeek].push(slot.time);
+        return acc;
+      }, {});
+      
+      // Convert to format expected by mentor profile
+      const availableSlots = Object.entries(groupedByDay).map(([day, times]) => ({
+        day,
+        times: times as string[]
+      }));
+      
+      console.log(`✅ Found ${availableTimes.length} available time slots`);
+      
+      res.json({
+        timeSlots: availableTimes, // For booking form
+        availableSlots: availableSlots, // For mentor profile display
+        rawTimes: availableTimes.map(slot => slot.time) // Just the times array
+      });
+    } catch (error) {
+      console.error("Error getting available times:", error);
+      res.status(500).json({ error: "Failed to get available times" });
+    }
+  });
+
   // Admin Configuration Endpoints
   app.get("/api/admin/contact-settings", async (req, res) => {
     try {
