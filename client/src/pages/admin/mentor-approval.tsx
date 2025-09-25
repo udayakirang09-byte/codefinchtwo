@@ -154,6 +154,7 @@ export default function MentorApproval() {
                     <TableHead>Applicant</TableHead>
                     <TableHead>Expertise</TableHead>
                     <TableHead>Experience</TableHead>
+                    <TableHead>Country</TableHead>
                     <TableHead>Pricing</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Applied</TableHead>
@@ -206,6 +207,11 @@ export default function MentorApproval() {
                       <TableCell>
                         <div className="text-sm">
                           {application.experience.substring(0, 50)}...
+                        </div>
+                      </TableCell>
+                      <TableCell data-testid={`cell-country-${application.id}`}>
+                        <div className="text-sm">
+                          {application.country || 'NA-Country'}
                         </div>
                       </TableCell>
                       <TableCell>

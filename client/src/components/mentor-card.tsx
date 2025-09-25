@@ -83,6 +83,11 @@ export default function MentorCard({ mentor }: MentorCardProps) {
         </div>
       </div>
       
+      <div className="flex items-center mb-4 text-sm text-muted-foreground" data-testid={`stat-country-${mentor.id}`}>
+        <span className="font-medium">Country: </span>
+        <span className="ml-1">{mentor.country}</span>
+      </div>
+      
       <p className="text-muted-foreground mb-4" data-testid={`text-mentor-description-${mentor.id}`}>
         {mentor.description}
       </p>
