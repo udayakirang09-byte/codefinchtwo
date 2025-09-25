@@ -214,32 +214,35 @@ export default function Signup() {
                 <div className="space-y-4">
                   <Label className="text-base font-medium">Educational Qualifications (Top 3)</Label>
                   {formData.qualifications.map((qual, index) => (
-                    <div key={index} className="grid grid-cols-3 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-sm">{index === 0 ? "Highest" : index === 1 ? "Second" : "Third"} Qualification</Label>
+                    <div key={index} className="grid grid-cols-12 gap-3">
+                      <div className="col-span-5 space-y-1">
+                        <Label className="text-sm font-medium">{index === 0 ? "Highest" : index === 1 ? "Second" : "Third"} Qualification</Label>
                         <Input
-                          placeholder="e.g., Bachelor's in CS"
+                          placeholder="e.g., Bachelor's in Computer Science"
                           value={qual.qualification}
                           onChange={(e) => handleQualificationChange(index, "qualification", e.target.value)}
                           data-testid={`input-qualification-${index}`}
+                          className="w-full"
                         />
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-sm">Specialization</Label>
+                      <div className="col-span-4 space-y-1">
+                        <Label className="text-sm font-medium">Specialization</Label>
                         <Input
                           placeholder="e.g., Machine Learning"
                           value={qual.specialization}
                           onChange={(e) => handleQualificationChange(index, "specialization", e.target.value)}
                           data-testid={`input-specialization-${index}`}
+                          className="w-full"
                         />
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-sm">Score/Grade</Label>
+                      <div className="col-span-3 space-y-1">
+                        <Label className="text-sm font-medium">Score/Grade</Label>
                         <Input
-                          placeholder="e.g., 3.8 GPA, First Class"
+                          placeholder="e.g., 3.8 GPA"
                           value={qual.score}
                           onChange={(e) => handleQualificationChange(index, "score", e.target.value)}
                           data-testid={`input-score-${index}`}
+                          className="w-full"
                         />
                       </div>
                     </div>
@@ -250,23 +253,25 @@ export default function Signup() {
                 <div className="space-y-4">
                   <Label className="text-base font-medium">Teaching Subjects & Experience</Label>
                   {formData.subjects.map((subj, index) => (
-                    <div key={index} className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-sm">Subject {index + 1}</Label>
+                    <div key={index} className="grid grid-cols-12 gap-3">
+                      <div className="col-span-7 space-y-1">
+                        <Label className="text-sm font-medium">Subject {index + 1}</Label>
                         <Input
-                          placeholder="e.g., Python Programming"
+                          placeholder="e.g., Python Programming, Web Development"
                           value={subj.subject}
                           onChange={(e) => handleSubjectChange(index, "subject", e.target.value)}
                           data-testid={`input-subject-${index}`}
+                          className="w-full"
                         />
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-sm">Experience</Label>
+                      <div className="col-span-5 space-y-1">
+                        <Label className="text-sm font-medium">Teaching Experience</Label>
                         <Input
-                          placeholder="e.g., 5 years, Advanced"
+                          placeholder="e.g., 5 years, Advanced level"
                           value={subj.experience}
                           onChange={(e) => handleSubjectChange(index, "experience", e.target.value)}
                           data-testid={`input-experience-${index}`}
+                          className="w-full"
                         />
                       </div>
                     </div>
