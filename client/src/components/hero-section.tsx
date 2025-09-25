@@ -15,13 +15,13 @@ export default function HeroSection() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="text-center lg:text-left">
             <h1 className="text-5xl lg:text-7xl font-bold text-white mb-6 leading-tight" data-testid="text-hero-title">
-              Where Young
+              Where You
               <span className="block">Minds Meet</span>
-              <span className="block text-accent">Coding Mentors</span>
+              <span className="block text-accent">Mentors For CS, IGCSE, IB, AP Subjects</span>
             </h1>
             <p className="text-xl text-white/90 mb-8 max-w-2xl" data-testid="text-hero-description">
-              Connect kids with passionate coding mentors for personalized learning experiences. 
-              Build the future, one line of code at a time.
+              Connect students with expert mentors for CS, IGCSE, IB, and AP subjects. 
+              Personalized learning experiences to excel in your academic journey.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
