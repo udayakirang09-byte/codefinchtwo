@@ -21,6 +21,7 @@ interface MentorApplication {
   bio: string;
   expertise: string[];
   experience: string;
+  country?: string;
   pricing: number;
   languages: string[];
   status: 'pending' | 'approved' | 'rejected';

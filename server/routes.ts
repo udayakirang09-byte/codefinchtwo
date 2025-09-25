@@ -686,6 +686,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const booking = await storage.createBooking(bookingData);
+      
+      // Automatically create chat session when booking is created
+      try {
+        const mentor = await storage.getMentor(req.body.mentorId);
+        if (mentor) {
+          const chatSessionData = {
+            bookingId: booking.id,
+            studentId: user.id, // User ID (not student record ID)
+            mentorId: mentor.userId, // Mentor's user ID
+          };
+          
+          await storage.createChatSession(chatSessionData);
+          console.log(`💬 Chat session created automatically for booking ${booking.id}`);
+        }
+      } catch (chatError) {
+        console.error("Warning: Failed to create chat session:", chatError);
+        // Don't fail the booking if chat creation fails
+      }
+      
       res.status(201).json(booking);
     } catch (error: any) {
       console.error("Error creating booking:", error);
@@ -1102,15 +1121,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/chat-sessions/:sessionId/messages", async (req, res) => {
-    console.log(`💬 POST /api/chat-sessions/${req.params.sessionId}/messages - Sending message`);
+    console.log(`💬 POST /api/chat-sessions/${req.params.sessionId}/messages - Sending message with timing validation`);
     try {
+      const { sessionId } = req.params;
+      const { senderId, message, studentUserId, mentorUserId } = req.body;
+
+      if (!senderId || !message) {
+        return res.status(400).json({ message: "Sender ID and message are required" });
+      }
+
+      // Validate chat access based on timing rules
+      if (studentUserId && mentorUserId) {
+        const canChat = await storage.validateChatAccess(studentUserId, mentorUserId);
+        if (!canChat) {
+          console.log(`❌ Chat access denied for ${studentUserId} -> ${mentorUserId} (expired relationship)`);
+          return res.status(403).json({ 
+            message: "Chat access expired. Messages can only be sent within 6 months of the last class." 
+          });
+        }
+      }
+
       const messageData = insertChatMessageSchema.parse({
-        ...req.body,
-        chatSessionId: req.params.sessionId
+        chatSessionId: sessionId,
+        senderId,
+        message
       });
-      const message = await storage.sendChatMessage(messageData);
-      console.log(`✅ Sent message ${message.id}`);
-      res.status(201).json(message);
+      
+      const newMessage = await storage.sendChatMessage(messageData);
+      console.log(`✅ Message sent successfully: ${newMessage.id}`);
+      res.status(201).json(newMessage);
     } catch (error) {
       console.error("❌ Error sending message:", error);
       res.status(500).json({ message: "Failed to send message" });
@@ -1128,6 +1167,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch messages" });
     }
   });
+
+  // Check student-mentor relationship status for chat access
+  app.get("/api/chat-relationship/:studentUserId/:mentorUserId", async (req, res) => {
+    console.log(`🔍 GET /api/chat-relationship/${req.params.studentUserId}/${req.params.mentorUserId} - Checking relationship status`);
+    try {
+      const { studentUserId, mentorUserId } = req.params;
+      const relationshipStatus = await storage.checkStudentMentorRelationshipStatus(studentUserId, mentorUserId);
+      console.log(`✅ Relationship status: canChat=${relationshipStatus.canChat}, canViewMessages=${relationshipStatus.canViewMessages}`);
+      res.json(relationshipStatus);
+    } catch (error) {
+      console.error("❌ Error checking relationship status:", error);
+      res.status(500).json({ message: "Failed to check relationship status" });
+    }
+  });
+
 
   // Class feedback routes
   app.post("/api/class-feedback", async (req, res) => {

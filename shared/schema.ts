@@ -278,7 +278,10 @@ export type ReviewWithDetails = Review & {
 export const chatSessions = pgTable("chat_sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
+  studentId: varchar("student_id").references(() => users.id).notNull(), // Added for relationship tracking
+  mentorId: varchar("mentor_id").references(() => users.id).notNull(), // Added for relationship tracking
   isActive: boolean("is_active").default(true),
+  archiveAt: timestamp("archive_at"), // When messages should be archived (3 months after relationship ends)
   startedAt: timestamp("started_at").defaultNow(),
   endedAt: timestamp("ended_at"),
 });

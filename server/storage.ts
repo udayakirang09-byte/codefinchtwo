@@ -126,6 +126,13 @@ export interface IStorage {
   getChatSessionByBooking(bookingId: string): Promise<ChatSession | undefined>;
   sendChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
   getChatMessages(sessionId: string): Promise<ChatMessage[]>;
+  checkStudentMentorRelationshipStatus(studentUserId: string, mentorUserId: string): Promise<{
+    isActive: boolean;
+    lastBookingDate: Date | null;
+    canChat: boolean;
+    canViewMessages: boolean;
+  }>;
+  validateChatAccess(studentUserId: string, mentorUserId: string): Promise<boolean>;
   
   // Feedback operations
   submitClassFeedback(feedback: InsertClassFeedback): Promise<ClassFeedback>;
@@ -259,6 +266,7 @@ export class DatabaseStorage implements IStorage {
         bio: "Experienced software engineer with 5+ years",
         expertise: ["JavaScript", "React", "Node.js"],
         experience: "Senior developer at tech startup",
+        country: "NA-Country", // Add country field to mock data
         pricing: 50,
         languages: ["English", "Spanish"],
         status: status || "pending",
@@ -599,6 +607,58 @@ export class DatabaseStorage implements IStorage {
       .where(eq(chatMessages.chatSessionId, sessionId))
       .orderBy(chatMessages.sentAt);
     return messages;
+  }
+
+  // Chat timing control methods
+  async checkStudentMentorRelationshipStatus(studentUserId: string, mentorUserId: string): Promise<{
+    isActive: boolean;
+    lastBookingDate: Date | null;
+    canChat: boolean;
+    canViewMessages: boolean;
+  }> {
+    // Find the most recent booking between this student-mentor pair
+    const recentBooking = await db
+      .select()
+      .from(bookings)
+      .leftJoin(students, eq(bookings.studentId, students.id))
+      .leftJoin(mentors, eq(bookings.mentorId, mentors.id))
+      .where(
+        and(
+          eq(students.userId, studentUserId),
+          eq(mentors.userId, mentorUserId)
+        )
+      )
+      .orderBy(desc(bookings.scheduledAt))
+      .limit(1);
+
+    if (recentBooking.length === 0) {
+      return {
+        isActive: false,
+        lastBookingDate: null,
+        canChat: false,
+        canViewMessages: false
+      };
+    }
+
+    const lastBookingDate = recentBooking[0].bookings.scheduledAt;
+    const now = new Date();
+    const sixMonthsAgo = new Date(now.getTime() - 6 * 30 * 24 * 60 * 60 * 1000); // 6 months
+    const nineMonthsAgo = new Date(now.getTime() - 9 * 30 * 24 * 60 * 60 * 1000); // 6 + 3 months
+
+    const isWithin6Months = lastBookingDate > sixMonthsAgo;
+    const isWithin9Months = lastBookingDate > nineMonthsAgo;
+
+    return {
+      isActive: isWithin6Months,
+      lastBookingDate,
+      canChat: isWithin6Months, // Can send new messages within 6 months
+      canViewMessages: isWithin9Months // Can view messages for 3 additional months
+    };
+  }
+
+  async validateChatAccess(studentUserId: string, mentorUserId: string): Promise<boolean> {
+    const relationshipStatus = await this.checkStudentMentorRelationshipStatus(studentUserId, mentorUserId);
+    return relationshipStatus.canChat;
   }
 
   // Feedback operations
