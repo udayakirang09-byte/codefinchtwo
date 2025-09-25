@@ -1,16 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
-import { useRoute, Link } from "wouter";
-import { Star, Users, Clock, Calendar, Video, MessageSquare } from "lucide-react";
+import { useRoute, Link, useLocation } from "wouter";
+import { Star, Users, Clock, Calendar, Video, MessageSquare, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 import type { MentorWithUser, ReviewWithDetails } from "@shared/schema";
 
 export default function MentorProfile() {
   const [match, params] = useRoute("/mentors/:id");
+  const [, navigate] = useLocation();
   const mentorId = params?.id;
+  const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
 
   const { data: mentor, isLoading: mentorLoading } = useQuery<MentorWithUser>({
     queryKey: ["/api/mentors", mentorId],
@@ -196,38 +201,58 @@ export default function MentorProfile() {
                 </div>
 
                 <div className="space-y-3 mb-6">
-                  <Link href={`/booking/${mentor.id}`}>
-                    <Button className="w-full" size="lg" data-testid="button-book-session">
-                      <Calendar className="mr-2" size={20} />
-                      Book a Session
+                  {isAuthenticated ? (
+                    <>
+                      <Link href={`/booking/${mentor.id}`}>
+                        <Button className="w-full" size="lg" data-testid="button-book-session">
+                          <Calendar className="mr-2" size={20} />
+                          Book a Session
+                        </Button>
+                      </Link>
+                      <Button 
+                        variant="outline" 
+                        className="w-full" 
+                        data-testid="button-video-call"
+                        onClick={() => {
+                          console.log('Start Video Call button clicked');
+                          navigate(`/booking/${mentor.id}`);
+                        }}
+                      >
+                        <Video className="mr-2" size={20} />
+                        Start Video Call
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="w-full" 
+                        data-testid="button-send-message"
+                        onClick={() => {
+                          console.log('Send Message button clicked');
+                          navigate(`/booking/${mentor.id}`);
+                        }}
+                      >
+                        <MessageSquare className="mr-2" size={20} />
+                        Send Message
+                      </Button>
+                    </>
+                  ) : (
+                    <Button 
+                      className="w-full" 
+                      size="lg" 
+                      variant="secondary"
+                      data-testid="button-login-to-book"
+                      onClick={() => {
+                        toast({
+                          title: "Login Required",
+                          description: "Please login to book a session with this mentor.",
+                          variant: "destructive",
+                        });
+                        navigate("/login");
+                      }}
+                    >
+                      <LogIn className="mr-2" size={20} />
+                      Login to Book Session
                     </Button>
-                  </Link>
-                  <Button 
-                    variant="outline" 
-                    className="w-full" 
-                    data-testid="button-video-call"
-                    onClick={() => {
-                      console.log('Start Video Call button clicked');
-                      // Redirect to booking page for this mentor
-                      window.location.href = `/booking/${mentor.id}`;
-                    }}
-                  >
-                    <Video className="mr-2" size={20} />
-                    Start Video Call
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full" 
-                    data-testid="button-send-message"
-                    onClick={() => {
-                      console.log('Send Message button clicked');
-                      // Redirect to booking page for this mentor
-                      window.location.href = `/booking/${mentor.id}`;
-                    }}
-                  >
-                    <MessageSquare className="mr-2" size={20} />
-                    Send Message
-                  </Button>
+                  )}
                 </div>
 
                 <div className="text-center text-sm text-muted-foreground">

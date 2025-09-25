@@ -21,7 +21,19 @@ export default function Booking() {
   const mentorId = params?.mentorId;
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      toast({
+        title: "Login Required",
+        description: "Please login to book a session with a mentor.",
+        variant: "destructive",
+      });
+      navigate("/login");
+    }
+  }, [isAuthenticated, authLoading, navigate, toast]);
 
   const [formData, setFormData] = useState({
     studentName: "",
