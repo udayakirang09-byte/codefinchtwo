@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { queryClient } from '@/lib/queryClient';
 
 // TypeScript interfaces
 interface AdminStats {
@@ -26,10 +27,20 @@ interface RecentActivity {
   time: string;
   icon: React.ReactNode;
 }
+
+interface HomeSectionControl {
+  id: string;
+  sectionType: string;
+  sectionName: string;
+  isEnabled: boolean;
+  displayOrder: number;
+  description?: string;
+}
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { 
   Shield,
   Users,
@@ -86,6 +97,32 @@ export default function AdminHome() {
       const response = await fetch('/api/admin/alerts');
       if (!response.ok) throw new Error('Failed to fetch alerts');
       return response.json();
+    }
+  });
+
+  // Fetch home section controls from API
+  const { data: homeSectionControls = [] as HomeSectionControl[], isLoading: controlsLoading } = useQuery<HomeSectionControl[]>({
+    queryKey: ['admin-home-sections'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/home-sections');
+      if (!response.ok) throw new Error('Failed to fetch home section controls');
+      return response.json();
+    }
+  });
+
+  // Mutation to update home section controls
+  const updateSectionControlMutation = useMutation({
+    mutationFn: async ({ sectionType, sectionName, isEnabled }: { sectionType: string; sectionName: string; isEnabled: boolean }) => {
+      const response = await fetch('/api/admin/home-sections', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sectionType, sectionName, isEnabled })
+      });
+      if (!response.ok) throw new Error('Failed to update section control');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-home-sections'] });
     }
   });
 
@@ -328,6 +365,101 @@ export default function AdminHome() {
                   <Zap className="w-4 h-4 mr-2" />
                   Load Testing
                 </Button>
+              </CardContent>
+            </Card>
+
+            {/* Home Section Controls */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Dashboard Section Controls
+                </CardTitle>
+                <CardDescription>
+                  Control which sections appear on teacher and student dashboards
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {controlsLoading ? (
+                  <div className="flex items-center justify-center py-4">
+                    <div className="animate-spin w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full" />
+                    <span className="ml-2 text-sm text-gray-600">Loading controls...</span>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Teacher Sections */}
+                    <div>
+                      <h4 className="font-semibold text-sm text-gray-700 mb-3" data-testid="heading-teacher-sections">
+                        Teacher Dashboard Sections
+                      </h4>
+                      <div className="space-y-3">
+                        {homeSectionControls
+                          .filter(control => control.sectionType === 'teacher')
+                          .sort((a, b) => a.displayOrder - b.displayOrder)
+                          .map((control) => (
+                            <div key={control.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                              <div>
+                                <label className="text-sm font-medium cursor-pointer" data-testid={`label-${control.sectionType}-${control.sectionName}`}>
+                                  {control.sectionName.charAt(0).toUpperCase() + control.sectionName.slice(1).replace(/([A-Z])/g, ' $1')}
+                                </label>
+                                {control.description && (
+                                  <p className="text-xs text-gray-500 mt-1">{control.description}</p>
+                                )}
+                              </div>
+                              <Switch
+                                checked={control.isEnabled}
+                                onCheckedChange={(checked) => {
+                                  updateSectionControlMutation.mutate({
+                                    sectionType: control.sectionType,
+                                    sectionName: control.sectionName,
+                                    isEnabled: checked
+                                  });
+                                }}
+                                disabled={updateSectionControlMutation.isPending}
+                                data-testid={`switch-${control.sectionType}-${control.sectionName}`}
+                              />
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+
+                    {/* Student Sections */}
+                    <div>
+                      <h4 className="font-semibold text-sm text-gray-700 mb-3" data-testid="heading-student-sections">
+                        Student Dashboard Sections
+                      </h4>
+                      <div className="space-y-3">
+                        {homeSectionControls
+                          .filter(control => control.sectionType === 'student')
+                          .sort((a, b) => a.displayOrder - b.displayOrder)
+                          .map((control) => (
+                            <div key={control.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                              <div>
+                                <label className="text-sm font-medium cursor-pointer" data-testid={`label-${control.sectionType}-${control.sectionName}`}>
+                                  {control.sectionName.charAt(0).toUpperCase() + control.sectionName.slice(1).replace(/([A-Z])/g, ' $1')}
+                                </label>
+                                {control.description && (
+                                  <p className="text-xs text-gray-500 mt-1">{control.description}</p>
+                                )}
+                              </div>
+                              <Switch
+                                checked={control.isEnabled}
+                                onCheckedChange={(checked) => {
+                                  updateSectionControlMutation.mutate({
+                                    sectionType: control.sectionType,
+                                    sectionName: control.sectionName,
+                                    isEnabled: checked
+                                  });
+                                }}
+                                disabled={updateSectionControlMutation.isPending}
+                                data-testid={`switch-${control.sectionType}-${control.sectionName}`}
+                              />
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
