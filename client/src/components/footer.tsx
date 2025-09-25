@@ -77,6 +77,21 @@ export default function Footer() {
                   Achievement Badges
                 </Link>
               </li>
+              <li>
+                <Link href="/forums" className="hover:text-white transition-colors" data-testid="link-forums">
+                  Discussion Forums
+                </Link>
+              </li>
+              <li>
+                <Link href="/projects" className="hover:text-white transition-colors" data-testid="link-projects">
+                  Project Showcase
+                </Link>
+              </li>
+              <li>
+                <Link href="/events" className="hover:text-white transition-colors" data-testid="link-events">
+                  Community Events
+                </Link>
+              </li>
             </ul>
           </div>
           
@@ -125,7 +140,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/privacy-policy" className="hover:text-white transition-colors" data-testid="link-privacy-policy">
+                <Link href="/privacy" className="hover:text-white transition-colors" data-testid="link-privacy-policy">
                   Privacy Policy
                 </Link>
               </li>
@@ -141,7 +156,7 @@ export default function Footer() {
             <Link href="/terms-of-service" className="hover:text-white transition-colors" data-testid="link-terms">
               Terms of Service
             </Link>
-            <Link href="/privacy-policy" className="hover:text-white transition-colors" data-testid="link-privacy">
+            <Link href="/privacy" className="hover:text-white transition-colors" data-testid="link-privacy">
               Privacy Policy
             </Link>
             <Link href="/cookie-policy" className="hover:text-white transition-colors" data-testid="link-cookies">

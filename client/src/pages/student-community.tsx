@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, MessageSquare, Trophy, Calendar } from "lucide-react";
+import { Link } from "wouter";
 
 export default function StudentCommunity() {
   return (
@@ -30,8 +31,8 @@ export default function StudentCommunity() {
                 Ask questions, share tips, and help each other learn
               </p>
               <Badge variant="secondary" className="mb-4">1,245 active students</Badge>
-              <Button className="w-full" data-testid="button-join-forums">
-                Join Forums
+              <Button className="w-full" asChild data-testid="button-join-forums">
+                <Link href="/forums">Join Forums</Link>
               </Button>
             </CardContent>
           </Card>
@@ -46,8 +47,8 @@ export default function StudentCommunity() {
                 Show off your coding projects and get feedback
               </p>
               <Badge variant="secondary" className="mb-4">892 projects shared</Badge>
-              <Button className="w-full" data-testid="button-share-project">
-                Share Project
+              <Button className="w-full" asChild data-testid="button-share-project">
+                <Link href="/projects">Share Project</Link>
               </Button>
             </CardContent>
           </Card>
@@ -62,8 +63,8 @@ export default function StudentCommunity() {
                 Join coding challenges, workshops, and meetups
               </p>
               <Badge variant="secondary" className="mb-4">Next event: Tomorrow</Badge>
-              <Button className="w-full" data-testid="button-view-events">
-                View Events
+              <Button className="w-full" asChild data-testid="button-view-events">
+                <Link href="/events">View Events</Link>
               </Button>
             </CardContent>
           </Card>

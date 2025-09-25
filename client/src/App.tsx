@@ -51,6 +51,9 @@ import LoadTestingGuide from "./pages/admin/load-testing-guide";
 import PaymentConfig from "./pages/admin/payment-config";
 import FinanceDashboard from "./pages/admin/finance-dashboard";
 import TeacherPaymentConfig from "./pages/teacher/payment-config";
+import Forums from "./pages/forums";
+import Projects from "./pages/projects";
+import Events from "./pages/events";
 
 function Router() {
   return (
@@ -66,6 +69,9 @@ function Router() {
       <Route path="/payment" component={Payment} />
       <Route path="/payment-success" component={PaymentSuccess} />
       <Route path="/student-community" component={StudentCommunity} />
+      <Route path="/forums" component={Forums} />
+      <Route path="/projects" component={Projects} />
+      <Route path="/events" component={Events} />
       <Route path="/achievement-badges" component={AchievementBadges} />
       <Route path="/help" component={Help} />
       <Route path="/admin/user-management" component={UserManagement} />
