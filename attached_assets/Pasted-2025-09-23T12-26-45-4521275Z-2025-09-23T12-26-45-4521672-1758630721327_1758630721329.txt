@@ -1,0 +1,311 @@
+2025-09-23T12:26:45.4521275Z ..........................................
+2025-09-23T12:26:45.4521672Z Zipped /tmp/zipdeploy/extracted/node_modules to /tmp/zipdeploy/extracted/node_modules.tar.gz done successfully
+2025-09-23T12:26:46.7925870Z Run rsync from: /tmp/zipdeploy/extracted/ to: /home/site/wwwroot/ in 8 parallel threads
+2025-09-23T12:26:46.8760535Z Delete options: clean=False, use manifest=True, directory to ignore=node_modules
+2025-09-23T12:26:46.9237153Z Prev manifest = /home/site/deployments/7cf8575f-32a7-4919-b479-7bc4938f92af/manifest and next /home/site/deployments/60263cd9-3c10-4c1c-8589-0dbe707333f9/manifest
+2025-09-23T12:26:47.0327889Z Cleaning up /tmp//filelist.txt and /tmp//splits
+2025-09-23T12:26:47.1520661Z Creating a list of all files at /tmp//filelist.txt
+2025-09-23T12:26:47.2384154Z Excluding: node_modules
+2025-09-23T12:26:47.3360902Z Created /tmp//filelist.txt. Total number of files to be synced = 26.
+2025-09-23T12:26:47.4197958Z Created batches from the list of files. Processing 4 files in each thread
+2025-09-23T12:26:47.5793874Z Running rsync for filelist /tmp//splits/split.aa from /tmp/zipdeploy/extracted/ to /home/site/wwwroot/
+2025-09-23T12:26:47.7037952Z Running rsync for filelist /tmp//splits/split.ac from /tmp/zipdeploy/extracted/ to /home/site/wwwroot/
+2025-09-23T12:26:47.7946411Z Running rsync for filelist /tmp//splits/split.ad from /tmp/zipdeploy/extracted/ to /home/site/wwwroot/
+2025-09-23T12:26:47.9713952Z Running rsync for filelist /tmp//splits/split.ab from /tmp/zipdeploy/extracted/ to /home/site/wwwroot/
+2025-09-23T12:26:48.1109375Z Running rsync for filelist /tmp//splits/split.ae from /tmp/zipdeploy/extracted/ to /home/site/wwwroot/
+2025-09-23T12:26:48.1623833Z Running rsync for filelist /tmp//splits/split.af from /tmp/zipdeploy/extracted/ to /home/site/wwwroot/
+2025-09-23T12:26:48.2686364Z Running rsync for filelist /tmp//splits/split.ag from /tmp/zipdeploy/extracted/ to /home/site/wwwroot/
+2025-09-23T12:26:48.3240816Z
+2025-09-23T12:26:48.4179223Z Number of files: 4 (reg: 2, dir: 2)
+2025-09-23T12:26:48.5349892Z Number of created files: 0
+2025-09-23T12:26:48.6931871Z Number of deleted files: 0
+2025-09-23T12:26:48.8057712Z Number of regular files transferred: 2
+2025-09-23T12:26:48.8716371Z Total file size: 3.48K bytes
+2025-09-23T12:26:48.9447364Z Total transferred file size: 3.48K bytes
+2025-09-23T12:26:49.0889864Z Literal data: 3.48K bytes
+2025-09-23T12:26:49.1842766Z Matched data: 0 bytes
+2025-09-23T12:26:49.2203122Z File list size: 0
+2025-09-23T12:26:49.3085492Z File list generation time: 0.001 seconds
+2025-09-23T12:26:49.3418527Z File list transfer time: 0.000 seconds
+2025-09-23T12:26:49.3940669Z Total bytes sent: 1.45K
+2025-09-23T12:26:49.4248956Z Total bytes received: 60
+2025-09-23T12:26:49.4723676Z
+2025-09-23T12:26:49.5180178Z sent 1.45K bytes  received 60 bytes  1.01K bytes/sec
+2025-09-23T12:26:49.5722556Z total size is 3.48K  speedup is 2.30
+2025-09-23T12:26:49.5938790Z Attempt 1: Rsync for filelist /tmp//splits/split.ag completed with exit code 0
+2025-09-23T12:26:49.6566381Z
+2025-09-23T12:26:49.7030546Z Number of files: 6 (reg: 4, dir: 2)
+2025-09-23T12:26:49.7277666Z Number of created files: 0
+2025-09-23T12:26:49.7873989Z Number of deleted files: 0
+2025-09-23T12:26:49.8175695Z Number of regular files transferred: 4
+2025-09-23T12:26:49.8881662Z Total file size: 79.45K bytes
+2025-09-23T12:26:49.9608239Z Total transferred file size: 79.45K bytes
+2025-09-23T12:26:50.0046364Z Literal data: 79.45K bytes
+2025-09-23T12:26:50.0240437Z Matched data: 0 bytes
+2025-09-23T12:26:50.0743999Z File list size: 0
+2025-09-23T12:26:50.1202450Z File list generation time: 0.001 seconds
+2025-09-23T12:26:50.1765670Z File list transfer time: 0.000 seconds
+2025-09-23T12:26:50.2273827Z Total bytes sent: 12.22K
+2025-09-23T12:26:50.2463483Z Total bytes received: 98
+2025-09-23T12:26:50.3025736Z
+2025-09-23T12:26:50.3298462Z sent 12.22K bytes  received 98 bytes  4.93K bytes/sec
+2025-09-23T12:26:50.3872037Z total size is 79.45K  speedup is 6.45
+2025-09-23T12:26:50.4232659Z Attempt 1: Rsync for filelist /tmp//splits/split.ad completed with exit code 0
+2025-09-23T12:26:50.5421192Z
+2025-09-23T12:26:50.5739729Z Number of files: 6 (reg: 4, dir: 2)
+2025-09-23T12:26:50.6501865Z Number of created files: 0
+2025-09-23T12:26:50.7049565Z Number of deleted files: 0
+2025-09-23T12:26:50.8191501Z Number of regular files transferred: 4
+2025-09-23T12:26:50.8923107Z Total file size: 16.62K bytes
+2025-09-23T12:26:50.9598290Z Total transferred file size: 16.62K bytes
+2025-09-23T12:26:51.0262442Z Literal data: 16.62K bytes
+2025-09-23T12:26:51.0905976Z Matched data: 0 bytes
+2025-09-23T12:26:51.1367400Z File list size: 0
+2025-09-23T12:26:51.1930065Z File list generation time: 0.001 seconds
+2025-09-23T12:26:51.2403947Z File list transfer time: 0.000 seconds
+2025-09-23T12:26:51.3200617Z Total bytes sent: 5.00K
+2025-09-23T12:26:51.3764413Z Total bytes received: 98
+2025-09-23T12:26:51.4325333Z
+2025-09-23T12:26:51.4678115Z sent 5.00K bytes  received 98 bytes  3.40K bytes/sec
+2025-09-23T12:26:51.5333378Z total size is 16.62K  speedup is 3.26
+2025-09-23T12:26:51.5811085Z Attempt 1: Rsync for filelist /tmp//splits/split.ae completed with exit code 0
+2025-09-23T12:26:52.0047838Z
+2025-09-23T12:26:52.1260665Z Number of files: 7 (reg: 4, dir: 3)
+2025-09-23T12:26:52.1460280Z Number of created files: 0
+2025-09-23T12:26:52.1954459Z Number of deleted files: 0
+2025-09-23T12:26:52.2571379Z Number of regular files transferred: 4
+2025-09-23T12:26:52.3161118Z Total file size: 47.02K bytes
+2025-09-23T12:26:52.3628369Z Total transferred file size: 47.02K bytes
+2025-09-23T12:26:52.4195521Z Literal data: 47.02K bytes
+2025-09-23T12:26:52.5639868Z Matched data: 0 bytes
+2025-09-23T12:26:52.6812923Z File list size: 0
+2025-09-23T12:26:52.6997364Z File list generation time: 0.001 seconds
+2025-09-23T12:26:52.7709106Z File list transfer time: 0.000 seconds
+2025-09-23T12:26:52.7997196Z Total bytes sent: 8.22K
+2025-09-23T12:26:52.8754779Z Total bytes received: 101
+2025-09-23T12:26:52.9322451Z
+2025-09-23T12:26:52.9873912Z sent 8.22K bytes  received 101 bytes  3.33K bytes/sec
+2025-09-23T12:26:53.0337474Z total size is 47.02K  speedup is 5.65
+2025-09-23T12:26:53.0977335Z Attempt 1: Rsync for filelist /tmp//splits/split.ac completed with exit code 0
+2025-09-23T12:26:53.1543420Z
+2025-09-23T12:26:53.2012224Z Number of files: 6 (reg: 4, dir: 2)
+2025-09-23T12:26:53.2493006Z Number of created files: 0
+2025-09-23T12:26:53.2865253Z Number of deleted files: 0
+2025-09-23T12:26:53.3423318Z Number of regular files transferred: 4
+2025-09-23T12:26:53.3795726Z Total file size: 114.61K bytes
+2025-09-23T12:26:53.4203779Z Total transferred file size: 114.61K bytes
+2025-09-23T12:26:53.4891362Z Literal data: 114.61K bytes
+2025-09-23T12:26:53.5336500Z Matched data: 0 bytes
+2025-09-23T12:26:53.5883683Z File list size: 0
+2025-09-23T12:26:53.6365394Z File list generation time: 0.001 seconds
+2025-09-23T12:26:53.6828155Z File list transfer time: 0.000 seconds
+2025-09-23T12:26:53.7410912Z Total bytes sent: 20.41K
+2025-09-23T12:26:53.7795564Z Total bytes received: 98
+2025-09-23T12:26:53.8132612Z
+2025-09-23T12:26:53.8575883Z sent 20.41K bytes  received 98 bytes  13.67K bytes/sec
+2025-09-23T12:26:53.8649965Z total size is 114.61K  speedup is 5.59
+2025-09-23T12:26:53.8823713Z Attempt 1: Rsync for filelist /tmp//splits/split.af completed with exit code 0
+2025-09-23T12:26:53.9176833Z
+2025-09-23T12:26:53.9386637Z Number of files: 9 (reg: 4, dir: 5)
+2025-09-23T12:26:53.9639382Z Number of created files: 0
+2025-09-23T12:26:54.0028572Z Number of deleted files: 0
+2025-09-23T12:26:54.0486263Z Number of regular files transferred: 4
+2025-09-23T12:26:54.0948757Z Total file size: 1.37M bytes
+2025-09-23T12:26:54.1146837Z Total transferred file size: 1.37M bytes
+2025-09-23T12:26:54.1542950Z Literal data: 1.37M bytes
+2025-09-23T12:26:54.1690300Z Matched data: 0 bytes
+2025-09-23T12:26:54.1902095Z File list size: 0
+2025-09-23T12:26:54.2067454Z File list generation time: 0.001 seconds
+2025-09-23T12:26:54.2451201Z File list transfer time: 0.000 seconds
+2025-09-23T12:26:54.2636531Z Total bytes sent: 343.88K
+2025-09-23T12:26:54.2781310Z Total bytes received: 104
+2025-09-23T12:26:54.2948216Z
+2025-09-23T12:26:54.3229363Z sent 343.88K bytes  received 104 bytes  137.59K bytes/sec
+2025-09-23T12:26:54.3325473Z total size is 1.37M  speedup is 3.98
+2025-09-23T12:26:54.3529372Z Attempt 1: Rsync for filelist /tmp//splits/split.ab completed with exit code 0
+2025-09-23T12:26:54.3716196Z
+2025-09-23T12:26:54.3980543Z Number of files: 4 (reg: 4)
+2025-09-23T12:26:54.4178409Z Number of created files: 0
+2025-09-23T12:26:54.4530916Z Number of deleted files: 0
+2025-09-23T12:26:54.4703654Z Number of regular files transferred: 4
+2025-09-23T12:26:54.4887424Z Total file size: 29.88M bytes
+2025-09-23T12:26:54.5196870Z Total transferred file size: 29.88M bytes
+2025-09-23T12:26:54.5329577Z Literal data: 29.88M bytes
+2025-09-23T12:26:54.5498522Z Matched data: 0 bytes
+2025-09-23T12:26:54.5673893Z File list size: 0
+2025-09-23T12:26:54.5853281Z File list generation time: 0.085 seconds
+2025-09-23T12:26:54.6116804Z File list transfer time: 0.000 seconds
+2025-09-23T12:26:54.6322321Z Total bytes sent: 29.77M
+2025-09-23T12:26:54.6581829Z Total bytes received: 92
+2025-09-23T12:26:54.6650231Z
+2025-09-23T12:26:54.6835469Z sent 29.77M bytes  received 92 bytes  3.97M bytes/sec
+2025-09-23T12:26:54.6990392Z total size is 29.88M  speedup is 1.00
+2025-09-23T12:26:54.7274043Z Attempt 1: Rsync for filelist /tmp//splits/split.aa completed with exit code 0
+2025-09-23T12:26:54.7632490Z Deleting files not present in /tmp/zipdeploy/extracted/ from /home/site/wwwroot/ based on manifest file /home/site/deployments/7cf8575f-32a7-4919-b479-7bc4938f92af/manifest
+2025-09-23T12:26:54.7764401Z Number of files deleted: 0. See /tmp//rsync_deletion_logs.txt for more details.
+2025-09-23T12:26:54.8125024Z create new manifest file at /home/site/deployments/60263cd9-3c10-4c1c-8589-0dbe707333f9/manifest
+2025-09-23T12:26:54.8503876Z Excluding node_modules in next manifest file
+2025-09-23T12:26:54.8801985Z Completed successfully in 7 seconds
+2025-09-23T12:28:36  No new trace in the past 1 min(s).
+2025-09-23T12:13:23.3706856Z Site: kidzaimathapp30237 will be blocked for 4 minutes till 09/23/2025 12:17:23
+2025-09-23T12:13:24.2273173Z Start site prohibitted because the site is being blocked.
+2025-09-23T12:17:23.3779569Z Site: kidzaimathapp30237 is unblocked.
+2025-09-23T12:28:38.3198529Z Container start method called.
+2025-09-23T12:28:38.3289256Z Establishing network.
+2025-09-23T12:28:38.3379831Z Pulling image: appsvc/node:20-lts_20250724.2.tuxprod.
+2025-09-23T12:28:42.9478996Z Container is starting.
+2025-09-23T12:28:42.9487689Z Establishing user namespace if not established already.
+2025-09-23T12:28:42.9489382Z Establishing network if not established already.
+2025-09-23T12:28:42.9490652Z Mounting volumes.
+2025-09-23T12:28:42.9603548Z Nested mountpoint
+2025-09-23T12:28:43.0316782Z Nested mountpoint volatile/logs
+2025-09-23T12:28:43.0439366Z Nested mountpoint
+2025-09-23T12:28:43.1500771Z Nested mountpoint
+2025-09-23T12:28:43.2104983Z Nested mountpoint
+2025-09-23T12:28:43.7805704Z Creating container.
+2025-09-23T12:28:43.7842045Z Creating pipes for streaming container io.
+2025-09-23T12:28:43.7854209Z Creating stdout named pipe at /podr/container/pipe/f682c7bc92c3_kidzaimathapp30237/stdout_b8c98c2cc9a5427b95af32844ab612a0.
+2025-09-23T12:28:43.7882441Z Successfully created stdout named pipe at: /podr/container/pipe/f682c7bc92c3_kidzaimathapp30237/stdout_b8c98c2cc9a5427b95af32844ab612a0.
+2025-09-23T12:28:43.7935010Z Opening named pipe /podr/container/pipe/f682c7bc92c3_kidzaimathapp30237/stdout_b8c98c2cc9a5427b95af32844ab612a0 for reading in non-blocking mode.
+2025-09-23T12:28:43.7941337Z Successfully opened named pipe: /podr/container/pipe/f682c7bc92c3_kidzaimathapp30237/stdout_b8c98c2cc9a5427b95af32844ab612a0.
+2025-09-23T12:28:43.7958936Z Successfully removed non-blocking flag from /podr/container/pipe/f682c7bc92c3_kidzaimathapp30237/stdout_b8c98c2cc9a5427b95af32844ab612a0.
+2025-09-23T12:28:43.7964586Z Creating stderr named pipe at /podr/container/pipe/f682c7bc92c3_kidzaimathapp30237/stderr_29dd3bddf58540f6a095c8dae0dc8790.
+2025-09-23T12:28:43.7974095Z Successfully created stderr named pipe at: /podr/container/pipe/f682c7bc92c3_kidzaimathapp30237/stderr_29dd3bddf58540f6a095c8dae0dc8790.
+2025-09-23T12:28:43.8036854Z Opening named pipe /podr/container/pipe/f682c7bc92c3_kidzaimathapp30237/stderr_29dd3bddf58540f6a095c8dae0dc8790 for reading in non-blocking mode.
+2025-09-23T12:28:43.8038404Z Successfully opened named pipe: /podr/container/pipe/f682c7bc92c3_kidzaimathapp30237/stderr_29dd3bddf58540f6a095c8dae0dc8790.
+2025-09-23T12:28:43.8039698Z Successfully removed non-blocking flag from /podr/container/pipe/f682c7bc92c3_kidzaimathapp30237/stderr_29dd3bddf58540f6a095c8dae0dc8790.
+2025-09-23T12:28:43.8058005Z Creating container with image: appsvc/node:20-lts_20250724.2.tuxprod from registry: mcr.microsoft.com and fully qualified image name: mcr.microsoft.com/appsvc/node:20-lts_20250724.2.tuxprod
+2025-09-23T12:28:45.6191534Z    _____
+2025-09-23T12:28:45.0226810Z Starting container: f682c7bc92c3_kidzaimathapp30237.
+2025-09-23T12:28:45.2358546Z Starting watchers and probes.
+2025-09-23T12:28:45.2700722Z Starting metrics collection.
+2025-09-23T12:28:45.6191875Z   /  _  \ __________ _________   ____
+2025-09-23T12:28:45.6192007Z  /  /_\  \\___   /  |  \_  __ \_/ __ \
+2025-09-23T12:28:45.6192029Z /    |    \/    /|  |  /|  | \/\  ___/
+2025-09-23T12:28:45.6192050Z \____|__  /_____ \____/ |__|    \___  >
+2025-09-23T12:28:45.6192070Z         \/      \/                  \/
+2025-09-23T12:28:45.6192092Z A P P   S E R V I C E   O N   L I N U X
+2025-09-23T12:28:45.6192110Z
+2025-09-23T12:28:45.6192132Z Documentation: http://aka.ms/webapp-linux
+2025-09-23T12:28:45.6192152Z NodeJS quickstart: https://aka.ms/node-qs
+2025-09-23T12:28:45.6192173Z NodeJS Version : v20.19.3
+2025-09-23T12:28:45.6192197Z Note: Any data outside '/home' is not persisted
+2025-09-23T12:28:45.6192215Z
+2025-09-23T12:28:45.3010172Z Container is running.
+2025-09-23T12:28:46.7200219Z Container start method finished after 8399 ms.
+2025-09-23T12:28:53.2393180Z Starting OpenBSD Secure Shell server: sshd.
+2025-09-23T12:28:53.2864028Z WEBSITES_INCLUDE_CLOUD_CERTS is not set to true.
+2025-09-23T12:28:53.3453270Z Updating certificates in /etc/ssl/certs...
+2025-09-23T12:29:13.1087953Z rehash: warning: skipping ca-certificates.crt,it does not contain exactly one certificate or CRL
+2025-09-23T12:29:13.2341825Z 4 added, 0 removed; done.
+2025-09-23T12:29:13.2357067Z Running hooks in /etc/ca-certificates/update.d...
+2025-09-23T12:29:13.2533308Z done.
+2025-09-23T12:29:13.3009189Z CA certificates copied and updated successfully.
+2025-09-23T12:29:13.5617592Z Starting periodic command scheduler: cron.
+2025-09-23T12:29:14.2362381Z Found build manifest file at '/home/site/wwwroot/oryx-manifest.toml'. Deserializing it...
+2025-09-23T12:29:14.2788916Z Could not find operation ID in manifest. Generating an operation id...
+2025-09-23T12:29:14.2789482Z Build Operation ID: d0a784ba-1990-4999-b554-fdcd0d2f2008
+2025-09-23T12:29:15.3852403Z Environment Variables for Application Insight's IPA Codeless Configuration exists..
+2025-09-23T12:29:15.6539520Z Writing output script to '/opt/startup/startup.sh'
+2025-09-23T12:29:15.9332469Z Running #!/bin/sh
+2025-09-23T12:29:15.9418694Z
+2025-09-23T12:29:15.9426083Z # Enter the source directory to make sure the script runs where the user expects
+2025-09-23T12:29:15.9430209Z cd "/home/site/wwwroot"
+2025-09-23T12:29:15.9801542Z
+2025-09-23T12:29:15.9814650Z export NODE_PATH=/usr/local/lib/node_modules:$NODE_PATH
+2025-09-23T12:29:15.9981178Z if [ -z "$PORT" ]; then
+2025-09-23T12:29:15.9981297Z 		export PORT=8080
+2025-09-23T12:29:15.9981321Z fi
+2025-09-23T12:29:15.9981343Z
+2025-09-23T12:29:15.9981368Z echo Found tar.gz based node_modules.
+2025-09-23T12:29:15.9981389Z extractionCommand="tar -xzf node_modules.tar.gz -C /node_modules"
+2025-09-23T12:29:15.9981408Z echo "Removing existing modules directory from root..."
+2025-09-23T12:29:15.9981428Z rm -fr /node_modules
+2025-09-23T12:29:15.9981445Z mkdir -p /node_modules
+2025-09-23T12:29:15.9981605Z echo Extracting modules...
+2025-09-23T12:29:15.9981678Z $extractionCommand
+2025-09-23T12:29:15.9981697Z export NODE_PATH="/node_modules":$NODE_PATH
+2025-09-23T12:29:15.9981716Z export PATH=/node_modules/.bin:$PATH
+2025-09-23T12:29:15.9981733Z if [ -d node_modules ]; then
+2025-09-23T12:29:15.9981753Z     mv -f node_modules _del_node_modules || true
+2025-09-23T12:29:15.9981769Z fi
+2025-09-23T12:29:15.9981784Z
+2025-09-23T12:29:15.9981803Z if [ -d /node_modules ]; then
+2025-09-23T12:29:15.9981821Z     ln -sfn /node_modules ./node_modules
+2025-09-23T12:29:15.9981837Z fi
+2025-09-23T12:29:15.9981853Z
+2025-09-23T12:29:15.9981871Z echo "Done."
+2025-09-23T12:29:15.9981918Z PATH="$PATH:/home/site/wwwroot" ./start-production.sh
+2025-09-23T12:29:15.9981937Z Found tar.gz based node_modules.
+2025-09-23T12:29:15.9981956Z Removing existing modules directory from root...
+2025-09-23T12:29:16.0290028Z Extracting modules...
+2025-09-23T12:29:41.2011615Z Done.
+2025-09-23T12:29:41.2486810Z Starting CodeConnect in production mode...
+2025-09-23T12:29:41.2541374Z Server directory: /home/site/wwwroot/dist/server
+2025-09-23T12:29:41.2614026Z Static files directory: /home/site/wwwroot/dist/public
+2025-09-23T12:29:46.6699241Z ⚠️ Stripe not configured - payment features disabled
+2025-09-23T12:29:47.6868015Z 12:29:47 PM [express] serving on port 8080
+2025-09-23T12:29:48.1898971Z Site startup probe succeeded after 61.3594167 seconds.
+2025-09-23 12:29:54.009 +00:00 [Warning] Microsoft.AspNetCore.Hosting.Diagnostics: Overriding HTTP_PORTS '8080' and HTTPS_PORTS ''. Binding to values defined by URLS instead 'http://0.0.0.0:8080'.
+2025-09-23 12:29:54.089 +00:00 [Information] Middleware: Destination base URL is http://169.254.131.3:8080
+2025-09-23 12:29:54.904 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:29:54.8828694Z","SiteName":"kidzaimathapp30237","TaskName":"AutoHealingMiddlewareInformation","Message":"/var/middleware/config/autoheal.xml does not exist","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":7}
+2025-09-23 12:29:55.185 +00:00 [Information] Microsoft.Hosting.Lifetime: Now listening on: http://0.0.0.0:8080
+2025-09-23 12:29:55.186 +00:00 [Information] Microsoft.Hosting.Lifetime: Application started. Press Ctrl+C to shut down.
+2025-09-23 12:29:55.186 +00:00 [Information] Microsoft.Hosting.Lifetime: Hosting environment: Production
+2025-09-23 12:29:55.186 +00:00 [Information] Microsoft.Hosting.Lifetime: Content root path: /app
+2025-09-23 12:29:55.907 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://localhost:8080/ - - -
+2025-09-23 12:29:56.310 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:29:56.3025468Z","SiteName":"kidzaimathapp30237","TaskName":"TraceConfigurationSetting","ModuleRuntimeVersion":"1.12.1","SettingName":"EasyAuthConfig","SettingValue":"{\"ConfigHelper\":{},\"platform\":{\"enabled\":false},\"globalValidation\":{\"excludedPaths\":[],\"unauthenticatedClientAction\":0,\"redirectToProvider\":null,\"ExcludedPathPrefixesSet\":[],\"ExcludedExactPathsSet\":[]},\"identityProviders\":{\"azureActiveDirectory\":{\"enabled\":true,\"registration\":{\"openIdIssuer\":null,\"clientId\":null,\"clientIdSettingName\":null,\"clientSecretSettingName\":null,\"clientSecretCertificateThumbprint\":null,\"clientSecretCertificateSubjectAlternativeName\":null,\"clientSecretCertificateIssuer\":null,\"OpenIdIssuerValue\":null,\"OpenIdConfigurationUrl\":null},\"login\":{\"loginParameters\":null,\"disableWwwAuthenticate\":false},\"validation\":{\"jwtClaimChecks\":null,\"defaultAuthorizationPolicy\":null,\"allowedAudiences\":null}},\"facebook\":{\"enabled\":true,\"registration\":{\"appId\":null,\"appIdSettingName\":null,\"appSecretSettingName\":null},\"login\":{\"scopes\":null},\"graphApiVersion\":null},\"gitHub\":{\"enabled\":true,\"registration\":{\"clientId\":null,\"clientIdSettingName\":null,\"clientSecretSettingName\":null},\"login\":{\"scopes\":null}},\"twitter\":{\"enabled\":true,\"registration\":{\"consumerKey\":null,\"consumerKeySettingName\":null,\"consumerSecretSettingName\":null}},\"legacyMicrosoftAccount\":{\"enabled\":true,\"registration\":{\"clientId\":null,\"clientIdSettingName\":null,\"clientSecretSettingName\":null},\"login\":{\"scopes\":null},\"validation\":{\"allowedAudiences\":null}},\"google\":{\"enabled\":true,\"registration\":{\"clientId\":null,\"clientIdSettingName\":null,\"clientSecretSettingName\":null},\"login\":{\"scopes\":null},\"validation\":{\"allowedAudiences\":null}},\"apple\":{\"enabled\":true,\"registration\":{\"clientId\":null,\"clientIdSettingName\":null,\"clientSecretSettingName\":null},\"login\":{\"scopes\":null}},\"azureStaticWebApps\":{\"enabled\":true,\"registration\":{\"clientId\":null},\"validation\":null},\"customOpenIdConnectProviders\":null},\"login\":{\"routes\":{\"logoutPath\":\"/.auth/logout\",\"loginPath\":null,\"loginCompletionPath\":null,\"loginIFrameReceiverPath\":null},\"tokenStore\":{\"enabled\":false,\"tokenRefreshExtensionHours\":72.0,\"fileSystem\":{\"directory\":\"/home/data/.auth\",\"Path\":\"/home/data/.auth/tokens\"},\"azureBlobStorage\":{\"ConfigHelper\":{},\"blobContainerUri\":null,\"clientId\":null,\"managedIdentityResourceId\":null,\"sasUrlSettingName\":\"WEBSITE_AUTH_TOKEN_CONTAINER_SASURL\"}},\"preserveUrlFragmentsForLogins\":false,\"shouldLogoutOfProvider\":true,\"allowedExternalRedirectUrls\":null,\"cookieExpiration\":{\"convention\":0,\"timeToExpiration\":\"08:00:00\"},\"nonce\":{\"validateNonce\":true,\"nonceExpirationInterval\":\"00:05:00\"}},\"httpSettings\":{\"requireHttps\":true,\"routes\":{\"apiPrefix\":\"/.auth\"},\"forwardProxy\":{\"convention\":0,\"customHostHeaderName\":null,\"customProtoHeaderName\":null}},\"legacyProperties\":{\"legacyMobileCompatibilityMode\":false,\"customIdentityProviderSettings\":[],\"customAuthorizationSettings\":{\"url\":null,\"allowInsecureRequests\":false},\"authFilePath\":null,\"configVersion\":null,\"legacyVersion\":null},\"clearInboundClaimsMapping\":false,\"AppTracingLevel\":31}","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":4}
+2025-09-23 12:29:56.311 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:29:56.3110881Z","SiteName":"kidzaimathapp30237","TaskName":"TraceConfigurationSetting","ModuleRuntimeVersion":"1.12.1","SettingName":"CorsConfig","SettingValue":"{\"AllowedOrigins\":\"https://kidzaimathstore31320.z13.web.core.windows.net\",\"SupportCredentials\":false}","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":4}
+2025-09-23 12:29:56.312 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:29:56.3124256Z","SiteName":"kidzaimathapp30237","TaskName":"TraceConfigurationSetting","ModuleRuntimeVersion":"1.12.1","SettingName":"WEBSITE_AUTH_INTERNAL_PATHS","SettingValue":"/api/health","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":4}
+2025-09-23 12:29:56.313 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:29:56.3138813Z","SiteName":"kidzaimathapp30237","TaskName":"TraceConfigurationSetting","ModuleRuntimeVersion":"1.12.1","SettingName":"IsMiseEnabled","SettingValue":"False","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":4}
+2025-09-23 12:29:56.327 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:29:56.323296Z","SiteName":"kidzaimathapp30237","TaskName":"TraceConfigurationSetting","ModuleRuntimeVersion":"1.12.1","SettingName":"WEBSITE_AUTH_HIDE_DEPRECATED_SID","SettingValue":"False","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":4}
+2025-09-23 12:29:56.328 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:29:56.3280016Z","SiteName":"kidzaimathapp30237","TaskName":"TraceConfigurationSetting","ModuleRuntimeVersion":"1.12.1","SettingName":"WEBSITE_AUTH_ZUMO_USE_TOKEN_STORE_CLAIMS","SettingValue":"False","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":4}
+2025-09-23 12:29:56.330 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:29:56.33029Z","SiteName":"kidzaimathapp30237","TaskName":"TraceConfigurationSetting","ModuleRuntimeVersion":"1.12.1","SettingName":"WEBSITE_AUTH_USE_LEGACY_CLAIMS","SettingValue":"True","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":4}
+2025-09-23 12:29:56.606 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:29:56.606353Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin ''","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 12:29:56.703 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET http://localhost:8080/ - 200 2195 text/html;+charset=UTF-8 797.0150ms
+2025-09-23 12:29:57.308 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/api/health - - -
+2025-09-23 12:29:57.344 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/ - - -
+2025-09-23 12:29:57.391 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:29:57.3742762Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin ''","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 12:29:57.392 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/api/health - 200 2195 text/html;+charset=UTF-8 84.2973ms
+2025-09-23T12:29:57.3664230Z 12:29:57 PM [express] GET /api/health 200 in 30ms
+2025-09-23T12:29:56.7420569Z Site is running with deployment version: 60263cd9-3c10-4c1c-8589-0dbe707333f9
+2025-09-23T12:29:56.7561859Z Site started.
+2025-09-23T12:29:56.9982154Z Site is running with patch version: 20.19.3
+2025-09-23 12:29:57.479 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:29:57.4796978Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin ''","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 12:29:57.480 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET https://kidzaimathapp30237.azurewebsites.net/ - 200 2195 text/html;+charset=UTF-8 135.7045ms
+2025-09-23 12:29:58.137 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/assets/index-mhPyTk2E.js - - -
+2025-09-23 12:29:58.149 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/assets/index-DQEDt6Yc.css - - -
+2025-09-23 12:29:58.194 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:29:58.1938849Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin 'https://kidzaimathapp30237.azurewebsites.net'","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 12:29:58.222 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:29:58.2144137Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin 'https://kidzaimathapp30237.azurewebsites.net'","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 12:29:58.243 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET https://kidzaimathapp30237.azurewebsites.net/assets/index-DQEDt6Yc.css - 200 99059 text/css;+charset=UTF-8 94.8592ms
+2025-09-23 12:29:58.541 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET https://kidzaimathapp30237.azurewebsites.net/assets/index-mhPyTk2E.js - 200 1240944 application/javascript;+charset=UTF-8 403.9376ms
+2025-09-23 12:30:00.336 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/favicon.ico - - -
+2025-09-23 12:30:00.357 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:30:00.3563193Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin ''","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 12:30:00.358 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET https://kidzaimathapp30237.azurewebsites.net/favicon.ico - 200 2195 text/html;+charset=UTF-8 22.0744ms
+2025-09-23 12:30:29.100 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/favicon.ico - - -
+2025-09-23 12:30:29.147 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:30:29.1411179Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin ''","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 12:30:29.149 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET https://kidzaimathapp30237.azurewebsites.net/favicon.ico - 304 - - 64.5795ms
+2025-09-23 12:30:30.864 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/api/health - - -
+2025-09-23 12:30:30.904 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:30:30.903692Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin ''","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 12:30:30.911 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET https://kidzaimathapp30237.azurewebsites.net/api/health - 200 2195 text/html;+charset=UTF-8 46.9471ms
+2025-09-23 12:30:31.218 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/assets/index-mhPyTk2E.js - - -
+2025-09-23 12:30:31.315 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:30:31.3153581Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin 'https://kidzaimathapp30237.azurewebsites.net'","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 12:30:31.361 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET https://kidzaimathapp30237.azurewebsites.net/assets/index-mhPyTk2E.js - 304 - - 100.3270ms
+2025-09-23 12:30:31.875 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/assets/index-DQEDt6Yc.css - - -
+2025-09-23T12:30:30.9138272Z 12:30:30 PM [express] GET /api/health 200 in 13ms
+2025-09-23 12:30:32.048 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:30:32.0486415Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin 'https://kidzaimathapp30237.azurewebsites.net'","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 12:30:32.049 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET https://kidzaimathapp30237.azurewebsites.net/assets/index-DQEDt6Yc.css - 304 - - 173.3681ms
+2025-09-23 12:30:32.706 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/favicon.ico - - -
+2025-09-23 12:30:32.991 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:30:32.9915139Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin ''","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 12:30:33.007 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET https://kidzaimathapp30237.azurewebsites.net/favicon.ico - 304 - - 316.6853ms
+2025-09-23 12:30:40.533 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/assets/index-DQEDt6Yc.css - - -
+2025-09-23 12:30:40.563 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:30:40.5628754Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin ''","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 12:30:40.565 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET https://kidzaimathapp30237.azurewebsites.net/assets/index-DQEDt6Yc.css - 304 - - 31.3022ms
+2025-09-23T12:30:48.1505990Z 12:30:48 PM [express] GET /api/health 200 in 19ms
+2025-09-23 12:30:48.121 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/api/health - - -
+2025-09-23 12:30:48.140 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:30:48.1408255Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin ''","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 12:30:48.147 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/api/health - 200 2195 text/html;+charset=UTF-8 19.9620ms
+2025-09-23 12:31:48.098 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/api/health - - -
+2025-09-23 12:31:48.157 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T12:31:48.1568211Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin ''","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 12:31:48.159 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/api/health - 200 2195 text/html;+charset=UTF-8 64.8396ms
+2025-09-23T12:31:48.1605283Z 12:31:48 PM [express] GET /api/health 200 in 50ms

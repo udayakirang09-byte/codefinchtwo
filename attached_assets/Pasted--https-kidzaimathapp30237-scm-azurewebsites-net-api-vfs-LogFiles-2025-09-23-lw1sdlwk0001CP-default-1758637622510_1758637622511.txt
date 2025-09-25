@@ -1,0 +1,250 @@
+(https://kidzaimathapp30237.scm.azurewebsites.net/api/vfs/LogFiles/2025_09_23_lw1sdlwk0001CP_default_scm_docker.log)
+2025-09-23T13:59:36.4999938Z Total bytes received: 92
+2025-09-23T13:59:36.5237522Z
+2025-09-23T13:59:36.5430719Z sent 29.75M bytes  received 92 bytes  2.59M bytes/sec
+2025-09-23T13:59:36.5673232Z total size is 29.87M  speedup is 1.00
+2025-09-23T13:59:36.5921317Z Attempt 1: Rsync for filelist /tmp//splits/split.aa completed with exit code 0
+2025-09-23T13:59:36.6155023Z Deleting files not present in /tmp/zipdeploy/extracted/ from /home/site/wwwroot/ based on manifest file /home/site/deployments/433093c4-e12f-4deb-89f4-83589864e341/manifest
+2025-09-23T13:59:36.6538888Z Number of files deleted: 2. See /tmp//rsync_deletion_logs.txt for more details.
+2025-09-23T13:59:36.6645483Z create new manifest file at /home/site/deployments/54d11a6f-ebae-4779-b89d-28e643b9df8f/manifest
+2025-09-23T13:59:36.7351162Z Excluding node_modules in next manifest file
+2025-09-23T13:59:36.7915768Z Completed successfully in 12 seconds/home/LogFiles/2025_09_23_lw1sdlwk0001CP_docker.log  (https://kidzaimathapp30237.scm.azurewebsites.net/api/vfs/LogFiles/2025_09_23_lw1sdlwk0001CP_docker.log)
+2025-09-23T14:01:08.2530636Z Site is running with deployment version: 54d11a6f-ebae-4779-b89d-28e643b9df8f
+2025-09-23T14:01:08.2816505Z Site started.
+2025-09-23T14:01:08.3375120Z Site is running with patch version: 20.19.3
+2025-09-23T14:01:29.3054306Z Container is terminating. Grace period: 5 seconds.
+2025-09-23T14:01:29.4619001Z Stop and delete container. Retry count = 0
+2025-09-23T14:01:29.4631454Z Stopping container: 50effee743dc_kidzaimathapp30237.
+2025-09-23T14:01:34.5274382Z Deleting container: 50effee743dc_kidzaimathapp30237. Retry count = 0
+2025-09-23T14:01:37.8178212Z Container spec TerminationMessagePolicy  path
+2025-09-23T14:01:37.8211266Z Container is terminated. Total time elapsed: 8514 ms.
+2025-09-23T14:01:37.8225705Z Site: kidzaimathapp30237 stopped.Ending Log Tail of existing logs ---Starting Live Log Stream ---
+2025-09-23T14:02:58.3669580Z 2:02:58 PM [express] GET /api/health 200 in 13ms
+2025-09-23T14:03:57.9575822Z 2:03:57 PM [express] GET /api/health 200 in 10ms
+2025-09-23T14:04:57.9487554Z 2:04:57 PM [express] GET /api/health 200 in 11ms
+2025-09-23T14:05:57.9367771Z 2:05:57 PM [express] GET /api/health 200 in 16ms
+2025-09-23T14:06:57.9239870Z 2:06:57 PM [express] GET /api/health 200 in 11ms
+2025-09-23T14:07:57.9598624Z 2:07:57 PM [express] GET /api/health 200 in 45ms
+2025-09-23T14:08:06.8173063Z 2:08:06 PM [express] GET /api/health 200 in 41ms
+2025-09-23T14:08:57.9471099Z 2:08:57 PM [express] GET /api/health 200 in 17ms
+2025-09-23T14:09:57.9464121Z 2:09:57 PM [express] GET /api/health 200 in 21ms
+2025-09-23T14:10:32.8567382Z Error fetching mentors: ErrorEvent {
+2025-09-23T14:10:32.8567861Z   [Symbol(kTarget)]: WebSocket {
+2025-09-23T14:10:32.8567883Z     _events: [Object: null prototype] {
+2025-09-23T14:10:32.8567901Z       error: [Function],
+2025-09-23T14:10:32.8567919Z       message: [Function],
+2025-09-23T14:10:32.8567935Z       close: [Function],
+2025-09-23T14:10:32.8567951Z       open: [Function]
+2025-09-23T14:10:32.8567967Z     },
+2025-09-23T14:10:32.8567984Z     _eventsCount: 4,
+2025-09-23T14:10:32.8568001Z     _maxListeners: undefined,
+2025-09-23T14:10:32.8568017Z     _binaryType: 'arraybuffer',
+2025-09-23T14:10:32.8568033Z     _closeCode: 1006,
+2025-09-23T14:10:32.8568077Z     _closeFrameReceived: false,
+2025-09-23T14:10:32.8568095Z     _closeFrameSent: false,
+2025-09-23T14:10:32.8568112Z     _closeMessage: <Buffer >,
+2025-09-23T14:10:32.8568128Z     _closeTimer: null,
+2025-09-23T14:10:32.8568144Z     _errorEmitted: true,
+2025-09-23T14:10:32.8568160Z     _extensions: {},
+2025-09-23T14:10:32.8568177Z     _paused: false,
+2025-09-23T14:10:32.8568193Z     _protocol: '',
+2025-09-23T14:10:32.8568210Z     _readyState: 3,
+2025-09-23T14:10:32.8568225Z     _receiver: null,
+2025-09-23T14:10:32.8568241Z     _sender: null,
+2025-09-23T14:10:32.8568256Z     _socket: null,
+2025-09-23T14:10:32.8568292Z     _bufferedAmount: 0,
+2025-09-23T14:10:32.8568309Z     _isServer: false,
+2025-09-23T14:10:32.8568324Z     _redirects: 0,
+2025-09-23T14:10:32.8568340Z     _autoPong: true,
+2025-09-23T14:10:32.8568357Z     _url: 'wss://kidzaimathpg11699.postgres.database.azure.com/v2',
+2025-09-23T14:10:32.8568373Z     _req: null,
+2025-09-23T14:10:32.8568390Z     [Symbol(shapeMode)]: false,
+2025-09-23T14:10:32.8568406Z     [Symbol(kCapture)]: false
+2025-09-23T14:10:32.8568421Z   },
+2025-09-23T14:10:32.8595246Z   [Symbol(kType)]: 'error',
+2025-09-23T14:10:32.8595313Z   [Symbol(kError)]: Error: connect ETIMEDOUT 74.225.215.16:443
+2025-09-23T14:10:32.8595338Z       at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16) {
+2025-09-23T14:10:32.8595358Z     errno: -110,
+2025-09-23T14:10:32.8595379Z     code: 'ETIMEDOUT',
+2025-09-23T14:10:32.8595400Z     syscall: 'connect',
+2025-09-23T14:10:32.8595420Z     address: '74.225.215.16',
+2025-09-23T14:10:32.8595441Z     port: 443
+2025-09-23T14:10:32.8595460Z   },
+2025-09-23T14:10:32.8595499Z   [Symbol(kMessage)]: 'connect ETIMEDOUT 74.225.215.16:443'
+2025-09-23T14:10:32.8595521Z }
+2025-09-23T14:10:32.8796994Z 2:10:32 PM [express] GET /api/mentors 500 in 135284ms :: {"message":"Failed to fetch mentors"}
+2025-09-23T14:10:38.9577050Z Error fetching mentors: ErrorEvent {
+2025-09-23T14:10:38.9577490Z   [Symbol(kTarget)]: WebSocket {
+2025-09-23T14:10:38.9577514Z     _events: [Object: null prototype] {
+2025-09-23T14:10:38.9577535Z       error: [Function],
+2025-09-23T14:10:38.9577555Z       message: [Function],
+2025-09-23T14:10:38.9577574Z       close: [Function],
+2025-09-23T14:10:38.9577595Z       open: [Function]
+2025-09-23T14:10:38.9577614Z     },
+2025-09-23T14:10:38.9577634Z     _eventsCount: 4,
+2025-09-23T14:10:38.9577654Z     _maxListeners: undefined,
+2025-09-23T14:10:38.9577674Z     _binaryType: 'arraybuffer',
+2025-09-23T14:10:38.9577694Z     _closeCode: 1006,
+2025-09-23T14:10:38.9577740Z     _closeFrameReceived: false,
+2025-09-23T14:10:38.9577761Z     _closeFrameSent: false,
+2025-09-23T14:10:38.9577781Z     _closeMessage: <Buffer >,
+2025-09-23T14:10:38.9577800Z     _closeTimer: null,
+2025-09-23T14:10:38.9577819Z     _errorEmitted: true,
+2025-09-23T14:10:38.9577838Z     _extensions: {},
+2025-09-23T14:10:38.9577857Z     _paused: false,
+2025-09-23T14:10:38.9577877Z     _protocol: '',
+2025-09-23T14:10:38.9577895Z     _readyState: 3,
+2025-09-23T14:10:38.9577914Z     _receiver: null,
+2025-09-23T14:10:38.9577934Z     _sender: null,
+2025-09-23T14:10:38.9577952Z     _socket: null,
+2025-09-23T14:10:38.9578004Z     _bufferedAmount: 0,
+2025-09-23T14:10:38.9578024Z     _isServer: false,
+2025-09-23T14:10:38.9578043Z     _redirects: 0,
+2025-09-23T14:10:38.9578062Z     _autoPong: true,
+2025-09-23T14:10:38.9578084Z     _url: 'wss://kidzaimathpg11699.postgres.database.azure.com/v2',
+2025-09-23T14:10:38.9578103Z     _req: null,
+2025-09-23T14:10:38.9578123Z     [Symbol(shapeMode)]: false,
+2025-09-23T14:10:38.9578142Z     [Symbol(kCapture)]: false
+2025-09-23T14:10:38.9578160Z   },
+2025-09-23T14:10:38.9578181Z   [Symbol(kType)]: 'error',
+2025-09-23T14:10:38.9578202Z   [Symbol(kError)]: Error: connect ETIMEDOUT 74.225.215.16:443
+2025-09-23T14:10:38.9578246Z       at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16) {
+2025-09-23T14:10:38.9578265Z     errno: -110,
+2025-09-23T14:10:38.9578284Z     code: 'ETIMEDOUT',
+2025-09-23T14:10:38.9578303Z     syscall: 'connect',
+2025-09-23T14:10:38.9578322Z     address: '74.225.215.16',
+2025-09-23T14:10:38.9578341Z     port: 443
+2025-09-23T14:10:38.9578360Z   },
+2025-09-23T14:10:38.9578381Z   [Symbol(kMessage)]: 'connect ETIMEDOUT 74.225.215.16:443'
+2025-09-23T14:10:38.9578400Z }
+2025-09-23T14:10:38.9702647Z 2:10:38 PM [express] GET /api/mentors 500 in 133910ms :: {"message":"Failed to fetch mentors"}
+2025-09-23T14:10:57.9470103Z 2:10:57 PM [express] GET /api/health 200 in 18ms
+2025-09-23T14:11:11.7262432Z Login error: ErrorEvent {
+2025-09-23T14:11:11.7262970Z   [Symbol(kTarget)]: WebSocket {
+2025-09-23T14:11:11.7262994Z     _events: [Object: null prototype] {
+2025-09-23T14:11:11.7263010Z       error: [Function],
+2025-09-23T14:11:11.7263027Z       message: [Function],
+2025-09-23T14:11:11.7263045Z       close: [Function],
+2025-09-23T14:11:11.7263063Z       open: [Function]
+2025-09-23T14:11:11.7263079Z     },
+2025-09-23T14:11:11.7263096Z     _eventsCount: 4,
+2025-09-23T14:11:11.7263112Z     _maxListeners: undefined,
+2025-09-23T14:11:11.7263130Z     _binaryType: 'arraybuffer',
+2025-09-23T14:11:11.7263146Z     _closeCode: 1006,
+2025-09-23T14:11:11.7263199Z     _closeFrameReceived: false,
+2025-09-23T14:11:11.7263217Z     _closeFrameSent: false,
+2025-09-23T14:11:11.7263234Z     _closeMessage: <Buffer >,
+2025-09-23T14:11:11.7263250Z     _closeTimer: null,
+2025-09-23T14:11:11.7263267Z     _errorEmitted: true,
+2025-09-23T14:11:11.7263283Z     _extensions: {},
+2025-09-23T14:11:11.7263299Z     _paused: false,
+2025-09-23T14:11:11.7263315Z     _protocol: '',
+2025-09-23T14:11:11.7263331Z     _readyState: 3,
+2025-09-23T14:11:11.7263399Z     _receiver: null,
+2025-09-23T14:11:11.7263416Z     _sender: null,
+2025-09-23T14:11:11.7263431Z     _socket: null,
+2025-09-23T14:11:11.7263474Z     _bufferedAmount: 0,
+2025-09-23T14:11:11.7263491Z     _isServer: false,
+2025-09-23T14:11:11.7263507Z     _redirects: 0,
+2025-09-23T14:11:11.7263523Z     _autoPong: true,
+2025-09-23T14:11:11.7263542Z     _url: 'wss://kidzaimathpg11699.postgres.database.azure.com/v2',
+2025-09-23T14:11:11.7263559Z     _req: null,
+2025-09-23T14:11:11.7263576Z     [Symbol(shapeMode)]: false,
+2025-09-23T14:11:11.7263592Z     [Symbol(kCapture)]: false
+2025-09-23T14:11:11.7263607Z   },
+2025-09-23T14:11:11.7263624Z   [Symbol(kType)]: 'error',
+2025-09-23T14:11:11.7263642Z   [Symbol(kError)]: Error: connect ETIMEDOUT 74.225.215.16:443
+2025-09-23T14:11:11.7263682Z       at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16) {
+2025-09-23T14:11:11.7263699Z     errno: -110,
+2025-09-23T14:11:11.7263716Z     code: 'ETIMEDOUT',
+2025-09-23T14:11:11.7263733Z     syscall: 'connect',
+2025-09-23T14:11:11.7263750Z     address: '74.225.215.16',
+2025-09-23T14:11:11.7263769Z     port: 443
+2025-09-23T14:11:11.7263784Z   },
+2025-09-23T14:11:11.7263802Z   [Symbol(kMessage)]: 'connect ETIMEDOUT 74.225.215.16:443'
+2025-09-23T14:11:11.7263817Z }
+2025-09-23T14:11:11.7377382Z 2:11:11 PM [express] POST /api/auth/login 500 in 135192ms :: {"message":"Login failed"}
+2025-09-23T14:11:57.9462999Z 2:11:57 PM [express] GET /api/health 200 in 19ms
+2025-09-23T14:12:57.9672182Z 2:12:57 PM [express] GET /api/health 200 in 20ms
+2025-09-23T14:13:57.9841171Z 2:13:57 PM [express] GET /api/health 200 in 3ms
+2025-09-23T14:14:57.9369413Z 2:14:57 PM [express] GET /api/health 200 in 19ms
+2025-09-23T14:15:57.9785794Z 2:15:57 PM [express] GET /api/health 200 in 20ms
+2025-09-23T14:16:57.9857975Z 2:16:57 PM [express] GET /api/health 200 in 12ms
+2025-09-23T14:17:10.1854616Z Login error: ErrorEvent {
+2025-09-23T14:17:10.1854899Z   [Symbol(kTarget)]: WebSocket {
+2025-09-23T14:17:10.1854923Z     _events: [Object: null prototype] {
+2025-09-23T14:17:10.1855745Z       error: [Function],
+2025-09-23T14:17:10.1855795Z       message: [Function],
+2025-09-23T14:17:10.1855813Z       close: [Function],
+2025-09-23T14:17:10.1855832Z       open: [Function]
+2025-09-23T14:17:10.1855849Z     },
+2025-09-23T14:17:10.1855868Z     _eventsCount: 4,
+2025-09-23T14:17:10.1855885Z     _maxListeners: undefined,
+2025-09-23T14:17:10.1855904Z     _binaryType: 'arraybuffer',
+2025-09-23T14:17:10.1855922Z     _closeCode: 1006,
+2025-09-23T14:17:10.1855975Z     _closeFrameReceived: false,
+2025-09-23T14:17:10.1855995Z     _closeFrameSent: false,
+2025-09-23T14:17:10.1856013Z     _closeMessage: <Buffer >,
+2025-09-23T14:17:10.1856031Z     _closeTimer: null,
+2025-09-23T14:17:10.1856050Z     _errorEmitted: true,
+2025-09-23T14:17:10.1856068Z     _extensions: {},
+2025-09-23T14:17:10.1856086Z     _paused: false,
+2025-09-23T14:17:10.1856105Z     _protocol: '',
+2025-09-23T14:17:10.1856122Z     _readyState: 3,
+2025-09-23T14:17:10.1856140Z     _receiver: null,
+2025-09-23T14:17:10.1856158Z     _sender: null,
+2025-09-23T14:17:10.1856175Z     _socket: null,
+2025-09-23T14:17:10.1856218Z     _bufferedAmount: 0,
+2025-09-23T14:17:10.1856236Z     _isServer: false,
+2025-09-23T14:17:10.1856253Z     _redirects: 0,
+2025-09-23T14:17:10.1856272Z     _autoPong: true,
+2025-09-23T14:17:10.1856292Z     _url: 'wss://kidzaimathpg11699.postgres.database.azure.com/v2',
+2025-09-23T14:17:10.1856310Z     _req: null,
+2025-09-23T14:17:10.1856583Z     [Symbol(shapeMode)]: false,
+2025-09-23T14:17:10.1856601Z     [Symbol(kCapture)]: false
+2025-09-23T14:17:10.1856619Z   },
+2025-09-23T14:17:10.1856637Z   [Symbol(kType)]: 'error',
+2025-09-23T14:17:10.1856658Z   [Symbol(kError)]: Error: connect ETIMEDOUT 74.225.215.16:443
+2025-09-23T14:17:10.1856704Z       at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16) {
+2025-09-23T14:17:10.1856722Z     errno: -110,
+2025-09-23T14:17:10.1856740Z     code: 'ETIMEDOUT',
+2025-09-23T14:17:10.1856758Z     syscall: 'connect',
+2025-09-23T14:17:10.1856776Z     address: '74.225.215.16',
+2025-09-23T14:17:10.1856795Z     port: 443
+2025-09-23T14:17:10.1856812Z   },
+2025-09-23T14:17:10.1856833Z   [Symbol(kMessage)]: 'connect ETIMEDOUT 74.225.215.16:443'
+2025-09-23T14:17:10.1856851Z }
+2025-09-23T14:17:10.1884725Z 2:17:10 PM [express] POST /api/auth/login 500 in 133967ms :: {"message":"Login failed"}
+2025-09-23T14:17:57.9397239Z 2:17:57 PM [express] GET /api/health 200 in 19ms
+2025-09-23T14:18:57.9350230Z 2:18:57 PM [express] GET /api/health 200 in 26ms
+2025-09-23T14:19:57.9330140Z 2:19:57 PM [express] GET /api/health 200 in 17ms
+2025-09-23T14:20:57.9253741Z 2:20:57 PM [express] GET /api/health 200 in 9ms
+2025-09-23T14:21:57.9267620Z 2:21:57 PM [express] GET /api/health 200 in 9ms
+2025-09-23T14:22:57.9382534Z 2:22:57 PM [express] GET /api/health 200 in 11ms
+2025-09-23 14:22:57.901 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/api/health - - -
+2025-09-23 14:22:57.947 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T14:22:57.9476296Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin ''","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 14:22:57.947 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/api/health - 200 2195 text/html;+charset=UTF-8 46.8199ms
+2025-09-23T14:23:57.9356400Z 2:23:57 PM [express] GET /api/health 200 in 22ms
+2025-09-23 14:23:57.903 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/api/health - - -
+2025-09-23 14:23:57.954 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T14:23:57.9541625Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin ''","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 14:23:57.956 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/api/health - 200 2195 text/html;+charset=UTF-8 52.9007ms
+2025-09-23 14:24:50.504 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/favicon.ico - - -
+2025-09-23 14:24:50.556 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T14:24:50.556273Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin ''","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 14:24:50.562 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET https://kidzaimathapp30237.azurewebsites.net/favicon.ico - 304 - - 61.1374ms
+2025-09-23T14:24:57.9396169Z 2:24:57 PM [express] GET /api/health 200 in 9ms
+2025-09-23 14:24:57.920 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/api/health - - -
+2025-09-23 14:24:57.940 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T14:24:57.9404259Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin ''","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 14:24:57.940 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/api/health - 200 2195 text/html;+charset=UTF-8 20.9502ms
+2025-09-23 14:25:04.680 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/favicon.ico - - -
+2025-09-23 14:25:04.693 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T14:25:04.6931345Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin ''","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 14:25:04.693 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET https://kidzaimathapp30237.azurewebsites.net/favicon.ico - 304 - - 19.4181ms
+2025-09-23 14:25:12.852 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/ - - -
+2025-09-23 14:25:12.937 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T14:25:12.936982Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin 'https://kidzaimathapp30237.scm.azurewebsites.net'","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 14:25:12.937 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET https://kidzaimathapp30237.azurewebsites.net/ - 200 2195 text/html;+charset=UTF-8 85.6221ms
+2025-09-23T14:25:57.9426623Z 2:25:57 PM [express] GET /api/health 200 in 17ms
+2025-09-23 14:25:57.914 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/api/health - - -
+2025-09-23 14:25:57.933 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T14:25:57.9330721Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin ''","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 14:25:57.933 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/api/health - 200 2195 text/html;+charset=UTF-8 19.4686ms
+2025-09-23 14:26:27.815 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request starting HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/ - - -
+2025-09-23 14:26:27.841 +00:00 [Information] MiddlewareConsoleLogs: {"Timestamp":"2025-09-23T14:26:27.8342195Z","SiteName":"kidzaimathapp30237","TaskName":"MiddlewareInformation","Message":"Handling CORS regular (non-preflight) request with origin ''","ModuleRuntimeVersion":"1.12.1","ProviderName":"Microsoft-Azure-AppService-Middleware","Level":4,"EventId":1}
+2025-09-23 14:26:27.842 +00:00 [Information] Microsoft.AspNetCore.Hosting.Diagnostics: Request finished HTTP/1.1 GET http://kidzaimathapp30237.azurewebsites.net/ - 200 2195 text/html;+charset=UTF-8 26.0284ms

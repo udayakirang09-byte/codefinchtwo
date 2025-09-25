@@ -1,0 +1,162 @@
+﻿2025-09-23T10:53:39.9268466Z Current runner version: '2.328.0'
+2025-09-23T10:53:39.9293568Z ##[group]Runner Image Provisioner
+2025-09-23T10:53:39.9294677Z Hosted Compute Agent
+2025-09-23T10:53:39.9295209Z Version: 20250829.383
+2025-09-23T10:53:39.9295877Z Commit: 27cb235aab5b0e52e153a26cd86b4742e89dac5d
+2025-09-23T10:53:39.9296603Z Build Date: 2025-08-29T13:48:48Z
+2025-09-23T10:53:39.9297171Z ##[endgroup]
+2025-09-23T10:53:39.9297773Z ##[group]Operating System
+2025-09-23T10:53:39.9298345Z Ubuntu
+2025-09-23T10:53:39.9298769Z 24.04.3
+2025-09-23T10:53:39.9299269Z LTS
+2025-09-23T10:53:39.9299753Z ##[endgroup]
+2025-09-23T10:53:39.9300214Z ##[group]Runner Image
+2025-09-23T10:53:39.9300853Z Image: ubuntu-24.04
+2025-09-23T10:53:39.9301375Z Version: 20250907.24.1
+2025-09-23T10:53:39.9302394Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20250907.24/images/ubuntu/Ubuntu2404-Readme.md
+2025-09-23T10:53:39.9304204Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20250907.24
+2025-09-23T10:53:39.9305219Z ##[endgroup]
+2025-09-23T10:53:39.9306393Z ##[group]GITHUB_TOKEN Permissions
+2025-09-23T10:53:39.9308237Z Contents: read
+2025-09-23T10:53:39.9308907Z Metadata: read
+2025-09-23T10:53:39.9309449Z Packages: read
+2025-09-23T10:53:39.9309996Z ##[endgroup]
+2025-09-23T10:53:39.9312164Z Secret source: Actions
+2025-09-23T10:53:39.9312893Z Prepare workflow directory
+2025-09-23T10:53:39.9704186Z Prepare all required actions
+2025-09-23T10:53:39.9743063Z Getting action download info
+2025-09-23T10:53:40.4190817Z Download action repository 'actions/checkout@v4' (SHA:08eba0b27e820071cde6df949e0beb9ba4906955)
+2025-09-23T10:53:40.5995969Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2025-09-23T10:53:40.6929532Z Download action repository 'azure/webapps-deploy@v2' (SHA:122b7ec46017e53a3f71e3a027d67550a1641f5e)
+2025-09-23T10:53:43.5573723Z Complete job name: build-and-deploy
+2025-09-23T10:53:43.6258563Z ##[group]Run actions/checkout@v4
+2025-09-23T10:53:43.6259395Z with:
+2025-09-23T10:53:43.6259725Z   repository: udayakirang09-byte/codefinchtwo
+2025-09-23T10:53:43.6260260Z   token: ***
+2025-09-23T10:53:43.6260497Z   ssh-strict: true
+2025-09-23T10:53:43.6260731Z   ssh-user: git
+2025-09-23T10:53:43.6260979Z   persist-credentials: true
+2025-09-23T10:53:43.6261247Z   clean: true
+2025-09-23T10:53:43.6261502Z   sparse-checkout-cone-mode: true
+2025-09-23T10:53:43.6261790Z   fetch-depth: 1
+2025-09-23T10:53:43.6262012Z   fetch-tags: false
+2025-09-23T10:53:43.6262266Z   show-progress: true
+2025-09-23T10:53:43.6262509Z   lfs: false
+2025-09-23T10:53:43.6262733Z   submodules: false
+2025-09-23T10:53:43.6262990Z   set-safe-directory: true
+2025-09-23T10:53:43.6263480Z ##[endgroup]
+2025-09-23T10:53:43.7366481Z Syncing repository: udayakirang09-byte/codefinchtwo
+2025-09-23T10:53:43.7368258Z ##[group]Getting Git version info
+2025-09-23T10:53:43.7368855Z Working directory is '/home/runner/work/codefinchtwo/codefinchtwo'
+2025-09-23T10:53:43.7369511Z [command]/usr/bin/git version
+2025-09-23T10:53:43.7435544Z git version 2.51.0
+2025-09-23T10:53:43.7462666Z ##[endgroup]
+2025-09-23T10:53:43.7477248Z Temporarily overriding HOME='/home/runner/work/_temp/19bfbde7-ef62-42db-8303-4aa902b7483c' before making global git config changes
+2025-09-23T10:53:43.7478538Z Adding repository directory to the temporary git global config as a safe directory
+2025-09-23T10:53:43.7490523Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/codefinchtwo/codefinchtwo
+2025-09-23T10:53:43.7529350Z Deleting the contents of '/home/runner/work/codefinchtwo/codefinchtwo'
+2025-09-23T10:53:43.7532941Z ##[group]Initializing the repository
+2025-09-23T10:53:43.7537102Z [command]/usr/bin/git init /home/runner/work/codefinchtwo/codefinchtwo
+2025-09-23T10:53:43.7649277Z hint: Using 'master' as the name for the initial branch. This default branch name
+2025-09-23T10:53:43.7650531Z hint: is subject to change. To configure the initial branch name to use in all
+2025-09-23T10:53:43.7651364Z hint: of your new repositories, which will suppress this warning, call:
+2025-09-23T10:53:43.7652221Z hint:
+2025-09-23T10:53:43.7652709Z hint: 	git config --global init.defaultBranch <name>
+2025-09-23T10:53:43.7653274Z hint:
+2025-09-23T10:53:43.7653956Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2025-09-23T10:53:43.7654798Z hint: 'development'. The just-created branch can be renamed via this command:
+2025-09-23T10:53:43.7655437Z hint:
+2025-09-23T10:53:43.7655818Z hint: 	git branch -m <name>
+2025-09-23T10:53:43.7656163Z hint:
+2025-09-23T10:53:43.7656549Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2025-09-23T10:53:43.7657190Z Initialized empty Git repository in /home/runner/work/codefinchtwo/codefinchtwo/.git/
+2025-09-23T10:53:43.7664915Z [command]/usr/bin/git remote add origin https://github.com/udayakirang09-byte/codefinchtwo
+2025-09-23T10:53:43.7702280Z ##[endgroup]
+2025-09-23T10:53:43.7703127Z ##[group]Disabling automatic garbage collection
+2025-09-23T10:53:43.7708402Z [command]/usr/bin/git config --local gc.auto 0
+2025-09-23T10:53:43.7737466Z ##[endgroup]
+2025-09-23T10:53:43.7737926Z ##[group]Setting up auth
+2025-09-23T10:53:43.7744366Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-09-23T10:53:43.7776658Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-09-23T10:53:43.8106502Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-09-23T10:53:43.8138858Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-09-23T10:53:43.8368919Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2025-09-23T10:53:43.8404862Z ##[endgroup]
+2025-09-23T10:53:43.8405415Z ##[group]Fetching the repository
+2025-09-23T10:53:43.8412741Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +67b9b41a75397b4ad22ca450454d16fc03f64ce2:refs/remotes/origin/main
+2025-09-23T10:53:45.0536507Z From https://github.com/udayakirang09-byte/codefinchtwo
+2025-09-23T10:53:45.0538045Z  * [new ref]         67b9b41a75397b4ad22ca450454d16fc03f64ce2 -> origin/main
+2025-09-23T10:53:45.0567008Z ##[endgroup]
+2025-09-23T10:53:45.0567478Z ##[group]Determining the checkout info
+2025-09-23T10:53:45.0569986Z ##[endgroup]
+2025-09-23T10:53:45.0576297Z [command]/usr/bin/git sparse-checkout disable
+2025-09-23T10:53:45.0619331Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2025-09-23T10:53:45.0648802Z ##[group]Checking out the ref
+2025-09-23T10:53:45.0653176Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2025-09-23T10:53:45.1729740Z Switched to a new branch 'main'
+2025-09-23T10:53:45.1730579Z branch 'main' set up to track 'origin/main'.
+2025-09-23T10:53:45.1749207Z ##[endgroup]
+2025-09-23T10:53:45.1788530Z [command]/usr/bin/git log -1 --format=%H
+2025-09-23T10:53:45.1811374Z 67b9b41a75397b4ad22ca450454d16fc03f64ce2
+2025-09-23T10:53:45.2046203Z ##[group]Run actions/setup-node@v4
+2025-09-23T10:53:45.2046569Z with:
+2025-09-23T10:53:45.2046789Z   node-version: 18
+2025-09-23T10:53:45.2047014Z   cache: npm
+2025-09-23T10:53:45.2047235Z   always-auth: false
+2025-09-23T10:53:45.2047479Z   check-latest: false
+2025-09-23T10:53:45.2047895Z   token: ***
+2025-09-23T10:53:45.2048121Z ##[endgroup]
+2025-09-23T10:53:45.3836901Z Found in cache @ /opt/hostedtoolcache/node/18.20.8/x64
+2025-09-23T10:53:45.3844142Z ##[group]Environment details
+2025-09-23T10:53:47.8857574Z node: v18.20.8
+2025-09-23T10:53:47.8858074Z npm: 10.8.2
+2025-09-23T10:53:47.8858350Z yarn: 1.22.22
+2025-09-23T10:53:47.8859386Z ##[endgroup]
+2025-09-23T10:53:47.8883549Z [command]/opt/hostedtoolcache/node/18.20.8/x64/bin/npm config get cache
+2025-09-23T10:53:48.2337832Z /home/runner/.npm
+2025-09-23T10:53:48.5079385Z npm cache is not found
+2025-09-23T10:53:48.5215348Z ##[group]Run npm ci
+2025-09-23T10:53:48.5215621Z [36;1mnpm ci[0m
+2025-09-23T10:53:48.5353070Z shell: /usr/bin/bash -e {0}
+2025-09-23T10:53:48.5353322Z ##[endgroup]
+2025-09-23T10:53:56.7148028Z npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+2025-09-23T10:53:56.8415250Z npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+2025-09-23T10:54:02.6301500Z 
+2025-09-23T10:54:02.6302411Z added 538 packages, and audited 539 packages in 14s
+2025-09-23T10:54:02.6302907Z 
+2025-09-23T10:54:02.6303241Z 76 packages are looking for funding
+2025-09-23T10:54:02.6304166Z   run `npm fund` for details
+2025-09-23T10:54:02.6700436Z 
+2025-09-23T10:54:02.6701276Z 11 vulnerabilities (3 low, 7 moderate, 1 high)
+2025-09-23T10:54:02.6701653Z 
+2025-09-23T10:54:02.6702015Z To address issues that do not require attention, run:
+2025-09-23T10:54:02.6702665Z   npm audit fix
+2025-09-23T10:54:02.6702899Z 
+2025-09-23T10:54:02.6703351Z To address all issues (including breaking changes), run:
+2025-09-23T10:54:02.6704194Z   npm audit fix --force
+2025-09-23T10:54:02.6704467Z 
+2025-09-23T10:54:02.6704701Z Run `npm audit` for details.
+2025-09-23T10:54:02.7057544Z ##[group]Run npm run typecheck
+2025-09-23T10:54:02.7057857Z [36;1mnpm run typecheck[0m
+2025-09-23T10:54:02.7058081Z [36;1m./build-production.sh[0m
+2025-09-23T10:54:02.7088665Z shell: /usr/bin/bash -e {0}
+2025-09-23T10:54:02.7088912Z ##[endgroup]
+2025-09-23T10:54:02.8435758Z 
+2025-09-23T10:54:02.8436473Z > rest-express@1.0.0 typecheck
+2025-09-23T10:54:02.8436919Z > tsc --noEmit
+2025-09-23T10:54:02.8437076Z 
+2025-09-23T10:54:16.4334219Z /home/runner/work/_temp/1eb7a73b-deb2-4694-b290-564afc8b4ad5.sh: line 2: ./build-production.sh: Permission denied
+2025-09-23T10:54:16.4349450Z ##[error]Process completed with exit code 126.
+2025-09-23T10:54:16.4450011Z Post job cleanup.
+2025-09-23T10:54:16.5398898Z [command]/usr/bin/git version
+2025-09-23T10:54:16.5440013Z git version 2.51.0
+2025-09-23T10:54:16.5484324Z Temporarily overriding HOME='/home/runner/work/_temp/5cf73a5d-5e97-403d-9f18-4b2f0179c2b6' before making global git config changes
+2025-09-23T10:54:16.5485349Z Adding repository directory to the temporary git global config as a safe directory
+2025-09-23T10:54:16.5490017Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/codefinchtwo/codefinchtwo
+2025-09-23T10:54:16.5529032Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-09-23T10:54:16.5567660Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-09-23T10:54:16.5806759Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-09-23T10:54:16.5829190Z http.https://github.com/.extraheader
+2025-09-23T10:54:16.5843143Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2025-09-23T10:54:16.5877940Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-09-23T10:54:16.6219288Z Cleaning up orphan processes

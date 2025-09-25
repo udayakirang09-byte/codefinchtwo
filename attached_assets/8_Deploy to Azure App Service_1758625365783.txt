@@ -1,0 +1,8 @@
+﻿2025-09-23T11:00:03.4456904Z ##[group]Run azure/webapps-deploy@v2
+2025-09-23T11:00:03.4457188Z with:
+2025-09-23T11:00:03.4457380Z   app-name: kidzaimathapp30237
+2025-09-23T11:00:03.4465706Z   publish-profile: ***
+2025-09-23T11:00:03.4466082Z   package: deploy.tar.gz
+2025-09-23T11:00:03.4466655Z   slot-name: production
+2025-09-23T11:00:03.4466977Z ##[endgroup]
+2025-09-23T11:00:09.1043975Z ##[error]Deployment Failed, Error: Invalid App Service package or folder path provided: deploy.tar.gz

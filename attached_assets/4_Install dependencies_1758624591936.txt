@@ -1,0 +1,21 @@
+﻿2025-09-23T09:45:51.6212910Z ##[group]Run npm ci
+2025-09-23T09:45:51.6213211Z [36;1mnpm ci[0m
+2025-09-23T09:45:51.6330907Z shell: /usr/bin/bash -e {0}
+2025-09-23T09:45:51.6331218Z ##[endgroup]
+2025-09-23T09:45:58.4212082Z npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+2025-09-23T09:45:58.4359763Z npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+2025-09-23T09:46:03.6738957Z 
+2025-09-23T09:46:03.6739775Z added 538 packages, and audited 539 packages in 12s
+2025-09-23T09:46:03.6740266Z 
+2025-09-23T09:46:03.6740559Z 76 packages are looking for funding
+2025-09-23T09:46:03.6741076Z   run `npm fund` for details
+2025-09-23T09:46:03.7098066Z 
+2025-09-23T09:46:03.7099277Z 11 vulnerabilities (3 low, 7 moderate, 1 high)
+2025-09-23T09:46:03.7100009Z 
+2025-09-23T09:46:03.7100639Z To address issues that do not require attention, run:
+2025-09-23T09:46:03.7102437Z   npm audit fix
+2025-09-23T09:46:03.7102693Z 
+2025-09-23T09:46:03.7103103Z To address all issues (including breaking changes), run:
+2025-09-23T09:46:03.7103798Z   npm audit fix --force
+2025-09-23T09:46:03.7104105Z 
+2025-09-23T09:46:03.7104350Z Run `npm audit` for details.

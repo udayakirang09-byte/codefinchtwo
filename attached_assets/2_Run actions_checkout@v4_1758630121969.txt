@@ -1,0 +1,69 @@
+﻿2025-09-23T12:19:09.9475444Z ##[group]Run actions/checkout@v4
+2025-09-23T12:19:09.9476087Z with:
+2025-09-23T12:19:09.9476395Z   repository: udayakirang09-byte/codefinchtwo
+2025-09-23T12:19:09.9477090Z   token: ***
+2025-09-23T12:19:09.9477332Z   ssh-strict: true
+2025-09-23T12:19:09.9477569Z   ssh-user: git
+2025-09-23T12:19:09.9477810Z   persist-credentials: true
+2025-09-23T12:19:09.9478072Z   clean: true
+2025-09-23T12:19:09.9478322Z   sparse-checkout-cone-mode: true
+2025-09-23T12:19:09.9478602Z   fetch-depth: 1
+2025-09-23T12:19:09.9478830Z   fetch-tags: false
+2025-09-23T12:19:09.9479060Z   show-progress: true
+2025-09-23T12:19:09.9479301Z   lfs: false
+2025-09-23T12:19:09.9479517Z   submodules: false
+2025-09-23T12:19:09.9479774Z   set-safe-directory: true
+2025-09-23T12:19:09.9480269Z ##[endgroup]
+2025-09-23T12:19:10.0541307Z Syncing repository: udayakirang09-byte/codefinchtwo
+2025-09-23T12:19:10.0543130Z ##[group]Getting Git version info
+2025-09-23T12:19:10.0543886Z Working directory is '/home/runner/work/codefinchtwo/codefinchtwo'
+2025-09-23T12:19:10.0544941Z [command]/usr/bin/git version
+2025-09-23T12:19:10.0637173Z git version 2.51.0
+2025-09-23T12:19:10.0663800Z ##[endgroup]
+2025-09-23T12:19:10.0679175Z Temporarily overriding HOME='/home/runner/work/_temp/a011eed4-40d2-449c-9570-5a43007b781f' before making global git config changes
+2025-09-23T12:19:10.0680668Z Adding repository directory to the temporary git global config as a safe directory
+2025-09-23T12:19:10.0692723Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/codefinchtwo/codefinchtwo
+2025-09-23T12:19:10.0728796Z Deleting the contents of '/home/runner/work/codefinchtwo/codefinchtwo'
+2025-09-23T12:19:10.0732413Z ##[group]Initializing the repository
+2025-09-23T12:19:10.0736957Z [command]/usr/bin/git init /home/runner/work/codefinchtwo/codefinchtwo
+2025-09-23T12:19:10.0842646Z hint: Using 'master' as the name for the initial branch. This default branch name
+2025-09-23T12:19:10.0843715Z hint: is subject to change. To configure the initial branch name to use in all
+2025-09-23T12:19:10.0844337Z hint: of your new repositories, which will suppress this warning, call:
+2025-09-23T12:19:10.0844995Z hint:
+2025-09-23T12:19:10.0845322Z hint: 	git config --global init.defaultBranch <name>
+2025-09-23T12:19:10.0845668Z hint:
+2025-09-23T12:19:10.0846000Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2025-09-23T12:19:10.0847050Z hint: 'development'. The just-created branch can be renamed via this command:
+2025-09-23T12:19:10.0847801Z hint:
+2025-09-23T12:19:10.0848074Z hint: 	git branch -m <name>
+2025-09-23T12:19:10.0848353Z hint:
+2025-09-23T12:19:10.0848861Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2025-09-23T12:19:10.0850057Z Initialized empty Git repository in /home/runner/work/codefinchtwo/codefinchtwo/.git/
+2025-09-23T12:19:10.0860028Z [command]/usr/bin/git remote add origin https://github.com/udayakirang09-byte/codefinchtwo
+2025-09-23T12:19:10.0896292Z ##[endgroup]
+2025-09-23T12:19:10.0897354Z ##[group]Disabling automatic garbage collection
+2025-09-23T12:19:10.0901514Z [command]/usr/bin/git config --local gc.auto 0
+2025-09-23T12:19:10.0928967Z ##[endgroup]
+2025-09-23T12:19:10.0929771Z ##[group]Setting up auth
+2025-09-23T12:19:10.0936360Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-09-23T12:19:10.0964928Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-09-23T12:19:10.1384568Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-09-23T12:19:10.1416041Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-09-23T12:19:10.1661562Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2025-09-23T12:19:10.1701161Z ##[endgroup]
+2025-09-23T12:19:10.1701955Z ##[group]Fetching the repository
+2025-09-23T12:19:10.1726695Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +6da3aee5f785b82b5a6494ccc463a77823d8cf37:refs/remotes/origin/main
+2025-09-23T12:19:11.1997257Z From https://github.com/udayakirang09-byte/codefinchtwo
+2025-09-23T12:19:11.1999429Z  * [new ref]         6da3aee5f785b82b5a6494ccc463a77823d8cf37 -> origin/main
+2025-09-23T12:19:11.2027491Z ##[endgroup]
+2025-09-23T12:19:11.2027971Z ##[group]Determining the checkout info
+2025-09-23T12:19:11.2029999Z ##[endgroup]
+2025-09-23T12:19:11.2034848Z [command]/usr/bin/git sparse-checkout disable
+2025-09-23T12:19:11.2074196Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2025-09-23T12:19:11.2100513Z ##[group]Checking out the ref
+2025-09-23T12:19:11.2104177Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2025-09-23T12:19:11.3170230Z Switched to a new branch 'main'
+2025-09-23T12:19:11.3171350Z branch 'main' set up to track 'origin/main'.
+2025-09-23T12:19:11.3190934Z ##[endgroup]
+2025-09-23T12:19:11.3231358Z [command]/usr/bin/git log -1 --format=%H
+2025-09-23T12:19:11.3253220Z 6da3aee5f785b82b5a6494ccc463a77823d8cf37

@@ -1,0 +1,11 @@
+﻿2025-09-23T09:46:03.7454873Z ##[group]Run chmod +x build-production.sh start-production.sh
+2025-09-23T09:46:03.7455401Z [36;1mchmod +x build-production.sh start-production.sh[0m
+2025-09-23T09:46:03.7455740Z [36;1m./build-production.sh[0m
+2025-09-23T09:46:03.7456227Z [36;1mecho "Contents of dist:"[0m
+2025-09-23T09:46:03.7456619Z [36;1mls -la dist[0m
+2025-09-23T09:46:03.7487327Z shell: /usr/bin/bash -e {0}
+2025-09-23T09:46:03.7487590Z ##[endgroup]
+2025-09-23T09:46:03.7562572Z Building CodeConnect for production...
+2025-09-23T09:46:03.7574305Z Building frontend...
+2025-09-23T09:46:03.7577741Z ./build-production.sh: line 11: vite: command not found
+2025-09-23T09:46:03.7593399Z ##[error]Process completed with exit code 127.

@@ -1,0 +1,23 @@
+﻿2025-09-23T12:19:11.3484004Z ##[group]Run actions/setup-node@v4
+2025-09-23T12:19:11.3484375Z with:
+2025-09-23T12:19:11.3484599Z   node-version: 18
+2025-09-23T12:19:11.3484825Z   cache: npm
+2025-09-23T12:19:11.3485050Z   always-auth: false
+2025-09-23T12:19:11.3485304Z   check-latest: false
+2025-09-23T12:19:11.3485681Z   token: ***
+2025-09-23T12:19:11.3485904Z ##[endgroup]
+2025-09-23T12:19:11.5202594Z Found in cache @ /opt/hostedtoolcache/node/18.20.8/x64
+2025-09-23T12:19:11.5209072Z ##[group]Environment details
+2025-09-23T12:19:17.9632927Z node: v18.20.8
+2025-09-23T12:19:17.9633495Z npm: 10.8.2
+2025-09-23T12:19:17.9633768Z yarn: 1.22.22
+2025-09-23T12:19:17.9635142Z ##[endgroup]
+2025-09-23T12:19:17.9655080Z [command]/opt/hostedtoolcache/node/18.20.8/x64/bin/npm config get cache
+2025-09-23T12:19:18.7775620Z /home/runner/.npm
+2025-09-23T12:19:19.1262837Z Cache hit for: node-cache-Linux-x64-npm-94f78bd56d61d3a770612e520b9f3e78db8c18ec97597ff9b04368298eb1f2a7
+2025-09-23T12:19:20.4175145Z Received 4194304 of 88026108 (4.8%), 4.0 MBs/sec
+2025-09-23T12:19:21.2030686Z Received 88026108 of 88026108 (100.0%), 47.0 MBs/sec
+2025-09-23T12:19:21.2031699Z Cache Size: ~84 MB (88026108 B)
+2025-09-23T12:19:21.2069617Z [command]/usr/bin/tar -xf /home/runner/work/_temp/b5b9cab2-810c-4146-a41a-748478ad729d/cache.tzst -P -C /home/runner/work/codefinchtwo/codefinchtwo --use-compress-program unzstd
+2025-09-23T12:19:21.4201746Z Cache restored successfully
+2025-09-23T12:19:21.4384869Z Cache restored from key: node-cache-Linux-x64-npm-94f78bd56d61d3a770612e520b9f3e78db8c18ec97597ff9b04368298eb1f2a7

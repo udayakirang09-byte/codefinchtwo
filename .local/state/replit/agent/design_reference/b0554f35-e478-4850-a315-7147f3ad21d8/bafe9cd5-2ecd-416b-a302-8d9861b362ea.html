@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeMentor Connect - Learn Coding from Expert Teachers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                borderRadius: {
+                    lg: "var(--radius)",
+                    md: "calc(var(--radius) - 2px)",
+                    sm: "calc(var(--radius) - 4px)",
+                },
+                colors: {
+                    background: "var(--background)",
+                    foreground: "var(--foreground)",
+                    card: {
+                        DEFAULT: "var(--card)",
+                        foreground: "var(--card-foreground)",
+                    },
+                    popover: {
+                        DEFAULT: "var(--popover)",
+                        foreground: "var(--popover-foreground)",
+                    },
+                    primary: {
+                        DEFAULT: "var(--primary)",
+                        foreground: "var(--primary-foreground)",
+                    },
+                    secondary: {
+                        DEFAULT: "var(--secondary)",
+                        foreground: "var(--secondary-foreground)",
+                    },
+                    muted: {
+                        DEFAULT: "var(--muted)",
+                        foreground: "var(--muted-foreground)",
+                    },
+                    accent: {
+                        DEFAULT: "var(--accent)",
+                        foreground: "var(--accent-foreground)",
+                    },
+                    destructive: {
+                        DEFAULT: "var(--destructive)",
+                        foreground: "var(--destructive-foreground)",
+                    },
+                    border: "var(--border)",
+                    input: "var(--input)",
+                    ring: "var(--ring)",
+                },
+                fontFamily: {
+                    sans: ["Inter", "system-ui", "sans-serif"],
+                }
+            },
+        }
+    };
+    </script>
+    <style>
+        :root {
+            --background: hsl(0 0% 100%);
+            --foreground: hsl(222.2 84% 4.9%);
+            --card: hsl(0 0% 100%);
+            --card-foreground: hsl(222.2 84% 4.9%);
+            --popover: hsl(0 0% 100%);
+            --popover-foreground: hsl(222.2 84% 4.9%);
+            --primary: hsl(221 83% 53%);
+            --primary-foreground: hsl(210 40% 98%);
+            --secondary: hsl(24 95% 53%);
+            --secondary-foreground: hsl(0 0% 98%);
+            --muted: hsl(210 40% 96%);
+            --muted-foreground: hsl(215.4 16.3% 46.9%);
+            --accent: hsl(262 83% 58%);
+            --accent-foreground: hsl(210 40% 98%);
+            --destructive: hsl(0 84% 60%);
+            --destructive-foreground: hsl(210 40% 98%);
+            --border: hsl(214.3 31.8% 91.4%);
+            --input: hsl(214.3 31.8% 91.4%);
+            --ring: hsl(221 83% 53%);
+            --radius: 0.75rem;
+        }
+
+        .dark {
+            --background: hsl(222.2 84% 4.9%);
+            --foreground: hsl(210 40% 98%);
+            --card: hsl(222.2 84% 4.9%);
+            --card-foreground: hsl(210 40% 98%);
+            --popover: hsl(222.2 84% 4.9%);
+            --popover-foreground: hsl(210 40% 98%);
+            --primary: hsl(221 83% 53%);
+            --primary-foreground: hsl(210 40% 98%);
+            --secondary: hsl(217.2 32.6% 17.5%);
+            --secondary-foreground: hsl(210 40% 98%);
+            --muted: hsl(217.2 32.6% 17.5%);
+            --muted-foreground: hsl(215 20.2% 65.1%);
+            --accent: hsl(217.2 32.6% 17.5%);
+            --accent-foreground: hsl(210 40% 98%);
+            --destructive: hsl(0 62.8% 30.6%);
+            --destructive-foreground: hsl(210 40% 98%);
+            --border: hsl(217.2 32.6% 17.5%);
+            --input: hsl(217.2 32.6% 17.5%);
+            --ring: hsl(224.3 76.3% 94.1%);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .animate-pulse-slow {
+            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .animate-bounce-slow {
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .slide-in {
+            animation: slideIn 0.5s ease-out forwards;
+        }
+
+        .hover-scale {
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .hover-scale:hover {
+            transform: scale(1.05);
+        }
+
+        .gradient-text {
+            background: linear-gradient(45deg, hsl(var(--primary)), hsl(var(--accent)));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .progress-ring {
+            transform: rotate(-90deg);
+            transition: stroke-dasharray 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-background text-foreground">
+    <!-- @COMPONENT: Header -->
+    <header class="fixed w-full top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center space-x-2">
+                    <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center animate-pulse-slow">
+                        <i class="fas fa-code text-primary-foreground text-lg"></i>
+                    </div>
+                    <span class="font-bold text-xl gradient-text">CodeMentor Connect</span>
+                </div>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#" class="text-foreground hover:text-primary transition-colors">Find Teachers</a>
+                    <a href="#" class="text-foreground hover:text-primary transition-colors">Become a Teacher</a>
+                    <a href="#" class="text-foreground hover:text-primary transition-colors">How it Works</a>
+                    <a href="#" class="text-foreground hover:text-primary transition-colors">Pricing</a>
+                </div>
+
+                <!-- Auth Buttons -->
+                <div class="hidden md:flex items-center space-x-4">
+                    <button class="text-foreground hover:text-primary transition-colors">Sign In</button>
+                    <button class="bg-primary text-primary-foreground px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors hover-scale">
+                        Get Started
+                    </button>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden">
+                    <button class="text-foreground hover:text-primary">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <!-- @END_COMPONENT: Header -->
+
+    <!-- @COMPONENT: Hero Section -->
+    <section class="pt-24 pb-16 bg-gradient-to-br from-primary/5 to-accent/5">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <!-- Hero Content -->
+                <div class="slide-in">
+                    <h1 class="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+                        Learn <span class="gradient-text">Coding</span><br>
+                        with Expert<br>
+                        <span class="gradient-text">Mentors</span>
+                    </h1>
+                    <p class="text-xl text-muted-foreground mb-8 leading-relaxed">
+                        Connect with experienced coding teachers for personalized one-on-one sessions. 
+                        Master programming skills at your own pace with live video classes and progress tracking.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4 mb-8">
+                        <button class="bg-primary text-primary-foreground px-8 py-4 rounded-lg font-semibold hover:bg-primary/90 transition-colors hover-scale">
+                            <i class="fas fa-search mr-2"></i>Find Your Teacher
+                        </button>
+                        <button class="border border-border px-8 py-4 rounded-lg font-semibold hover:bg-muted transition-colors hover-scale">
+                            <i class="fas fa-play mr-2"></i>Watch Demo
+                        </button>
+                    </div>
+                    <!-- Stats -->
+                    <div class="flex flex-wrap gap-8">
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-primary animate-bounce-slow">500+</div>
+                            <div class="text-sm text-muted-foreground">Expert Teachers</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-secondary animate-bounce-slow">10k+</div>
+                            <div class="text-sm text-muted-foreground">Students Taught</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-accent animate-bounce-slow">4.9★</div>
+                            <div class="text-sm text-muted-foreground">Average Rating</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hero Visual -->
+                <div class="relative animate-float">
+                    <!-- A modern classroom setting with kids learning coding on laptops -->
+                    <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600" alt="Kids learning coding in modern classroom" class="rounded-2xl shadow-2xl w-full" />
+                    <!-- Floating Elements -->
+                    <div class="absolute -top-4 -left-4 w-16 h-16 bg-primary rounded-full flex items-center justify-center glass-card animate-pulse-slow">
+                        <i class="fas fa-code text-primary-foreground text-xl"></i>
+                    </div>
+                    <div class="absolute -bottom-4 -right-4 w-20 h-20 bg-secondary rounded-full flex items-center justify-center glass-card animate-bounce-slow">
+                        <i class="fas fa-graduation-cap text-secondary-foreground text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- @END_COMPONENT: Hero Section -->
+
+    <!-- @COMPONENT: Featured Teachers -->
+    <section class="py-16 bg-background">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Meet Our Top Teachers</h2>
+                <p class="text-xl text-muted-foreground max-w-2xl mx-auto">
+                    Connect with experienced coding mentors who are passionate about teaching
+                </p>
+            </div>
+
+            <!-- @MAP: featuredTeachers.map(teacher => ( -->
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Teacher Card 1 -->
+                <div class="bg-card rounded-2xl p-6 border border-border hover:shadow-xl transition-all duration-300 hover-scale">
+                    <div class="flex items-center mb-4">
+                        <!-- Professional coding instructor with friendly demeanor -->
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150" alt="Teacher profile" class="w-16 h-16 rounded-full object-cover" />
+                        <div class="ml-4">
+                            <h3 class="font-semibold text-lg" data-bind="teacher.name">Alex Johnson</h3>
+                            <p class="text-sm text-muted-foreground" data-bind="teacher.title">Python & Web Dev Expert</p>
+                            <div class="flex items-center mt-1">
+                                <div class="flex text-yellow-500">
+                                    <i class="fas fa-star text-sm"></i>
+                                    <i class="fas fa-star text-sm"></i>
+                                    <i class="fas fa-star text-sm"></i>
+                                    <i class="fas fa-star text-sm"></i>
+                                    <i class="fas fa-star text-sm"></i>
+                                </div>
+                                <span class="ml-2 text-sm text-muted-foreground" data-bind="teacher.rating">5.0 (120 reviews)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted-foreground mb-4" data-bind="teacher.description">
+                        5+ years teaching Python, Django, and React. Specializes in making complex concepts simple for beginners.
+                    </p>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">Python</span>
+                        <span class="bg-secondary/10 text-secondary px-3 py-1 rounded-full text-sm">React</span>
+                        <span class="bg-accent/10 text-accent px-3 py-1 rounded-full text-sm">Django</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-2xl font-bold text-primary" data-bind="teacher.price">$35/hr</span>
+                        <button class="bg-primary text-primary-foreground px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+                            Book Session
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Teacher Card 2 -->
+                <div class="bg-card rounded-2xl p-6 border border-border hover:shadow-xl transition-all duration-300 hover-scale">
+                    <div class="flex items-center mb-4">
+                        <!-- Female coding mentor with professional appearance -->
+                        <img src="https://pixabay.com/get/g5c6035fd533aa369ba08f4d515cc5984900808383cdfdd75bb4eec053d5ee849468d1a0d7f29538e9483df984f911f21cc35526ac067a15909aaa53d3272fc09_1280.jpg" alt="Teacher profile" class="w-16 h-16 rounded-full object-cover" />
+                        <div class="ml-4">
+                            <h3 class="font-semibold text-lg" data-bind="teacher.name">Sarah Chen</h3>
+                            <p class="text-sm text-muted-foreground" data-bind="teacher.title">Mobile App Developer</p>
+                            <div class="flex items-center mt-1">
+                                <div class="flex text-yellow-500">
+                                    <i class="fas fa-star text-sm"></i>
+                                    <i class="fas fa-star text-sm"></i>
+                                    <i class="fas fa-star text-sm"></i>
+                                    <i class="fas fa-star text-sm"></i>
+                                    <i class="fas fa-star text-sm"></i>
+                                </div>
+                                <span class="ml-2 text-sm text-muted-foreground" data-bind="teacher.rating">4.9 (85 reviews)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted-foreground mb-4" data-bind="teacher.description">
+                        Expert in Swift, Kotlin, and Flutter. Former Apple engineer with 8+ years experience building mobile apps.
+                    </p>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">Swift</span>
+                        <span class="bg-secondary/10 text-secondary px-3 py-1 rounded-full text-sm">Flutter</span>
+                        <span class="bg-accent/10 text-accent px-3 py-1 rounded-full text-sm">Kotlin</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-2xl font-bold text-primary" data-bind="teacher.price">$45/hr</span>
+                        <button class="bg-primary text-primary-foreground px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+                            Book Session
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Teacher Card 3 -->
+                <div class="bg-card rounded-2xl p-6 border border-border hover:shadow-xl transition-all duration-300 hover-scale">
+                    <div class="flex items-center mb-4">
+                        <!-- Young coding instructor teaching kids programming -->
+                        <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150" alt="Teacher profile" class="w-16 h-16 rounded-full object-cover" />
+                        <div class="ml-4">
+                            <h3 class="font-semibold text-lg" data-bind="teacher.name">Mike Rodriguez</h3>
+                            <p class="text-sm text-muted-foreground" data-bind="teacher.title">Game Dev & JavaScript</p>
+                            <div class="flex items-center mt-1">
+                                <div class="flex text-yellow-500">
+                                    <i class="fas fa-star text-sm"></i>
+                                    <i class="fas fa-star text-sm"></i>
+                                    <i class="fas fa-star text-sm"></i>
+                                    <i class="fas fa-star text-sm"></i>
+                                    <i class="fas fa-star text-sm"></i>
+                                </div>
+                                <span class="ml-2 text-sm text-muted-foreground" data-bind="teacher.rating">4.8 (95 reviews)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted-foreground mb-4" data-bind="teacher.description">
+                        Game developer turned educator. Teaches JavaScript, Unity, and C# through fun, interactive game projects.
+                    </p>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">JavaScript</span>
+                        <span class="bg-secondary/10 text-secondary px-3 py-1 rounded-full text-sm">Unity</span>
+                        <span class="bg-accent/10 text-accent px-3 py-1 rounded-full text-sm">C#</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-2xl font-bold text-primary" data-bind="teacher.price">$40/hr</span>
+                        <button class="bg-primary text-primary-foreground px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+                            Book Session
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_MAP )) -->
+
+            <div class="text-center mt-12">
+                <button class="bg-secondary text-secondary-foreground px-8 py-4 rounded-lg font-semibold hover:bg-secondary/90 transition-colors hover-scale">
+                    <i class="fas fa-users mr-2"></i>View All Teachers
+                </button>
+            </div>
+        </div>
+    </section>
+    <!-- @END_COMPONENT: Featured Teachers -->
+
+    <!-- @COMPONENT: Features Section -->
+    <section class="py-16 bg-muted/50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Why Choose CodeMentor Connect?</h2>
+                <p class="text-xl text-muted-foreground max-w-2xl mx-auto">
+                    Everything you need for a successful coding education journey
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Feature 1: Video Classes -->
+                <div class="bg-card rounded-2xl p-8 border border-border hover:shadow-lg transition-all duration-300">
+                    <div class="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 animate-pulse-slow">
+                        <i class="fas fa-video text-primary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">Live Video Classes</h3>
+                    <p class="text-muted-foreground mb-4">
+                        High-quality video calls with screen sharing, whiteboard, and integrated chat for real-time learning.
+                    </p>
+                    <!-- Mock video interface -->
+                    <div class="bg-muted rounded-lg p-4 relative">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-white text-sm"></i>
+                            </div>
+                            <span class="text-sm font-medium">Live Session</span>
+                            <span class="ml-auto text-xs bg-red-500 text-white px-2 py-1 rounded">REC</span>
+                        </div>
+                        <div class="h-24 bg-background rounded border-2 border-dashed border-border flex items-center justify-center">
+                            <i class="fas fa-play text-muted-foreground text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feature 2: Progress Tracking -->
+                <div class="bg-card rounded-2xl p-8 border border-border hover:shadow-lg transition-all duration-300">
+                    <div class="w-16 h-16 bg-secondary/10 rounded-2xl flex items-center justify-center mb-6 animate-float">
+                        <i class="fas fa-chart-line text-secondary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">Progress Tracking</h3>
+                    <p class="text-muted-foreground mb-4">
+                        Track your learning journey with detailed progress reports, achievements, and skill assessments.
+                    </p>
+                    <!-- Mock progress interface -->
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm">Python Basics</span>
+                            <span class="text-sm font-medium text-green-600">100%</span>
+                        </div>
+                        <div class="w-full bg-muted rounded-full h-2">
+                            <div class="bg-green-500 h-2 rounded-full w-full"></div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm">Web Development</span>
+                            <span class="text-sm font-medium text-primary">75%</span>
+                        </div>
+                        <div class="w-full bg-muted rounded-full h-2">
+                            <div class="bg-primary h-2 rounded-full w-3/4"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feature 3: Smart Matching -->
+                <div class="bg-card rounded-2xl p-8 border border-border hover:shadow-lg transition-all duration-300">
+                    <div class="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mb-6 animate-bounce-slow">
+                        <i class="fas fa-brain text-accent text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">Smart Matching</h3>
+                    <p class="text-muted-foreground mb-4">
+                        Our AI-powered system matches you with the perfect teacher based on your goals, schedule, and learning style.
+                    </p>
+                    <!-- Mock matching interface -->
+                    <div class="bg-muted rounded-lg p-4">
+                        <div class="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                            <i class="fas fa-magic text-accent"></i>
+                            <span>AI Recommendation</span>
+                        </div>
+                        <div class="text-sm font-medium">98% match with Sarah Chen</div>
+                        <div class="text-xs text-muted-foreground mt-1">Based on your learning goals and schedule</div>
+                    </div>
+                </div>
+
+                <!-- Feature 4: Flexible Scheduling -->
+                <div class="bg-card rounded-2xl p-8 border border-border hover:shadow-lg transition-all duration-300">
+                    <div class="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center mb-6">
+                        <i class="fas fa-calendar-alt text-green-500 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">Flexible Scheduling</h3>
+                    <p class="text-muted-foreground">
+                        Book sessions that fit your schedule. Available 24/7 with teachers across different time zones.
+                    </p>
+                </div>
+
+                <!-- Feature 5: Secure Payments -->
+                <div class="bg-card rounded-2xl p-8 border border-border hover:shadow-lg transition-all duration-300">
+                    <div class="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-6">
+                        <i class="fas fa-shield-alt text-blue-500 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">Secure Payments</h3>
+                    <p class="text-muted-foreground">
+                        Safe and secure payment processing with transparent pricing and automatic billing management.
+                    </p>
+                </div>
+
+                <!-- Feature 6: Community Support -->
+                <div class="bg-card rounded-2xl p-8 border border-border hover:shadow-lg transition-all duration-300">
+                    <div class="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center mb-6">
+                        <i class="fas fa-users text-purple-500 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">Community Support</h3>
+                    <p class="text-muted-foreground">
+                        Join our vibrant community of learners and teachers for additional support and networking opportunities.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- @END_COMPONENT: Features Section -->
+
+    <!-- @COMPONENT: How It Works -->
+    <section class="py-16 bg-background">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">How It Works</h2>
+                <p class="text-xl text-muted-foreground max-w-2xl mx-auto">
+                    Get started with your coding journey in just three simple steps
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Step 1 -->
+                <div class="text-center group">
+                    <div class="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <span class="text-2xl font-bold text-primary-foreground">1</span>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">Find Your Teacher</h3>
+                    <p class="text-muted-foreground">
+                        Browse our expert teachers, read reviews, and find the perfect match for your learning goals and schedule.
+                    </p>
+                    <!-- Teacher browsing mockup -->
+                    <div class="mt-6 bg-muted rounded-lg p-4 max-w-sm mx-auto">
+                        <!-- Kids learning programming with enthusiastic teacher -->
+                        <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200" alt="Teacher and student interaction" class="w-full h-32 object-cover rounded mb-3" />
+                        <div class="text-left">
+                            <div class="text-sm font-medium">Alex Johnson</div>
+                            <div class="text-xs text-muted-foreground">Python Expert • $35/hr</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="text-center group">
+                    <div class="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <span class="text-2xl font-bold text-secondary-foreground">2</span>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">Book a Session</h3>
+                    <p class="text-muted-foreground">
+                        Choose your preferred time slot and book your first coding session. Pay securely and get instant confirmation.
+                    </p>
+                    <!-- Booking interface mockup -->
+                    <div class="mt-6 bg-muted rounded-lg p-4 max-w-sm mx-auto">
+                        <div class="grid grid-cols-7 gap-1 mb-3">
+                            <div class="text-xs text-center p-1">S</div>
+                            <div class="text-xs text-center p-1">M</div>
+                            <div class="text-xs text-center p-1">T</div>
+                            <div class="text-xs text-center p-1 bg-primary text-primary-foreground rounded">W</div>
+                            <div class="text-xs text-center p-1">T</div>
+                            <div class="text-xs text-center p-1">F</div>
+                            <div class="text-xs text-center p-1">S</div>
+                        </div>
+                        <div class="text-sm font-medium text-center">Available: 2:00 PM - 4:00 PM</div>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="text-center group">
+                    <div class="w-20 h-20 bg-accent rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <span class="text-2xl font-bold text-accent-foreground">3</span>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-4">Start Learning</h3>
+                    <p class="text-muted-foreground">
+                        Join your live video session, interact with your teacher, and start building amazing projects together.
+                    </p>
+                    <!-- Learning session mockup -->
+                    <div class="mt-6 bg-muted rounded-lg p-4 max-w-sm mx-auto">
+                        <!-- Modern educational technology setup with multiple screens -->
+                        <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200" alt="Modern educational technology setup" class="w-full h-32 object-cover rounded mb-3" />
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-green-600"><i class="fas fa-circle text-xs"></i> Live</span>
+                            <span>45:32 elapsed</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-12">
+                <button class="bg-gradient-to-r from-primary to-accent text-primary-foreground px-8 py-4 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 hover-scale">
+                    <i class="fas fa-rocket mr-2"></i>Start Your Journey Today
+                </button>
+            </div>
+        </div>
+    </section>
+    <!-- @END_COMPONENT: How It Works -->
+
+    <!-- @COMPONENT: Student Success Stories -->
+    <section class="py-16 bg-muted/50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Student Success Stories</h2>
+                <p class="text-xl text-muted-foreground max-w-2xl mx-auto">
+                    See how our students are achieving their coding dreams
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Success Story 1 -->
+                <div class="bg-card rounded-2xl p-8 border border-border hover:shadow-lg transition-all duration-300">
+                    <div class="flex items-center mb-4">
+                        <!-- Happy young student learning coding -->
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80" alt="Student profile" class="w-12 h-12 rounded-full object-cover" />
+                        <div class="ml-4">
+                            <h4 class="font-semibold">Emma, Age 12</h4>
+                            <p class="text-sm text-muted-foreground">Student for 6 months</p>
+                        </div>
+                    </div>
+                    <div class="flex text-yellow-500 mb-3">
+                        <i class="fas fa-star text-sm"></i>
+                        <i class="fas fa-star text-sm"></i>
+                        <i class="fas fa-star text-sm"></i>
+                        <i class="fas fa-star text-sm"></i>
+                        <i class="fas fa-star text-sm"></i>
+                    </div>
+                    <p class="text-muted-foreground mb-4">
+                        "I never thought I could build my own website! My teacher Sarah made everything so easy to understand. Now I'm creating games in JavaScript!"
+                    </p>
+                    <div class="bg-primary/10 rounded-lg p-3">
+                        <div class="text-sm font-medium text-primary">Achievement Unlocked:</div>
+                        <div class="text-sm text-muted-foreground">Built first web application</div>
+                    </div>
+                </div>
+
+                <!-- Success Story 2 -->
+                <div class="bg-card rounded-2xl p-8 border border-border hover:shadow-lg transition-all duration-300">
+                    <div class="flex items-center mb-4">
+                        <!-- Teenage student celebrating coding success -->
+                        <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80" alt="Student profile" class="w-12 h-12 rounded-full object-cover" />
+                        <div class="ml-4">
+                            <h4 class="font-semibold">Marcus, Age 16</h4>
+                            <p class="text-sm text-muted-foreground">Student for 1 year</p>
+                        </div>
+                    </div>
+                    <div class="flex text-yellow-500 mb-3">
+                        <i class="fas fa-star text-sm"></i>
+                        <i class="fas fa-star text-sm"></i>
+                        <i class="fas fa-star text-sm"></i>
+                        <i class="fas fa-star text-sm"></i>
+                        <i class="fas fa-star text-sm"></i>
+                    </div>
+                    <p class="text-muted-foreground mb-4">
+                        "Alex helped me get ready for my computer science AP exam. I got a 5! Now I'm building mobile apps and loving every minute of it."
+                    </p>
+                    <div class="bg-secondary/10 rounded-lg p-3">
+                        <div class="text-sm font-medium text-secondary">Achievement Unlocked:</div>
+                        <div class="text-sm text-muted-foreground">AP Computer Science - Score 5</div>
+                    </div>
+                </div>
+
+                <!-- Success Story 3 -->
+                <div class="bg-card rounded-2xl p-8 border border-border hover:shadow-lg transition-all duration-300">
+                    <div class="flex items-center mb-4">
+                        <!-- Young girl proud of her coding accomplishments -->
+                        <img src="https://pixabay.com/get/gc4c1a4e66eb809612524a366faa0ee88531c6a2832ea8c771931488235b8fa2c88ee8988f4321dea5787c458cddcb97df5761c0d7ba0674d32a1c380893b2e9a_1280.jpg" alt="Student profile" class="w-12 h-12 rounded-full object-cover" />
+                        <div class="ml-4">
+                            <h4 class="font-semibold">Sophia, Age 14</h4>
+                            <p class="text-sm text-muted-foreground">Student for 8 months</p>
+                        </div>
+                    </div>
+                    <div class="flex text-yellow-500 mb-3">
+                        <i class="fas fa-star text-sm"></i>
+                        <i class="fas fa-star text-sm"></i>
+                        <i class="fas fa-star text-sm"></i>
+                        <i class="fas fa-star text-sm"></i>
+                        <i class="fas fa-star text-sm"></i>
+                    </div>
+                    <p class="text-muted-foreground mb-4">
+                        "Mike taught me how to make 2D games with Unity. I just published my first game on the app store and it has over 1000 downloads!"
+                    </p>
+                    <div class="bg-accent/10 rounded-lg p-3">
+                        <div class="text-sm font-medium text-accent">Achievement Unlocked:</div>
+                        <div class="text-sm text-muted-foreground">Published first mobile game</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Statistics -->
+            <div class="mt-16 grid md:grid-cols-4 gap-8 text-center">
+                <div class="bg-card rounded-2xl p-6 border border-border">
+                    <div class="text-3xl font-bold text-primary mb-2">95%</div>
+                    <div class="text-sm text-muted-foreground">Students Complete Courses</div>
+                </div>
+                <div class="bg-card rounded-2xl p-6 border border-border">
+                    <div class="text-3xl font-bold text-secondary mb-2">4.8★</div>
+                    <div class="text-sm text-muted-foreground">Average Rating</div>
+                </div>
+                <div class="bg-card rounded-2xl p-6 border border-border">
+                    <div class="text-3xl font-bold text-accent mb-2">2.5x</div>
+                    <div class="text-sm text-muted-foreground">Faster Learning</div>
+                </div>
+                <div class="bg-card rounded-2xl p-6 border border-border">
+                    <div class="text-3xl font-bold text-green-500 mb-2">100%</div>
+                    <div class="text-sm text-muted-foreground">Money-back Guarantee</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- @END_COMPONENT: Student Success Stories -->
+
+    <!-- @COMPONENT: Pricing Section -->
+    <section class="py-16 bg-background">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
+                <p class="text-xl text-muted-foreground max-w-2xl mx-auto">
+                    Pay only for the sessions you take. No hidden fees, no long-term commitments.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                <!-- Starter Plan -->
+                <div class="bg-card rounded-2xl p-8 border border-border hover:shadow-lg transition-all duration-300">
+                    <div class="text-center mb-8">
+                        <h3 class="text-2xl font-bold mb-2">Starter</h3>
+                        <p class="text-muted-foreground mb-4">Perfect for trying out coding</p>
+                        <div class="text-4xl font-bold text-primary mb-2">$25-40</div>
+                        <div class="text-sm text-muted-foreground">per hour + 10% platform fee</div>
+                    </div>
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>1-on-1 video sessions</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Screen sharing & whiteboard</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Basic progress tracking</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Session recordings</span>
+                        </li>
+                    </ul>
+                    <button class="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
+                        Get Started
+                    </button>
+                </div>
+
+                <!-- Pro Plan -->
+                <div class="bg-card rounded-2xl p-8 border-2 border-primary hover:shadow-xl transition-all duration-300 relative">
+                    <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-6 py-2 rounded-full text-sm font-semibold">
+                        Most Popular
+                    </div>
+                    <div class="text-center mb-8">
+                        <h3 class="text-2xl font-bold mb-2">Pro</h3>
+                        <p class="text-muted-foreground mb-4">For serious learners</p>
+                        <div class="text-4xl font-bold text-primary mb-2">$35-55</div>
+                        <div class="text-sm text-muted-foreground">per hour + 8% platform fee</div>
+                    </div>
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Everything in Starter</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Priority teacher matching</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Advanced progress analytics</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Project-based learning</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Community access</span>
+                        </li>
+                    </ul>
+                    <button class="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
+                        Choose Pro
+                    </button>
+                </div>
+
+                <!-- Premium Plan -->
+                <div class="bg-card rounded-2xl p-8 border border-border hover:shadow-lg transition-all duration-300">
+                    <div class="text-center mb-8">
+                        <h3 class="text-2xl font-bold mb-2">Premium</h3>
+                        <p class="text-muted-foreground mb-4">For intensive learning</p>
+                        <div class="text-4xl font-bold text-primary mb-2">$45-75</div>
+                        <div class="text-sm text-muted-foreground">per hour + 5% platform fee</div>
+                    </div>
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Everything in Pro</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Expert-level teachers</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Custom curriculum</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Career guidance</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-green-500 mr-3"></i>
+                            <span>Priority support</span>
+                        </li>
+                    </ul>
+                    <button class="w-full bg-accent text-accent-foreground py-3 rounded-lg font-semibold hover:bg-accent/90 transition-colors">
+                        Go Premium
+                    </button>
+                </div>
+            </div>
+
+            <div class="text-center mt-12">
+                <p class="text-sm text-muted-foreground mb-4">
+                    All plans include: Free trial session • Money-back guarantee • Cancel anytime
+                </p>
+                <button class="text-primary hover:text-primary/80 transition-colors underline">
+                    Compare all features →
+                </button>
+            </div>
+        </div>
+    </section>
+    <!-- @END_COMPONENT: Pricing Section -->
+
+    <!-- @COMPONENT: Call to Action -->
+    <section class="py-16 bg-gradient-to-br from-primary to-accent text-primary-foreground relative overflow-hidden">
+        <div class="absolute inset-0 bg-black/10"></div>
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative">
+            <div class="text-center max-w-3xl mx-auto">
+                <h2 class="text-3xl md:text-4xl font-bold mb-6">
+                    Ready to Start Your Coding Journey?
+                </h2>
+                <p class="text-xl mb-8 opacity-90">
+                    Join thousands of students who are already learning to code with expert mentors. 
+                    Get your first lesson free and see the difference personalized learning makes.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button class="bg-white text-primary px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors hover-scale">
+                        <i class="fas fa-gift mr-2"></i>Claim Free Trial
+                    </button>
+                    <button class="border border-white/30 px-8 py-4 rounded-lg font-semibold hover:bg-white/10 transition-colors hover-scale">
+                        <i class="fas fa-play mr-2"></i>Watch How It Works
+                    </button>
+                </div>
+                <p class="text-sm mt-6 opacity-75">
+                    No credit card required • 30-day money-back guarantee
+                </p>
+            </div>
+        </div>
+        <!-- Animated background elements -->
+        <div class="absolute top-10 left-10 w-20 h-20 border border-white/20 rounded-full animate-pulse-slow"></div>
+        <div class="absolute bottom-10 right-10 w-16 h-16 border border-white/20 rounded-full animate-float"></div>
+        <div class="absolute top-1/2 left-1/4 w-12 h-12 border border-white/20 rounded-full animate-bounce-slow"></div>
+    </section>
+    <!-- @END_COMPONENT: Call to Action -->
+
+    <!-- @COMPONENT: Footer -->
+    <footer class="bg-muted/50 border-t border-border">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <div class="grid md:grid-cols-4 gap-8">
+                <!-- Company Info -->
+                <div class="col-span-1 md:col-span-2">
+                    <div class="flex items-center space-x-2 mb-6">
+                        <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                            <i class="fas fa-code text-primary-foreground text-lg"></i>
+                        </div>
+                        <span class="font-bold text-xl gradient-text">CodeMentor Connect</span>
+                    </div>
+                    <p class="text-muted-foreground mb-6 max-w-md">
+                        Connecting aspiring coders with expert teachers for personalized, interactive learning experiences. 
+                        Learn at your own pace with the guidance of experienced mentors.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-muted-foreground hover:text-primary transition-colors">
+                            <i class="fab fa-twitter text-xl"></i>
+                        </a>
+                        <a href="#" class="text-muted-foreground hover:text-primary transition-colors">
+                            <i class="fab fa-facebook text-xl"></i>
+                        </a>
+                        <a href="#" class="text-muted-foreground hover:text-primary transition-colors">
+                            <i class="fab fa-linkedin text-xl"></i>
+                        </a>
+                        <a href="#" class="text-muted-foreground hover:text-primary transition-colors">
+                            <i class="fab fa-instagram text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- For Students -->
+                <div>
+                    <h4 class="font-semibold mb-4">For Students</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-muted-foreground hover:text-primary transition-colors">Find Teachers</a></li>
+                        <li><a href="#" class="text-muted-foreground hover:text-primary transition-colors">Browse Subjects</a></li>
+                        <li><a href="#" class="text-muted-foreground hover:text-primary transition-colors">Pricing</a></li>
+                        <li><a href="#" class="text-muted-foreground hover:text-primary transition-colors">Student Reviews</a></li>
+                        <li><a href="#" class="text-muted-foreground hover:text-primary transition-colors">Learning Resources</a></li>
+                    </ul>
+                </div>
+
+                <!-- For Teachers -->
+                <div>
+                    <h4 class="font-semibold mb-4">For Teachers</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-muted-foreground hover:text-primary transition-colors">Become a Teacher</a></li>
+                        <li><a href="#" class="text-muted-foreground hover:text-primary transition-colors">Teacher Dashboard</a></li>
+                        <li><a href="#" class="text-muted-foreground hover:text-primary transition-colors">Payment Info</a></li>
+                        <li><a href="#" class="text-muted-foreground hover:text-primary transition-colors">Teaching Resources</a></li>
+                        <li><a href="#" class="text-muted-foreground hover:text-primary transition-colors">Success Stories</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-border pt-8 mt-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="flex flex-wrap gap-6 mb-4 md:mb-0">
+                        <a href="#" class="text-muted-foreground hover:text-primary transition-colors">Privacy Policy</a>
+                        <a href="#" class="text-muted-foreground hover:text-primary transition-colors">Terms of Service</a>
+                        <a href="#" class="text-muted-foreground hover:text-primary transition-colors">Cookie Policy</a>
+                        <a href="#" class="text-muted-foreground hover:text-primary transition-colors">Support</a>
+                        <!-- Hidden admin access -->
+                        <a href="/admin" class="text-muted-foreground/50 hover:text-primary transition-colors text-xs">Admin</a>
+                    </div>
+                    <div class="text-muted-foreground">
+                        © 2024 CodeMentor Connect. All rights reserved.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- @END_COMPONENT: Footer -->
+
+    <script>
+        (function() {
+            // Simple mobile menu toggle
+            document.addEventListener('DOMContentLoaded', function() {
+                // Add smooth scrolling
+                const links = document.querySelectorAll('a[href^="#"]');
+                links.forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const target = document.querySelector(this.getAttribute('href'));
+                        if (target) {
+                            target.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'start'
+                            });
+                        }
+                    });
+                });
+
+                // Add scroll effect to header
+                let lastScroll = 0;
+                window.addEventListener('scroll', function() {
+                    const currentScroll = window.pageYOffset;
+                    const header = document.querySelector('header');
+                    
+                    if (currentScroll <= 0) {
+                        header.classList.remove('scroll-up');
+                        return;
+                    }
+                    
+                    if (currentScroll > lastScroll && !header.classList.contains('scroll-down')) {
+                        header.classList.remove('scroll-up');
+                        header.classList.add('scroll-down');
+                    } else if (currentScroll < lastScroll && header.classList.contains('scroll-down')) {
+                        header.classList.remove('scroll-down');
+                        header.classList.add('scroll-up');
+                    }
+                    lastScroll = currentScroll;
+                });
+
+                // Add intersection observer for animations
+                const observerOptions = {
+                    threshold: 0.1,
+                    rootMargin: '0px 0px -50px 0px'
+                };
+
+                const observer = new IntersectionObserver(function(entries) {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('slide-in');
+                        }
+                    });
+                }, observerOptions);
+
+                // Observe elements that should animate on scroll
+                document.querySelectorAll('section').forEach(section => {
+                    observer.observe(section);
+                });
+
+                // TODO: Implement user registration functionality
+                // TODO: Implement teacher-student matching algorithm  
+                // TODO: Implement video calling system
+                // TODO: Implement progress tracking system
+                // TODO: Implement payment processing
+                // TODO: Implement admin dashboard
+                // TODO: Add form validation and submission handlers
+                
+                console.log('CodeMentor Connect initialized');
+            });
+        })();
+    </script>
+</body>
+</html>

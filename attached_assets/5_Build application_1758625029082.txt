@@ -1,0 +1,11 @@
+﻿2025-09-23T10:54:02.7057530Z ##[group]Run npm run typecheck
+2025-09-23T10:54:02.7057854Z [36;1mnpm run typecheck[0m
+2025-09-23T10:54:02.7058079Z [36;1m./build-production.sh[0m
+2025-09-23T10:54:02.7088657Z shell: /usr/bin/bash -e {0}
+2025-09-23T10:54:02.7088909Z ##[endgroup]
+2025-09-23T10:54:02.8435721Z 
+2025-09-23T10:54:02.8436456Z > rest-express@1.0.0 typecheck
+2025-09-23T10:54:02.8436916Z > tsc --noEmit
+2025-09-23T10:54:02.8437072Z 
+2025-09-23T10:54:16.4334169Z /home/runner/work/_temp/1eb7a73b-deb2-4694-b290-564afc8b4ad5.sh: line 2: ./build-production.sh: Permission denied
+2025-09-23T10:54:16.4349436Z ##[error]Process completed with exit code 126.

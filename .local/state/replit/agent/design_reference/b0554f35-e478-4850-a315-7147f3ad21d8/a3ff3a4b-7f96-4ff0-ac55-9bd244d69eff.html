@@ -1,0 +1,724 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeConnect - Where Young Minds Meet Coding Mentors</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                borderRadius: {
+                    lg: "var(--radius)",
+                    md: "calc(var(--radius) - 2px)",
+                    sm: "calc(var(--radius) - 4px)",
+                },
+                colors: {
+                    background: "var(--background)",
+                    foreground: "var(--foreground)",
+                    card: {
+                        DEFAULT: "var(--card)",
+                        foreground: "var(--card-foreground)",
+                    },
+                    primary: {
+                        DEFAULT: "var(--primary)",
+                        foreground: "var(--primary-foreground)",
+                    },
+                    secondary: {
+                        DEFAULT: "var(--secondary)",
+                        foreground: "var(--secondary-foreground)",
+                    },
+                    muted: {
+                        DEFAULT: "var(--muted)",
+                        foreground: "var(--muted-foreground)",
+                    },
+                    accent: {
+                        DEFAULT: "var(--accent)",
+                        foreground: "var(--accent-foreground)",
+                    },
+                    border: "var(--border)",
+                    ring: "var(--ring)",
+                },
+                fontFamily: {
+                    sans: ["Inter", "sans-serif"],
+                }
+            },
+        }
+    };
+    </script>
+    <style>
+        :root {
+            --background: hsl(210 40% 98%);
+            --foreground: hsl(215 25% 27%);
+            --card: hsl(0 0% 100%);
+            --card-foreground: hsl(215 25% 27%);
+            --primary: hsl(239 84% 67%);
+            --primary-foreground: hsl(0 0% 100%);
+            --secondary: hsl(160 84% 39%);
+            --secondary-foreground: hsl(0 0% 100%);
+            --muted: hsl(215 16% 47%);
+            --muted-foreground: hsl(215 16% 65%);
+            --accent: hsl(43 96% 56%);
+            --accent-foreground: hsl(0 0% 100%);
+            --border: hsl(215 28% 17%);
+            --ring: hsl(239 84% 67%);
+            --radius: 12px;
+        }
+        
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #6366F1 0%, #3B82F6 50%, #10B981 100%);
+        }
+        
+        .text-gradient {
+            background: linear-gradient(135deg, #6366F1, #3B82F6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .floating-animation {
+            animation: floating 6s ease-in-out infinite;
+        }
+        
+        @keyframes floating {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .hover-lift {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .hover-lift:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15);
+        }
+        
+        .sticky-nav {
+            backdrop-filter: blur(20px);
+            background: rgba(248, 250, 252, 0.8);
+        }
+    </style>
+</head>
+<body class="font-sans bg-background text-foreground">
+    <!-- @COMPONENT: StickyNavigation -->
+    <nav class="sticky top-0 z-50 sticky-nav border-b border-white/20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <div class="text-2xl font-bold text-gradient">
+                        <i class="fas fa-code mr-2"></i>CodeConnect
+                    </div>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#discover" class="text-muted-foreground hover:text-primary transition-colors">Discover</a>
+                    <a href="#how-it-works" class="text-muted-foreground hover:text-primary transition-colors">How It Works</a>
+                    <a href="#community" class="text-muted-foreground hover:text-primary transition-colors">Community</a>
+                    <a href="#success-stories" class="text-muted-foreground hover:text-primary transition-colors">Success Stories</a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <button class="text-muted-foreground hover:text-primary transition-colors font-medium">Sign In</button>
+                    <button class="bg-primary text-primary-foreground px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors font-medium">
+                        Get Started
+                    </button>
+                </div>
+                
+                <div class="md:hidden">
+                    <i class="fas fa-bars text-muted-foreground"></i>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <!-- @END_COMPONENT: StickyNavigation -->
+
+    <!-- @COMPONENT: HeroSection -->
+    <section class="relative min-h-screen gradient-bg overflow-hidden">
+        <div class="absolute inset-0 bg-black/10"></div>
+        
+        <!-- Floating decorative elements -->
+        <div class="absolute top-20 left-10 w-32 h-32 bg-white/10 rounded-full floating-animation"></div>
+        <div class="absolute top-40 right-20 w-20 h-20 bg-white/15 rounded-full floating-animation" style="animation-delay: -2s;"></div>
+        <div class="absolute bottom-40 left-20 w-24 h-24 bg-white/10 rounded-full floating-animation" style="animation-delay: -4s;"></div>
+        
+        <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-32">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div class="text-center lg:text-left">
+                    <h1 class="text-5xl lg:text-7xl font-bold text-white mb-6 leading-tight">
+                        Where Young
+                        <span class="block">Minds Meet</span>
+                        <span class="block text-accent">Coding Mentors</span>
+                    </h1>
+                    <p class="text-xl text-white/90 mb-8 max-w-2xl">
+                        Connect kids with passionate coding mentors for personalized learning experiences. 
+                        Build the future, one line of code at a time.
+                    </p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                        <button class="bg-white text-primary px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/90 transition-all hover-lift">
+                            <i class="fas fa-graduation-cap mr-2"></i>
+                            I Want to Learn
+                        </button>
+                        <button class="bg-accent text-accent-foreground px-8 py-4 rounded-xl font-semibold text-lg hover:bg-accent/90 transition-all hover-lift">
+                            <i class="fas fa-chalkboard-teacher mr-2"></i>
+                            I Want to Teach
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center justify-center lg:justify-start space-x-8 mt-12 text-white/80">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold">10K+</div>
+                            <div class="text-sm">Happy Students</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold">500+</div>
+                            <div class="text-sm">Expert Mentors</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold">95%</div>
+                            <div class="text-sm">Success Rate</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="relative">
+                    <!-- Kids coding programming scene -->
+                    <img src="https://images.unsplash.com/photo-1596496050755-c923e73e42e1?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600" 
+                         alt="Kids learning programming together" 
+                         class="rounded-2xl shadow-2xl hover-lift" />
+                    
+                    <!-- Floating achievement cards -->
+                    <div class="absolute -top-6 -right-6 glassmorphism rounded-xl p-4 text-white">
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-trophy text-accent"></i>
+                            <span class="font-semibold">Achievement Unlocked!</span>
+                        </div>
+                    </div>
+                    
+                    <div class="absolute -bottom-6 -left-6 glassmorphism rounded-xl p-4 text-white">
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-video text-secondary"></i>
+                            <span class="font-semibold">Live Session Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- @END_COMPONENT: HeroSection -->
+
+    <!-- @COMPONENT: DiscoverySection -->
+    <section id="discover" class="py-20 bg-background">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl lg:text-5xl font-bold text-foreground mb-6">
+                    Discover Amazing <span class="text-gradient">Coding Mentors</span>
+                </h2>
+                <p class="text-xl text-muted-foreground max-w-3xl mx-auto">
+                    Browse through our curated community of passionate educators who make learning to code fun and engaging.
+                </p>
+            </div>
+            
+            <!-- Filter tabs -->
+            <div class="flex justify-center mb-12">
+                <div class="bg-card rounded-xl p-2 shadow-lg">
+                    <div class="flex space-x-2">
+                        <button class="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium">All Mentors</button>
+                        <button class="px-6 py-3 text-muted-foreground hover:text-foreground transition-colors">Python</button>
+                        <button class="px-6 py-3 text-muted-foreground hover:text-foreground transition-colors">JavaScript</button>
+                        <button class="px-6 py-3 text-muted-foreground hover:text-foreground transition-colors">Scratch</button>
+                        <button class="px-6 py-3 text-muted-foreground hover:text-foreground transition-colors">Web Design</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- @MAP: mentors.map(mentor => ( -->
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Mentor Card 1 -->
+                <div class="bg-card rounded-2xl p-6 shadow-lg hover-lift">
+                    <!-- Teacher student interaction scene -->
+                    <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=300" 
+                         alt="Mentor teaching student in classroom setting" 
+                         class="w-full h-48 object-cover rounded-xl mb-4" />
+                    
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold">
+                            SM
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-foreground" data-bind="mentor.name">Sarah Martinez</h3>
+                            <p class="text-muted-foreground text-sm" data-bind="mentor.title">Python & AI Specialist</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4 mb-4 text-sm text-muted-foreground">
+                        <div class="flex items-center">
+                            <i class="fas fa-star text-accent mr-1"></i>
+                            <span data-bind="mentor.rating">4.9</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-users mr-1"></i>
+                            <span data-bind="mentor.students">120 students</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-clock mr-1"></i>
+                            <span data-bind="mentor.experience">3 years</span>
+                        </div>
+                    </div>
+                    
+                    <p class="text-muted-foreground mb-4" data-bind="mentor.description">
+                        Specializes in making Python fun for kids with interactive games and projects.
+                    </p>
+                    
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">Python</span>
+                        <span class="px-3 py-1 bg-secondary/10 text-secondary rounded-full text-sm">AI</span>
+                        <span class="px-3 py-1 bg-accent/10 text-accent rounded-full text-sm">Games</span>
+                    </div>
+                    
+                    <button class="w-full bg-primary text-primary-foreground py-3 rounded-xl font-medium hover:bg-primary/90 transition-colors">
+                        View Profile & Book
+                    </button>
+                </div>
+                
+                <!-- Mentor Card 2 -->
+                <div class="bg-card rounded-2xl p-6 shadow-lg hover-lift">
+                    <!-- Modern educational technology scene -->
+                    <img src="https://images.unsplash.com/photo-1531482615713-2afd69097998?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=300" 
+                         alt="Modern classroom with educational technology" 
+                         class="w-full h-48 object-cover rounded-xl mb-4" />
+                    
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-12 h-12 bg-secondary rounded-full flex items-center justify-center text-secondary-foreground font-bold">
+                            JC
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-foreground" data-bind="mentor.name">Jake Chen</h3>
+                            <p class="text-muted-foreground text-sm" data-bind="mentor.title">Web Development Expert</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4 mb-4 text-sm text-muted-foreground">
+                        <div class="flex items-center">
+                            <i class="fas fa-star text-accent mr-1"></i>
+                            <span data-bind="mentor.rating">4.8</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-users mr-1"></i>
+                            <span data-bind="mentor.students">95 students</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-clock mr-1"></i>
+                            <span data-bind="mentor.experience">5 years</span>
+                        </div>
+                    </div>
+                    
+                    <p class="text-muted-foreground mb-4" data-bind="mentor.description">
+                        Teaches HTML, CSS, and JavaScript through building real websites kids love.
+                    </p>
+                    
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">HTML/CSS</span>
+                        <span class="px-3 py-1 bg-secondary/10 text-secondary rounded-full text-sm">JavaScript</span>
+                        <span class="px-3 py-1 bg-accent/10 text-accent rounded-full text-sm">Websites</span>
+                    </div>
+                    
+                    <button class="w-full bg-primary text-primary-foreground py-3 rounded-xl font-medium hover:bg-primary/90 transition-colors">
+                        View Profile & Book
+                    </button>
+                </div>
+                
+                <!-- Mentor Card 3 -->
+                <div class="bg-card rounded-2xl p-6 shadow-lg hover-lift">
+                    <!-- Children learning together scene -->
+                    <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=300" 
+                         alt="Children collaborating and learning together" 
+                         class="w-full h-48 object-cover rounded-xl mb-4" />
+                    
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-12 h-12 bg-accent rounded-full flex items-center justify-center text-accent-foreground font-bold">
+                            EP
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-foreground" data-bind="mentor.name">Emma Parker</h3>
+                            <p class="text-muted-foreground text-sm" data-bind="mentor.title">Scratch & Game Design</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4 mb-4 text-sm text-muted-foreground">
+                        <div class="flex items-center">
+                            <i class="fas fa-star text-accent mr-1"></i>
+                            <span data-bind="mentor.rating">5.0</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-users mr-1"></i>
+                            <span data-bind="mentor.students">200 students</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-clock mr-1"></i>
+                            <span data-bind="mentor.experience">4 years</span>
+                        </div>
+                    </div>
+                    
+                    <p class="text-muted-foreground mb-4" data-bind="mentor.description">
+                        Makes coding accessible for young beginners through visual programming and games.
+                    </p>
+                    
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">Scratch</span>
+                        <span class="px-3 py-1 bg-secondary/10 text-secondary rounded-full text-sm">Game Design</span>
+                        <span class="px-3 py-1 bg-accent/10 text-accent rounded-full text-sm">Beginner</span>
+                    </div>
+                    
+                    <button class="w-full bg-primary text-primary-foreground py-3 rounded-xl font-medium hover:bg-primary/90 transition-colors">
+                        View Profile & Book
+                    </button>
+                </div>
+            </div>
+            <!-- @END_MAP )) -->
+            
+            <div class="text-center mt-12">
+                <button class="bg-secondary text-secondary-foreground px-8 py-4 rounded-xl font-semibold hover:bg-secondary/90 transition-colors">
+                    <i class="fas fa-search mr-2"></i>
+                    Explore All Mentors
+                </button>
+            </div>
+        </div>
+    </section>
+    <!-- @END_COMPONENT: DiscoverySection -->
+
+    <!-- @COMPONENT: HowItWorksSection -->
+    <section id="how-it-works" class="py-20 bg-muted/20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl lg:text-5xl font-bold text-foreground mb-6">
+                    Simple Steps to <span class="text-gradient">Start Learning</span>
+                </h2>
+                <p class="text-xl text-muted-foreground max-w-3xl mx-auto">
+                    Our platform makes it easy for kids to connect with amazing coding mentors and start their programming journey.
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-12">
+                <!-- Step 1 -->
+                <div class="text-center">
+                    <div class="w-20 h-20 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-2xl font-bold mx-auto mb-6">
+                        1
+                    </div>
+                    <h3 class="text-2xl font-bold text-foreground mb-4">Choose Your Path</h3>
+                    <p class="text-muted-foreground mb-6">
+                        Browse our mentor profiles and find the perfect teacher for your child's interests and skill level.
+                    </p>
+                    <!-- Online education classroom scene -->
+                    <img src="https://images.unsplash.com/photo-1501594907352-04cda38ebc29?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=250" 
+                         alt="Online classroom environment with students" 
+                         class="rounded-xl shadow-lg w-full h-48 object-cover" />
+                </div>
+                
+                <!-- Step 2 -->
+                <div class="text-center">
+                    <div class="w-20 h-20 bg-secondary rounded-full flex items-center justify-center text-secondary-foreground text-2xl font-bold mx-auto mb-6">
+                        2
+                    </div>
+                    <h3 class="text-2xl font-bold text-foreground mb-4">Book & Connect</h3>
+                    <p class="text-muted-foreground mb-6">
+                        Schedule sessions that work for your family's schedule and connect instantly through our secure platform.
+                    </p>
+                    <!-- Coding mentor teaching scene -->
+                    <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=250" 
+                         alt="Mentor teaching student programming concepts" 
+                         class="rounded-xl shadow-lg w-full h-48 object-cover" />
+                </div>
+                
+                <!-- Step 3 -->
+                <div class="text-center">
+                    <div class="w-20 h-20 bg-accent rounded-full flex items-center justify-center text-accent-foreground text-2xl font-bold mx-auto mb-6">
+                        3
+                    </div>
+                    <h3 class="text-2xl font-bold text-foreground mb-4">Learn & Grow</h3>
+                    <p class="text-muted-foreground mb-6">
+                        Watch your child build confidence and coding skills through engaging, personalized learning experiences.
+                    </p>
+                    <!-- Kids coding programming scene -->
+                    <img src="https://images.unsplash.com/photo-1515879218367-8466d910aaa4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=250" 
+                         alt="Children programming and celebrating success" 
+                         class="rounded-xl shadow-lg w-full h-48 object-cover" />
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- @END_COMPONENT: HowItWorksSection -->
+
+    <!-- @COMPONENT: SuccessStoriesSection -->
+    <section id="success-stories" class="py-20 bg-background">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl lg:text-5xl font-bold text-foreground mb-6">
+                    Amazing <span class="text-gradient">Success Stories</span>
+                </h2>
+                <p class="text-xl text-muted-foreground max-w-3xl mx-auto">
+                    See how our young learners are building incredible projects and developing valuable skills.
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Success Story 1 -->
+                <div class="bg-card rounded-2xl p-6 shadow-lg hover-lift">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold">
+                            AB
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-foreground" data-bind="student.name">Alex (12 years old)</h3>
+                            <p class="text-muted-foreground text-sm">Built a Weather App</p>
+                        </div>
+                    </div>
+                    
+                    <p class="text-muted-foreground mb-4">
+                        "I learned Python with Sarah and built my first weather app! Now I want to become a software engineer."
+                    </p>
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-1 text-accent">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <span class="text-sm text-muted-foreground">3 months ago</span>
+                    </div>
+                </div>
+                
+                <!-- Success Story 2 -->
+                <div class="bg-card rounded-2xl p-6 shadow-lg hover-lift">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-12 h-12 bg-secondary rounded-full flex items-center justify-center text-secondary-foreground font-bold">
+                            MJ
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-foreground" data-bind="student.name">Maya (10 years old)</h3>
+                            <p class="text-muted-foreground text-sm">Created Interactive Games</p>
+                        </div>
+                    </div>
+                    
+                    <p class="text-muted-foreground mb-4">
+                        "Emma taught me Scratch and I made 5 games! My friends love playing them at school."
+                    </p>
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-1 text-accent">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <span class="text-sm text-muted-foreground">1 month ago</span>
+                    </div>
+                </div>
+                
+                <!-- Success Story 3 -->
+                <div class="bg-card rounded-2xl p-6 shadow-lg hover-lift">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-12 h-12 bg-accent rounded-full flex items-center justify-center text-accent-foreground font-bold">
+                            LS
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-foreground" data-bind="student.name">Liam (14 years old)</h3>
+                            <p class="text-muted-foreground text-sm">Built Personal Website</p>
+                        </div>
+                    </div>
+                    
+                    <p class="text-muted-foreground mb-4">
+                        "Jake helped me build my own website! I'm now helping other kids in my class learn to code."
+                    </p>
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-1 text-accent">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <span class="text-sm text-muted-foreground">2 weeks ago</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- @END_COMPONENT: SuccessStoriesSection -->
+
+    <!-- @COMPONENT: CommunitySection -->
+    <section id="community" class="py-20 gradient-bg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-4xl lg:text-5xl font-bold text-white mb-6">
+                Join Our Growing <span class="text-accent">Community</span>
+            </h2>
+            <p class="text-xl text-white/90 mb-12 max-w-3xl mx-auto">
+                Connect with other young coders, share projects, and celebrate achievements together.
+            </p>
+            
+            <div class="grid md:grid-cols-2 gap-8 mb-12">
+                <div class="glassmorphism rounded-2xl p-8 text-white">
+                    <i class="fas fa-users text-4xl text-accent mb-4"></i>
+                    <h3 class="text-2xl font-bold mb-4">For Students</h3>
+                    <p class="mb-6">Join thousands of young coders, share your projects, and make new friends who love programming as much as you do.</p>
+                    <button class="bg-white text-primary px-6 py-3 rounded-xl font-semibold hover:bg-white/90 transition-colors">
+                        Join Student Community
+                    </button>
+                </div>
+                
+                <div class="glassmorphism rounded-2xl p-8 text-white">
+                    <i class="fas fa-chalkboard-teacher text-4xl text-accent mb-4"></i>
+                    <h3 class="text-2xl font-bold mb-4">For Mentors</h3>
+                    <p class="mb-6">Share your passion for coding, inspire the next generation, and build a rewarding teaching career with flexible scheduling.</p>
+                    <button class="bg-accent text-accent-foreground px-6 py-3 rounded-xl font-semibold hover:bg-accent/90 transition-colors">
+                        Become a Mentor
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-center space-x-12 text-white/80">
+                <div class="text-center">
+                    <div class="text-3xl font-bold">50K+</div>
+                    <div>Community Members</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold">1M+</div>
+                    <div>Projects Created</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold">99%</div>
+                    <div>Parent Satisfaction</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- @END_COMPONENT: CommunitySection -->
+
+    <!-- @COMPONENT: Footer -->
+    <footer class="bg-foreground text-white py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8 mb-12">
+                <div>
+                    <div class="text-2xl font-bold text-accent mb-4">
+                        <i class="fas fa-code mr-2"></i>CodeConnect
+                    </div>
+                    <p class="text-white/80 mb-6">
+                        Connecting young minds with passionate coding mentors to build the future, one line of code at a time.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="font-semibold text-lg mb-4">For Students</h3>
+                    <ul class="space-y-2 text-white/80">
+                        <li><a href="#" class="hover:text-white transition-colors">Find a Mentor</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Browse Courses</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Student Community</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Achievement Badges</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="font-semibold text-lg mb-4">For Mentors</h3>
+                    <ul class="space-y-2 text-white/80">
+                        <li><a href="#" class="hover:text-white transition-colors">Become a Mentor</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Teacher Resources</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Mentor Community</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Success Stories</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="font-semibold text-lg mb-4">Support</h3>
+                    <ul class="space-y-2 text-white/80">
+                        <li><a href="#" class="hover:text-white transition-colors">Help Center</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Safety Guidelines</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Contact Us</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-white/20 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-white/60 mb-4 md:mb-0">
+                    © 2024 CodeConnect. All rights reserved.
+                </p>
+                <div class="flex space-x-6 text-white/60 text-sm">
+                    <a href="#" class="hover:text-white transition-colors">Terms of Service</a>
+                    <a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
+                    <a href="#" class="hover:text-white transition-colors">Cookie Policy</a>
+                </div>
+                
+                <!-- Hidden admin dashboard sequence trigger -->
+                <div class="hidden">
+                    <!-- @FUNCTIONALITY: Click sequence to access admin dashboard: Logo(3x) + Community + Success Stories -->
+                    <button id="admin-trigger" data-implementation="Implement click sequence counter for admin access"></button>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- @END_COMPONENT: Footer -->
+
+    <script>
+        (function() {
+            // TODO: Implement smooth scrolling for navigation links
+            // TODO: Implement booking calendar integration
+            // TODO: Implement video classroom functionality
+            // TODO: Implement achievement badge system
+            // TODO: Implement admin dashboard access sequence
+            // TODO: Implement mentor profile modal displays
+            // TODO: Implement real-time availability checking
+            
+            // Basic smooth scrolling for demo
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+            
+            // Sticky navigation background on scroll
+            window.addEventListener('scroll', function() {
+                const nav = document.querySelector('nav');
+                if (window.scrollY > 50) {
+                    nav.style.background = 'rgba(248, 250, 252, 0.95)';
+                } else {
+                    nav.style.background = 'rgba(248, 250, 252, 0.8)';
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+2025-09-22T23:38:39.7360002Z Container is terminating. Grace period: 5 seconds.
+2025-09-22T23:38:39.8031981Z Stop and delete container. Retry count = 0
+2025-09-22T23:38:39.8124326Z Stopping container: 933037036329_kidzaimathapp30237.
+2025-09-22T23:38:39.9577802Z Deleting container: 933037036329_kidzaimathapp30237. Retry count = 0
+2025-09-22T23:38:44.2197396Z Container spec TerminationMessagePolicy  path
+2025-09-22T23:38:44.2280118Z Container is terminated. Total time elapsed: 4481 ms.
+2025-09-22T23:38:44.2345458Z Site container: kidzaimathapp30237 terminated during site startup.
+2025-09-22T23:38:44.2419749Z Site startup probe failed after 67.9529819 seconds.
+2025-09-22T23:38:44.3110755Z Failed to start site. Revert by stopping site.
+2025-09-22T23:38:44.3548414Z Site: kidzaimathapp30237 stopped./home/LogFiles/2025_09_22_lw1sdlwk0001CP_easyauth_docker.log  (https://kidzaimathapp30237.scm.azurewebsites.net/api/vfs/LogFiles/2025_09_22_lw1sdlwk0001CP_easyauth_docker.log)/home/LogFiles/2025_09_23_lw1sdlwk0001CP_default_docker.log  (https://kidzaimathapp30237.scm.azurewebsites.net/api/vfs/LogFiles/2025_09_23_lw1sdlwk0001CP_default_docker.log)
+2025-09-23T11:38:19.2120268Z     at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-09-23T11:38:19.2120289Z     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12)
+2025-09-23T11:38:19.2120424Z     at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25)
+2025-09-23T11:38:19.2120450Z     at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38)
+2025-09-23T11:38:19.2120472Z     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38)
+2025-09-23T11:38:19.2120493Z     at ModuleJob._link (node:internal/modules/esm/module_job:130:49) {
+2025-09-23T11:38:19.2120513Z   code: 'ERR_MODULE_NOT_FOUND'
+2025-09-23T11:38:19.2120532Z }
+2025-09-23T11:38:19.2120550Z
+2025-09-23T11:38:19.2120571Z Node.js v20.19.3/home/LogFiles/2025_09_23_lw1sdlwk0001CP_default_scm_docker.log  (https://kidzaimathapp30237.scm.azurewebsites.net/api/vfs/LogFiles/2025_09_23_lw1sdlwk0001CP_default_scm_docker.log)
+2025-09-23T11:30:58.5487754Z Total bytes received: 98
+2025-09-23T11:30:58.5681076Z
+2025-09-23T11:30:58.6028286Z sent 19.38K bytes  received 98 bytes  12.98K bytes/sec
+2025-09-23T11:30:58.6171581Z total size is 103.86K  speedup is 5.33
+2025-09-23T11:30:58.6415507Z Attempt 1: Rsync for filelist /tmp//splits/split.ae completed with exit code 0
+2025-09-23T11:30:58.6657656Z Attempt 1: Rsync for filelist /tmp//splits/split.ac completed with exit code 0
+2025-09-23T11:30:58.6895332Z Deleting files not present in /tmp/zipdeploy/extracted/ from /home/site/wwwroot/ based on manifest file /home/site/deployments/1b7c74a7-b59d-407c-93a4-b84db634faab/manifest
+2025-09-23T11:30:58.7165713Z Number of files deleted: 0. See /tmp//rsync_deletion_logs.txt for more details.
+2025-09-23T11:30:58.7535360Z create new manifest file at /home/site/deployments/8d3d4674-0d73-43c4-a165-5189b06b7587/manifest
+2025-09-23T11:30:58.7775470Z Completed successfully in 2 seconds/home/LogFiles/2025_09_23_lw1sdlwk0001CP_docker.log  (https://kidzaimathapp30237.scm.azurewebsites.net/api/vfs/LogFiles/2025_09_23_lw1sdlwk0001CP_docker.log)
+2025-09-23T11:38:19.3197378Z Container is terminating. Grace period: 5 seconds.
+2025-09-23T11:38:19.3287745Z Stop and delete container. Retry count = 0
+2025-09-23T11:38:19.3295677Z Stopping container: f0791787931b_kidzaimathapp30237.
+2025-09-23T11:38:19.4396281Z Deleting container: f0791787931b_kidzaimathapp30237. Retry count = 0
+2025-09-23T11:38:20.3262685Z Container spec TerminationMessagePolicy  path
+2025-09-23T11:38:20.3364555Z Container is terminated. Total time elapsed: 1006 ms.
+2025-09-23T11:38:20.3737783Z Site container: kidzaimathapp30237 terminated during site startup.
+2025-09-23T11:38:20.3748334Z Site startup probe failed after 28.8457871 seconds.
+2025-09-23T11:38:20.4119102Z Failed to start site. Revert by stopping site.
+2025-09-23T11:38:20.4144374Z Site: kidzaimathapp30237 stopped.Ending Log Tail of existing logs ---Starting Live Log Stream ---
+2025-09-23T11:39:30  No new trace in the past 1 min(s).
+2025-09-23T11:40:30  No new trace in the past 2 min(s).
+2025-09-23T11:41:30  No new trace in the past 3 min(s).
+2025-09-23T11:42:30  No new trace in the past 4 min(s).
+2025-09-23T11:38:22.7940822Z Site: kidzaimathapp30237 will be blocked for 2 minutes till 09/23/2025 11:40:22
+2025-09-23T11:38:24.2501616Z Start site prohibitted because the site is being blocked.
+2025-09-23T11:40:22.7962244Z Site: kidzaimathapp30237 is unblocked.
+2025-09-23T11:43:25.6854495Z Container start method called.
+2025-09-23T11:43:25.6855540Z Establishing network.
+2025-09-23T11:43:25.6856385Z Pulling image: appsvc/node:20-lts_20250724.2.tuxprod.
+2025-09-23T11:43:31.7021524Z Container is starting.
+2025-09-23T11:43:31.7022687Z Establishing user namespace if not established already.
+2025-09-23T11:43:31.7023558Z Establishing network if not established already.
+2025-09-23T11:43:31.7024370Z Mounting volumes.
+2025-09-23T11:43:31.7025701Z Nested mountpoint
+2025-09-23T11:43:31.7488183Z Nested mountpoint volatile/logs
+2025-09-23T11:43:31.7868323Z Nested mountpoint
+2025-09-23T11:43:31.7900287Z Nested mountpoint
+2025-09-23T11:43:31.8164606Z Nested mountpoint
+2025-09-23T11:43:33.2534933Z Creating container.
+2025-09-23T11:43:33.2913021Z Creating pipes for streaming container io.
+2025-09-23T11:43:33.2916079Z Creating stdout named pipe at /podr/container/pipe/56ab01023294_kidzaimathapp30237/stdout_3912d91f5b4843a4a156e3236f29312d.
+2025-09-23T11:43:33.2978953Z Successfully created stdout named pipe at: /podr/container/pipe/56ab01023294_kidzaimathapp30237/stdout_3912d91f5b4843a4a156e3236f29312d.
+2025-09-23T11:43:33.2980295Z Opening named pipe /podr/container/pipe/56ab01023294_kidzaimathapp30237/stdout_3912d91f5b4843a4a156e3236f29312d for reading in non-blocking mode.
+2025-09-23T11:43:33.2981621Z Successfully opened named pipe: /podr/container/pipe/56ab01023294_kidzaimathapp30237/stdout_3912d91f5b4843a4a156e3236f29312d.
+2025-09-23T11:43:33.2982543Z Successfully removed non-blocking flag from /podr/container/pipe/56ab01023294_kidzaimathapp30237/stdout_3912d91f5b4843a4a156e3236f29312d.
+2025-09-23T11:43:33.2983459Z Creating stderr named pipe at /podr/container/pipe/56ab01023294_kidzaimathapp30237/stderr_01f0958117dd4816aa86abb3a050d19b.
+2025-09-23T11:43:33.2984974Z Successfully created stderr named pipe at: /podr/container/pipe/56ab01023294_kidzaimathapp30237/stderr_01f0958117dd4816aa86abb3a050d19b.
+2025-09-23T11:43:33.2986294Z Opening named pipe /podr/container/pipe/56ab01023294_kidzaimathapp30237/stderr_01f0958117dd4816aa86abb3a050d19b for reading in non-blocking mode.
+2025-09-23T11:43:33.2987372Z Successfully opened named pipe: /podr/container/pipe/56ab01023294_kidzaimathapp30237/stderr_01f0958117dd4816aa86abb3a050d19b.
+2025-09-23T11:43:33.2988818Z Successfully removed non-blocking flag from /podr/container/pipe/56ab01023294_kidzaimathapp30237/stderr_01f0958117dd4816aa86abb3a050d19b.
+2025-09-23T11:43:33.2990059Z Creating container with image: appsvc/node:20-lts_20250724.2.tuxprod from registry: mcr.microsoft.com and fully qualified image name: mcr.microsoft.com/appsvc/node:20-lts_20250724.2.tuxprod
+2025-09-23T11:43:33.8704250Z Starting container: 56ab01023294_kidzaimathapp30237.
+2025-09-23T11:43:34.6086320Z    _____
+2025-09-23T11:43:33.9764550Z Starting watchers and probes.
+2025-09-23T11:43:33.9941512Z Starting metrics collection.
+2025-09-23T11:43:33.9944141Z Container is running.
+2025-09-23T11:43:34.3512235Z Container start method finished after 8658 ms.
+2025-09-23T11:43:34.6086646Z   /  _  \ __________ _________   ____
+2025-09-23T11:43:34.6086672Z  /  /_\  \\___   /  |  \_  __ \_/ __ \
+2025-09-23T11:43:34.6086691Z /    |    \/    /|  |  /|  | \/\  ___/
+2025-09-23T11:43:34.6086708Z \____|__  /_____ \____/ |__|    \___  >
+2025-09-23T11:43:34.6086726Z         \/      \/                  \/
+2025-09-23T11:43:34.6086743Z A P P   S E R V I C E   O N   L I N U X
+2025-09-23T11:43:34.6086762Z
+2025-09-23T11:43:34.6086784Z Documentation: http://aka.ms/webapp-linux
+2025-09-23T11:43:34.6086801Z NodeJS quickstart: https://aka.ms/node-qs
+2025-09-23T11:43:34.6086884Z NodeJS Version : v20.19.3
+2025-09-23T11:43:34.6086906Z Note: Any data outside '/home' is not persisted
+2025-09-23T11:43:34.6086922Z
+2025-09-23T11:43:40.9440680Z Starting OpenBSD Secure Shell server: sshd.
+2025-09-23T11:43:40.9660111Z WEBSITES_INCLUDE_CLOUD_CERTS is not set to true.
+2025-09-23T11:43:41.0133613Z Updating certificates in /etc/ssl/certs...
+2025-09-23T11:43:53.7807032Z rehash: warning: skipping ca-certificates.crt,it does not contain exactly one certificate or CRL
+2025-09-23T11:43:53.8458595Z 4 added, 0 removed; done.
+2025-09-23T11:43:53.8464121Z Running hooks in /etc/ca-certificates/update.d...
+2025-09-23T11:43:53.8581540Z done.
+2025-09-23T11:43:53.8855523Z CA certificates copied and updated successfully.
+2025-09-23T11:43:54.1470929Z Starting periodic command scheduler: cron.
+2025-09-23T11:43:54.3284206Z Could not find build manifest file at '/home/site/wwwroot/oryx-manifest.toml'
+2025-09-23T11:43:54.3397871Z Could not find operation ID in manifest. Generating an operation id...
+2025-09-23T11:43:54.3398196Z Build Operation ID: e46ca454-6e61-4ac5-a5d0-73c697822f32
+2025-09-23T11:43:55.5333483Z Environment Variables for Application Insight's IPA Codeless Configuration exists..
+2025-09-23T11:43:55.7949078Z Writing output script to '/opt/startup/startup.sh'
+2025-09-23T11:43:56.0663059Z Running #!/bin/sh
+2025-09-23T11:43:56.0663621Z
+2025-09-23T11:43:56.0663662Z # Enter the source directory to make sure the script runs where the user expects
+2025-09-23T11:43:56.0663684Z cd "/home/site/wwwroot"
+2025-09-23T11:43:56.0663708Z
+2025-09-23T11:43:56.0663737Z export NODE_PATH=/usr/local/lib/node_modules:$NODE_PATH
+2025-09-23T11:43:56.0663757Z if [ -z "$PORT" ]; then
+2025-09-23T11:43:56.0663777Z 		export PORT=8080
+2025-09-23T11:43:56.0663883Z fi
+2025-09-23T11:43:56.0663905Z
+2025-09-23T11:43:56.0761240Z PATH="$PATH:/home/site/wwwroot" ./start-production.sh
+2025-09-23T11:43:56.1938743Z Starting CodeConnect in production mode...
+2025-09-23T11:43:56.2124703Z Server directory: /home/site/wwwroot/dist/server
+2025-09-23T11:43:56.2223438Z Static files directory: /home/site/wwwroot/dist/public
+2025-09-23T11:43:57.3273408Z node:internal/modules/esm/resolve:873
+2025-09-23T11:43:57.3273983Z   throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+2025-09-23T11:43:57.3274010Z         ^
+2025-09-23T11:43:57.3274033Z
+2025-09-23T11:43:57.3274055Z Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'express' imported from /home/site/wwwroot/dist/server/index.js
+2025-09-23T11:43:57.3274072Z     at packageResolve (node:internal/modules/esm/resolve:873:9)
+2025-09-23T11:43:57.3275338Z     at moduleResolve (node:internal/modules/esm/resolve:946:18)
+2025-09-23T11:43:57.3275370Z     at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-09-23T11:43:57.3275394Z     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12)
+2025-09-23T11:43:57.3336672Z     at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25)
+2025-09-23T11:43:57.3336772Z     at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38)
+2025-09-23T11:43:57.3336793Z     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38)
+2025-09-23T11:43:57.3336812Z     at ModuleJob._link (node:internal/modules/esm/module_job:130:49) {
+2025-09-23T11:43:57.3336829Z   code: 'ERR_MODULE_NOT_FOUND'
+2025-09-23T11:43:57.3336845Z }
+2025-09-23T11:43:57.3337215Z
+2025-09-23T11:43:57.3337240Z Node.js v20.19.3
+2025-09-23T11:43:57.4628046Z Container has finished running with exit code: 1.
+2025-09-23T11:43:57.4629544Z Container is terminating. Grace period: 5 seconds.
+2025-09-23T11:43:57.4632377Z Stop and delete container. Retry count = 0
+2025-09-23T11:43:57.4804964Z Stopping container: 56ab01023294_kidzaimathapp30237.
+2025-09-23T11:43:57.5666387Z Deleting container: 56ab01023294_kidzaimathapp30237. Retry count = 0
+2025-09-23T11:43:58.1982866Z Container spec TerminationMessagePolicy  path
+2025-09-23T11:43:58.2002882Z Container is terminated. Total time elapsed: 737 ms.
+2025-09-23T11:43:58.2017394Z Site container: kidzaimathapp30237 terminated during site startup.
+2025-09-23T11:43:58.2095879Z Site startup probe failed after 23.8346465 seconds.
+2025-09-23T11:43:58.2397641Z Failed to start site. Revert by stopping site.
+2025-09-23T11:43:58.2563384Z Site: kidzaimathapp30237 stopped.
