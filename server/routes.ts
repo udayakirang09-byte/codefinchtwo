@@ -83,11 +83,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "User already exists with this email" });
       }
       
-      // Create user
+      // Create user with password
       const user = await storage.createUser({
         firstName,
         lastName,
         email: email.trim(),
+        password: password.trim(), // Store password (in production, hash with bcrypt)
         role
       });
       
