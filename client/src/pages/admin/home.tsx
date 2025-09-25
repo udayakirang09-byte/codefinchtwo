@@ -191,12 +191,6 @@ export default function AdminHome() {
                 <Activity className="w-4 h-4 mr-2" />
                 System Health
               </Button>
-              <Link href="/admin/analytics">
-                <Button data-testid="button-analytics-dashboard">
-                  <Brain className="w-4 h-4 mr-2" />
-                  AI Analytics
-                </Button>
-              </Link>
             </div>
           </div>
         </div>
@@ -337,34 +331,12 @@ export default function AdminHome() {
                     Mentor Approval
                   </Button>
                 </Link>
-                <Link href="/admin/analytics">
-                  <Button variant="outline" className="w-full" data-testid="button-ai-analytics">
-                    <Brain className="w-4 h-4 mr-2" />
-                    AI Analytics
-                  </Button>
-                </Link>
-                <Link href="/admin/cloud-deployments">
-                  <Button variant="outline" className="w-full" data-testid="button-cloud-deployments">
-                    <Cloud className="w-4 h-4 mr-2" />
-                    Cloud Deployments
-                  </Button>
-                </Link>
                 <Link href="/admin/code-mapping">
                   <Button variant="outline" className="w-full" data-testid="button-code-mapping">
                     <Map className="w-4 h-4 mr-2" />
                     Code Mapping
                   </Button>
                 </Link>
-                <Link href="/admin/test-management">
-                  <Button variant="outline" className="w-full" data-testid="button-test-management">
-                    <TestTube className="w-4 h-4 mr-2" />
-                    Unit & System Tests
-                  </Button>
-                </Link>
-                <Button variant="outline" className="w-full" data-testid="button-load-testing">
-                  <Zap className="w-4 h-4 mr-2" />
-                  Load Testing
-                </Button>
               </CardContent>
             </Card>
 
