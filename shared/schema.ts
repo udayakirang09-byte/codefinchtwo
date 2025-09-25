@@ -8,6 +8,7 @@ import {
   decimal,
   boolean,
   jsonb,
+  unique,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -1432,7 +1433,7 @@ export const specializations = pgTable("specializations", {
 
 export const subjects = pgTable("subjects", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: varchar("name").notNull().unique(),
+  name: varchar("name").notNull(),
   description: text("description"),
   board: varchar("board"), // IGCSE, IB, AP, CS, etc.
   grade: varchar("grade"), // Grade level or year
@@ -1440,7 +1441,10 @@ export const subjects = pgTable("subjects", {
   displayOrder: integer("display_order").default(0),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  // Composite unique constraint to allow same subject name for different board/grade/category combinations
+  subjectBoardGradeCategoryUnique: unique().on(table.name, table.board, table.grade, table.category),
+}));
 
 // Insert Schemas
 export const insertForumCategorySchema = createInsertSchema(forumCategories).omit({

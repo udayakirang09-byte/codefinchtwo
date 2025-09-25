@@ -203,6 +203,20 @@ export interface IStorage {
   getSpecializations(): Promise<Specialization[]>;
   getSubjects(): Promise<Subject[]>;
   
+  // Educational dropdown management operations
+  clearQualifications(): Promise<void>;
+  clearSpecializations(): Promise<void>;
+  clearSubjects(): Promise<void>;
+  createQualification(qualification: { name: string; description?: string; category?: string; displayOrder?: number }): Promise<void>;
+  createSpecialization(specialization: { name: string; description?: string; category?: string; displayOrder?: number }): Promise<void>;
+  createSubject(subject: { name: string; description?: string; board?: string; grade?: string; category?: string; displayOrder?: number }): Promise<void>;
+  batchCreateQualifications(qualifications: { name: string; description?: string; category?: string; displayOrder?: number }[]): Promise<void>;
+  batchCreateSpecializations(specializations: { name: string; description?: string; category?: string; displayOrder?: number }[]): Promise<void>;
+  batchCreateSubjects(subjects: { name: string; description?: string; board?: string; grade?: string; category?: string; displayOrder?: number }[]): Promise<void>;
+  getQualificationsCount(): Promise<number>;
+  getSpecializationsCount(): Promise<number>;
+  getSubjectsCount(): Promise<number>;
+  
 }
 
 export class DatabaseStorage implements IStorage {
@@ -950,6 +964,111 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(subjects)
       .where(eq(subjects.isActive, true))
       .orderBy(subjects.displayOrder, subjects.name);
+  }
+
+  // Educational dropdown management operations
+  async clearQualifications(): Promise<void> {
+    await db.delete(qualifications);
+  }
+
+  async clearSpecializations(): Promise<void> {
+    await db.delete(specializations);
+  }
+
+  async clearSubjects(): Promise<void> {
+    await db.delete(subjects);
+  }
+
+  async createQualification(qualification: { name: string; description?: string; category?: string; displayOrder?: number }): Promise<void> {
+    await db.insert(qualifications).values({
+      name: qualification.name,
+      description: qualification.description,
+      category: qualification.category,
+      displayOrder: qualification.displayOrder || 0,
+      isActive: true
+    }).onConflictDoNothing();
+  }
+
+  async createSpecialization(specialization: { name: string; description?: string; category?: string; displayOrder?: number }): Promise<void> {
+    await db.insert(specializations).values({
+      name: specialization.name,
+      description: specialization.description,
+      category: specialization.category,
+      displayOrder: specialization.displayOrder || 0,
+      isActive: true
+    }).onConflictDoNothing();
+  }
+
+  async createSubject(subject: { name: string; description?: string; board?: string; grade?: string; category?: string; displayOrder?: number }): Promise<void> {
+    await db.insert(subjects).values({
+      name: subject.name,
+      description: subject.description,
+      board: subject.board,
+      grade: subject.grade,
+      category: subject.category,
+      displayOrder: subject.displayOrder || 0,
+      isActive: true
+    }).onConflictDoNothing();
+  }
+
+  // Batch insert methods for better performance
+  async batchCreateQualifications(qualificationsList: { name: string; description?: string; category?: string; displayOrder?: number }[]): Promise<void> {
+    if (qualificationsList.length === 0) return;
+    
+    const values = qualificationsList.map(q => ({
+      name: q.name,
+      description: q.description,
+      category: q.category,
+      displayOrder: q.displayOrder || 0,
+      isActive: true
+    }));
+    
+    await db.insert(qualifications).values(values).onConflictDoNothing();
+  }
+
+  async batchCreateSpecializations(specializationsList: { name: string; description?: string; category?: string; displayOrder?: number }[]): Promise<void> {
+    if (specializationsList.length === 0) return;
+    
+    const values = specializationsList.map(s => ({
+      name: s.name,
+      description: s.description,
+      category: s.category,
+      displayOrder: s.displayOrder || 0,
+      isActive: true
+    }));
+    
+    await db.insert(specializations).values(values).onConflictDoNothing();
+  }
+
+  async batchCreateSubjects(subjectsList: { name: string; description?: string; board?: string; grade?: string; category?: string; displayOrder?: number }[]): Promise<void> {
+    if (subjectsList.length === 0) return;
+    
+    const values = subjectsList.map(s => ({
+      name: s.name,
+      description: s.description,
+      board: s.board,
+      grade: s.grade,
+      category: s.category,
+      displayOrder: s.displayOrder || 0,
+      isActive: true
+    }));
+    
+    await db.insert(subjects).values(values).onConflictDoNothing();
+  }
+
+  async getQualificationsCount(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(qualifications);
+    return result[0]?.count || 0;
+  }
+
+  async getSpecializationsCount(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(specializations);
+    return result[0]?.count || 0;
+  }
+
+  async getSubjectsCount(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(subjects);
+    return result[0]?.count || 0;
   }
 
   // Session management operations
