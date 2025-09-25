@@ -1,30 +1,55 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRoute } from "wouter";
-import Navigation from "@/components/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
-import { Video, VideoOff, Mic, MicOff, Users, MessageCircle, Phone, Settings, AlertTriangle, Wifi, WifiOff, Shield } from "lucide-react";
+import { useWebRTC } from "@/hooks/use-webrtc";
+import { Video, VideoOff, Mic, MicOff, Users, MessageCircle, Phone, Settings, AlertTriangle, Wifi, WifiOff, Shield, Monitor } from "lucide-react";
 
 export default function VideoClass() {
   const [, params] = useRoute("/video-class/:id");
   const classId = params?.id;
   
-  const [isVideoOn, setIsVideoOn] = useState(true);
-  const [isAudioOn, setIsAudioOn] = useState(true);
-  const [isConnected, setIsConnected] = useState(false);
-  const [isReconnecting, setIsReconnecting] = useState(false);
-  const reconnectAttemptsRef = useRef(0);
-  const [connectionQuality, setConnectionQuality] = useState<'good' | 'poor' | 'disconnected'>('disconnected');
-  const [participants, setParticipants] = useState(6); // 1 teacher + 5 students maximum
   const [teacherAlerts, setTeacherAlerts] = useState<string[]>([]);
   const [multipleLoginUsers, setMultipleLoginUsers] = useState<Array<{userId: string, sessionCount: number, user: any}>>([]);
   const [lastAlertedUsers, setLastAlertedUsers] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
+  
+  // Determine teacher role based on URL parameter or default to student
+  const isTeacher = classId?.includes('teacher') || false;
+  
+  // WebRTC hook for real video functionality
+  const {
+    isConnected,
+    participants,
+    localStream,
+    localVideoRef,
+    isVideoEnabled,
+    isAudioEnabled, 
+    connectionQuality,
+    toggleVideo,
+    toggleAudio,
+    startScreenShare,
+    disconnect
+  } = useWebRTC({
+    sessionId: classId || 'default',
+    userId: user?.id || 'anonymous',
+    isTeacher,
+    onParticipantJoin: (participant) => {
+      if (isTeacher) {
+        addTeacherAlert(`${participant.isTeacher ? 'Teacher' : 'Student'} joined the session`);
+      }
+    },
+    onParticipantLeave: (userId) => {
+      if (isTeacher) {
+        addTeacherAlert(`Participant ${userId} left the session`);
+      }
+    }
+  });
 
   // Query to check for multiple login users
   const { data: multipleLogins, refetch: refetchMultipleLogins } = useQuery({
@@ -33,57 +58,13 @@ export default function VideoClass() {
     refetchInterval: 30000, // Check every 30 seconds during video session
   });
   
-  // Determine teacher role based on URL parameter or default to student
-  const isTeacher = classId?.includes('teacher') || false;
-  
-  const [classInfo, setClassInfo] = useState({
+  const [classInfo] = useState({
     subject: "Python Basics",
-    mentor: "Sarah Johnson",
+    mentor: "Sarah Johnson", 
     duration: 60,
     startTime: new Date(),
     isTeacher
   });
-
-  // Reconnection logic using ref for stable attempt counting
-  const attemptReconnection = useCallback(async () => {
-    if (reconnectAttemptsRef.current >= 3) {
-      setConnectionQuality('disconnected');
-      toast({
-        title: "Connection Failed",
-        description: "Unable to reconnect after 3 attempts. Please refresh the page.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsReconnecting(true);
-    reconnectAttemptsRef.current += 1;
-    
-    try {
-      // Simulate reconnection attempt
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simulate success/failure
-      const success = Math.random() > 0.3; // 70% success rate
-      
-      if (success) {
-        setIsConnected(true);
-        setIsReconnecting(false);
-        reconnectAttemptsRef.current = 0;
-        setConnectionQuality('good');
-        toast({
-          title: "Reconnected",
-          description: "Successfully reconnected to the video session.",
-        });
-      } else {
-        setIsReconnecting(false);
-        setTimeout(attemptReconnection, 3000); // Retry after 3 seconds
-      }
-    } catch (error) {
-      setIsReconnecting(false);
-      setTimeout(attemptReconnection, 3000);
-    }
-  }, [toast]);
 
   // Teacher alert system
   const addTeacherAlert = useCallback((message: string) => {
@@ -135,53 +116,17 @@ export default function VideoClass() {
     }
   }, [multipleLogins, isTeacher, addTeacherAlert, lastAlertedUsers]);
 
-  // Main connection effect
+  // Initialize teacher alert when connected
   useEffect(() => {
-    console.log(`🎥 Initializing video class ${classId}`);
-    
-    // Simulate initial connection
-    const connectTimeout = setTimeout(() => {
-      setIsConnected(true);
-      setConnectionQuality('good');
-      
-      if (classInfo.isTeacher) {
-        addTeacherAlert("Video session started successfully. You are the host.");
-      }
-    }, 2000);
-
-    // Simulate random connection issues for demonstration
-    const connectionMonitor = setInterval(() => {
-      if (isConnected && Math.random() < 0.05) { // 5% chance of connection issue
-        setIsConnected(false);
-        setConnectionQuality('poor');
-        toast({
-          title: "Connection Issue",
-          description: "Attempting to reconnect...",
-          variant: "destructive",
-        });
-        attemptReconnection();
-      }
-    }, 10000);
-
-    return () => {
-      clearTimeout(connectTimeout);
-      clearInterval(connectionMonitor);
-    };
-  }, [classId, isConnected, classInfo.isTeacher, addTeacherAlert, attemptReconnection, toast]);
+    if (isConnected && isTeacher) {
+      addTeacherAlert("Video session started successfully. You are the host.");
+    }
+  }, [isConnected, isTeacher, addTeacherAlert]);
 
   const handleEndCall = () => {
     console.log(`📞 Ending video class ${classId}`);
+    disconnect();
     window.location.href = '/';
-  };
-
-  const handleToggleVideo = () => {
-    setIsVideoOn(!isVideoOn);
-    console.log(`📹 Video ${!isVideoOn ? 'enabled' : 'disabled'}`);
-  };
-
-  const handleToggleAudio = () => {
-    setIsAudioOn(!isAudioOn);
-    console.log(`🎤 Audio ${!isAudioOn ? 'enabled' : 'disabled'}`);
   };
 
   const handleOpenChat = () => {
@@ -189,25 +134,71 @@ export default function VideoClass() {
     window.open(`/chat/${classId}`, '_blank', 'width=400,height=600');
   };
 
-  // Show connecting overlay when not connected or reconnecting
-  const showConnectingOverlay = !isConnected || isReconnecting;
+  // Participant grid component for multiple video streams
+  const ParticipantGrid = () => {
+    if (participants.length === 0) {
+      return (
+        <div className="text-center text-gray-400">
+          <Users className="h-16 w-16 mx-auto mb-4" />
+          <p>Waiting for participants to join...</p>
+        </div>
+      );
+    }
+
+    // Dynamic grid layout for unlimited participants
+    const gridCols = participants.length <= 4 ? 'grid-cols-2' : 
+                     participants.length <= 9 ? 'grid-cols-3' : 'grid-cols-4';
+    
+    return (
+      <div className={`grid ${gridCols} gap-2 h-full overflow-auto`}>
+        {participants.map((participant) => (
+          <div key={participant.userId} className="bg-gray-800 rounded-lg border border-gray-600 flex items-center justify-center relative">
+            {participant.stream ? (
+              <video
+                autoPlay
+                playsInline
+                muted={false}
+                className="w-full h-full object-cover rounded-lg"
+                ref={(el) => {
+                  if (el && participant.stream) {
+                    el.srcObject = participant.stream;
+                  }
+                }}
+              />
+            ) : (
+              <div className="text-center">
+                <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mb-2 mx-auto">
+                  <span className="text-sm font-bold text-white">
+                    {participant.userId.substring(0, 2).toUpperCase()}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-300">{participant.userId}</p>
+              </div>
+            )}
+            <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-1 rounded">
+              {participant.isTeacher ? '👨‍🏫 Teacher' : '👨‍🎓 Student'}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 relative">
       {/* Connecting Overlay */}
-      {showConnectingOverlay && (
+      {!isConnected && (
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-purple-900 to-black z-50 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white mb-6"></div>
-            <h2 className="text-2xl font-bold text-white mb-2">
-              {isReconnecting ? 'Reconnecting to Class...' : 'Connecting to Class...'}
-            </h2>
+            <h2 className="text-2xl font-bold text-white mb-2">Connecting to Class...</h2>
             <p className="text-blue-200">
               Please wait while we connect you to {classInfo.subject}
             </p>
           </div>
         </div>
       )}
+
       {/* Header */}
       <div className="bg-black/50 backdrop-blur-sm border-b border-gray-700 p-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
@@ -218,7 +209,7 @@ export default function VideoClass() {
           <div className="flex items-center gap-4">
             <Badge className="bg-green-600">
               <Users className="h-3 w-3 mr-1" />
-              {participants} participants
+              {participants.length + 1} participants
             </Badge>
             <Badge 
               variant="outline" 
@@ -235,7 +226,7 @@ export default function VideoClass() {
             <Badge variant="outline" className="text-white border-gray-600">
               {new Date().toLocaleTimeString()}
             </Badge>
-            {classInfo.isTeacher && (
+            {isTeacher && (
               <Badge className="bg-purple-600">
                 <AlertTriangle className="h-3 w-3 mr-1" />
                 Teacher
@@ -249,42 +240,40 @@ export default function VideoClass() {
       <div className="flex-1 p-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
-            {/* Main Video */}
+            {/* Main Video Area */}
             <div className="lg:col-span-3">
               <Card className="h-full bg-gray-900 border-gray-700">
                 <CardContent className="p-0 h-full relative">
                   <div className="w-full h-full bg-gradient-to-br from-blue-900 to-purple-900 rounded-lg flex items-center justify-center relative overflow-hidden">
-                    {isVideoOn ? (
+                    {localStream && isVideoEnabled ? (
                       <>
-                        {/* Simulated video feed */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20"></div>
-                        <div className="relative z-10 text-center">
-                          <div className="w-32 h-32 bg-white/20 rounded-full flex items-center justify-center mb-4 mx-auto">
-                            <span className="text-4xl font-bold text-white">SJ</span>
-                          </div>
-                          <h3 className="text-2xl font-bold text-white">{classInfo.mentor}</h3>
-                          <p className="text-blue-200">Teaching {classInfo.subject}</p>
+                        {/* Local video feed */}
+                        <video
+                          ref={localVideoRef}
+                          autoPlay
+                          playsInline
+                          muted
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                        <div className="absolute top-4 left-4 bg-black/70 text-white text-sm px-2 py-1 rounded">
+                          You ({isTeacher ? 'Teacher' : 'Student'})
                         </div>
                       </>
                     ) : (
                       <div className="text-center">
                         <VideoOff className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-400">Video is turned off</p>
+                        <p className="text-gray-400">
+                          {localStream ? 'Video is turned off' : 'Camera not available'}
+                        </p>
                       </div>
                     )}
                     
-                    {/* Your video (small) */}
-                    <div className="absolute bottom-4 right-4 w-32 h-24 bg-gray-800 rounded-lg border-2 border-gray-600 flex items-center justify-center">
-                      {isVideoOn ? (
-                        <div className="text-center">
-                          <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mb-1">
-                            <span className="text-xs font-bold text-white">You</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <VideoOff className="h-6 w-6 text-gray-400" />
-                      )}
-                    </div>
+                    {/* Participants grid overlay (for small view) */}
+                    {participants.length > 0 && (
+                      <div className="absolute bottom-4 right-4 w-48 h-32 bg-gray-800/90 rounded-lg border border-gray-600 p-2">
+                        <ParticipantGrid />
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -293,7 +282,7 @@ export default function VideoClass() {
             {/* Sidebar */}
             <div className="lg:col-span-1 space-y-4">
               {/* Security Alerts for Multiple Logins */}
-              {classInfo.isTeacher && multipleLoginUsers.length > 0 && (
+              {isTeacher && multipleLoginUsers.length > 0 && (
                 <Card className="bg-red-800 border-red-700" data-testid="card-security-alert">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-white text-sm flex items-center" data-testid="title-security-alert">
@@ -317,7 +306,7 @@ export default function VideoClass() {
               )}
               
               {/* Teacher Alerts */}
-              {classInfo.isTeacher && teacherAlerts.length > 0 && (
+              {isTeacher && teacherAlerts.length > 0 && (
                 <Card className="bg-purple-800 border-purple-700">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-white text-sm flex items-center">
@@ -346,21 +335,31 @@ export default function VideoClass() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-yellow-100 text-sm mb-3">
-                      {isReconnecting ? 'Attempting to reconnect...' : 'Connection unstable'}
+                      {!isConnected ? 'Attempting to connect...' : 'Connection unstable'}
                     </p>
-                    {!isConnected && !isReconnecting && (
-                      <Button 
-                        size="sm" 
-                        onClick={attemptReconnection}
-                        className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
-                        data-testid="button-reconnect"
-                      >
-                        Reconnect
-                      </Button>
-                    )}
                   </CardContent>
                 </Card>
               )}
+
+              {/* Participants List */}
+              <Card className="bg-gray-800 border-gray-700">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-white text-sm">Participants ({participants.length + 1})</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="text-sm text-gray-300 flex items-center">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    You ({isTeacher ? 'Teacher' : 'Student'})
+                  </div>
+                  {participants.map((participant) => (
+                    <div key={participant.userId} className="text-sm text-gray-300 flex items-center">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                      {participant.userId} ({participant.isTeacher ? 'Teacher' : 'Student'})
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
               {/* Class Info */}
               <Card className="bg-gray-800 border-gray-700">
                 <CardHeader className="pb-3">
@@ -377,10 +376,10 @@ export default function VideoClass() {
                     <strong>Started:</strong> {classInfo.startTime.toLocaleTimeString()}
                   </div>
                   <div className="text-gray-300">
-                    <strong>Role:</strong> {classInfo.isTeacher ? 'Teacher (Host)' : 'Student'}
+                    <strong>Role:</strong> {isTeacher ? 'Teacher (Host)' : 'Student'}
                   </div>
                   <div className="text-gray-300">
-                    <strong>Max Participants:</strong> 6 (1 teacher + 5 students)
+                    <strong>Max Participants:</strong> 6+ users supported
                   </div>
                 </CardContent>
               </Card>
@@ -401,7 +400,19 @@ export default function VideoClass() {
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Open Chat
                   </Button>
-                  {classInfo.isTeacher && (
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={startScreenShare}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white border-green-600"
+                    data-testid="button-screen-share"
+                  >
+                    <Monitor className="h-4 w-4 mr-2" />
+                    Share Screen
+                  </Button>
+                  
+                  {isTeacher && (
                     <>
                       <Button 
                         variant="outline" 
@@ -445,22 +456,22 @@ export default function VideoClass() {
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-4">
           <Button
             size="lg"
-            variant={isVideoOn ? "default" : "secondary"}
-            onClick={handleToggleVideo}
-            className={`rounded-full w-14 h-14 ${isVideoOn ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600 hover:bg-gray-700'}`}
+            variant={isVideoEnabled ? "default" : "secondary"}
+            onClick={toggleVideo}
+            className={`rounded-full w-14 h-14 ${isVideoEnabled ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600 hover:bg-gray-700'}`}
             data-testid="button-toggle-video"
           >
-            {isVideoOn ? <Video className="h-6 w-6" /> : <VideoOff className="h-6 w-6" />}
+            {isVideoEnabled ? <Video className="h-6 w-6" /> : <VideoOff className="h-6 w-6" />}
           </Button>
           
           <Button
             size="lg"
-            variant={isAudioOn ? "default" : "secondary"}
-            onClick={handleToggleAudio}
-            className={`rounded-full w-14 h-14 ${isAudioOn ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}
+            variant={isAudioEnabled ? "default" : "secondary"}
+            onClick={toggleAudio}
+            className={`rounded-full w-14 h-14 ${isAudioEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}
             data-testid="button-toggle-audio"
           >
-            {isAudioOn ? <Mic className="h-6 w-6" /> : <MicOff className="h-6 w-6" />}
+            {isAudioEnabled ? <Mic className="h-6 w-6" /> : <MicOff className="h-6 w-6" />}
           </Button>
           
           <Button

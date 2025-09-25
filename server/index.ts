@@ -1,4 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
+import { createServer } from "http";
+import { WebSocketServer } from "ws";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
@@ -37,7 +39,188 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  const httpServer = createServer(app);
   const server = await registerRoutes(app);
+  
+  // Setup WebSocket server for video chat signaling on specific path
+  const wss = new WebSocketServer({ 
+    server: httpServer,
+    path: '/video-signaling'
+  });
+  
+  // Store active video sessions and their participants
+  const videoSessions = new Map<string, Set<any>>();
+  
+  wss.on('connection', (ws: any, request: any) => {
+    log('WebSocket connection established');
+    
+    // Track authentication status
+    let isAuthenticated = false;
+    let authenticatedUserId: string | null = null;
+    
+    ws.on('message', (message: Buffer) => {
+      try {
+        const data = JSON.parse(message.toString());
+        
+        // Require authentication for all operations except auth
+        if (data.type !== 'authenticate' && !isAuthenticated) {
+          ws.send(JSON.stringify({
+            type: 'error',
+            message: 'Authentication required'
+          }));
+          return;
+        }
+        
+        switch (data.type) {
+          case 'authenticate':
+            // Basic authentication - in production, validate JWT/session token
+            const { userId: authUserId, sessionToken } = data;
+            
+            // For now, accept any non-empty userId (in production: validate session)
+            if (authUserId && typeof authUserId === 'string' && authUserId.trim()) {
+              isAuthenticated = true;
+              authenticatedUserId = authUserId;
+              
+              ws.send(JSON.stringify({
+                type: 'authenticated',
+                userId: authUserId
+              }));
+              
+              log(`User ${authUserId} authenticated for video signaling`);
+            } else {
+              ws.send(JSON.stringify({
+                type: 'auth-failed',
+                message: 'Invalid credentials'
+              }));
+            }
+            break;
+            
+          case 'join-video-session':
+            // Use authenticated userId to prevent spoofing
+            const { sessionId, isTeacher } = data;
+            const userId = authenticatedUserId;
+            
+            if (!videoSessions.has(sessionId)) {
+              videoSessions.set(sessionId, new Set());
+            }
+            
+            const participants = videoSessions.get(sessionId)!;
+            
+            // Add participant with connection info
+            const participant = { ws, userId, isTeacher, sessionId };
+            participants.add(participant);
+            
+            // Notify all participants about new join
+            participants.forEach((p: any) => {
+              if (p.ws !== ws) {
+                p.ws.send(JSON.stringify({
+                  type: 'user-joined',
+                  userId,
+                  isTeacher,
+                  totalParticipants: participants.size
+                }));
+              }
+            });
+            
+            // Send current participants list to new user
+            const participantsList = Array.from(participants).map((p: any) => ({
+              userId: p.userId,
+              isTeacher: p.isTeacher
+            }));
+            
+            ws.send(JSON.stringify({
+              type: 'session-joined',
+              participants: participantsList,
+              totalParticipants: participants.size
+            }));
+            
+            log(`User ${userId} joined video session ${sessionId} as ${isTeacher ? 'teacher' : 'student'}`);
+            break;
+            
+          case 'webrtc-offer':
+          case 'webrtc-answer':
+          case 'webrtc-ice-candidate':
+            // Forward WebRTC signaling messages to target peer
+            const { targetUserId } = data;
+            const currentSessionId = data.sessionId;
+            const fromUserId = authenticatedUserId;
+            
+            if (videoSessions.has(currentSessionId)) {
+              const sessionParticipants = videoSessions.get(currentSessionId)!;
+              
+              sessionParticipants.forEach((p: any) => {
+                if (p.userId === targetUserId && p.ws !== ws) {
+                  p.ws.send(JSON.stringify({
+                    ...data,
+                    fromUserId: fromUserId
+                  }));
+                }
+              });
+            }
+            break;
+            
+          case 'leave-video-session':
+            const leaveSessionId = data.sessionId;
+            const leaveUserId = authenticatedUserId;
+            
+            if (videoSessions.has(leaveSessionId)) {
+              const sessionParticipants = videoSessions.get(leaveSessionId)!;
+              
+              // Remove participant
+              sessionParticipants.forEach((p: any) => {
+                if (p.userId === leaveUserId) {
+                  sessionParticipants.delete(p);
+                }
+              });
+              
+              // Notify remaining participants
+              sessionParticipants.forEach((p: any) => {
+                p.ws.send(JSON.stringify({
+                  type: 'user-left',
+                  userId: leaveUserId,
+                  totalParticipants: sessionParticipants.size
+                }));
+              });
+              
+              // Clean up empty sessions
+              if (sessionParticipants.size === 0) {
+                videoSessions.delete(leaveSessionId);
+              }
+            }
+            break;
+        }
+      } catch (error) {
+        log(`WebSocket message error: ${error}`);
+      }
+    });
+    
+    ws.on('close', () => {
+      // Clean up disconnected participants
+      videoSessions.forEach((participants, sessionId) => {
+        participants.forEach((p: any) => {
+          if (p.ws === ws) {
+            participants.delete(p);
+            
+            // Notify other participants
+            participants.forEach((remaining: any) => {
+              remaining.ws.send(JSON.stringify({
+                type: 'user-left',
+                userId: p.userId,
+                totalParticipants: participants.size
+              }));
+            });
+          }
+        });
+        
+        // Clean up empty sessions
+        if (participants.size === 0) {
+          videoSessions.delete(sessionId);
+        }
+      });
+      
+      log('WebSocket connection closed');
+    });
+  });
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -51,7 +234,7 @@ app.use((req, res, next) => {
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
   if (app.get("env") === "development") {
-    await setupVite(app, server);
+    await setupVite(app, httpServer);
   } else {
     serveStatic(app);
   }
@@ -61,11 +244,7 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '3000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
+  httpServer.listen(port, "0.0.0.0", () => {
+    log(`serving on port ${port} with WebSocket support`);
   });
 })();
