@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRoute } from "wouter";
 import Navigation from "@/components/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,23 +15,26 @@ export default function VideoClass() {
   const [isAudioOn, setIsAudioOn] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
-  const [reconnectAttempts, setReconnectAttempts] = useState(0);
-  const [connectionQuality, setConnectionQuality] = useState<'good' | 'poor' | 'disconnected'>('good');
-  const [participants, setParticipants] = useState(6); // 1 teacher + 4 students + current user
+  const reconnectAttemptsRef = useRef(0);
+  const [connectionQuality, setConnectionQuality] = useState<'good' | 'poor' | 'disconnected'>('disconnected');
+  const [participants, setParticipants] = useState(6); // 1 teacher + 5 students maximum
   const [teacherAlerts, setTeacherAlerts] = useState<string[]>([]);
   const { toast } = useToast();
+  
+  // Determine teacher role based on URL parameter or default to student
+  const isTeacher = classId?.includes('teacher') || false;
   
   const [classInfo, setClassInfo] = useState({
     subject: "Python Basics",
     mentor: "Sarah Johnson",
     duration: 60,
     startTime: new Date(),
-    isTeacher: Math.random() > 0.5 // Simulate teacher/student role
+    isTeacher
   });
 
-  // Reconnection logic
+  // Reconnection logic using ref for stable attempt counting
   const attemptReconnection = useCallback(async () => {
-    if (reconnectAttempts >= 3) {
+    if (reconnectAttemptsRef.current >= 3) {
       setConnectionQuality('disconnected');
       toast({
         title: "Connection Failed",
@@ -42,7 +45,7 @@ export default function VideoClass() {
     }
 
     setIsReconnecting(true);
-    setReconnectAttempts(prev => prev + 1);
+    reconnectAttemptsRef.current += 1;
     
     try {
       // Simulate reconnection attempt
@@ -54,7 +57,7 @@ export default function VideoClass() {
       if (success) {
         setIsConnected(true);
         setIsReconnecting(false);
-        setReconnectAttempts(0);
+        reconnectAttemptsRef.current = 0;
         setConnectionQuality('good');
         toast({
           title: "Reconnected",
@@ -68,11 +71,11 @@ export default function VideoClass() {
       setIsReconnecting(false);
       setTimeout(attemptReconnection, 3000);
     }
-  }, [reconnectAttempts, toast]);
+  }, [toast]);
 
   // Teacher alert system
   const addTeacherAlert = useCallback((message: string) => {
-    if (classInfo.isTeacher) {
+    if (isTeacher) {
       setTeacherAlerts(prev => [...prev, message]);
       toast({
         title: "Teacher Alert",
@@ -85,7 +88,7 @@ export default function VideoClass() {
         setTeacherAlerts(prev => prev.filter(alert => alert !== message));
       }, 10000);
     }
-  }, [classInfo.isTeacher, toast]);
+  }, [isTeacher, toast]);
 
   // Main connection effect
   useEffect(() => {
@@ -141,20 +144,25 @@ export default function VideoClass() {
     window.open(`/chat/${classId}`, '_blank', 'width=400,height=600');
   };
 
-  if (!isConnected) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white mb-6"></div>
-          <h2 className="text-2xl font-bold text-white mb-2">Connecting to Class...</h2>
-          <p className="text-blue-200">Please wait while we connect you to {classInfo.subject}</p>
-        </div>
-      </div>
-    );
-  }
+  // Show connecting overlay when not connected or reconnecting
+  const showConnectingOverlay = !isConnected || isReconnecting;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 relative">
+      {/* Connecting Overlay */}
+      {showConnectingOverlay && (
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-purple-900 to-black z-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white mb-6"></div>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              {isReconnecting ? 'Reconnecting to Class...' : 'Connecting to Class...'}
+            </h2>
+            <p className="text-blue-200">
+              Please wait while we connect you to {classInfo.subject}
+            </p>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="bg-black/50 backdrop-blur-sm border-b border-gray-700 p-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
@@ -303,7 +311,7 @@ export default function VideoClass() {
                     <strong>Role:</strong> {classInfo.isTeacher ? 'Teacher (Host)' : 'Student'}
                   </div>
                   <div className="text-gray-300">
-                    <strong>Max Participants:</strong> 6 (1 teacher + 4 students)
+                    <strong>Max Participants:</strong> 6 (1 teacher + 5 students)
                   </div>
                 </CardContent>
               </Card>
