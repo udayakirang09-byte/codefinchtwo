@@ -30,8 +30,60 @@ jobs:
         chmod +x build-production.sh start-production.sh
         ./build-production.sh
     
+    - name: Test database connection
+      run: |
+        echo "Testing database connection..."
+        node -e "
+          const { neon } = require('@neondatabase/serverless');
+          const sql = neon(process.env.DATABASE_URL);
+          sql\`SELECT 1 as test\`.then(result => {
+            console.log('✅ Database connection successful:', result);
+          }).catch(err => {
+            console.log('❌ Database connection failed:', err.message);
+            process.exit(1);
+          });
+        "
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
     - name: Deploy database schema
-      run: npm run db:push --force
+      run: |
+        echo "🔄 Starting database schema deployment..."
+        npm run db:push --force
+        echo "✅ Database schema deployment completed"
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    - name: Verify tables exist
+      run: |
+        echo "🔍 Verifying tables were created..."
+        node -e "
+          const { neon } = require('@neondatabase/serverless');
+          const sql = neon(process.env.DATABASE_URL);
+          
+          async function checkTables() {
+            try {
+              const tables = await sql\`
+                SELECT table_name FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name IN ('mentors', 'teacher_audio_metrics', 'home_section_controls')
+              \`;
+              console.log('📊 Found tables:', tables.map(t => t.table_name));
+              
+              if (tables.length === 3) {
+                console.log('✅ All required tables exist');
+              } else {
+                console.log('❌ Missing tables - only found:', tables.length);
+                process.exit(1);
+              }
+            } catch (err) {
+              console.log('❌ Table verification failed:', err.message);
+              process.exit(1);
+            }
+          }
+          
+          checkTables();
+        "
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
     
