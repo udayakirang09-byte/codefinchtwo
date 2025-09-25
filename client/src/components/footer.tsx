@@ -1,5 +1,7 @@
-import { Code } from "lucide-react";
+import { Code, Cookie } from "lucide-react";
 import { Link } from "wouter";
+import { CookieSettingsDialog } from "@/components/cookie-policy";
+import { Button } from "@/components/ui/button";
 
 export default function Footer() {
   return (
@@ -144,6 +146,15 @@ export default function Footer() {
                   Privacy Policy
                 </Link>
               </li>
+              <li>
+                <CookieSettingsDialog
+                  trigger={
+                    <button className="text-white/80 hover:text-white transition-colors text-left" data-testid="button-footer-cookie-settings">
+                      Cookie Preferences
+                    </button>
+                  }
+                />
+              </li>
             </ul>
           </div>
         </div>
@@ -152,16 +163,21 @@ export default function Footer() {
           <p className="text-white/60 mb-4 md:mb-0" data-testid="text-copyright">
             © 2024 CodeConnect. All rights reserved.
           </p>
-          <div className="flex space-x-6 text-white/60 text-sm">
+          <div className="flex space-x-6 text-white/60 text-sm items-center">
             <Link href="/terms-of-service" className="hover:text-white transition-colors" data-testid="link-terms">
               Terms of Service
             </Link>
             <Link href="/privacy" className="hover:text-white transition-colors" data-testid="link-privacy">
               Privacy Policy
             </Link>
-            <Link href="/cookie-policy" className="hover:text-white transition-colors" data-testid="link-cookies">
-              Cookie Policy
-            </Link>
+            <CookieSettingsDialog
+              trigger={
+                <button className="flex items-center gap-1 hover:text-white transition-colors" data-testid="button-bottom-cookie-settings">
+                  <Cookie className="h-4 w-4" />
+                  Cookie Settings
+                </button>
+              }
+            />
           </div>
         </div>
       </div>
