@@ -58,6 +58,12 @@ import {
   type StudentWithUser,
   type BookingWithDetails,
   type ReviewWithDetails,
+  qualifications,
+  specializations,
+  subjects,
+  type Qualification,
+  type Specialization,
+  type Subject,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -178,6 +184,11 @@ export interface IStorage {
     studentsCount: number;
     teachersCount: number;
   }>;
+  
+  // Educational dropdown operations
+  getQualifications(): Promise<Qualification[]>;
+  getSpecializations(): Promise<Specialization[]>;
+  getSubjects(): Promise<Subject[]>;
   
 }
 
@@ -907,6 +918,25 @@ export class DatabaseStorage implements IStorage {
   async createHelpTicket(ticketData: any): Promise<any> {
     const [ticket] = await db.insert(helpTickets).values(ticketData).returning();
     return ticket;
+  }
+
+  // Educational dropdown operations
+  async getQualifications(): Promise<Qualification[]> {
+    return await db.select().from(qualifications)
+      .where(eq(qualifications.isActive, true))
+      .orderBy(qualifications.displayOrder, qualifications.name);
+  }
+
+  async getSpecializations(): Promise<Specialization[]> {
+    return await db.select().from(specializations)
+      .where(eq(specializations.isActive, true))
+      .orderBy(specializations.displayOrder, specializations.name);
+  }
+
+  async getSubjects(): Promise<Subject[]> {
+    return await db.select().from(subjects)
+      .where(eq(subjects.isActive, true))
+      .orderBy(subjects.displayOrder, subjects.name);
   }
 
 }

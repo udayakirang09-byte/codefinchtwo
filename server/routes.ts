@@ -3551,7 +3551,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Educational Dropdown Routes
+  app.get('/api/qualifications', async (req, res) => {
+    try {
+      const qualificationsList = await storage.getQualifications();
+      res.json(qualificationsList);
+    } catch (error) {
+      console.error('Error fetching qualifications:', error);
+      res.status(500).json({ message: 'Failed to fetch qualifications' });
+    }
+  });
+
+  app.get('/api/specializations', async (req, res) => {
+    try {
+      const specializationsList = await storage.getSpecializations();
+      res.json(specializationsList);
+    } catch (error) {
+      console.error('Error fetching specializations:', error);
+      res.status(500).json({ message: 'Failed to fetch specializations' });
+    }
+  });
+
+  app.get('/api/subjects', async (req, res) => {
+    try {
+      const subjectsList = await storage.getSubjects();
+      res.json(subjectsList);
+    } catch (error) {
+      console.error('Error fetching subjects:', error);
+      res.status(500).json({ message: 'Failed to fetch subjects' });
+    }
+  });
+
   console.log('✅ Forum, Project, and Events API routes registered successfully!');
+  console.log('✅ Educational dropdown API routes registered successfully!');
 
   const httpServer = createServer(app);
   return httpServer;

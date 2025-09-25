@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Code, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import type { Qualification, Specialization, Subject } from "@shared/schema";
 
 export default function Signup() {
   const [formData, setFormData] = useState({
@@ -34,6 +36,22 @@ export default function Signup() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  // Fetch educational dropdown data
+  const { data: qualifications = [], isLoading: qualificationsLoading, isError: qualificationsError } = useQuery<Qualification[]>({
+    queryKey: ['/api/qualifications'],
+    enabled: formData.role === "mentor" || formData.role === "both"
+  });
+
+  const { data: specializations = [], isLoading: specializationsLoading, isError: specializationsError } = useQuery<Specialization[]>({
+    queryKey: ['/api/specializations'],
+    enabled: formData.role === "mentor" || formData.role === "both"
+  });
+
+  const { data: subjects = [], isLoading: subjectsLoading, isError: subjectsError } = useQuery<Subject[]>({
+    queryKey: ['/api/subjects'],
+    enabled: formData.role === "mentor" || formData.role === "both"
+  });
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -217,23 +235,41 @@ export default function Signup() {
                     <div key={index} className="grid grid-cols-12 gap-3">
                       <div className="col-span-5 space-y-1">
                         <Label className="text-sm font-medium">{index === 0 ? "Highest" : index === 1 ? "Second" : "Third"} Qualification</Label>
-                        <Input
-                          placeholder="e.g., Bachelor's in Computer Science"
-                          value={qual.qualification}
-                          onChange={(e) => handleQualificationChange(index, "qualification", e.target.value)}
-                          data-testid={`input-qualification-${index}`}
-                          className="w-full"
-                        />
+                        <Select 
+                          value={qual.qualification} 
+                          onValueChange={(value) => handleQualificationChange(index, "qualification", value)}
+                          disabled={qualificationsLoading}
+                        >
+                          <SelectTrigger data-testid={`select-qualification-${index}`}>
+                            <SelectValue placeholder={qualificationsLoading ? "Loading..." : qualificationsError ? "Error loading qualifications" : "Select qualification"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {qualifications.map((qualification) => (
+                              <SelectItem key={qualification.id} value={qualification.name}>
+                                {qualification.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="col-span-4 space-y-1">
                         <Label className="text-sm font-medium">Specialization</Label>
-                        <Input
-                          placeholder="e.g., Machine Learning"
-                          value={qual.specialization}
-                          onChange={(e) => handleQualificationChange(index, "specialization", e.target.value)}
-                          data-testid={`input-specialization-${index}`}
-                          className="w-full"
-                        />
+                        <Select 
+                          value={qual.specialization} 
+                          onValueChange={(value) => handleQualificationChange(index, "specialization", value)}
+                          disabled={specializationsLoading}
+                        >
+                          <SelectTrigger data-testid={`select-specialization-${index}`}>
+                            <SelectValue placeholder={specializationsLoading ? "Loading..." : specializationsError ? "Error loading specializations" : "Select specialization"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {specializations.map((specialization) => (
+                              <SelectItem key={specialization.id} value={specialization.name}>
+                                {specialization.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="col-span-3 space-y-1">
                         <Label className="text-sm font-medium">Score/Grade</Label>
@@ -256,13 +292,22 @@ export default function Signup() {
                     <div key={index} className="grid grid-cols-12 gap-3">
                       <div className="col-span-7 space-y-1">
                         <Label className="text-sm font-medium">Subject {index + 1}</Label>
-                        <Input
-                          placeholder="e.g., Python Programming, Web Development"
-                          value={subj.subject}
-                          onChange={(e) => handleSubjectChange(index, "subject", e.target.value)}
-                          data-testid={`input-subject-${index}`}
-                          className="w-full"
-                        />
+                        <Select 
+                          value={subj.subject} 
+                          onValueChange={(value) => handleSubjectChange(index, "subject", value)}
+                          disabled={subjectsLoading}
+                        >
+                          <SelectTrigger data-testid={`select-subject-${index}`}>
+                            <SelectValue placeholder={subjectsLoading ? "Loading..." : subjectsError ? "Error loading subjects" : "Select subject"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {subjects.map((subject) => (
+                              <SelectItem key={subject.id} value={subject.name}>
+                                {subject.name} ({subject.board})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="col-span-5 space-y-1">
                         <Label className="text-sm font-medium">Teaching Experience</Label>
