@@ -436,13 +436,40 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  // TODO: Fix course operations - temporarily disabled due to type issues
+  // Course operations - fixed implementation
   async createCourse(courseData: InsertCourse): Promise<Course> {
-    throw new Error("Course creation not implemented yet");
+    const processedData = {
+      ...courseData,
+      tags: courseData.tags ? Array.from(courseData.tags as string[]) : []
+    };
+    
+    const [course] = await db.insert(courses).values([processedData]).returning();
+    return course;
   }
 
   async updateCourse(id: string, courseData: Partial<InsertCourse>): Promise<void> {
-    throw new Error("Course update not implemented yet");
+    const processedData: any = {
+      ...courseData,
+      updatedAt: new Date()
+    };
+
+    // Process tags array if provided
+    if (courseData.tags) {
+      processedData.tags = Array.from(courseData.tags as string[]);
+    }
+
+    // Remove undefined values safely
+    const filteredData = Object.entries(processedData).reduce((acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as any);
+
+    await db
+      .update(courses)
+      .set(filteredData)
+      .where(eq(courses.id, id));
   }
 
   async deleteCourse(id: string): Promise<void> {

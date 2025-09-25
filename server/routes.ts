@@ -608,50 +608,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Courses routes
   app.get("/api/courses", async (req, res) => {
     try {
-      // For now, return sample courses with real mentor data
-      const mentors = await storage.getMentors();
-      const sampleCourses = [
-        {
-          id: "course1",
-          title: "Python for Kids",
-          description: "Learn Python programming through fun games and projects",
-          duration: "8 weeks",
-          price: "2999",
-          difficulty: "Beginner",
-          category: "Programming",
-          mentor: mentors[0] || { user: { firstName: "Sarah", lastName: "Johnson" }, title: "Python Expert" },
-          mentorId: mentors[0]?.id || "ment001",
-          image: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
-        },
-        {
-          id: "course2",
-          title: "Web Development Basics",
-          description: "Build your first website with HTML, CSS, and JavaScript",
-          duration: "10 weeks",
-          price: "3999",
-          difficulty: "Beginner",
-          category: "Web Development",
-          mentor: mentors[1] || { user: { firstName: "Mike", lastName: "Chen" }, title: "JavaScript Expert" },
-          mentorId: mentors[1]?.id || "ment002",
-          image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
-        },
-        {
-          id: "course3",
-          title: "Scratch Programming",
-          description: "Create animations and games with block-based coding",
-          duration: "6 weeks",
-          price: "2499",
-          difficulty: "Beginner",
-          category: "Visual Programming",
-          mentor: mentors[2] || { user: { firstName: "Alex", lastName: "Rivera" }, title: "Frontend Specialist" },
-          mentorId: mentors[2]?.id || "ment003",
-          image: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
-        }
-      ];
-      res.json(sampleCourses);
+      // Get courses from database
+      const dbCourses = await storage.getCourses();
+      
+      // Enhance courses with mentor details
+      const coursesWithMentors = await Promise.all(
+        dbCourses.map(async (course) => {
+          const mentor = await storage.getMentor(course.mentorId);
+          return {
+            ...course,
+            mentor: mentor || null,
+            // Add default image for display
+            image: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
+          };
+        })
+      );
+
+      console.log(`📚 Retrieved ${coursesWithMentors.length} courses from database`);
+      res.json(coursesWithMentors);
     } catch (error) {
       console.error("Error fetching courses:", error);
       res.status(500).json({ message: "Failed to fetch courses" });
+    }
+  });
+
+  // Create course route
+  app.post("/api/courses", async (req, res) => {
+    try {
+      const courseData = req.body;
+
+      // Validate required fields
+      if (!courseData.title || !courseData.description || !courseData.mentorId) {
+        return res.status(400).json({ 
+          message: "Missing required fields: title, description, mentorId" 
+        });
+      }
+
+      // Ensure mentorId exists
+      const mentor = await storage.getMentor(courseData.mentorId);
+      if (!mentor) {
+        return res.status(400).json({ message: "Invalid mentor ID" });
+      }
+
+      // Process course data
+      const processedData = {
+        ...courseData,
+        price: courseData.price ? courseData.price.toString() : "0",
+        maxStudents: courseData.maxStudents || 10,
+        tags: Array.isArray(courseData.tags) ? courseData.tags : []
+      };
+
+      const newCourse = await storage.createCourse(processedData);
+
+      console.log(`✅ Course created: "${newCourse.title}" (ID: ${newCourse.id})`);
+      res.status(201).json(newCourse);
+    } catch (error) {
+      console.error("Error creating course:", error);
+      res.status(500).json({ message: "Failed to create course" });
     }
   });
 
