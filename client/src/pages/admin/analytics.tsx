@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -68,9 +68,9 @@ export default function AdminAnalytics() {
     queryKey: [`/api/admin/chat-analytics?timeRange=${selectedTimeRange}`],
   });
 
-  // Audio Analytics Query
-  const { data: audioAnalytics = [], isLoading: audioLoading } = useQuery<any[]>({
-    queryKey: [`/api/admin/audio-analytics?timeRange=${selectedTimeRange}`],
+  // Teacher Audio Analytics Query (Rankings)
+  const { data: teacherAnalytics = [], isLoading: audioLoading } = useQuery<any[]>({
+    queryKey: ['/api/admin/teacher-analytics'],
   });
 
   // Cloud Deployments Query
@@ -140,6 +140,19 @@ export default function AdminAnalytics() {
   ];
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
+  // Helper functions for teacher rankings
+  const params = ['encourageInvolvement', 'pleasantCommunication', 'avoidPersonalDetails', 'overallScore'] as const;
+  const score = (t: any, k: string) => t.metrics?.[k] ?? t[k] ?? 0;
+  const ranks = useMemo(() => {
+    const map: Record<string, Map<string, number>> = {};
+    params.forEach(p => {
+      const sorted = [...teacherAnalytics].sort((a, b) => score(b, p) - score(a, p));
+      map[p] = new Map(sorted.map((t, i) => [t.mentorId ?? t.id ?? t.mentorName ?? String(i), i + 1]));
+    });
+    return map;
+  }, [teacherAnalytics]);
+  const colorFor = (v: number) => v >= 9 ? 'text-green-600 font-semibold' : v < 8 ? 'text-red-600 font-semibold' : 'text-gray-900';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -487,69 +500,103 @@ export default function AdminAnalytics() {
             </Card>
           </TabsContent>
 
-          {/* Audio Analytics Tab */}
+          {/* Teacher Rankings Audio Analytics Tab */}
           <TabsContent value="audio-analytics" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Mic className="h-5 w-5" />
-                  Audio Analytics & Teaching Effectiveness
+                  <TrendingUp className="h-5 w-5" />
+                  Teacher Performance Rankings
                 </CardTitle>
-                <CardDescription>
-                  AI analysis of audio sessions for teaching quality and engagement metrics
-                </CardDescription>
+                <CardDescription>Rankings 1–10 per parameter. Green ≥9, red &lt;8.</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {audioLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="animate-spin w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full" />
-                      <span className="ml-3">Processing audio data...</span>
-                    </div>
-                  ) : Array.isArray(audioAnalytics) && audioAnalytics.length > 0 ? (
-                    audioAnalytics.map((audio: any, index: number) => (
-                      <div key={audio.id || index} className="border rounded-lg p-4" data-testid={`audio-analytics-${index}`}>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                          <div>
-                            <div className="text-sm text-gray-500">Duration</div>
-                            <div className="text-lg font-semibold" data-testid={`audio-duration-${index}`}>
-                              {Math.floor((audio.duration || 0) / 60)}m {(audio.duration || 0) % 60}s
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-sm text-gray-500">Teaching Effectiveness</div>
-                            <div className="text-lg font-semibold" data-testid={`audio-effectiveness-${index}`}>
-                              {((audio.teachingEffectiveness || 0) * 100).toFixed(0)}%
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-sm text-gray-500">Audio Quality</div>
-                            <div className="text-lg font-semibold" data-testid={`audio-quality-${index}`}>
-                              {((audio.audioQuality || 0) * 100).toFixed(0)}%
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-sm text-gray-500">Speaking Ratio</div>
-                            <div className="text-lg font-semibold" data-testid={`audio-speaking-ratio-${index}`}>
-                              {((audio.speakingTimeRatio || 0) * 100).toFixed(0)}%
-                            </div>
-                          </div>
-                        </div>
-                        {audio.aiSummary && (
-                          <div className="mt-3 p-3 bg-gray-50 rounded-lg" data-testid={`audio-summary-${index}`}>
-                            <div className="text-sm font-medium mb-1">AI Summary</div>
-                            <p className="text-sm text-gray-600">{audio.aiSummary}</p>
-                          </div>
-                        )}
+                {audioLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full" />
+                    <span className="ml-3">Loading teacher analytics…</span>
+                  </div>
+                ) : (!Array.isArray(teacherAnalytics) || teacherAnalytics.length === 0) ? (
+                  <div className="text-center py-8">
+                    <TrendingUp className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                    <p className="text-gray-500">No teacher analytics available</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse border border-gray-200">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="py-3 px-4 border border-gray-200 font-semibold" data-testid="col-teacher">Teacher</th>
+                          {params.map(p => (
+                            <th key={p} className="py-3 px-4 border border-gray-200 font-semibold text-center" data-testid={`col-${p}`}>
+                              {p === 'encourageInvolvement' ? 'Student Involvement' :
+                               p === 'pleasantCommunication' ? 'Communication' :
+                               p === 'avoidPersonalDetails' ? 'Professional Boundaries' :
+                               'Overall Score'}
+                            </th>
+                          ))}
+                          <th className="py-3 px-4 border border-gray-200 font-semibold text-center" data-testid="col-classes">Classes</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {teacherAnalytics.map((t: any, idx: number) => {
+                          const id = t.mentorId ?? t.id ?? t.mentorName ?? String(idx);
+                          return (
+                            <tr key={id} className="hover:bg-gray-50">
+                              <td className="py-3 px-4 border border-gray-200 font-medium" data-testid={`text-teacher-${id}`}>
+                                {t.mentorName ?? t.name ?? t.teacherName ?? id}
+                              </td>
+                              {params.map(p => {
+                                const v = Number(score(t, p));
+                                const r = ranks[p]?.get(id);
+                                return (
+                                  <td key={p} className="py-3 px-4 border border-gray-200 text-center">
+                                    <div className="flex items-center justify-center gap-2">
+                                      <span 
+                                        className={`font-bold ${
+                                          v >= 9 ? 'text-green-600 bg-green-100 px-2 py-1 rounded' :
+                                          v < 8 ? 'text-red-600 bg-red-100 px-2 py-1 rounded' :
+                                          'text-gray-900'
+                                        }`}
+                                        data-testid={`score-${p}-${id}`}
+                                      >
+                                        {v.toFixed(1)}/10
+                                      </span>
+                                      {typeof r === 'number' && r <= 10 && (
+                                        <span className="text-xs bg-gray-100 rounded px-2 py-1" data-testid={`rank-${p}-${id}`}>
+                                          #{r}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
+                                );
+                              })}
+                              <td className="py-3 px-4 border border-gray-200 text-center" data-testid={`teacher-classes-${id}`}>
+                                {t.totalClasses ?? 0}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                    
+                    {/* Legend */}
+                    <div className="mt-6 flex items-center justify-center gap-6">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
+                        <span className="text-sm text-gray-600">Excellent Performance (≥9)</span>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <Mic className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                      <p className="text-gray-500">No audio analytics data available</p>
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-red-100 border border-red-300 rounded"></div>
+                        <span className="text-sm text-gray-600">Needs Improvement (&lt;8)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-white border border-gray-300 rounded"></div>
+                        <span className="text-sm text-gray-600">Satisfactory (8-8.9)</span>
+                      </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
