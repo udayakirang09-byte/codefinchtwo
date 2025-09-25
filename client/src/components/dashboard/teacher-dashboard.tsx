@@ -101,6 +101,27 @@ export default function TeacherDashboard() {
     },
     enabled: !!user?.id
   });
+
+  // Fetch teacher audio analytics from API
+  const { data: audioAnalytics, isLoading: audioLoading } = useQuery({
+    queryKey: ['teacher-audio-analytics', user?.id],
+    queryFn: async () => {
+      // First get the mentor record to get mentorId
+      const mentorResponse = await fetch(`/api/mentors/by-user/${user?.id}`);
+      if (!mentorResponse.ok) {
+        return null; // Teacher might not be set up as mentor yet
+      }
+      const mentor = await mentorResponse.json();
+      
+      // Then get audio analytics
+      const analyticsResponse = await fetch(`/api/teacher/audio-aggregate/${mentor.id}`);
+      if (!analyticsResponse.ok) {
+        return null; // No analytics data yet
+      }
+      return analyticsResponse.json();
+    },
+    enabled: !!user?.id
+  });
   
   const upcomingClasses = Array.isArray(teacherClasses) ? teacherClasses.filter((booking: any) => 
     booking.status === 'scheduled' && new Date(booking.scheduledAt) > new Date()
@@ -210,6 +231,204 @@ export default function TeacherDashboard() {
           <div className="absolute -top-6 -right-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
           <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-blue-300/20 rounded-full blur-3xl"></div>
         </div>
+
+        {/* Teacher Audio Analytics Performance Card */}
+        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-rose-500 to-pink-600 text-white">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <TrendingUp className="h-6 w-6" />
+              Class Quality Analytics
+              {audioAnalytics && (
+                <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30">
+                  Based on {audioAnalytics.totalClasses} classes
+                </Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {audioLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-gray-500">Loading analytics...</div>
+              </div>
+            ) : !audioAnalytics ? (
+              <div className="text-center py-12">
+                <div className="bg-pink-50 rounded-2xl p-8 border border-pink-200">
+                  <TrendingUp className="h-16 w-16 text-pink-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">No Analytics Data Yet</h3>
+                  <p className="text-gray-600">
+                    Complete a few classes to see your teaching quality metrics and performance analytics.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Encourage Involvement Score */}
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-100 border border-blue-200 rounded-xl p-6 text-center">
+                  <div className="mb-3">
+                    <div 
+                      className={`text-4xl font-bold mb-2 ${
+                        audioAnalytics.encourageInvolvement >= 9 
+                          ? 'text-green-600' 
+                          : audioAnalytics.encourageInvolvement >= 8 
+                            ? 'text-blue-600' 
+                            : 'text-red-600'
+                      }`}
+                      data-testid="metric-encourage-involvement"
+                    >
+                      {audioAnalytics.encourageInvolvement.toFixed(1)}
+                      <span className="text-lg text-gray-500">/10</span>
+                    </div>
+                    <div 
+                      className={`w-full h-2 rounded-full ${
+                        audioAnalytics.encourageInvolvement >= 9 
+                          ? 'bg-green-200' 
+                          : audioAnalytics.encourageInvolvement >= 8 
+                            ? 'bg-blue-200' 
+                            : 'bg-red-200'
+                      }`}
+                    >
+                      <div 
+                        className={`h-full rounded-full ${
+                          audioAnalytics.encourageInvolvement >= 9 
+                            ? 'bg-green-500' 
+                            : audioAnalytics.encourageInvolvement >= 8 
+                              ? 'bg-blue-500' 
+                              : 'bg-red-500'
+                        }`}
+                        style={{ width: `${(audioAnalytics.encourageInvolvement / 10) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  <h4 className="font-semibold text-gray-800 text-sm">Student Involvement</h4>
+                  <p className="text-xs text-gray-600 mt-1">Encouraging participation</p>
+                </div>
+
+                {/* Pleasant Communication Score */}
+                <div className="bg-gradient-to-br from-green-50 to-emerald-100 border border-green-200 rounded-xl p-6 text-center">
+                  <div className="mb-3">
+                    <div 
+                      className={`text-4xl font-bold mb-2 ${
+                        audioAnalytics.pleasantCommunication >= 9 
+                          ? 'text-green-600' 
+                          : audioAnalytics.pleasantCommunication >= 8 
+                            ? 'text-blue-600' 
+                            : 'text-red-600'
+                      }`}
+                      data-testid="metric-pleasant-communication"
+                    >
+                      {audioAnalytics.pleasantCommunication.toFixed(1)}
+                      <span className="text-lg text-gray-500">/10</span>
+                    </div>
+                    <div 
+                      className={`w-full h-2 rounded-full ${
+                        audioAnalytics.pleasantCommunication >= 9 
+                          ? 'bg-green-200' 
+                          : audioAnalytics.pleasantCommunication >= 8 
+                            ? 'bg-blue-200' 
+                            : 'bg-red-200'
+                      }`}
+                    >
+                      <div 
+                        className={`h-full rounded-full ${
+                          audioAnalytics.pleasantCommunication >= 9 
+                            ? 'bg-green-500' 
+                            : audioAnalytics.pleasantCommunication >= 8 
+                              ? 'bg-blue-500' 
+                              : 'bg-red-500'
+                        }`}
+                        style={{ width: `${(audioAnalytics.pleasantCommunication / 10) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  <h4 className="font-semibold text-gray-800 text-sm">Communication Style</h4>
+                  <p className="text-xs text-gray-600 mt-1">Pleasant & professional</p>
+                </div>
+
+                {/* Avoid Personal Details Score */}
+                <div className="bg-gradient-to-br from-purple-50 to-violet-100 border border-purple-200 rounded-xl p-6 text-center">
+                  <div className="mb-3">
+                    <div 
+                      className={`text-4xl font-bold mb-2 ${
+                        audioAnalytics.avoidPersonalDetails >= 9 
+                          ? 'text-green-600' 
+                          : audioAnalytics.avoidPersonalDetails >= 8 
+                            ? 'text-blue-600' 
+                            : 'text-red-600'
+                      }`}
+                      data-testid="metric-avoid-personal-details"
+                    >
+                      {audioAnalytics.avoidPersonalDetails.toFixed(1)}
+                      <span className="text-lg text-gray-500">/10</span>
+                    </div>
+                    <div 
+                      className={`w-full h-2 rounded-full ${
+                        audioAnalytics.avoidPersonalDetails >= 9 
+                          ? 'bg-green-200' 
+                          : audioAnalytics.avoidPersonalDetails >= 8 
+                            ? 'bg-blue-200' 
+                            : 'bg-red-200'
+                      }`}
+                    >
+                      <div 
+                        className={`h-full rounded-full ${
+                          audioAnalytics.avoidPersonalDetails >= 9 
+                            ? 'bg-green-500' 
+                            : audioAnalytics.avoidPersonalDetails >= 8 
+                              ? 'bg-blue-500' 
+                              : 'bg-red-500'
+                        }`}
+                        style={{ width: `${(audioAnalytics.avoidPersonalDetails / 10) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  <h4 className="font-semibold text-gray-800 text-sm">Professional Boundaries</h4>
+                  <p className="text-xs text-gray-600 mt-1">Avoiding personal topics</p>
+                </div>
+
+                {/* Overall Score */}
+                <div className="bg-gradient-to-br from-amber-50 to-yellow-100 border border-amber-200 rounded-xl p-6 text-center">
+                  <div className="mb-3">
+                    <div 
+                      className={`text-4xl font-bold mb-2 ${
+                        audioAnalytics.overallScore >= 9 
+                          ? 'text-green-600' 
+                          : audioAnalytics.overallScore >= 8 
+                            ? 'text-blue-600' 
+                            : 'text-red-600'
+                      }`}
+                      data-testid="metric-overall-score"
+                    >
+                      {audioAnalytics.overallScore.toFixed(1)}
+                      <span className="text-lg text-gray-500">/10</span>
+                    </div>
+                    <div 
+                      className={`w-full h-2 rounded-full ${
+                        audioAnalytics.overallScore >= 9 
+                          ? 'bg-green-200' 
+                          : audioAnalytics.overallScore >= 8 
+                            ? 'bg-blue-200' 
+                            : 'bg-red-200'
+                      }`}
+                    >
+                      <div 
+                        className={`h-full rounded-full ${
+                          audioAnalytics.overallScore >= 9 
+                            ? 'bg-green-500' 
+                            : audioAnalytics.overallScore >= 8 
+                              ? 'bg-blue-500' 
+                              : 'bg-red-500'
+                        }`}
+                        style={{ width: `${(audioAnalytics.overallScore / 10) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  <h4 className="font-semibold text-gray-800 text-sm">Overall Excellence</h4>
+                  <p className="text-xs text-gray-600 mt-1">Combined class quality</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Beautiful Notifications Panel */}
         {notifications.length > 0 && (

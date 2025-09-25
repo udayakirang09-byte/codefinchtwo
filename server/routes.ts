@@ -4187,8 +4187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         questionRate: questionRate || 0.8,
         clarity: clarity || 8.0,
         adherenceToTopic: adherenceToTopic || 8.0,
-        politeness: politeness || 8.0,
-        computedAt: new Date()
+        politeness: politeness || 8.0
       });
 
       console.log(`📊 Audio metrics created for mentor ${mentorId}`);
