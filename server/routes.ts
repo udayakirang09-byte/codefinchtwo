@@ -4167,6 +4167,136 @@ export async function registerRoutes(app: Express): Promise<Server> {
   console.log('✅ Forum, Project, and Events API routes registered successfully!');
   console.log('✅ Educational dropdown API routes registered successfully!');
 
+  // Teacher Audio Analytics API Routes
+  
+  // Create audio analytics metrics for a teacher
+  app.post('/api/teacher/audio-metrics', async (req, res) => {
+    try {
+      const { mentorId, encourageInvolvement, pleasantCommunication, avoidPersonalDetails, studentTalkRatio, questionRate, clarity, adherenceToTopic, politeness } = req.body;
+      
+      if (!mentorId) {
+        return res.status(400).json({ message: 'Mentor ID is required' });
+      }
+
+      const metrics = await storage.createTeacherAudioMetrics({
+        mentorId,
+        encourageInvolvement: encourageInvolvement || 8.0,
+        pleasantCommunication: pleasantCommunication || 8.0,
+        avoidPersonalDetails: avoidPersonalDetails || 8.0,
+        studentTalkRatio: studentTalkRatio || 0.6,
+        questionRate: questionRate || 0.8,
+        clarity: clarity || 8.0,
+        adherenceToTopic: adherenceToTopic || 8.0,
+        politeness: politeness || 8.0,
+        computedAt: new Date()
+      });
+
+      console.log(`📊 Audio metrics created for mentor ${mentorId}`);
+      res.status(201).json(metrics);
+    } catch (error) {
+      console.error('Error creating audio metrics:', error);
+      res.status(500).json({ message: 'Failed to create audio metrics' });
+    }
+  });
+
+  // Get audio metrics for a specific teacher
+  app.get('/api/teacher/audio-metrics/:mentorId', async (req, res) => {
+    try {
+      const { mentorId } = req.params;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      
+      const metrics = await storage.getTeacherAudioMetrics(mentorId, { limit });
+      res.json(metrics);
+    } catch (error) {
+      console.error('Error fetching teacher audio metrics:', error);
+      res.status(500).json({ message: 'Failed to fetch audio metrics' });
+    }
+  });
+
+  // Get teacher aggregate scores for dashboard display
+  app.get('/api/teacher/audio-aggregate/:mentorId', async (req, res) => {
+    try {
+      const { mentorId } = req.params;
+      const aggregate = await storage.getTeacherAudioAggregate(mentorId);
+      
+      if (!aggregate) {
+        return res.status(404).json({ message: 'No audio metrics found for this teacher' });
+      }
+
+      res.json(aggregate);
+    } catch (error) {
+      console.error('Error fetching teacher audio aggregate:', error);
+      res.status(500).json({ message: 'Failed to fetch audio aggregate' });
+    }
+  });
+
+  // Admin Analytics - Get all teacher rankings
+  app.get('/api/admin/teacher-analytics', async (req, res) => {
+    try {
+      const window = req.query.window as string;
+      const analytics = await storage.getTeacherAudioMetricsAggregates(window);
+      
+      // Sort by overall score (highest first) for ranking display
+      const sortedAnalytics = analytics.sort((a, b) => b.overallScore - a.overallScore);
+      
+      console.log(`📊 Admin analytics retrieved for ${analytics.length} teachers`);
+      res.json(sortedAnalytics);
+    } catch (error) {
+      console.error('Error fetching admin teacher analytics:', error);
+      res.status(500).json({ message: 'Failed to fetch teacher analytics' });
+    }
+  });
+
+  // Home Section Controls API Routes
+  
+  // Get all home section controls
+  app.get('/api/admin/home-sections', async (req, res) => {
+    try {
+      const controls = await storage.getHomeSectionControls();
+      res.json(controls);
+    } catch (error) {
+      console.error('Error fetching home section controls:', error);
+      res.status(500).json({ message: 'Failed to fetch home section controls' });
+    }
+  });
+
+  // Update home section control
+  app.put('/api/admin/home-sections', async (req, res) => {
+    try {
+      const { sectionType, sectionName, isEnabled } = req.body;
+      
+      if (!sectionType || !sectionName) {
+        return res.status(400).json({ message: 'Section type and name are required' });
+      }
+
+      await storage.updateHomeSectionControl(sectionType, sectionName, isEnabled);
+      console.log(`⚙️ Home section control updated: ${sectionType}.${sectionName} = ${isEnabled}`);
+      res.json({ success: true, message: 'Home section control updated successfully' });
+    } catch (error) {
+      console.error('Error updating home section control:', error);
+      res.status(500).json({ message: 'Failed to update home section control' });
+    }
+  });
+
+  // Get home section controls for specific type (teacher or student)
+  app.get('/api/admin/home-sections/:sectionType', async (req, res) => {
+    try {
+      const { sectionType } = req.params;
+      
+      if (sectionType !== 'teacher' && sectionType !== 'student') {
+        return res.status(400).json({ message: 'Section type must be "teacher" or "student"' });
+      }
+
+      const controls = await storage.getHomeSectionControlsForType(sectionType as 'teacher' | 'student');
+      res.json(controls);
+    } catch (error) {
+      console.error('Error fetching home section controls by type:', error);
+      res.status(500).json({ message: 'Failed to fetch home section controls' });
+    }
+  });
+
+  console.log('✅ Teacher Audio Analytics API routes registered successfully!');
+
   const httpServer = createServer(app);
   return httpServer;
 }
