@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Calendar, Clock, Video, MessageCircle, Star, BookOpen, Award, Bell, Users, TrendingUp, Search, Filter, X } from "lucide-react";
+import { Calendar, Clock, Video, MessageCircle, Star, BookOpen, Award, Bell, Users, TrendingUp, Search, Filter, X, Play } from "lucide-react";
 import { formatDistanceToNow, isWithinInterval, addHours, addMinutes } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -276,6 +276,11 @@ export default function StudentDashboard() {
   const handleHelpCenter = () => {
     console.log(`❓ Opening help center`);
     window.location.href = '/help';
+  };
+
+  const handleViewRecordings = () => {
+    console.log(`🎥 Opening recorded sessions`);
+    window.location.href = '/recordings';
   };
 
   const handleNotificationClick = (notification: Notification) => {
@@ -633,7 +638,7 @@ export default function StudentDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
               <Button 
                 variant="outline" 
                 className="h-32 p-6 flex-col hover:bg-blue-50 hover:border-blue-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
@@ -673,6 +678,16 @@ export default function StudentDashboard() {
                 <Users className="h-10 w-10 mb-3 text-orange-600 group-hover:scale-110 transition-transform duration-200" />
                 <span className="font-bold text-lg">Help Center</span>
                 <span className="text-xs text-gray-500 mt-1 text-center">Get support & guides</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-32 p-6 flex-col hover:bg-red-50 hover:border-red-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                data-testid="button-view-recordings"
+                onClick={handleViewRecordings}
+              >
+                <Play className="h-10 w-10 mb-3 text-red-600 group-hover:scale-110 transition-transform duration-200" />
+                <span className="font-bold text-lg">View Recordings</span>
+                <span className="text-xs text-gray-500 mt-1 text-center">Watch past sessions</span>
               </Button>
             </div>
           </CardContent>
