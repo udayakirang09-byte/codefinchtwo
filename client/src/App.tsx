@@ -4,7 +4,6 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { DebugPanel } from "@/components/debug-panel";
-import { CookieConsentBanner } from "@/components/cookie-policy";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import MentorProfile from "@/pages/mentor-profile";
@@ -121,7 +120,6 @@ function App() {
       <TooltipProvider>
         <Toaster />
         <Router />
-        <CookieConsentBanner />
         <DebugPanel />
       </TooltipProvider>
     </QueryClientProvider>
