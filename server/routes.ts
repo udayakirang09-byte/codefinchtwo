@@ -2018,6 +2018,186 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Azure VM Management API Routes
+  app.get("/api/admin/azure-vms", async (req, res) => {
+    console.log("☁️ GET /api/admin/azure-vms - Fetching Azure VM list");
+    try {
+      const vms = await storage.listAzureVms();
+      console.log(`✅ Found ${vms.length} Azure VMs`);
+      res.json(vms);
+    } catch (error) {
+      console.error("❌ Error listing Azure VMs:", error);
+      res.status(500).json({ message: "Failed to list Azure VMs", error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  app.post("/api/admin/azure-vms", async (req, res) => {
+    console.log("🚀 POST /api/admin/azure-vms - Creating new Azure VM");
+    try {
+      const vmConfig = req.body;
+      console.log("VM Config:", JSON.stringify(vmConfig, null, 2));
+      
+      const newVm = await storage.createAzureVm(vmConfig);
+      console.log(`✅ Azure VM creation initiated: ${vmConfig.vmName}`);
+      res.status(201).json(newVm);
+    } catch (error) {
+      console.error("❌ Error creating Azure VM:", error);
+      res.status(500).json({ message: "Failed to create Azure VM", error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  app.get("/api/admin/azure-vms/:vmName", async (req, res) => {
+    const { vmName } = req.params;
+    console.log(`🔍 GET /api/admin/azure-vms/${vmName} - Fetching VM details`);
+    try {
+      const vm = await storage.getAzureVm(vmName);
+      console.log(`✅ Retrieved details for VM: ${vmName}`);
+      res.json(vm);
+    } catch (error) {
+      console.error(`❌ Error fetching VM ${vmName}:`, error);
+      res.status(500).json({ message: "Failed to fetch Azure VM details", error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  app.get("/api/admin/azure-vms/:vmName/status", async (req, res) => {
+    const { vmName } = req.params;
+    console.log(`📊 GET /api/admin/azure-vms/${vmName}/status - Fetching VM status`);
+    try {
+      const status = await storage.getVmStatus(vmName);
+      console.log(`✅ Retrieved status for VM: ${vmName} - ${status.powerState}`);
+      res.json(status);
+    } catch (error) {
+      console.error(`❌ Error fetching VM status for ${vmName}:`, error);
+      res.status(500).json({ message: "Failed to fetch VM status", error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  app.post("/api/admin/azure-vms/:vmName/start", async (req, res) => {
+    const { vmName } = req.params;
+    console.log(`▶️ POST /api/admin/azure-vms/${vmName}/start - Starting VM`);
+    try {
+      await storage.startAzureVm(vmName);
+      console.log(`✅ VM start command sent: ${vmName}`);
+      res.json({ message: `Azure VM ${vmName} start command sent`, status: "starting" });
+    } catch (error) {
+      console.error(`❌ Error starting VM ${vmName}:`, error);
+      res.status(500).json({ message: "Failed to start Azure VM", error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  app.post("/api/admin/azure-vms/:vmName/stop", async (req, res) => {
+    const { vmName } = req.params;
+    console.log(`⏹️ POST /api/admin/azure-vms/${vmName}/stop - Stopping VM`);
+    try {
+      await storage.stopAzureVm(vmName);
+      console.log(`✅ VM stop command sent: ${vmName}`);
+      res.json({ message: `Azure VM ${vmName} stop command sent`, status: "stopping" });
+    } catch (error) {
+      console.error(`❌ Error stopping VM ${vmName}:`, error);
+      res.status(500).json({ message: "Failed to stop Azure VM", error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  app.post("/api/admin/azure-vms/:vmName/restart", async (req, res) => {
+    const { vmName } = req.params;
+    console.log(`🔄 POST /api/admin/azure-vms/${vmName}/restart - Restarting VM`);
+    try {
+      await storage.restartAzureVm(vmName);
+      console.log(`✅ VM restart command sent: ${vmName}`);
+      res.json({ message: `Azure VM ${vmName} restart command sent`, status: "restarting" });
+    } catch (error) {
+      console.error(`❌ Error restarting VM ${vmName}:`, error);
+      res.status(500).json({ message: "Failed to restart Azure VM", error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  app.patch("/api/admin/azure-vms/:vmName", async (req, res) => {
+    const { vmName } = req.params;
+    const updates = req.body;
+    console.log(`⚙️ PATCH /api/admin/azure-vms/${vmName} - Updating VM configuration`);
+    try {
+      await storage.updateAzureVm(vmName, updates);
+      console.log(`✅ VM configuration updated: ${vmName}`);
+      res.json({ message: `Azure VM ${vmName} updated successfully` });
+    } catch (error) {
+      console.error(`❌ Error updating VM ${vmName}:`, error);
+      res.status(500).json({ message: "Failed to update Azure VM", error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  app.delete("/api/admin/azure-vms/:vmName", async (req, res) => {
+    const { vmName } = req.params;
+    console.log(`🗑️ DELETE /api/admin/azure-vms/${vmName} - Deleting VM`);
+    try {
+      await storage.deleteAzureVm(vmName);
+      console.log(`✅ VM deletion initiated: ${vmName}`);
+      res.json({ message: `Azure VM ${vmName} deletion initiated` });
+    } catch (error) {
+      console.error(`❌ Error deleting VM ${vmName}:`, error);
+      res.status(500).json({ message: "Failed to delete Azure VM", error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  // Recording Storage Management API Routes
+  app.post("/api/admin/recordings/upload/:sessionId", async (req, res) => {
+    const { sessionId } = req.params;
+    const fileData = req.body;
+    console.log(`⬆️ POST /api/admin/recordings/upload/${sessionId} - Uploading recording to VM`);
+    try {
+      const recordingUrl = await storage.uploadRecordingToVm(sessionId, fileData);
+      console.log(`✅ Recording uploaded successfully for session: ${sessionId}`);
+      res.json({ 
+        message: "Recording uploaded successfully", 
+        recordingUrl,
+        sessionId
+      });
+    } catch (error) {
+      console.error(`❌ Error uploading recording for session ${sessionId}:`, error);
+      res.status(500).json({ message: "Failed to upload recording", error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  app.get("/api/admin/recordings/download/:sessionId", async (req, res) => {
+    const { sessionId } = req.params;
+    console.log(`⬇️ GET /api/admin/recordings/download/${sessionId} - Downloading recording from VM`);
+    try {
+      const downloadData = await storage.downloadRecordingFromVm(sessionId);
+      console.log(`✅ Recording download prepared for session: ${sessionId}`);
+      res.json(downloadData);
+    } catch (error) {
+      console.error(`❌ Error downloading recording for session ${sessionId}:`, error);
+      res.status(500).json({ message: "Failed to download recording", error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  app.delete("/api/admin/recordings/:sessionId", async (req, res) => {
+    const { sessionId } = req.params;
+    console.log(`🗑️ DELETE /api/admin/recordings/${sessionId} - Deleting recording from VM`);
+    try {
+      await storage.deleteRecordingFromVm(sessionId);
+      console.log(`✅ Recording deleted successfully for session: ${sessionId}`);
+      res.json({ 
+        message: "Recording deleted successfully", 
+        sessionId
+      });
+    } catch (error) {
+      console.error(`❌ Error deleting recording for session ${sessionId}:`, error);
+      res.status(500).json({ message: "Failed to delete recording", error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  app.get("/api/admin/recordings/storage-stats", async (req, res) => {
+    console.log("📊 GET /api/admin/recordings/storage-stats - Fetching recording storage statistics");
+    try {
+      const stats = await storage.getRecordingStorageStats();
+      console.log(`✅ Retrieved recording storage stats - ${stats.totalRecordings} recordings`);
+      res.json(stats);
+    } catch (error) {
+      console.error("❌ Error fetching recording storage stats:", error);
+      res.status(500).json({ message: "Failed to fetch recording storage statistics", error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
   app.get("/api/admin/mentor-applications", async (req, res) => {
     try {
       const { status } = req.query;

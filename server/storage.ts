@@ -228,6 +228,23 @@ export interface IStorage {
   getSpecializationsCount(): Promise<number>;
   getSubjectsCount(): Promise<number>;
   
+  // Azure VM Management operations
+  createAzureVm(vmConfig: any): Promise<any>;
+  getAzureVm(vmName: string): Promise<any>;
+  listAzureVms(): Promise<any[]>;
+  updateAzureVm(vmName: string, updates: any): Promise<void>;
+  deleteAzureVm(vmName: string): Promise<void>;
+  getVmStatus(vmName: string): Promise<any>;
+  startAzureVm(vmName: string): Promise<void>;
+  stopAzureVm(vmName: string): Promise<void>;
+  restartAzureVm(vmName: string): Promise<void>;
+  
+  // Recording Storage operations
+  uploadRecordingToVm(sessionId: string, fileData: any): Promise<string>;
+  downloadRecordingFromVm(sessionId: string): Promise<any>;
+  deleteRecordingFromVm(sessionId: string): Promise<void>;
+  getRecordingStorageStats(): Promise<any>;
+  
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1269,6 +1286,208 @@ export class DatabaseStorage implements IStorage {
       }
     }
     return result;
+  }
+
+  // Azure VM Management operations
+  async createAzureVm(vmConfig: any): Promise<any> {
+    // Mock implementation for Azure VM creation
+    console.log('🚀 Azure VM creation requested:', vmConfig.vmName);
+    
+    const vmData = {
+      id: `vm-${Date.now()}`,
+      name: vmConfig.vmName,
+      status: 'Creating',
+      location: vmConfig.location || 'eastus',
+      size: vmConfig.vmSize || 'Standard_D2s_v3',
+      createdAt: new Date(),
+      publicIpAddress: null,
+      privateIpAddress: null,
+      isHealthy: false
+    };
+    
+    // In a real implementation, this would call Azure ARM APIs
+    // For now, we'll simulate the creation process
+    setTimeout(() => {
+      console.log('✅ Azure VM created successfully:', vmConfig.vmName);
+    }, 5000);
+    
+    return vmData;
+  }
+  
+  async getAzureVm(vmName: string): Promise<any> {
+    console.log('🔍 Getting Azure VM details:', vmName);
+    
+    // Mock VM data - in real implementation, would query Azure ARM APIs
+    return {
+      id: `vm-${vmName}`,
+      name: vmName,
+      status: 'Running',
+      location: 'eastus',
+      size: 'Standard_D2s_v3',
+      publicIpAddress: '20.62.132.45',
+      privateIpAddress: '10.0.0.4',
+      isHealthy: true,
+      lastHealthCheck: new Date(),
+      diskUsage: {
+        total: 30720000000, // 30GB
+        used: 5120000000,   // 5GB
+        available: 25600000000 // 25GB
+      },
+      recordings: {
+        count: 12,
+        totalSize: 2048000000, // 2GB
+        lastUploaded: new Date()
+      }
+    };
+  }
+  
+  async listAzureVms(): Promise<any[]> {
+    console.log('📋 Listing all Azure VMs');
+    
+    // Mock VM list - in real implementation, would query Azure ARM APIs
+    return [
+      {
+        id: 'vm-codeconnect-prod-1',
+        name: 'codeconnect-prod-1',
+        status: 'Running',
+        location: 'eastus',
+        size: 'Standard_D2s_v3',
+        isHealthy: true,
+        recordings: { count: 15, totalSize: 3072000000 }
+      },
+      {
+        id: 'vm-codeconnect-backup-1',
+        name: 'codeconnect-backup-1', 
+        status: 'Stopped',
+        location: 'eastus',
+        size: 'Standard_B2s',
+        isHealthy: false,
+        recordings: { count: 0, totalSize: 0 }
+      }
+    ];
+  }
+  
+  async updateAzureVm(vmName: string, updates: any): Promise<void> {
+    console.log('⚙️ Updating Azure VM:', vmName, 'Updates:', updates);
+    
+    // In real implementation, would call Azure ARM APIs to update VM
+    // This could include resizing, updating tags, changing network settings, etc.
+  }
+  
+  async deleteAzureVm(vmName: string): Promise<void> {
+    console.log('🗑️ Deleting Azure VM:', vmName);
+    
+    // In real implementation, would call Azure ARM APIs to delete VM
+    // This would also clean up associated resources like disks, network interfaces, etc.
+  }
+  
+  async getVmStatus(vmName: string): Promise<any> {
+    console.log('📊 Getting VM status:', vmName);
+    
+    return {
+      vmName,
+      powerState: 'VM running',
+      provisioningState: 'Succeeded',
+      publicIpAddress: '20.62.132.45',
+      privateIpAddress: '10.0.0.4',
+      lastHealthCheck: new Date(),
+      isHealthy: true,
+      diskUsage: {
+        total: 30720000000,
+        used: 5120000000,
+        available: 25600000000
+      },
+      recordings: {
+        count: 12,
+        totalSize: 2048000000,
+        lastUploaded: new Date()
+      }
+    };
+  }
+  
+  async startAzureVm(vmName: string): Promise<void> {
+    console.log('▶️ Starting Azure VM:', vmName);
+    
+    // In real implementation, would call Azure ARM APIs to start the VM
+    // This would be an async operation that could take 1-2 minutes
+  }
+  
+  async stopAzureVm(vmName: string): Promise<void> {
+    console.log('⏹️ Stopping Azure VM:', vmName);
+    
+    // In real implementation, would call Azure ARM APIs to stop the VM
+    // This would be an async operation
+  }
+  
+  async restartAzureVm(vmName: string): Promise<void> {
+    console.log('🔄 Restarting Azure VM:', vmName);
+    
+    // In real implementation, would call Azure ARM APIs to restart the VM
+    // This combines stop + start operations
+  }
+
+  // Recording Storage operations
+  async uploadRecordingToVm(sessionId: string, fileData: any): Promise<string> {
+    console.log('⬆️ Uploading recording to VM for session:', sessionId);
+    
+    // In real implementation, would:
+    // 1. Connect to the Azure VM via SSH or Azure Storage API
+    // 2. Process the video file (compression, format standardization)
+    // 3. Upload to Azure Storage Blob
+    // 4. Return the blob URL
+    
+    const recordingUrl = `https://codeconnect.blob.core.windows.net/recordings/session-${sessionId}-${Date.now()}.mp4`;
+    
+    // Update the video session with the recording URL
+    await this.updateVideoSessionRecording(sessionId, recordingUrl);
+    
+    return recordingUrl;
+  }
+  
+  async downloadRecordingFromVm(sessionId: string): Promise<any> {
+    console.log('⬇️ Downloading recording from VM for session:', sessionId);
+    
+    // In real implementation, would:
+    // 1. Look up the recording URL from the database
+    // 2. Generate a signed download URL from Azure Storage
+    // 3. Return the download metadata
+    
+    return {
+      sessionId,
+      downloadUrl: `https://codeconnect.blob.core.windows.net/recordings/session-${sessionId}.mp4?signed-url-token`,
+      expiresAt: new Date(Date.now() + 3600000), // 1 hour from now
+      fileSize: 52428800, // 50MB
+      format: 'mp4'
+    };
+  }
+  
+  async deleteRecordingFromVm(sessionId: string): Promise<void> {
+    console.log('🗑️ Deleting recording from VM for session:', sessionId);
+    
+    // In real implementation, would:
+    // 1. Look up the recording URL from the database
+    // 2. Delete the blob from Azure Storage
+    // 3. Update the database to remove the recording URL
+    
+    await this.updateVideoSessionRecording(sessionId, '');
+  }
+  
+  async getRecordingStorageStats(): Promise<any> {
+    console.log('📊 Getting recording storage statistics');
+    
+    // In real implementation, would query Azure Storage Account for usage stats
+    return {
+      totalRecordings: 45,
+      totalStorageUsed: 8589934592, // 8GB
+      averageRecordingSize: 190840217, // ~190MB
+      storageQuota: 107374182400, // 100GB
+      storageUsagePercent: 8.0,
+      monthlyUploadCount: 12,
+      monthlyDownloadCount: 34,
+      retentionDays: 365,
+      oldestRecording: new Date('2024-01-15'),
+      newestRecording: new Date()
+    };
   }
 
 }
