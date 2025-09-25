@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRoute } from "wouter";
 import Navigation from "@/components/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Video, VideoOff, Mic, MicOff, Users, MessageCircle, Phone, Settings } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Video, VideoOff, Mic, MicOff, Users, MessageCircle, Phone, Settings, AlertTriangle, Wifi, WifiOff } from "lucide-react";
 
 export default function VideoClass() {
   const [, params] = useRoute("/video-class/:id");
@@ -13,21 +14,112 @@ export default function VideoClass() {
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [isAudioOn, setIsAudioOn] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [connectionQuality, setConnectionQuality] = useState<'good' | 'poor' | 'disconnected'>('good');
+  const [participants, setParticipants] = useState(6); // 1 teacher + 4 students + current user
+  const [teacherAlerts, setTeacherAlerts] = useState<string[]>([]);
+  const { toast } = useToast();
+  
   const [classInfo, setClassInfo] = useState({
     subject: "Python Basics",
     mentor: "Sarah Johnson",
     duration: 60,
     startTime: new Date(),
-    participants: 2
+    isTeacher: Math.random() > 0.5 // Simulate teacher/student role
   });
 
+  // Reconnection logic
+  const attemptReconnection = useCallback(async () => {
+    if (reconnectAttempts >= 3) {
+      setConnectionQuality('disconnected');
+      toast({
+        title: "Connection Failed",
+        description: "Unable to reconnect after 3 attempts. Please refresh the page.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsReconnecting(true);
+    setReconnectAttempts(prev => prev + 1);
+    
+    try {
+      // Simulate reconnection attempt
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Simulate success/failure
+      const success = Math.random() > 0.3; // 70% success rate
+      
+      if (success) {
+        setIsConnected(true);
+        setIsReconnecting(false);
+        setReconnectAttempts(0);
+        setConnectionQuality('good');
+        toast({
+          title: "Reconnected",
+          description: "Successfully reconnected to the video session.",
+        });
+      } else {
+        setIsReconnecting(false);
+        setTimeout(attemptReconnection, 3000); // Retry after 3 seconds
+      }
+    } catch (error) {
+      setIsReconnecting(false);
+      setTimeout(attemptReconnection, 3000);
+    }
+  }, [reconnectAttempts, toast]);
+
+  // Teacher alert system
+  const addTeacherAlert = useCallback((message: string) => {
+    if (classInfo.isTeacher) {
+      setTeacherAlerts(prev => [...prev, message]);
+      toast({
+        title: "Teacher Alert",
+        description: message,
+        variant: "default",
+      });
+      
+      // Auto-remove alert after 10 seconds
+      setTimeout(() => {
+        setTeacherAlerts(prev => prev.filter(alert => alert !== message));
+      }, 10000);
+    }
+  }, [classInfo.isTeacher, toast]);
+
+  // Main connection effect
   useEffect(() => {
     console.log(`🎥 Initializing video class ${classId}`);
-    // Simulate connection after 2 seconds
-    setTimeout(() => {
+    
+    // Simulate initial connection
+    const connectTimeout = setTimeout(() => {
       setIsConnected(true);
+      setConnectionQuality('good');
+      
+      if (classInfo.isTeacher) {
+        addTeacherAlert("Video session started successfully. You are the host.");
+      }
     }, 2000);
-  }, [classId]);
+
+    // Simulate random connection issues for demonstration
+    const connectionMonitor = setInterval(() => {
+      if (isConnected && Math.random() < 0.05) { // 5% chance of connection issue
+        setIsConnected(false);
+        setConnectionQuality('poor');
+        toast({
+          title: "Connection Issue",
+          description: "Attempting to reconnect...",
+          variant: "destructive",
+        });
+        attemptReconnection();
+      }
+    }, 10000);
+
+    return () => {
+      clearTimeout(connectTimeout);
+      clearInterval(connectionMonitor);
+    };
+  }, [classId, isConnected, classInfo.isTeacher, addTeacherAlert, attemptReconnection, toast]);
 
   const handleEndCall = () => {
     console.log(`📞 Ending video class ${classId}`);
@@ -73,11 +165,29 @@ export default function VideoClass() {
           <div className="flex items-center gap-4">
             <Badge className="bg-green-600">
               <Users className="h-3 w-3 mr-1" />
-              {classInfo.participants} participants
+              {participants} participants
+            </Badge>
+            <Badge 
+              variant="outline" 
+              className={`text-white border-gray-600 ${
+                connectionQuality === 'good' ? 'bg-green-600/20 border-green-600' :
+                connectionQuality === 'poor' ? 'bg-yellow-600/20 border-yellow-600' :
+                'bg-red-600/20 border-red-600'
+              }`}
+            >
+              {connectionQuality === 'good' ? <Wifi className="h-3 w-3 mr-1" /> : <WifiOff className="h-3 w-3 mr-1" />}
+              {connectionQuality === 'good' ? 'Connected' : 
+               connectionQuality === 'poor' ? 'Poor Connection' : 'Disconnected'}
             </Badge>
             <Badge variant="outline" className="text-white border-gray-600">
               {new Date().toLocaleTimeString()}
             </Badge>
+            {classInfo.isTeacher && (
+              <Badge className="bg-purple-600">
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                Teacher
+              </Badge>
+            )}
           </div>
         </div>
       </div>
@@ -129,6 +239,51 @@ export default function VideoClass() {
 
             {/* Sidebar */}
             <div className="lg:col-span-1 space-y-4">
+              {/* Teacher Alerts */}
+              {classInfo.isTeacher && teacherAlerts.length > 0 && (
+                <Card className="bg-purple-800 border-purple-700">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-white text-sm flex items-center">
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      Teacher Alerts
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {teacherAlerts.slice(-3).map((alert, index) => (
+                      <div key={index} className="text-sm text-purple-100 p-2 bg-purple-900/50 rounded">
+                        {alert}
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+              
+              {/* Connection Status */}
+              {(!isConnected || connectionQuality === 'poor') && (
+                <Card className="bg-yellow-800 border-yellow-700">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-white text-sm flex items-center">
+                      <WifiOff className="h-4 w-4 mr-2" />
+                      Connection Issues
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-yellow-100 text-sm mb-3">
+                      {isReconnecting ? 'Attempting to reconnect...' : 'Connection unstable'}
+                    </p>
+                    {!isConnected && !isReconnecting && (
+                      <Button 
+                        size="sm" 
+                        onClick={attemptReconnection}
+                        className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
+                        data-testid="button-reconnect"
+                      >
+                        Reconnect
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
               {/* Class Info */}
               <Card className="bg-gray-800 border-gray-700">
                 <CardHeader className="pb-3">
@@ -143,6 +298,12 @@ export default function VideoClass() {
                   </div>
                   <div className="text-gray-300">
                     <strong>Started:</strong> {classInfo.startTime.toLocaleTimeString()}
+                  </div>
+                  <div className="text-gray-300">
+                    <strong>Role:</strong> {classInfo.isTeacher ? 'Teacher (Host)' : 'Student'}
+                  </div>
+                  <div className="text-gray-300">
+                    <strong>Max Participants:</strong> 6 (1 teacher + 4 students)
                   </div>
                 </CardContent>
               </Card>
@@ -163,6 +324,18 @@ export default function VideoClass() {
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Open Chat
                   </Button>
+                  {classInfo.isTeacher && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => addTeacherAlert('Test alert: All students are engaged!')}
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
+                      data-testid="button-test-alert"
+                    >
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      Test Alert
+                    </Button>
+                  )}
                   <Button 
                     variant="outline" 
                     size="sm" 
