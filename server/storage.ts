@@ -60,7 +60,7 @@ import {
   type ReviewWithDetails,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -178,6 +178,7 @@ export interface IStorage {
     studentsCount: number;
     teachersCount: number;
   }>;
+  
 }
 
 export class DatabaseStorage implements IStorage {
@@ -907,6 +908,7 @@ export class DatabaseStorage implements IStorage {
     const [ticket] = await db.insert(helpTickets).values(ticketData).returning();
     return ticket;
   }
+
 }
 
 export const storage = new DatabaseStorage();

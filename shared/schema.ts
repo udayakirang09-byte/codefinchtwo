@@ -1208,3 +1208,293 @@ export type InsertHelpKnowledgeBase = z.infer<typeof insertHelpKnowledgeBaseSche
 
 export type HelpTicketMessage = typeof helpTicketMessages.$inferSelect;
 export type InsertHelpTicketMessage = z.infer<typeof insertHelpTicketMessageSchema>;
+
+// Forum System Tables
+export const forumCategories = pgTable("forum_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  color: varchar("color").default("#6B73FF"),
+  isActive: boolean("is_active").default(true),
+  displayOrder: integer("display_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const forumPosts = pgTable("forum_posts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  categoryId: varchar("category_id").references(() => forumCategories.id).notNull(),
+  authorId: varchar("author_id").references(() => users.id).notNull(),
+  title: varchar("title").notNull(),
+  content: text("content").notNull(),
+  isPinned: boolean("is_pinned").default(false),
+  isLocked: boolean("is_locked").default(false),
+  views: integer("views").default(0),
+  likes: integer("likes").default(0),
+  replies: integer("replies").default(0),
+  tags: jsonb("tags").$type<string[]>().default([]),
+  lastReplyAt: timestamp("last_reply_at"),
+  lastReplyByUserId: varchar("last_reply_by_user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const forumReplies = pgTable("forum_replies", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  postId: varchar("post_id").references(() => forumPosts.id).notNull(),
+  authorId: varchar("author_id").references(() => users.id).notNull(),
+  content: text("content").notNull(),
+  parentReplyId: varchar("parent_reply_id"),
+  likes: integer("likes").default(0),
+  isDeleted: boolean("is_deleted").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const forumLikes = pgTable("forum_likes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  postId: varchar("post_id").references(() => forumPosts.id),
+  replyId: varchar("reply_id").references(() => forumReplies.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Project Showcase Tables
+export const projectCategories = pgTable("project_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  color: varchar("color").default("#22C55E"),
+  icon: varchar("icon").default("Folder"),
+  isActive: boolean("is_active").default(true),
+  displayOrder: integer("display_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const projects = pgTable("projects", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  categoryId: varchar("category_id").references(() => projectCategories.id).notNull(),
+  authorId: varchar("author_id").references(() => users.id).notNull(),
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  technologies: jsonb("technologies").$type<string[]>().default([]),
+  githubUrl: varchar("github_url"),
+  liveUrl: varchar("live_url"),
+  thumbnailUrl: varchar("thumbnail_url"),
+  images: jsonb("images").$type<string[]>().default([]),
+  difficulty: varchar("difficulty").default("beginner"), // beginner, intermediate, advanced
+  views: integer("views").default(0),
+  likes: integer("likes").default(0),
+  comments: integer("comments").default(0),
+  isPublished: boolean("is_published").default(false),
+  isFeatured: boolean("is_featured").default(false),
+  publishedAt: timestamp("published_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const projectComments = pgTable("project_comments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").references(() => projects.id).notNull(),
+  authorId: varchar("author_id").references(() => users.id).notNull(),
+  content: text("content").notNull(),
+  parentCommentId: varchar("parent_comment_id"),
+  likes: integer("likes").default(0),
+  isDeleted: boolean("is_deleted").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const projectLikes = pgTable("project_likes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  projectId: varchar("project_id").references(() => projects.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Events System Tables
+export const eventCategories = pgTable("event_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  color: varchar("color").default("#F59E0B"),
+  icon: varchar("icon").default("Calendar"),
+  isActive: boolean("is_active").default(true),
+  displayOrder: integer("display_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const events = pgTable("events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  categoryId: varchar("category_id").references(() => eventCategories.id).notNull(),
+  organizerId: varchar("organizer_id").references(() => users.id).notNull(),
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  shortDescription: text("short_description"),
+  location: varchar("location"), // "Online" or physical location
+  eventUrl: varchar("event_url"), // For online events
+  thumbnailUrl: varchar("thumbnail_url"),
+  maxParticipants: integer("max_participants"),
+  currentParticipants: integer("current_participants").default(0),
+  difficulty: varchar("difficulty").default("all"), // all, beginner, intermediate, advanced
+  tags: jsonb("tags").$type<string[]>().default([]),
+  prerequisites: text("prerequisites"),
+  agenda: jsonb("agenda").$type<{time: string; topic: string; description?: string}[]>().default([]),
+  materials: jsonb("materials").$type<{name: string; url: string; type: string}[]>().default([]),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  registrationDeadline: timestamp("registration_deadline"),
+  isPublished: boolean("is_published").default(false),
+  isFeatured: boolean("is_featured").default(false),
+  isFree: boolean("is_free").default(true),
+  price: decimal("price", { precision: 10, scale: 2 }).default("0.00"),
+  isRecurring: boolean("is_recurring").default(false),
+  recurringPattern: jsonb("recurring_pattern").$type<{frequency: string; interval: number; endDate?: string}>(),
+  publishedAt: timestamp("published_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const eventRegistrations = pgTable("event_registrations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  eventId: varchar("event_id").references(() => events.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  status: varchar("status").default("registered"), // registered, attended, cancelled, no_show
+  registrationData: jsonb("registration_data").$type<Record<string, any>>().default({}),
+  attendedAt: timestamp("attended_at"),
+  cancelledAt: timestamp("cancelled_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const eventComments = pgTable("event_comments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  eventId: varchar("event_id").references(() => events.id).notNull(),
+  authorId: varchar("author_id").references(() => users.id).notNull(),
+  content: text("content").notNull(),
+  parentCommentId: varchar("parent_comment_id"),
+  isDeleted: boolean("is_deleted").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Insert Schemas
+export const insertForumCategorySchema = createInsertSchema(forumCategories).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertForumPostSchema = createInsertSchema(forumPosts).omit({
+  id: true,
+  views: true,
+  likes: true,
+  replies: true,
+  lastReplyAt: true,
+  lastReplyByUserId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertForumReplySchema = createInsertSchema(forumReplies).omit({
+  id: true,
+  likes: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertForumLikeSchema = createInsertSchema(forumLikes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertProjectCategorySchema = createInsertSchema(projectCategories).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertProjectSchema = createInsertSchema(projects).omit({
+  id: true,
+  views: true,
+  likes: true,
+  comments: true,
+  publishedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertProjectCommentSchema = createInsertSchema(projectComments).omit({
+  id: true,
+  likes: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertProjectLikeSchema = createInsertSchema(projectLikes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertEventCategorySchema = createInsertSchema(eventCategories).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertEventSchema = createInsertSchema(events).omit({
+  id: true,
+  currentParticipants: true,
+  publishedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertEventRegistrationSchema = createInsertSchema(eventRegistrations).omit({
+  id: true,
+  attendedAt: true,
+  cancelledAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertEventCommentSchema = createInsertSchema(eventComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Types
+export type ForumCategory = typeof forumCategories.$inferSelect;
+export type InsertForumCategory = z.infer<typeof insertForumCategorySchema>;
+
+export type ForumPost = typeof forumPosts.$inferSelect;
+export type InsertForumPost = z.infer<typeof insertForumPostSchema>;
+
+export type ForumReply = typeof forumReplies.$inferSelect;
+export type InsertForumReply = z.infer<typeof insertForumReplySchema>;
+
+export type ForumLike = typeof forumLikes.$inferSelect;
+export type InsertForumLike = z.infer<typeof insertForumLikeSchema>;
+
+export type ProjectCategory = typeof projectCategories.$inferSelect;
+export type InsertProjectCategory = z.infer<typeof insertProjectCategorySchema>;
+
+export type Project = typeof projects.$inferSelect;
+export type InsertProject = z.infer<typeof insertProjectSchema>;
+
+export type ProjectComment = typeof projectComments.$inferSelect;
+export type InsertProjectComment = z.infer<typeof insertProjectCommentSchema>;
+
+export type ProjectLike = typeof projectLikes.$inferSelect;
+export type InsertProjectLike = z.infer<typeof insertProjectLikeSchema>;
+
+export type EventCategory = typeof eventCategories.$inferSelect;
+export type InsertEventCategory = z.infer<typeof insertEventCategorySchema>;
+
+export type Event = typeof events.$inferSelect;
+export type InsertEvent = z.infer<typeof insertEventSchema>;
+
+export type EventRegistration = typeof eventRegistrations.$inferSelect;
+export type InsertEventRegistration = z.infer<typeof insertEventRegistrationSchema>;
+
+export type EventComment = typeof eventComments.$inferSelect;
+export type InsertEventComment = z.infer<typeof insertEventCommentSchema>;

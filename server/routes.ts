@@ -3391,6 +3391,168 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   console.log('✅ KADB Help System API routes registered successfully!');
 
+  // Forum System Routes
+  app.get('/api/forum/categories', async (req, res) => {
+    try {
+      const { forumCategories } = await import('@shared/schema');
+      const categories = await db.select().from(forumCategories).orderBy(forumCategories.displayOrder);
+      res.json(categories);
+    } catch (error) {
+      console.error('Error fetching forum categories:', error);
+      res.status(500).json({ message: 'Failed to fetch forum categories' });
+    }
+  });
+
+  app.get('/api/forum/posts', async (req, res) => {
+    try {
+      const { forumPosts } = await import('@shared/schema');
+      const posts = await db.select().from(forumPosts).orderBy(desc(forumPosts.createdAt));
+      res.json(posts);
+    } catch (error) {
+      console.error('Error fetching forum posts:', error);
+      res.status(500).json({ message: 'Failed to fetch forum posts' });
+    }
+  });
+
+  app.post('/api/forum/posts', async (req, res) => {
+    try {
+      const { forumPosts } = await import('@shared/schema');
+      const { title, content, categoryId, authorId, tags = [] } = req.body;
+      const [post] = await db.insert(forumPosts).values({
+        title,
+        content,
+        categoryId,
+        authorId,
+        tags: Array.isArray(tags) ? tags : []
+      }).returning();
+      res.status(201).json(post);
+    } catch (error) {
+      console.error('Error creating forum post:', error);
+      res.status(500).json({ message: 'Failed to create forum post' });
+    }
+  });
+
+  // Project System Routes
+  app.get('/api/projects/categories', async (req, res) => {
+    try {
+      const { projectCategories } = await import('@shared/schema');
+      const categories = await db.select().from(projectCategories).orderBy(projectCategories.displayOrder);
+      res.json(categories);
+    } catch (error) {
+      console.error('Error fetching project categories:', error);
+      res.status(500).json({ message: 'Failed to fetch project categories' });
+    }
+  });
+
+  app.get('/api/projects', async (req, res) => {
+    try {
+      const { projects } = await import('@shared/schema');
+      const { published } = req.query;
+      
+      if (published === 'true') {
+        const projectList = await db.select().from(projects).where(eq(projects.isPublished, true)).orderBy(desc(projects.createdAt));
+        res.json(projectList);
+      } else {
+        const projectList = await db.select().from(projects).orderBy(desc(projects.createdAt));
+        res.json(projectList);
+      }
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      res.status(500).json({ message: 'Failed to fetch projects' });
+    }
+  });
+
+  app.post('/api/projects', async (req, res) => {
+    try {
+      const { projects } = await import('@shared/schema');
+      const { title, description, categoryId, authorId, technologies = [], difficulty = 'beginner', githubUrl, liveUrl } = req.body;
+      const [project] = await db.insert(projects).values({
+        title,
+        description,
+        categoryId,
+        authorId,
+        technologies: Array.isArray(technologies) ? technologies : [],
+        difficulty,
+        githubUrl,
+        liveUrl
+      }).returning();
+      res.status(201).json(project);
+    } catch (error) {
+      console.error('Error creating project:', error);
+      res.status(500).json({ message: 'Failed to create project' });
+    }
+  });
+
+  // Events System Routes
+  app.get('/api/events/categories', async (req, res) => {
+    try {
+      const { eventCategories } = await import('@shared/schema');
+      const categories = await db.select().from(eventCategories).orderBy(eventCategories.displayOrder);
+      res.json(categories);
+    } catch (error) {
+      console.error('Error fetching event categories:', error);
+      res.status(500).json({ message: 'Failed to fetch event categories' });
+    }
+  });
+
+  app.get('/api/events', async (req, res) => {
+    try {
+      const { events } = await import('@shared/schema');
+      const { published } = req.query;
+      
+      if (published === 'true') {
+        const eventList = await db.select().from(events).where(eq(events.isPublished, true)).orderBy(events.startDate);
+        res.json(eventList);
+      } else {
+        const eventList = await db.select().from(events).orderBy(events.startDate);
+        res.json(eventList);
+      }
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      res.status(500).json({ message: 'Failed to fetch events' });
+    }
+  });
+
+  app.post('/api/events', async (req, res) => {
+    try {
+      const { events } = await import('@shared/schema');
+      const { title, description, categoryId, organizerId, startDate, endDate, location = 'Online', tags = [], difficulty = 'all' } = req.body;
+      const [event] = await db.insert(events).values({
+        title,
+        description,
+        categoryId,
+        organizerId,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        location,
+        tags: Array.isArray(tags) ? tags : [],
+        difficulty
+      }).returning();
+      res.status(201).json(event);
+    } catch (error) {
+      console.error('Error creating event:', error);
+      res.status(500).json({ message: 'Failed to create event' });
+    }
+  });
+
+  app.post('/api/events/:id/register', async (req, res) => {
+    try {
+      const { eventRegistrations, insertEventRegistrationSchema } = await import('@shared/schema');
+      const { id } = req.params;
+      const validatedData = insertEventRegistrationSchema.parse({ 
+        eventId: id, 
+        ...req.body 
+      });
+      const [registration] = await db.insert(eventRegistrations).values(validatedData).returning();
+      res.status(201).json(registration);
+    } catch (error) {
+      console.error('Error registering for event:', error);
+      res.status(500).json({ message: 'Failed to register for event' });
+    }
+  });
+
+  console.log('✅ Forum, Project, and Events API routes registered successfully!');
+
   const httpServer = createServer(app);
   return httpServer;
 }
