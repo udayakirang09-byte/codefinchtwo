@@ -4294,6 +4294,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Database connectivity diagnostic endpoint
+  app.get('/api/debug/database', async (req, res) => {
+    try {
+      console.log('🔍 Database diagnostic started...');
+      
+      // Test basic database connection
+      const users = await storage.getAllUsers();
+      
+      // Check if required tables exist by testing operations
+      const tableTests = {
+        users: false,
+        mentors: false,
+        students: false,
+        teacherAudioMetrics: false,
+        homeSectionControls: false
+      };
+      
+      try {
+        await storage.getAllUsers();
+        tableTests.users = true;
+      } catch (error) {
+        console.error('Users table test failed:', error);
+      }
+      
+      try {
+        await storage.getAllMentors();
+        tableTests.mentors = true;
+      } catch (error) {
+        console.error('Mentors table test failed:', error);
+      }
+      
+      try {
+        await storage.getAllStudents();
+        tableTests.students = true;
+      } catch (error) {
+        console.error('Students table test failed:', error);
+      }
+      
+      try {
+        await storage.getAllHomeSectionControls();
+        tableTests.homeSectionControls = true;
+      } catch (error) {
+        console.error('HomeSectionControls table test failed:', error);
+      }
+      
+      const environment = {
+        NODE_ENV: process.env.NODE_ENV,
+        hasDatabase: !!process.env.DATABASE_URL,
+        databaseHost: process.env.DATABASE_URL ? 'configured' : 'missing',
+        bcryptAvailable: false
+      };
+      
+      // Test bcrypt import
+      try {
+        const bcrypt = await import('bcrypt');
+        await bcrypt.hash('test', 10);
+        environment.bcryptAvailable = true;
+      } catch (error) {
+        console.error('bcrypt test failed:', error);
+      }
+      
+      console.log('✅ Database diagnostic completed');
+      res.json({
+        status: 'Database diagnostic complete',
+        totalUsers: users.length,
+        tableTests,
+        environment,
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error('❌ Database diagnostic failed:', error);
+      res.status(500).json({
+        status: 'Database diagnostic failed',
+        error: error.message,
+        environment: {
+          NODE_ENV: process.env.NODE_ENV,
+          hasDatabase: !!process.env.DATABASE_URL,
+          databaseHost: process.env.DATABASE_URL ? 'configured' : 'missing'
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   console.log('✅ Teacher Audio Analytics API routes registered successfully!');
 
   const httpServer = createServer(app);
