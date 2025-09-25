@@ -120,6 +120,10 @@ export interface IStorage {
   // Video session operations
   createVideoSession(session: InsertVideoSession): Promise<VideoSession>;
   getVideoSessionByBooking(bookingId: string): Promise<VideoSession | undefined>;
+  getStudentRecordings(studentUserId: string): Promise<Array<VideoSession & { booking: BookingWithDetails }>>;
+  getRecordingById(recordingId: string): Promise<VideoSession | undefined>;
+  validateStudentRecordingAccess(studentUserId: string, recordingId: string): Promise<boolean>;
+  updateVideoSessionRecording(sessionId: string, recordingUrl: string): Promise<void>;
   
   // Chat operations
   createChatSession(session: InsertChatSession): Promise<ChatSession>;
@@ -582,6 +586,73 @@ export class DatabaseStorage implements IStorage {
   async getVideoSessionByBooking(bookingId: string): Promise<VideoSession | undefined> {
     const [session] = await db.select().from(videoSessions).where(eq(videoSessions.bookingId, bookingId));
     return session;
+  }
+
+  // Recording access methods with role-based permissions
+  async getStudentRecordings(studentUserId: string): Promise<Array<VideoSession & {
+    booking: BookingWithDetails;
+  }>> {
+    const recordings = await db
+      .select()
+      .from(videoSessions)
+      .leftJoin(bookings, eq(videoSessions.bookingId, bookings.id))
+      .leftJoin(students, eq(bookings.studentId, students.id))
+      .leftJoin(mentors, eq(bookings.mentorId, mentors.id))
+      .leftJoin(users, eq(students.userId, users.id))
+      .where(
+        and(
+          eq(users.id, studentUserId),
+          sql`${videoSessions.recordingUrl} IS NOT NULL`,
+          eq(videoSessions.status, 'ended')
+        )
+      )
+      .orderBy(desc(videoSessions.createdAt));
+
+    return recordings.map(record => ({
+      ...record.video_sessions!,
+      booking: {
+        ...record.bookings!,
+        student: {
+          ...record.students!,
+          user: record.users!
+        },
+        mentor: {
+          ...record.mentors!,
+          user: record.users! // This will need to be joined separately
+        }
+      } as BookingWithDetails
+    }));
+  }
+
+  async getRecordingById(recordingId: string): Promise<VideoSession | undefined> {
+    const [recording] = await db
+      .select()
+      .from(videoSessions)
+      .where(eq(videoSessions.id, recordingId));
+    return recording;
+  }
+
+  async validateStudentRecordingAccess(studentUserId: string, recordingId: string): Promise<boolean> {
+    const [result] = await db
+      .select()
+      .from(videoSessions)
+      .leftJoin(bookings, eq(videoSessions.bookingId, bookings.id))
+      .leftJoin(students, eq(bookings.studentId, students.id))
+      .where(
+        and(
+          eq(videoSessions.id, recordingId),
+          eq(students.userId, studentUserId)
+        )
+      );
+
+    return !!result;
+  }
+
+  async updateVideoSessionRecording(sessionId: string, recordingUrl: string): Promise<void> {
+    await db
+      .update(videoSessions)
+      .set({ recordingUrl })
+      .where(eq(videoSessions.id, sessionId));
   }
 
   // Chat operations

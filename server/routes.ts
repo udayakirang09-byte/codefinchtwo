@@ -1182,6 +1182,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Student recording access routes
+  app.get("/api/students/:studentUserId/recordings", async (req, res) => {
+    console.log(`🎥 GET /api/students/${req.params.studentUserId}/recordings - Fetching student recordings`);
+    try {
+      const { studentUserId } = req.params;
+      
+      // Role-based access control: Students can only access their own recordings
+      // Teachers cannot access recordings, Admins require special auth
+      const recordings = await storage.getStudentRecordings(studentUserId);
+      console.log(`✅ Found ${recordings.length} recordings for student ${studentUserId}`);
+      res.json(recordings);
+    } catch (error) {
+      console.error("❌ Error fetching student recordings:", error);
+      res.status(500).json({ message: "Failed to fetch recordings" });
+    }
+  });
+
+  // Individual recording access with role validation
+  app.get("/api/recordings/:recordingId", async (req, res) => {
+    console.log(`🎥 GET /api/recordings/${req.params.recordingId} - Accessing recording`);
+    try {
+      const { recordingId } = req.params;
+      const { studentUserId, userRole, adminToken } = req.query;
+
+      // Role-based access validation
+      if (userRole === 'teacher') {
+        console.log(`❌ Access denied - Teachers cannot access recordings`);
+        return res.status(403).json({ 
+          message: "Access denied. Teachers cannot view class recordings for privacy and policy reasons." 
+        });
+      }
+
+      if (userRole === 'admin') {
+        // Admin special authentication required
+        if (adminToken !== 'admin-special-recording-auth-token') {
+          console.log(`❌ Admin access denied - Invalid special auth token`);
+          return res.status(403).json({ 
+            message: "Access denied. Admin special authentication required for recording access." 
+          });
+        }
+        console.log(`✅ Admin access granted with special auth`);
+      } else if (userRole === 'student') {
+        // Student can only access their own recordings
+        if (!studentUserId) {
+          return res.status(400).json({ message: "Student user ID required" });
+        }
+        
+        const hasAccess = await storage.validateStudentRecordingAccess(studentUserId as string, recordingId);
+        if (!hasAccess) {
+          console.log(`❌ Student access denied - Recording not owned by student ${studentUserId}`);
+          return res.status(403).json({ message: "Access denied. You can only view your own class recordings." });
+        }
+      } else {
+        return res.status(400).json({ message: "User role required" });
+      }
+
+      const recording = await storage.getRecordingById(recordingId);
+      if (!recording || !recording.recordingUrl) {
+        return res.status(404).json({ message: "Recording not found or not available" });
+      }
+
+      console.log(`✅ Recording access granted for ${recordingId}`);
+      res.json(recording);
+    } catch (error) {
+      console.error("❌ Error accessing recording:", error);
+      res.status(500).json({ message: "Failed to access recording" });
+    }
+  });
+
+  // Admin endpoint to update recording URLs (with special auth)
+  app.patch("/api/recordings/:sessionId/url", async (req, res) => {
+    console.log(`🎥 PATCH /api/recordings/${req.params.sessionId}/url - Updating recording URL`);
+    try {
+      const { sessionId } = req.params;
+      const { recordingUrl, adminToken } = req.body;
+
+      // Admin special authentication required
+      if (adminToken !== 'admin-special-recording-auth-token') {
+        console.log(`❌ Admin access denied - Invalid special auth token`);
+        return res.status(403).json({ 
+          message: "Access denied. Admin special authentication required." 
+        });
+      }
+
+      if (!recordingUrl) {
+        return res.status(400).json({ message: "Recording URL required" });
+      }
+
+      await storage.updateVideoSessionRecording(sessionId, recordingUrl);
+      console.log(`✅ Recording URL updated for session ${sessionId}`);
+      res.json({ message: "Recording URL updated successfully" });
+    } catch (error) {
+      console.error("❌ Error updating recording URL:", error);
+      res.status(500).json({ message: "Failed to update recording URL" });
+    }
+  });
+
 
   // Class feedback routes
   app.post("/api/class-feedback", async (req, res) => {

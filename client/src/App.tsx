@@ -54,6 +54,7 @@ import TeacherPaymentConfig from "./pages/teacher/payment-config";
 import Forums from "./pages/forums";
 import Projects from "./pages/projects";
 import Events from "./pages/events";
+import Recordings from "./pages/recordings";
 
 function Router() {
   return (
@@ -88,6 +89,7 @@ function Router() {
       <Route path="/admin/home" component={AdminHome} />
       <Route path="/student/active-classes" component={ActiveClasses} />
       <Route path="/student/learning-hours" component={LearningHours} />
+      <Route path="/recordings" component={Recordings} />
       <Route path="/teacher/create-course" component={CreateCourse} />
       <Route path="/teacher/manage-schedule" component={ManageSchedule} />
       <Route path="/student/progress" component={StudentProgress} />
