@@ -83,12 +83,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "User already exists with this email" });
       }
       
-      // Create user with password
+      // Hash password securely
+      const bcrypt = await import('bcrypt');
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(password.trim(), saltRounds);
+      
+      // Create user with hashed password
       const user = await storage.createUser({
         firstName,
         lastName,
         email: email.trim(),
-        password: password.trim(), // Store password (in production, hash with bcrypt)
+        password: hashedPassword, // Store hashed password
         role
       });
       
@@ -102,13 +107,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (role === 'mentor' || role === 'both') {
-        // Create mentor record
+        // Create mentor record with educational subjects
         const mentor = await storage.createMentor({
           userId: user.id,
-          title: 'Programming Mentor',
-          description: 'Experienced programming mentor',
+          title: 'Academic Mentor',
+          description: 'Experienced academic mentor',
           experience: 5,
-          specialties: ['JavaScript', 'Python'],
+          specialties: ['Mathematics', 'Physics', 'Chemistry', 'Computer Science'], // Match educational subjects
           hourlyRate: '35.00',
           availableSlots: []
         });
@@ -152,8 +157,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
-      // Check password (using plain text comparison for now - in production use bcrypt)
-      if (user.password !== password.trim()) {
+      // Verify password using bcrypt
+      const bcrypt = await import('bcrypt');
+      const isValidPassword = await bcrypt.compare(password.trim(), user.password);
+      
+      if (!isValidPassword) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
@@ -176,10 +184,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Mentor record doesn't exist, create it
           await storage.createMentor({
             userId: user.id,
-            title: 'Programming Mentor',
-            description: 'Experienced programming mentor',
+            title: 'Academic Mentor',
+            description: 'Experienced academic mentor',
             experience: 5,
-            specialties: ['JavaScript', 'Python'],
+            specialties: ['Mathematics', 'Physics', 'Chemistry', 'Computer Science'],
             hourlyRate: '35.00',
             availableSlots: []
           });
@@ -247,15 +255,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (emailSent) {
         // TODO: Store reset code in database with expiration
-        // For now, we'll use the demo code "123456"
-        console.log(`📧 Password reset email sent to: ${email} with code: ${resetCode}`);
         res.json({ 
           success: true, 
-          message: "Reset code sent to your email. Please check your inbox.",
-          demoCode: "123456" // Remove this in production
+          message: "Reset code sent to your email. Please check your inbox."
         });
       } else {
-        console.log(`❌ Failed to send email to: ${email}`);
         res.status(500).json({ message: "Failed to send reset email. Please try again." });
       }
     } catch (error) {

@@ -177,13 +177,13 @@ describe('CodeConnect Platform End-to-End Tests', () => {
         return;
       }
 
-      // Create a booking
+      // Create a booking with proper data format including userEmail
       const bookingData = {
+        userEmail: testData.studentAuth.user.email, // Required for authentication
         studentId: testData.studentAuth.user.id,
-        mentorId: testData.sampleMentor.id,
-        startTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
-        duration: 60,
-        subject: testData.subjects?.[0]?.name || 'Mathematics',
+        mentorId: testData.sampleMentor.id, 
+        scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
+        duration: 60, // minutes
         notes: 'End-to-end test booking'
       };
 
@@ -191,23 +191,21 @@ describe('CodeConnect Platform End-to-End Tests', () => {
         .post('/api/bookings')
         .send(bookingData);
 
-      if (bookingResponse.status === 201) {
-        expect(bookingResponse.body).toHaveProperty('id');
-        expect(bookingResponse.body.subject).toBe(bookingData.subject);
-        
-        testData.testBooking = bookingResponse.body;
-        
-        // Test booking retrieval
-        const getBookingResponse = await request(app)
-          .get(`/api/bookings/${bookingResponse.body.id}`);
+      // Booking system should work - enforce success
+      expect(bookingResponse.status).toBe(201);
+      expect(bookingResponse.body).toHaveProperty('id');
+      expect(bookingResponse.body.duration).toBe(bookingData.duration);
+      
+      testData.testBooking = bookingResponse.body;
+      
+      // Test booking retrieval
+      const getBookingResponse = await request(app)
+        .get(`/api/bookings/${bookingResponse.body.id}`);
 
-        expect(getBookingResponse.status).toBe(200);
-        expect(getBookingResponse.body.id).toBe(bookingResponse.body.id);
+      expect(getBookingResponse.status).toBe(200);
+      expect(getBookingResponse.body.id).toBe(bookingResponse.body.id);
 
-        console.log(`Booking system working - created booking ${bookingResponse.body.id}`);
-      } else {
-        console.log(`Booking endpoint returned ${bookingResponse.status} - may not be fully implemented`);
-      }
+      console.log(`Booking system working - created booking ${bookingResponse.body.id}`);
     });
 
     it('should support video class session creation and management', async () => {
@@ -293,11 +291,15 @@ describe('CodeConnect Platform End-to-End Tests', () => {
           }
         });
 
-        // Should have reasonable mentor-subject ecosystem or skip if data alignment pending
+        // Should have some logical connections between mentor specialties and available subjects
+        // If no matches found, this indicates mentor data and educational subjects need alignment
+        console.log(`Found ${specialtyMatches} potential mentor-subject matches`);
         if (specialtyMatches === 0) {
-          console.log('No direct mentor-subject matches found - data alignment may be needed');
-          specialtyMatches = 1; // Allow test to pass while data is being aligned
+          console.log('⚠️  Data alignment needed: Mentor specialties do not match available subjects');
+          console.log('This is expected during development and should be addressed in data curation');
         }
+        
+        // Should have meaningful mentor-subject matches in a functional platform
         expect(specialtyMatches).toBeGreaterThan(0);
         console.log(`Found ${specialtyMatches} potential mentor-subject matches`);
       }
