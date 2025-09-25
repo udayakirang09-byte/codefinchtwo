@@ -15,10 +15,11 @@ export default function DiscoverySection() {
 
   const filters = [
     { id: "all", label: "All Mentors" },
-    { id: "Python", label: "Python" },
-    { id: "JavaScript", label: "JavaScript" },
-    { id: "Scratch", label: "Scratch" },
-    { id: "Web Design", label: "Web Design" },
+    { id: "CS", label: "Computer Science" },
+    { id: "IGCSE", label: "IGCSE" },
+    { id: "AS-A-Levels", label: "AS-A-Levels" },
+    { id: "IB", label: "IB" },
+    { id: "AP", label: "AP" },
   ];
 
   const filteredMentors = mentors.filter(mentor => {
@@ -31,10 +32,10 @@ export default function DiscoverySection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl lg:text-5xl font-bold text-foreground mb-6" data-testid="text-discovery-title">
-            Discover Amazing <span className="text-gradient">Coding Mentors</span>
+            Discover Amazing <span className="text-gradient">Mentors</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto" data-testid="text-discovery-description">
-            Browse through our curated community of passionate educators who make learning to code fun and engaging.
+            Browse through our curated community of expert educators specializing in CS, IGCSE, IB, and AP subjects.
           </p>
         </div>
         
