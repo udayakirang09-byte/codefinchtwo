@@ -1,7 +1,10 @@
 import { GraduationCap, Presentation } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 
 export default function HeroSection() {
+  const [, navigate] = useLocation();
+  
   return (
     <section className="relative min-h-screen gradient-bg overflow-hidden">
       <div className="absolute inset-0 bg-black/10"></div>
@@ -45,11 +48,8 @@ export default function HeroSection() {
                 className="bg-accent text-accent-foreground px-8 py-4 hover:bg-accent/90 hover-lift font-semibold text-lg"
                 data-testid="button-teach"
                 onClick={() => {
-                  console.log('👨‍🏫 I Want to Teach button clicked - scrolling to community section');
-                  const communitySection = document.getElementById('community');
-                  if (communitySection) {
-                    communitySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }
+                  console.log('👨‍🏫 I Want to Teach button clicked - navigating to signup');
+                  navigate('/signup');
                 }}
               >
                 <Presentation className="mr-2" size={20} />

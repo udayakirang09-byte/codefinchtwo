@@ -1,7 +1,10 @@
 import { Users, Presentation } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 
 export default function CommunitySection() {
+  const [, navigate] = useLocation();
+  
   return (
     <section id="community" className="py-20 gradient-bg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -43,8 +46,8 @@ export default function CommunitySection() {
               data-testid="button-become-mentor"
               onClick={() => {
                 console.log('Become a Mentor button clicked');
-                // Navigate to help page for mentor information
-                window.location.href = '/help';
+                // Navigate to signup page to become a mentor
+                navigate('/signup');
               }}
             >
               Become a Mentor
