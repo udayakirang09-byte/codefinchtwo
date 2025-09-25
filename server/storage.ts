@@ -67,6 +67,12 @@ import {
   type Qualification,
   type Specialization,
   type Subject,
+  teacherAudioMetrics,
+  homeSectionControls,
+  type TeacherAudioMetrics,
+  type InsertTeacherAudioMetrics,
+  type HomeSectionControls,
+  type InsertHomeSectionControls,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -244,6 +250,33 @@ export interface IStorage {
   downloadRecordingFromVm(sessionId: string): Promise<any>;
   deleteRecordingFromVm(sessionId: string): Promise<void>;
   getRecordingStorageStats(): Promise<any>;
+  
+  // Teacher Audio Analytics operations
+  createTeacherAudioMetrics(metrics: InsertTeacherAudioMetrics): Promise<TeacherAudioMetrics>;
+  getTeacherAudioMetrics(mentorId: string, options?: { limit?: number; from?: Date; to?: Date }): Promise<TeacherAudioMetrics[]>;
+  getTeacherAudioMetricsAggregates(window?: string): Promise<Array<{
+    mentorId: string;
+    mentorName: string;
+    encourageInvolvement: number;
+    pleasantCommunication: number;
+    avoidPersonalDetails: number;
+    overallScore: number;
+    totalClasses: number;
+    highlightGreen: boolean;
+    highlightRed: boolean;
+  }>>;
+  getTeacherAudioAggregate(mentorId: string): Promise<{
+    encourageInvolvement: number;
+    pleasantCommunication: number;
+    avoidPersonalDetails: number;
+    overallScore: number;
+    totalClasses: number;
+  } | undefined>;
+  
+  // Home Section Controls operations  
+  getHomeSectionControls(): Promise<HomeSectionControls[]>;
+  updateHomeSectionControl(sectionType: string, sectionName: string, isEnabled: boolean): Promise<void>;
+  getHomeSectionControlsForType(sectionType: 'teacher' | 'student'): Promise<HomeSectionControls[]>;
   
 }
 
@@ -1488,6 +1521,138 @@ export class DatabaseStorage implements IStorage {
       oldestRecording: new Date('2024-01-15'),
       newestRecording: new Date()
     };
+  }
+
+  // Teacher Audio Analytics operations
+  async createTeacherAudioMetrics(metrics: InsertTeacherAudioMetrics): Promise<TeacherAudioMetrics> {
+    // Calculate overall score from key metrics
+    const overallScore = (
+      metrics.encourageInvolvement + 
+      metrics.pleasantCommunication + 
+      metrics.avoidPersonalDetails + 
+      metrics.studentTalkRatio + 
+      metrics.questionRate + 
+      metrics.clarity + 
+      metrics.adherenceToTopic + 
+      metrics.politeness
+    ) / 8;
+
+    const [result] = await db.insert(teacherAudioMetrics).values({
+      ...metrics,
+      overallScore: overallScore.toFixed(1)
+    }).returning();
+    
+    console.log(`📊 Created audio analytics for mentor ${metrics.mentorId} with overall score ${overallScore.toFixed(1)}`);
+    return result;
+  }
+
+  async getTeacherAudioMetrics(mentorId: string, options?: { limit?: number; from?: Date; to?: Date }): Promise<TeacherAudioMetrics[]> {
+    const baseQuery = db.select().from(teacherAudioMetrics)
+      .where(eq(teacherAudioMetrics.mentorId, mentorId))
+      .orderBy(desc(teacherAudioMetrics.computedAt));
+
+    if (options?.limit) {
+      return await baseQuery.limit(options.limit);
+    }
+
+    // Additional filtering could be added here for date ranges
+    return await baseQuery;
+  }
+
+  async getTeacherAudioMetricsAggregates(window?: string): Promise<Array<{
+    mentorId: string;
+    mentorName: string;
+    encourageInvolvement: number;
+    pleasantCommunication: number;
+    avoidPersonalDetails: number;
+    overallScore: number;
+    totalClasses: number;
+    highlightGreen: boolean;
+    highlightRed: boolean;
+  }>> {
+    // Get aggregated metrics for all mentors
+    const results = await db
+      .select({
+        mentorId: teacherAudioMetrics.mentorId,
+        mentorName: sql<string>`COALESCE(users.first_name || ' ' || users.last_name, users.email)`,
+        avgEncourageInvolvement: sql<number>`AVG(${teacherAudioMetrics.encourageInvolvement})`,
+        avgPleasantCommunication: sql<number>`AVG(${teacherAudioMetrics.pleasantCommunication})`,
+        avgAvoidPersonalDetails: sql<number>`AVG(${teacherAudioMetrics.avoidPersonalDetails})`,
+        avgOverallScore: sql<number>`AVG(${teacherAudioMetrics.overallScore})`,
+        totalClasses: sql<number>`COUNT(*)`
+      })
+      .from(teacherAudioMetrics)
+      .leftJoin(mentors, eq(teacherAudioMetrics.mentorId, mentors.id))
+      .leftJoin(users, eq(mentors.userId, users.id))
+      .groupBy(teacherAudioMetrics.mentorId, users.firstName, users.lastName, users.email);
+
+    return results.map(row => ({
+      mentorId: row.mentorId,
+      mentorName: row.mentorName,
+      encourageInvolvement: Math.round(row.avgEncourageInvolvement * 10) / 10,
+      pleasantCommunication: Math.round(row.avgPleasantCommunication * 10) / 10,
+      avoidPersonalDetails: Math.round(row.avgAvoidPersonalDetails * 10) / 10,
+      overallScore: Math.round(row.avgOverallScore * 10) / 10,
+      totalClasses: row.totalClasses,
+      highlightGreen: row.avgOverallScore >= 9,
+      highlightRed: row.avgEncourageInvolvement < 8 || row.avgPleasantCommunication < 8 || row.avgAvoidPersonalDetails < 8
+    }));
+  }
+
+  async getTeacherAudioAggregate(mentorId: string): Promise<{
+    encourageInvolvement: number;
+    pleasantCommunication: number;
+    avoidPersonalDetails: number;
+    overallScore: number;
+    totalClasses: number;
+  } | undefined> {
+    const [result] = await db
+      .select({
+        avgEncourageInvolvement: sql<number>`AVG(${teacherAudioMetrics.encourageInvolvement})`,
+        avgPleasantCommunication: sql<number>`AVG(${teacherAudioMetrics.pleasantCommunication})`,
+        avgAvoidPersonalDetails: sql<number>`AVG(${teacherAudioMetrics.avoidPersonalDetails})`,
+        avgOverallScore: sql<number>`AVG(${teacherAudioMetrics.overallScore})`,
+        totalClasses: sql<number>`COUNT(*)`
+      })
+      .from(teacherAudioMetrics)
+      .where(eq(teacherAudioMetrics.mentorId, mentorId));
+
+    if (!result || result.totalClasses === 0) return undefined;
+
+    return {
+      encourageInvolvement: Math.round(result.avgEncourageInvolvement * 10) / 10,
+      pleasantCommunication: Math.round(result.avgPleasantCommunication * 10) / 10,
+      avoidPersonalDetails: Math.round(result.avgAvoidPersonalDetails * 10) / 10,
+      overallScore: Math.round(result.avgOverallScore * 10) / 10,
+      totalClasses: result.totalClasses
+    };
+  }
+
+  // Home Section Controls operations
+  async getHomeSectionControls(): Promise<HomeSectionControls[]> {
+    return await db.select().from(homeSectionControls).orderBy(homeSectionControls.displayOrder);
+  }
+
+  async updateHomeSectionControl(sectionType: string, sectionName: string, isEnabled: boolean): Promise<void> {
+    await db.insert(homeSectionControls).values({
+      sectionType,
+      sectionName,
+      isEnabled
+    }).onConflictDoUpdate({
+      target: [homeSectionControls.sectionType, homeSectionControls.sectionName],
+      set: {
+        isEnabled,
+        updatedAt: sql`NOW()`
+      }
+    });
+
+    console.log(`⚙️ Updated home section control: ${sectionType}.${sectionName} = ${isEnabled}`);
+  }
+
+  async getHomeSectionControlsForType(sectionType: 'teacher' | 'student'): Promise<HomeSectionControls[]> {
+    return await db.select().from(homeSectionControls)
+      .where(eq(homeSectionControls.sectionType, sectionType))
+      .orderBy(homeSectionControls.displayOrder);
   }
 
 }

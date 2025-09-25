@@ -1594,3 +1594,68 @@ export type InsertSpecialization = z.infer<typeof insertSpecializationSchema>;
 
 export type Subject = typeof subjects.$inferSelect;
 export type InsertSubject = z.infer<typeof insertSubjectSchema>;
+
+// Teacher Audio Performance Metrics Table
+export const teacherAudioMetrics = pgTable("teacher_audio_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
+  bookingId: varchar("booking_id").references(() => bookings.id),
+  
+  // Core Teaching Quality Parameters (0-10 scale)
+  encourageInvolvement: integer("encourage_involvement").notNull(), // How well teacher encourages student participation
+  pleasantCommunication: integer("pleasant_communication").notNull(), // Politeness and pleasant tone
+  avoidPersonalDetails: integer("avoid_personal_details").notNull(), // Professional boundary maintenance
+  
+  // Additional Performance Metrics (0-10 scale)
+  studentTalkRatio: integer("student_talk_ratio").notNull(), // Balance of student vs teacher talking
+  questionRate: integer("question_rate").notNull(), // How well teacher asks engaging questions
+  clarity: integer("clarity").notNull(), // Clear explanation and articulation
+  adherenceToTopic: integer("adherence_to_topic").notNull(), // Staying focused on lesson objectives
+  politeness: integer("politeness").notNull(), // Professional courtesy and respect
+  
+  // Overall Calculated Score (average of key metrics)
+  overallScore: decimal("overall_score", { precision: 3, scale: 1 }).notNull(),
+  
+  // Analysis metadata
+  analysisVersion: varchar("analysis_version").default("v1.0"),
+  confidenceScore: decimal("confidence_score", { precision: 3, scale: 2 }), // AI analysis confidence 0-1
+  processingNotes: text("processing_notes"),
+  
+  computedAt: timestamp("computed_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Home Page Section Controls (stored in admin config)
+export const homeSectionControls = pgTable("home_section_controls", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sectionType: varchar("section_type").notNull(), // 'teacher', 'student'
+  sectionName: varchar("section_name").notNull(), // 'analytics', 'dashboard', 'resources', etc.
+  isEnabled: boolean("is_enabled").default(true),
+  displayOrder: integer("display_order").default(0),
+  description: text("description"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  uniqueSectionType: unique().on(table.sectionType, table.sectionName)
+}));
+
+// Schema definitions for teacher audio metrics
+export const insertTeacherAudioMetricsSchema = createInsertSchema(teacherAudioMetrics).omit({
+  id: true,
+  overallScore: true, // calculated automatically
+  computedAt: true,
+  createdAt: true,
+});
+
+export const insertHomeSectionControlsSchema = createInsertSchema(homeSectionControls).omit({
+  id: true,
+  updatedAt: true,
+  createdAt: true,
+});
+
+// Types for teacher audio metrics
+export type TeacherAudioMetrics = typeof teacherAudioMetrics.$inferSelect;
+export type InsertTeacherAudioMetrics = z.infer<typeof insertTeacherAudioMetricsSchema>;
+
+export type HomeSectionControls = typeof homeSectionControls.$inferSelect;
+export type InsertHomeSectionControls = z.infer<typeof insertHomeSectionControlsSchema>;
