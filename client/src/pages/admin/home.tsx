@@ -368,6 +368,57 @@ export default function AdminHome() {
               </CardContent>
             </Card>
 
+            {/* Navigation Links */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Navigation Links
+                </CardTitle>
+                <CardDescription>
+                  Direct access to system pages and utilities
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Link href="/admin/analytics">
+                  <Button variant="outline" className="w-full" data-testid="button-nav-ai-analytics">
+                    <Brain className="w-4 h-4 mr-2" />
+                    🤖 AI Analytics
+                  </Button>
+                </Link>
+                <Link href="/admin/payment-config">
+                  <Button variant="outline" className="w-full" data-testid="button-nav-payment-config">
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    💰 Payment Config
+                  </Button>
+                </Link>
+                <Link href="/admin/finance-dashboard">
+                  <Button variant="outline" className="w-full" data-testid="button-nav-finance-analytics">
+                    <TrendingUp className="w-4 h-4 mr-2" />
+                    📊 Finance Analytics
+                  </Button>
+                </Link>
+                <Link href="/admin/cloud-deployments">
+                  <Button variant="outline" className="w-full" data-testid="button-nav-cloud-deploy">
+                    <Cloud className="w-4 h-4 mr-2" />
+                    ☁️ Cloud Deploy
+                  </Button>
+                </Link>
+                <Link href="/simple-test">
+                  <Button variant="outline" className="w-full" data-testid="button-nav-simple-test">
+                    <TestTube className="w-4 h-4 mr-2" />
+                    🔧 Simple Test
+                  </Button>
+                </Link>
+                <Link href="/system-test">
+                  <Button variant="outline" className="w-full" data-testid="button-nav-full-tests">
+                    <Cog className="w-4 h-4 mr-2" />
+                    🧪 Full Tests
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
             {/* Home Section Controls */}
             <Card>
               <CardHeader>
