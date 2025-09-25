@@ -1378,6 +1378,39 @@ export const eventComments = pgTable("event_comments", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Educational Dropdown Tables
+export const qualifications = pgTable("qualifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull().unique(),
+  description: text("description"),
+  category: varchar("category"), // undergraduate, postgraduate, professional, etc.
+  displayOrder: integer("display_order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const specializations = pgTable("specializations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull().unique(),
+  description: text("description"),
+  category: varchar("category"), // STEM, Arts, Business, etc.
+  displayOrder: integer("display_order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const subjects = pgTable("subjects", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull().unique(),
+  description: text("description"),
+  board: varchar("board"), // IGCSE, IB, AP, CS, etc.
+  grade: varchar("grade"), // Grade level or year
+  category: varchar("category"), // Mathematics, Science, Language, etc.
+  displayOrder: integer("display_order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert Schemas
 export const insertForumCategorySchema = createInsertSchema(forumCategories).omit({
   id: true,
@@ -1462,6 +1495,21 @@ export const insertEventCommentSchema = createInsertSchema(eventComments).omit({
   updatedAt: true,
 });
 
+export const insertQualificationSchema = createInsertSchema(qualifications).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSpecializationSchema = createInsertSchema(specializations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSubjectSchema = createInsertSchema(subjects).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type ForumCategory = typeof forumCategories.$inferSelect;
 export type InsertForumCategory = z.infer<typeof insertForumCategorySchema>;
@@ -1498,3 +1546,12 @@ export type InsertEventRegistration = z.infer<typeof insertEventRegistrationSche
 
 export type EventComment = typeof eventComments.$inferSelect;
 export type InsertEventComment = z.infer<typeof insertEventCommentSchema>;
+
+export type Qualification = typeof qualifications.$inferSelect;
+export type InsertQualification = z.infer<typeof insertQualificationSchema>;
+
+export type Specialization = typeof specializations.$inferSelect;
+export type InsertSpecialization = z.infer<typeof insertSpecializationSchema>;
+
+export type Subject = typeof subjects.$inferSelect;
+export type InsertSubject = z.infer<typeof insertSubjectSchema>;
