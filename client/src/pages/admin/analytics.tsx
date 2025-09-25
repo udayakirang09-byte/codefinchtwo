@@ -69,8 +69,13 @@ export default function AdminAnalytics() {
   });
 
   // Teacher Audio Analytics Query (Rankings)
-  const { data: teacherAnalytics = [], isLoading: audioLoading } = useQuery<any[]>({
+  const { data: teacherAnalytics = [], isLoading: teacherLoading } = useQuery<any[]>({
     queryKey: ['/api/admin/teacher-analytics'],
+  });
+
+  // Original Audio Analytics Query (Session Details)
+  const { data: audioAnalytics = [], isLoading: audioLoading } = useQuery<any[]>({
+    queryKey: ['/api/admin/audio-analytics'],
   });
 
   // Cloud Deployments Query
@@ -500,26 +505,147 @@ export default function AdminAnalytics() {
             </Card>
           </TabsContent>
 
-          {/* Teacher Rankings Audio Analytics Tab */}
+          {/* Audio Analytics & Teacher Rankings Tab */}
           <TabsContent value="audio-analytics" className="space-y-6">
+            {/* Original Audio Analytics Sessions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Mic className="h-5 w-5" />
+                  Audio Session Analytics
+                </CardTitle>
+                <CardDescription>
+                  Detailed AI analysis of audio sessions with quality metrics, transcription, and insights
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {audioLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full" />
+                      <span className="ml-3">Loading audio sessions...</span>
+                    </div>
+                  ) : Array.isArray(audioAnalytics) && audioAnalytics.length > 0 ? (
+                    audioAnalytics.map((audio: any, index: number) => (
+                      <div key={audio.id || index} className="border rounded-lg p-6 bg-gradient-to-r from-blue-50 to-indigo-50" data-testid={`audio-session-${index}`}>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                          <div>
+                            <div className="text-sm text-gray-500">Duration</div>
+                            <div className="text-lg font-semibold" data-testid={`audio-duration-${index}`}>
+                              {Math.floor((audio.duration || 0) / 60)}m {(audio.duration || 0) % 60}s
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-500">Audio Quality</div>
+                            <div className="text-lg font-semibold text-blue-600" data-testid={`audio-quality-${index}`}>
+                              {((audio.audioQuality || 0) * 100).toFixed(0)}%
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-500">Speaking Ratio</div>
+                            <div className="text-lg font-semibold text-green-600" data-testid={`audio-speaking-ratio-${index}`}>
+                              {((audio.speakingTimeRatio || 0) * 100).toFixed(0)}%
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-500">Background Noise</div>
+                            <div className="text-lg font-semibold text-orange-600" data-testid={`audio-noise-${index}`}>
+                              {((audio.backgroundNoise || 0) * 100).toFixed(0)}%
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div>
+                            <div className="text-sm text-gray-500 mb-2">Teaching Effectiveness</div>
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="bg-green-500 h-2 rounded-full transition-all duration-300" 
+                                  style={{ width: `${((audio.teachingEffectiveness || 0) * 100)}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm font-semibold" data-testid={`audio-effectiveness-${index}`}>
+                                {((audio.teachingEffectiveness || 0) * 100).toFixed(0)}%
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {audio.keyTopics && audio.keyTopics.length > 0 && (
+                            <div>
+                              <div className="text-sm text-gray-500 mb-2">Key Topics</div>
+                              <div className="flex flex-wrap gap-2" data-testid={`audio-topics-${index}`}>
+                                {audio.keyTopics.slice(0, 3).map((topic: string, topicIndex: number) => (
+                                  <Badge key={topicIndex} variant="outline" className="text-xs">
+                                    {topic}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {audio.emotionalTone && Object.keys(audio.emotionalTone).length > 0 && (
+                          <div className="mb-4">
+                            <div className="text-sm text-gray-500 mb-2">Emotional Tone Analysis</div>
+                            <div className="flex flex-wrap gap-2" data-testid={`audio-emotions-${index}`}>
+                              {Object.entries(audio.emotionalTone).map(([emotion, score]: [string, any]) => (
+                                <div key={emotion} className="bg-purple-100 text-purple-800 px-2 py-1 rounded-md text-xs">
+                                  {emotion}: {typeof score === 'number' ? score.toFixed(1) : score}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {audio.aiSummary && (
+                          <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200" data-testid={`audio-summary-${index}`}>
+                            <div className="text-sm font-medium mb-2 text-gray-700">🤖 AI Session Summary</div>
+                            <p className="text-sm text-gray-600">{audio.aiSummary}</p>
+                          </div>
+                        )}
+
+                        {audio.aiTranscription && (
+                          <div className="mt-4 p-4 bg-gray-50 rounded-lg border" data-testid={`audio-transcript-${index}`}>
+                            <div className="text-sm font-medium mb-2 text-gray-700">📝 AI Transcription</div>
+                            <p className="text-xs text-gray-600 max-h-20 overflow-y-auto">
+                              {audio.aiTranscription.length > 200 
+                                ? `${audio.aiTranscription.substring(0, 200)}...` 
+                                : audio.aiTranscription}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <Mic className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                      <p className="text-gray-500">No audio session analytics available</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Teacher Performance Rankings */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5" />
                   Teacher Performance Rankings
                 </CardTitle>
-                <CardDescription>Rankings 1–10 per parameter. Green ≥9, red &lt;8.</CardDescription>
+                <CardDescription>Rankings 1–10 per teaching parameter. Green ≥9, red &lt;8.</CardDescription>
               </CardHeader>
               <CardContent>
-                {audioLoading ? (
+                {teacherLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="animate-spin w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full" />
-                    <span className="ml-3">Loading teacher analytics…</span>
+                    <span className="ml-3">Loading teacher rankings...</span>
                   </div>
                 ) : (!Array.isArray(teacherAnalytics) || teacherAnalytics.length === 0) ? (
                   <div className="text-center py-8">
                     <TrendingUp className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                    <p className="text-gray-500">No teacher analytics available</p>
+                    <p className="text-gray-500">No teacher rankings available</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
