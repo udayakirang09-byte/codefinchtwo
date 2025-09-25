@@ -49,13 +49,24 @@ import {
   insertCourseSchema,
 } from "@shared/schema";
 
-// Initialize Stripe
-if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === 'NA') {
+// Initialize Stripe with appropriate keys
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY !== 'NA' 
+  ? process.env.STRIPE_SECRET_KEY 
+  : process.env.TESTING_STRIPE_SECRET_KEY;
+
+if (!stripeSecretKey || stripeSecretKey === 'NA') {
   console.warn('⚠️ Stripe not configured - payment features disabled');
 }
-const stripe = process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY !== 'NA' 
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2025-08-27.basil" })
+
+const stripe = stripeSecretKey && stripeSecretKey !== 'NA' 
+  ? new Stripe(stripeSecretKey, { apiVersion: "2025-08-27.basil" })
   : null;
+
+if (stripe) {
+  console.log('✅ Stripe payment system ready');
+} else {
+  console.log('❌ Stripe payment system disabled');
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
