@@ -17,6 +17,7 @@ import {
   paymentTransactions,
   unsettledFinances,
   paymentWorkflows,
+  helpTickets,
   type User,
   type InsertUser,
   type Mentor,
@@ -160,6 +161,9 @@ export interface IStorage {
   createPaymentWorkflow(workflow: InsertPaymentWorkflow): Promise<PaymentWorkflow>;
   getActivePaymentWorkflows(): Promise<PaymentWorkflow[]>;
   updatePaymentWorkflowStage(id: string, stage: string, nextActionAt?: Date): Promise<void>;
+  
+  // Help System operations
+  createHelpTicket(ticket: any): Promise<any>;
   
   // Admin operations
   getSystemStats(): Promise<any>;
@@ -852,6 +856,12 @@ export class DatabaseStorage implements IStorage {
       completedBookings: completedBookings.length || 0,
       completionRate: allBookings.length > 0 ? (completedBookings.length / allBookings.length) * 100 : 0
     };
+  }
+
+  // Help System operations
+  async createHelpTicket(ticketData: any): Promise<any> {
+    const [ticket] = await db.insert(helpTickets).values(ticketData).returning();
+    return ticket;
   }
 }
 

@@ -3050,6 +3050,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   console.log('✅ Payment system API routes registered successfully!');
 
+  // KADB Help System API Routes
+  app.post('/api/ai/help/response', async (req, res) => {
+    try {
+      console.log('🤖 AI Help Request:', req.body);
+      const { question, category = 'general', userId } = req.body;
+      
+      if (!question || typeof question !== 'string') {
+        return res.status(400).json({ message: 'Question is required' });
+      }
+
+      const { aiHelpService } = await import('./ai-help');
+      const result = await aiHelpService.generateHelpResponse(question, category, userId);
+      
+      console.log('✅ AI Help Response generated successfully');
+      res.json(result);
+    } catch (error: any) {
+      console.error('❌ AI Help Error:', error);
+      res.status(500).json({ 
+        message: 'Failed to generate AI response',
+        aiResponse: "I'm sorry, I'm having trouble connecting right now. Please try creating a support ticket for immediate assistance.",
+        confidence: 0,
+        suggestedKnowledgeBase: [],
+        escalateToHuman: true
+      });
+    }
+  });
+
+  app.post('/api/help-tickets', async (req, res) => {
+    try {
+      console.log('🎫 Creating Help Ticket:', req.body);
+      const { subject, description, category = 'general', contactEmail } = req.body;
+      
+      if (!subject || !description) {
+        return res.status(400).json({ message: 'Subject and description are required' });
+      }
+
+      // Analyze ticket sentiment
+      const { aiHelpService } = await import('./ai-help');
+      const analysis = await aiHelpService.analyzeTicketSentiment(description);
+      
+      // Create ticket
+      const ticketData = {
+        subject,
+        description,
+        category: analysis.category,
+        priority: analysis.priority,
+        contactEmail: contactEmail || null,
+        status: 'open'
+      };
+
+      const ticket = await storage.createHelpTicket(ticketData);
+      console.log(`✅ Help Ticket created: ${ticket.id}`);
+      
+      res.status(201).json(ticket);
+    } catch (error: any) {
+      console.error('❌ Help Ticket Creation Error:', error);
+      res.status(500).json({ message: 'Failed to create help ticket' });
+    }
+  });
+
+  app.get('/api/help-knowledge-base', async (req, res) => {
+    try {
+      console.log('📚 Fetching Knowledge Base Articles');
+      const { search, category } = req.query;
+      
+      const { aiHelpService } = await import('./ai-help');
+      if (search) {
+        const articles = await aiHelpService.searchKnowledgeBase(search as string, category as string);
+        res.json(articles);
+      } else {
+        // Return empty array for now - in production would return all articles
+        res.json([]);
+      }
+    } catch (error: any) {
+      console.error('❌ Knowledge Base Error:', error);
+      res.status(500).json({ message: 'Failed to fetch knowledge base' });
+    }
+  });
+
+  console.log('✅ KADB Help System API routes registered successfully!');
+
   const httpServer = createServer(app);
   return httpServer;
 }
