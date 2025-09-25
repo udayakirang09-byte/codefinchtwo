@@ -137,8 +137,8 @@ export default function TeacherDashboard() {
   }, []);
 
   const isVideoEnabled = (scheduledAt: Date) => {
-    const tenMinutesBefore = addMinutes(scheduledAt, -10);
-    return currentTime >= tenMinutesBefore && currentTime <= addHours(scheduledAt, 2);
+    const fiveMinutesBefore = addMinutes(scheduledAt, -5);
+    return currentTime >= fiveMinutesBefore && currentTime <= addHours(scheduledAt, 2);
   };
 
   const isChatEnabled = (scheduledAt: Date) => {
@@ -316,7 +316,7 @@ export default function TeacherDashboard() {
                         data-testid={`button-teacher-video-${upcomingClass.id}`}
                       >
                         <Video className="h-5 w-5 mr-2" />
-                        {videoEnabled ? "Start Class" : `Available in ${formatDistanceToNow(addMinutes(upcomingClass.scheduledAt, -10))}`}
+                        {videoEnabled ? "Start Class" : `Available in ${formatDistanceToNow(addMinutes(upcomingClass.scheduledAt, -5))}`}
                       </Button>
                       
                       <Button
