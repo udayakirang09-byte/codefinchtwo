@@ -148,6 +148,8 @@ export interface IStorage {
   // Payment Transaction operations
   createPaymentTransaction(transaction: InsertPaymentTransaction): Promise<PaymentTransaction>;
   getPaymentTransaction(id: string): Promise<PaymentTransaction | undefined>;
+  getPaymentTransactionByStripeId(stripePaymentIntentId: string): Promise<PaymentTransaction | undefined>;
+  updatePaymentTransaction(id: string, updates: Partial<InsertPaymentTransaction>): Promise<void>;
   updatePaymentTransactionStatus(id: string, status: string, workflowStage?: string): Promise<void>;
   getTransactionsByUser(userId: string): Promise<PaymentTransaction[]>;
   getPendingTeacherPayouts(): Promise<PaymentTransaction[]>;
@@ -741,6 +743,21 @@ export class DatabaseStorage implements IStorage {
         eq(paymentTransactions.workflowStage, 'admin_to_teacher'),
         eq(paymentTransactions.status, 'pending')
       ));
+  }
+
+  async getPaymentTransactionByStripeId(stripePaymentIntentId: string): Promise<PaymentTransaction | undefined> {
+    const [transaction] = await db
+      .select()
+      .from(paymentTransactions)
+      .where(eq(paymentTransactions.stripePaymentIntentId, stripePaymentIntentId));
+    return transaction;
+  }
+
+  async updatePaymentTransaction(id: string, updates: Partial<InsertPaymentTransaction>): Promise<void> {
+    await db
+      .update(paymentTransactions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(paymentTransactions.id, id));
   }
 
   // Unsettled Finance operations

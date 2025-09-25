@@ -106,11 +106,18 @@ export default function Checkout() {
   const [courseData, setCourseData] = useState<any>(null);
   const { toast } = useToast();
 
-  // Extract course ID from URL params  
-  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  // Extract course ID from URL params using window.location.search
+  const urlParams = new URLSearchParams(window.location.search);
   const courseId = urlParams.get('courseId') || '1';
 
   useEffect(() => {
+    console.log('Checkout courseId debug:', { 
+      location, 
+      urlParams: location.split('?')[1], 
+      courseId, 
+      courseIdType: typeof courseId 
+    });
+
     // Course data (in real app, fetch from API)
     const courses = [
       {
@@ -137,6 +144,12 @@ export default function Checkout() {
     ];
 
     const course = courses.find(c => c.id === courseId) || courses[0];
+    console.log('Course selection debug:', { 
+      courseId, 
+      foundCourse: course, 
+      coursesIds: courses.map(c => c.id),
+      findResult: courses.find(c => c.id === courseId)
+    });
     setCourseData(course);
 
     // Create PaymentIntent

@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
@@ -1638,37 +1639,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Stripe Payment Routes
-  // Non-Stripe payment processing
+  // DISABLED: Insecure payment processing (PCI violation - collects raw card data)
+  // Only use Stripe Elements for secure payment processing
   app.post("/api/process-payment", async (req, res) => {
-    try {
-      const { courseId, courseName, amount, paymentMethod, transactionId } = req.body;
-      
-      // Simulate payment processing delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Create enrollment record
-      const enrollmentData = {
-        courseId,
-        courseName,
-        amount,
-        paymentMethod,
-        transactionId,
-        status: "completed",
-        enrolledAt: new Date()
-      };
-      
-      console.log(`💳 Payment processed for ₹${amount} - Course: ${courseName} via ${paymentMethod}`);
-      
-      res.json({ 
-        success: true,
-        transactionId,
-        message: "Payment completed successfully"
-      });
-    } catch (error: any) {
-      console.error("❌ Payment processing failed:", error.message);
-      res.status(500).json({ message: "Payment processing failed: " + error.message });
-    }
+    console.warn('⚠️ SECURITY: Insecure payment endpoint called - redirecting to Stripe');
+    res.status(400).json({ 
+      message: "This payment method is disabled for security. Please use the secure checkout.",
+      redirectTo: "/checkout" 
+    });
   });
 
   // Stripe payment intent for secure payments
@@ -1710,6 +1688,264 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Comprehensive Stripe Webhook System for Automated Payment Processing
+  app.post("/api/webhooks/stripe", express.raw({ type: 'application/json' }), async (req, res) => {
+    try {
+      const sig = req.headers['stripe-signature'];
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+      
+      if (!sig) {
+        console.warn('⚠️ Webhook signature missing');
+        return res.status(400).json({ message: 'Webhook signature required' });
+      }
+
+      let event;
+      
+      // Verify webhook signature (only if webhook secret is configured)
+      if (webhookSecret && stripe) {
+        try {
+          event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+          console.log(`✅ Webhook signature verified for event: ${event.type}`);
+        } catch (err: any) {
+          console.error(`❌ Webhook signature verification failed: ${err.message}`);
+          return res.status(400).json({ message: 'Invalid signature' });
+        }
+      } else {
+        // Development mode: parse event without signature verification
+        event = JSON.parse(req.body.toString());
+        console.log(`⚠️ Webhook processed without signature verification (dev mode): ${event.type}`);
+      }
+
+      // Handle different webhook events
+      switch (event.type) {
+        case 'payment_intent.succeeded':
+          await handlePaymentIntentSucceeded(event.data.object);
+          break;
+        case 'payment_intent.payment_failed':
+          await handlePaymentIntentFailed(event.data.object);
+          break;
+        case 'charge.refunded':
+          await handleChargeRefunded(event.data.object);
+          break;
+        case 'payment_intent.canceled':
+          await handlePaymentIntentCanceled(event.data.object);
+          break;
+        default:
+          console.log(`ℹ️ Unhandled webhook event type: ${event.type}`);
+      }
+
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error('❌ Webhook processing error:', error.message);
+      res.status(500).json({ message: 'Webhook processing failed' });
+    }
+  });
+
+  // Webhook Event Handlers - Integrates with sophisticated payment infrastructure
+  async function handlePaymentIntentSucceeded(paymentIntent: any) {
+    try {
+      console.log(`💳 Payment succeeded: ${paymentIntent.id} for ₹${paymentIntent.amount / 100}`);
+      
+      const { courseId, courseName, mentorId, bookingDetails } = paymentIntent.metadata;
+      const amount = paymentIntent.amount / 100; // Convert from paise to rupees
+      
+      // Calculate transaction fees based on configuration
+      const feeConfig = await storage.getActiveTransactionFeeConfig();
+      const transactionFee = Math.max(
+        amount * (parseFloat(feeConfig?.feePercentage || "2.00")) / 100,
+        parseFloat(feeConfig?.minimumFee || "0.50")
+      );
+      const netAmount = amount - transactionFee;
+
+      // Create payment transaction record
+      const transactionData = {
+        courseId: courseId || null,
+        transactionType: courseId ? "course_payment" : "booking_payment",
+        amount: amount.toString(),
+        transactionFee: transactionFee.toString(),
+        netAmount: netAmount.toString(),
+        currency: "INR",
+        fromUserId: null, // Will be populated when user system is integrated
+        toUserId: mentorId || null,
+        status: "completed",
+        workflowStage: "student_to_admin",
+        stripePaymentIntentId: paymentIntent.id,
+        scheduledAt: bookingDetails ? new Date(JSON.parse(bookingDetails).scheduledAt) : null,
+        cancellationDeadline: bookingDetails ? new Date(new Date(JSON.parse(bookingDetails).scheduledAt).getTime() - 5 * 60 * 60 * 1000) : null,
+        teacherPayoutEligibleAt: bookingDetails ? new Date(new Date(JSON.parse(bookingDetails).scheduledAt).getTime() + 24 * 60 * 60 * 1000) : null,
+        completedAt: new Date()
+      };
+
+      const transaction = await storage.createPaymentTransaction(transactionData);
+      console.log(`✅ Payment transaction created: ${transaction.id}`);
+
+      // Create automated payment workflow
+      const workflowData = {
+        transactionId: transaction.id,
+        workflowType: courseId ? "course_purchase" : "class_booking",
+        currentStage: "payment_received",
+        nextStage: bookingDetails ? "waiting_for_class" : "completed",
+        nextActionAt: bookingDetails ? new Date(JSON.parse(bookingDetails).scheduledAt) : null,
+        lastProcessedAt: new Date(),
+        status: "active"
+      };
+
+      await storage.createPaymentWorkflow(workflowData);
+      console.log(`🔄 Payment workflow created for transaction: ${transaction.id}`);
+
+      // Create booking if this is a mentor booking
+      if (mentorId && bookingDetails) {
+        const parsedBooking = JSON.parse(bookingDetails);
+        const bookingData = {
+          mentorId,
+          studentId: "temp_student", // Temporary until user auth integration
+          subject: parsedBooking.subject || courseName || "Coding Session",
+          scheduledAt: new Date(parsedBooking.scheduledAt),
+          duration: parsedBooking.duration || 60,
+          status: "confirmed",
+          notes: `Booking confirmed via payment ${paymentIntent.id}`
+        };
+
+        const createdBooking = await storage.createBooking(bookingData);
+        console.log(`📅 Automated booking created: ${createdBooking.id}`);
+
+        // Update transaction with booking reference
+        await storage.updatePaymentTransaction(transaction.id, { bookingId: createdBooking.id });
+      }
+
+      // Create course enrollment if this is a course purchase
+      if (courseId) {
+        // Course enrollment logic would go here
+        console.log(`🎓 Course enrollment processing for courseId: ${courseId}`);
+      }
+
+    } catch (error: any) {
+      console.error('❌ Error processing successful payment:', error.message);
+      // Create unsettled finance record for manual review
+      await createUnsettledFinance(paymentIntent.id, 'failed_enrollment', paymentIntent.amount / 100, 
+        `Failed to process successful payment: ${error.message}`);
+    }
+  }
+
+  async function handlePaymentIntentFailed(paymentIntent: any) {
+    try {
+      console.log(`❌ Payment failed: ${paymentIntent.id} - ${paymentIntent.last_payment_error?.message}`);
+      
+      const { courseId, mentorId } = paymentIntent.metadata;
+      const amount = paymentIntent.amount / 100;
+
+      // Create failed payment transaction record
+      const transactionData = {
+        courseId: courseId || null,
+        transactionType: courseId ? "course_payment" : "booking_payment",
+        amount: amount.toString(),
+        transactionFee: "0.00",
+        netAmount: amount.toString(),
+        currency: "INR",
+        toUserId: mentorId || null,
+        status: "failed",
+        workflowStage: "student_to_admin",
+        stripePaymentIntentId: paymentIntent.id,
+        failureReason: paymentIntent.last_payment_error?.message || "Payment failed",
+        completedAt: new Date()
+      };
+
+      const failedTransaction = await storage.createPaymentTransaction(transactionData);
+      console.log(`📝 Failed payment transaction recorded: ${failedTransaction.id}`);
+
+    } catch (error: any) {
+      console.error('❌ Error processing failed payment:', error.message);
+    }
+  }
+
+  async function handleChargeRefunded(charge: any) {
+    try {
+      console.log(`🔄 Refund processed: ${charge.id} for ₹${charge.amount_refunded / 100}`);
+      
+      // Find the original transaction by Stripe payment intent ID
+      const originalTransaction = await storage.getPaymentTransactionByStripeId(charge.payment_intent);
+      
+      if (originalTransaction) {
+        // Create refund transaction record
+        const refundData = {
+          bookingId: originalTransaction.bookingId,
+          courseId: originalTransaction.courseId,
+          transactionType: "refund",
+          amount: (charge.amount_refunded / 100).toString(),
+          transactionFee: "0.00",
+          netAmount: (charge.amount_refunded / 100).toString(),
+          currency: "INR",
+          fromUserId: originalTransaction.toUserId,
+          toUserId: originalTransaction.fromUserId,
+          status: "completed",
+          workflowStage: "refund_to_student",
+          stripePaymentIntentId: charge.payment_intent,
+          stripeTransferId: charge.id,
+          completedAt: new Date()
+        };
+
+        const refundTransaction = await storage.createPaymentTransaction(refundData);
+        console.log(`✅ Refund transaction created: ${refundTransaction.id}`);
+
+        // Update booking status if applicable
+        if (originalTransaction.bookingId) {
+          await storage.updateBookingStatus(originalTransaction.bookingId, "cancelled");
+          console.log(`📅 Booking cancelled: ${originalTransaction.bookingId}`);
+        }
+      } else {
+        console.warn(`⚠️ Original transaction not found for payment intent: ${charge.payment_intent}`);
+      }
+
+    } catch (error: any) {
+      console.error('❌ Error processing refund:', error.message);
+    }
+  }
+
+  async function handlePaymentIntentCanceled(paymentIntent: any) {
+    try {
+      console.log(`🚫 Payment canceled: ${paymentIntent.id}`);
+      
+      const { courseId, mentorId } = paymentIntent.metadata;
+      const amount = paymentIntent.amount / 100;
+
+      // Create canceled payment transaction record
+      const transactionData = {
+        courseId: courseId || null,
+        transactionType: courseId ? "course_payment" : "booking_payment",
+        amount: amount.toString(),
+        transactionFee: "0.00",
+        netAmount: amount.toString(),
+        currency: "INR",
+        toUserId: mentorId || null,
+        status: "cancelled",
+        workflowStage: "student_to_admin",
+        stripePaymentIntentId: paymentIntent.id,
+        failureReason: "Payment canceled by user",
+        completedAt: new Date()
+      };
+
+      const canceledTransaction = await storage.createPaymentTransaction(transactionData);
+      console.log(`📝 Canceled payment transaction recorded: ${canceledTransaction.id}`);
+
+    } catch (error: any) {
+      console.error('❌ Error processing canceled payment:', error.message);
+    }
+  }
+
+  // Helper function to create unsettled finance records for manual review
+  async function createUnsettledFinance(paymentIntentId: string, conflictType: string, amount: number, description: string) {
+    try {
+      // TODO: Create unsettled finance record when storage interface is extended
+      console.log(`⚠️ Unsettled finance issue logged for manual review:`);
+      console.log(`  Payment Intent: ${paymentIntentId}`);
+      console.log(`  Conflict Type: ${conflictType}`);
+      console.log(`  Amount: ₹${amount}`);
+      console.log(`  Description: ${description}`);
+    } catch (error: any) {
+      console.error('❌ Error logging unsettled finance issue:', error.message);
+    }
+  }
 
   // Admin Contact Features Toggle Routes
   app.get("/api/admin/contact-settings", async (req, res) => {
