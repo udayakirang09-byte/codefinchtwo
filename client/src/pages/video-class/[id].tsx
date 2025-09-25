@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Video, VideoOff, Mic, MicOff, Users, MessageCircle, Phone, Settings, AlertTriangle, Wifi, WifiOff } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
+import { Video, VideoOff, Mic, MicOff, Users, MessageCircle, Phone, Settings, AlertTriangle, Wifi, WifiOff, Shield } from "lucide-react";
 
 export default function VideoClass() {
   const [, params] = useRoute("/video-class/:id");
@@ -19,7 +21,17 @@ export default function VideoClass() {
   const [connectionQuality, setConnectionQuality] = useState<'good' | 'poor' | 'disconnected'>('disconnected');
   const [participants, setParticipants] = useState(6); // 1 teacher + 5 students maximum
   const [teacherAlerts, setTeacherAlerts] = useState<string[]>([]);
+  const [multipleLoginUsers, setMultipleLoginUsers] = useState<Array<{userId: string, sessionCount: number, user: any}>>([]);
+  const [lastAlertedUsers, setLastAlertedUsers] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
+
+  // Query to check for multiple login users
+  const { data: multipleLogins, refetch: refetchMultipleLogins } = useQuery({
+    queryKey: ['/api/sessions/multiple-logins'],
+    enabled: isAuthenticated && Boolean(user),
+    refetchInterval: 30000, // Check every 30 seconds during video session
+  });
   
   // Determine teacher role based on URL parameter or default to student
   const isTeacher = classId?.includes('teacher') || false;
@@ -89,6 +101,39 @@ export default function VideoClass() {
       }, 10000);
     }
   }, [isTeacher, toast]);
+
+  // Multiple login detection effect with deduplication
+  useEffect(() => {
+    if (multipleLogins && Array.isArray(multipleLogins) && multipleLogins.length > 0) {
+      const currentUsers = multipleLogins.filter(login => login.sessionCount > 1);
+      
+      if (currentUsers.length > 0) {
+        setMultipleLoginUsers(currentUsers);
+        
+        if (isTeacher) {
+          // Only alert for new users or users with increased session count
+          currentUsers.forEach(userLogin => {
+            const alertKey = `${userLogin.userId}-${userLogin.sessionCount}`;
+            
+            if (!lastAlertedUsers.has(alertKey)) {
+              const alertMessage = `Security Alert: User ${userLogin.user.firstName} ${userLogin.user.lastName} (${userLogin.user.email}) has ${userLogin.sessionCount} active sessions`;
+              addTeacherAlert(alertMessage);
+              
+              // Update alerted users set
+              setLastAlertedUsers(prev => {
+                const newSet = new Set(prev);
+                newSet.add(alertKey);
+                return newSet;
+              });
+            }
+          });
+        }
+      } else {
+        setMultipleLoginUsers([]);
+        setLastAlertedUsers(new Set()); // Clear when no multiple logins
+      }
+    }
+  }, [multipleLogins, isTeacher, addTeacherAlert, lastAlertedUsers]);
 
   // Main connection effect
   useEffect(() => {
@@ -247,6 +292,30 @@ export default function VideoClass() {
 
             {/* Sidebar */}
             <div className="lg:col-span-1 space-y-4">
+              {/* Security Alerts for Multiple Logins */}
+              {classInfo.isTeacher && multipleLoginUsers.length > 0 && (
+                <Card className="bg-red-800 border-red-700" data-testid="card-security-alert">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-white text-sm flex items-center" data-testid="title-security-alert">
+                      <Shield className="h-4 w-4 mr-2" />
+                      Security Alert - Multiple Logins
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2" data-testid="content-security-alert">
+                    {multipleLoginUsers.map((userLogin, index) => (
+                      <div key={index} className="text-sm text-red-100 p-2 bg-red-900/50 rounded" data-testid={`alert-user-${userLogin.userId}`}>
+                        <div className="font-semibold" data-testid={`text-user-name-${userLogin.userId}`}>{userLogin.user.firstName} {userLogin.user.lastName}</div>
+                        <div className="text-xs text-red-200" data-testid={`text-user-email-${userLogin.userId}`}>{userLogin.user.email}</div>
+                        <div className="text-xs text-red-300" data-testid={`text-session-count-${userLogin.userId}`}>{userLogin.sessionCount} active sessions</div>
+                      </div>
+                    ))}
+                    <div className="text-xs text-red-200 mt-2 p-2 bg-red-900/30 rounded" data-testid="text-security-warning">
+                      ⚠️ Students with multiple active sessions may be sharing accounts or using multiple devices
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
               {/* Teacher Alerts */}
               {classInfo.isTeacher && teacherAlerts.length > 0 && (
                 <Card className="bg-purple-800 border-purple-700">
@@ -333,16 +402,28 @@ export default function VideoClass() {
                     Open Chat
                   </Button>
                   {classInfo.isTeacher && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => addTeacherAlert('Test alert: All students are engaged!')}
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
-                      data-testid="button-test-alert"
-                    >
-                      <AlertTriangle className="h-4 w-4 mr-2" />
-                      Test Alert
-                    </Button>
+                    <>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => refetchMultipleLogins()}
+                        className="w-full bg-orange-600 hover:bg-orange-700 text-white border-orange-600"
+                        data-testid="button-check-multiple-logins"
+                      >
+                        <Shield className="h-4 w-4 mr-2" />
+                        Check Multiple Logins
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => addTeacherAlert('Test alert: All students are engaged!')}
+                        className="w-full bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
+                        data-testid="button-test-alert"
+                      >
+                        <AlertTriangle className="h-4 w-4 mr-2" />
+                        Test Alert
+                      </Button>
+                    </>
                   )}
                   <Button 
                     variant="outline" 

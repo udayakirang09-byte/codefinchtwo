@@ -118,7 +118,7 @@ export const successStories = pgTable("success_stories", {
 });
 
 // Relations
-export const usersRelations = relations(users, ({ one }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
   mentor: one(mentors, {
     fields: [users.id],
     references: [mentors.userId],
@@ -127,6 +127,8 @@ export const usersRelations = relations(users, ({ one }) => ({
     fields: [users.id],
     references: [students.userId],
   }),
+  sessions: many(userSessions),
+  notifications: many(notifications),
 }));
 
 export const mentorsRelations = relations(mentors, ({ one, many }) => ({
@@ -324,6 +326,19 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const userSessions = pgTable("user_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  sessionToken: varchar("session_token").notNull().unique(),
+  deviceInfo: varchar("device_info"), // browser/device identifier
+  ipAddress: varchar("ip_address"),
+  userAgent: text("user_agent"),
+  isActive: boolean("is_active").default(true),
+  lastActivity: timestamp("last_activity").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+});
+
 // Additional Relations
 export const chatSessionsRelations = relations(chatSessions, ({ one, many }) => ({
   booking: one(bookings, {
@@ -373,6 +388,13 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
   }),
 }));
 
+export const userSessionsRelations = relations(userSessions, ({ one }) => ({
+  user: one(users, {
+    fields: [userSessions.userId],
+    references: [users.id],
+  }),
+}));
+
 // Additional Insert Schemas
 export const insertChatSessionSchema = createInsertSchema(chatSessions).omit({
   id: true,
@@ -399,6 +421,12 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   createdAt: true,
 });
 
+export const insertUserSessionSchema = createInsertSchema(userSessions).omit({
+  id: true,
+  createdAt: true,
+  lastActivity: true,
+});
+
 // Additional Types
 export type ChatSession = typeof chatSessions.$inferSelect;
 export type InsertChatSession = z.infer<typeof insertChatSessionSchema>;
@@ -414,6 +442,9 @@ export type InsertClassFeedback = z.infer<typeof insertClassFeedbackSchema>;
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+export type UserSession = typeof userSessions.$inferSelect;
+export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
 
 // Admin Configuration Table
 export const adminConfig = pgTable("admin_config", {

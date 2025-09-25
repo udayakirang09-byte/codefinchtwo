@@ -11,6 +11,7 @@ import {
   videoSessions,
   classFeedback,
   notifications,
+  userSessions,
   teacherProfiles,
   paymentMethods,
   transactionFeeConfig,
@@ -42,6 +43,8 @@ import {
   type InsertClassFeedback,
   type Notification,
   type InsertNotification,
+  type UserSession,
+  type InsertUserSession,
   type TeacherProfile,
   type InsertTeacherProfile,
   type PaymentMethod,
@@ -132,6 +135,16 @@ export interface IStorage {
   createNotification(notification: InsertNotification): Promise<Notification>;
   getUserNotifications(userId: string): Promise<Notification[]>;
   markNotificationAsRead(notificationId: string): Promise<void>;
+  
+  // Session operations
+  createUserSession(session: InsertUserSession): Promise<UserSession>;
+  getUserSessions(userId: string): Promise<UserSession[]>;
+  getActiveUserSessions(userId: string): Promise<UserSession[]>;
+  getUserSessionByToken(sessionToken: string): Promise<UserSession | undefined>;
+  updateSessionActivity(sessionToken: string): Promise<void>;
+  deactivateSession(sessionToken: string): Promise<void>;
+  deactivateUserSessions(userId: string): Promise<void>;
+  getMultipleLoginUsers(): Promise<{ userId: string; sessionCount: number; user: User }[]>;
   
   // Teacher Profile operations
   createTeacherProfile(profile: InsertTeacherProfile): Promise<TeacherProfile>;
@@ -937,6 +950,75 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(subjects)
       .where(eq(subjects.isActive, true))
       .orderBy(subjects.displayOrder, subjects.name);
+  }
+
+  // Session management operations
+  async createUserSession(session: InsertUserSession): Promise<UserSession> {
+    const [newSession] = await db.insert(userSessions).values(session).returning();
+    return newSession;
+  }
+
+  async getUserSessions(userId: string): Promise<UserSession[]> {
+    return await db.select().from(userSessions)
+      .where(eq(userSessions.userId, userId))
+      .orderBy(desc(userSessions.lastActivity));
+  }
+
+  async getActiveUserSessions(userId: string): Promise<UserSession[]> {
+    return await db.select().from(userSessions)
+      .where(and(
+        eq(userSessions.userId, userId),
+        eq(userSessions.isActive, true)
+      ))
+      .orderBy(desc(userSessions.lastActivity));
+  }
+
+  async getUserSessionByToken(sessionToken: string): Promise<UserSession | undefined> {
+    const [session] = await db.select().from(userSessions)
+      .where(eq(userSessions.sessionToken, sessionToken));
+    return session;
+  }
+
+  async updateSessionActivity(sessionToken: string): Promise<void> {
+    await db.update(userSessions)
+      .set({ lastActivity: new Date() })
+      .where(eq(userSessions.sessionToken, sessionToken));
+  }
+
+  async deactivateSession(sessionToken: string): Promise<void> {
+    await db.update(userSessions)
+      .set({ isActive: false })
+      .where(eq(userSessions.sessionToken, sessionToken));
+  }
+
+  async deactivateUserSessions(userId: string): Promise<void> {
+    await db.update(userSessions)
+      .set({ isActive: false })
+      .where(eq(userSessions.userId, userId));
+  }
+
+  async getMultipleLoginUsers(): Promise<{ userId: string; sessionCount: number; user: User }[]> {
+    const activeSessions = await db.select({
+      userId: userSessions.userId,
+      sessionCount: sql<number>`COUNT(*)`.as('sessionCount')
+    })
+    .from(userSessions)
+    .where(eq(userSessions.isActive, true))
+    .groupBy(userSessions.userId)
+    .having(sql`COUNT(*) > 1`);
+
+    const result = [];
+    for (const session of activeSessions) {
+      const user = await this.getUser(session.userId);
+      if (user) {
+        result.push({
+          userId: session.userId,
+          sessionCount: session.sessionCount,
+          user
+        });
+      }
+    }
+    return result;
   }
 
 }

@@ -185,8 +185,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Create session for the user
+      const { nanoid } = await import('nanoid');
+      const sessionToken = nanoid(32);
+      const userAgent = req.headers['user-agent'] || 'Unknown';
+      const ipAddress = req.ip || req.connection.remoteAddress || 'Unknown';
+      
+      // Check for multiple active sessions
+      const activeSessions = await storage.getActiveUserSessions(user.id);
+      const hasMultipleSessions = activeSessions.length > 0;
+      
+      // Create new session
+      await storage.createUserSession({
+        userId: user.id,
+        sessionToken,
+        userAgent,
+        ipAddress,
+        isActive: true
+      });
+      
       res.json({ 
         success: true, 
+        sessionToken,
+        hasMultipleSessions,
         user: { 
           id: user.id, 
           email: user.email, 
@@ -239,6 +260,231 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Forgot password error:", error);
       res.status(500).json({ message: "Failed to send reset code" });
+    }
+  });
+  
+  // Authentication middleware
+  const authenticateSession = async (req: any, res: any, next: any) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const sessionToken = authHeader.substring(7);
+      const session = await storage.getUserSessionByToken(sessionToken);
+      
+      if (!session || !session.isActive) {
+        return res.status(401).json({ message: "Invalid or expired session" });
+      }
+      
+      // Update session activity
+      await storage.updateSessionActivity(sessionToken);
+      
+      // Get user information
+      const user = await storage.getUser(session.userId);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
+      req.user = user;
+      req.session = session;
+      next();
+    } catch (error) {
+      console.error("Authentication error:", error);
+      res.status(500).json({ message: "Authentication failed" });
+    }
+  };
+
+  // Authorization middleware for teacher/admin roles
+  const requireTeacherOrAdmin = (req: any, res: any, next: any) => {
+    if (!req.user || (req.user.role !== 'mentor' && req.user.role !== 'admin')) {
+      return res.status(403).json({ message: "Teacher or admin access required" });
+    }
+    next();
+  };
+
+  // Session management routes
+  app.post("/api/sessions", async (req, res) => {
+    // This route is only used during login - no auth required
+    try {
+      const { userId, sessionToken, userAgent, ipAddress } = req.body;
+      
+      if (!userId || !sessionToken) {
+        return res.status(400).json({ message: "Missing required session data" });
+      }
+      
+      const session = await storage.createUserSession({
+        userId,
+        sessionToken,
+        userAgent: userAgent || 'Unknown',
+        ipAddress: ipAddress || 'Unknown',
+        isActive: true
+      });
+      
+      // Don't return sensitive session data
+      res.status(201).json({ success: true });
+    } catch (error) {
+      console.error("Error creating session:", error);
+      res.status(500).json({ message: "Failed to create session" });
+    }
+  });
+
+  app.get("/api/sessions/user/:userId", authenticateSession, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      
+      // Users can only access their own sessions unless they're admin
+      if (req.user.id !== userId && req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const sessions = await storage.getUserSessions(userId);
+      
+      // Remove sensitive data from response
+      const safeSessions = sessions.map(session => ({
+        id: session.id,
+        isActive: session.isActive,
+        lastActivity: session.lastActivity,
+        createdAt: session.createdAt,
+        userAgent: session.userAgent?.substring(0, 50) + '...' // Truncate for privacy
+      }));
+      
+      res.json(safeSessions);
+    } catch (error) {
+      console.error("Error fetching user sessions:", error);
+      res.status(500).json({ message: "Failed to fetch sessions" });
+    }
+  });
+
+  app.get("/api/sessions/active/:userId", authenticateSession, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      
+      // Users can only access their own sessions unless they're admin
+      if (req.user.id !== userId && req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const sessions = await storage.getActiveUserSessions(userId);
+      
+      // Remove sensitive data from response
+      const safeSessions = sessions.map(session => ({
+        id: session.id,
+        isActive: session.isActive,
+        lastActivity: session.lastActivity,
+        createdAt: session.createdAt,
+        userAgent: session.userAgent?.substring(0, 50) + '...' // Truncate for privacy
+      }));
+      
+      res.json(safeSessions);
+    } catch (error) {
+      console.error("Error fetching active sessions:", error);
+      res.status(500).json({ message: "Failed to fetch active sessions" });
+    }
+  });
+
+  app.get("/api/sessions/token/:sessionToken", authenticateSession, async (req: any, res) => {
+    try {
+      const { sessionToken } = req.params;
+      
+      // Only allow users to check their own session token
+      if (req.session.sessionToken !== sessionToken && req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const session = await storage.getUserSessionByToken(sessionToken);
+      
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      
+      // Remove sensitive data from response
+      res.json({
+        id: session.id,
+        isActive: session.isActive,
+        lastActivity: session.lastActivity,
+        createdAt: session.createdAt
+      });
+    } catch (error) {
+      console.error("Error fetching session by token:", error);
+      res.status(500).json({ message: "Failed to fetch session" });
+    }
+  });
+
+  app.patch("/api/sessions/activity/:sessionToken", authenticateSession, async (req: any, res) => {
+    try {
+      const { sessionToken } = req.params;
+      
+      // Only allow users to update their own session
+      if (req.session.sessionToken !== sessionToken) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      await storage.updateSessionActivity(sessionToken);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating session activity:", error);
+      res.status(500).json({ message: "Failed to update session activity" });
+    }
+  });
+
+  app.delete("/api/sessions/:sessionToken", authenticateSession, async (req: any, res) => {
+    try {
+      const { sessionToken } = req.params;
+      
+      // Only allow users to deactivate their own session or admin
+      if (req.session.sessionToken !== sessionToken && req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      await storage.deactivateSession(sessionToken);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deactivating session:", error);
+      res.status(500).json({ message: "Failed to deactivate session" });
+    }
+  });
+
+  app.delete("/api/sessions/user/:userId", authenticateSession, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      
+      // Only allow users to deactivate their own sessions or admin
+      if (req.user.id !== userId && req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      await storage.deactivateUserSessions(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deactivating user sessions:", error);
+      res.status(500).json({ message: "Failed to deactivate user sessions" });
+    }
+  });
+
+  app.get("/api/sessions/multiple-logins", authenticateSession, requireTeacherOrAdmin, async (req: any, res) => {
+    try {
+      // For now, return all multiple login users (to be scoped to class later)
+      const multipleLoginUsers = await storage.getMultipleLoginUsers();
+      
+      // Remove sensitive data from response
+      const safeUsers = multipleLoginUsers.map(userLogin => ({
+        userId: userLogin.userId,
+        sessionCount: userLogin.sessionCount,
+        user: {
+          id: userLogin.user.id,
+          firstName: userLogin.user.firstName,
+          lastName: userLogin.user.lastName,
+          email: userLogin.user.email,
+          role: userLogin.user.role
+        }
+      }));
+      
+      res.json(safeUsers);
+    } catch (error) {
+      console.error("Error fetching multiple login users:", error);
+      res.status(500).json({ message: "Failed to fetch multiple login users" });
     }
   });
   
