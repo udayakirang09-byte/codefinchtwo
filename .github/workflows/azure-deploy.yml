@@ -30,17 +30,16 @@ jobs:
         chmod +x build-production.sh start-production.sh
         ./build-production.sh
 
-  # DETACHED: Database deployment disabled
-  # Uncomment below to re-enable database deployment when needed
-  # deploy-database:
-  #   needs: build
-  #   uses: ./.github/workflows/azure-dbdeploy.yml
-  #   secrets:
-  #     DATABASE_URL: ${{ secrets.DATABASE_URL }}
-  #     AZURE_POSTGRES_PASSWORD: ${{ secrets.AZURE_POSTGRES_PASSWORD }}
+  # RE-ENABLED: Database deployment active  
+  deploy-database:
+    needs: build
+    uses: ./.github/workflows/azure-dbdeploy.yml
+    secrets:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      AZURE_POSTGRES_PASSWORD: ${{ secrets.AZURE_POSTGRES_PASSWORD }}
 
   deploy-application:
-    needs: [build]  # Removed deploy-database dependency
+    needs: [build, deploy-database]  # Restored deploy-database dependency
     runs-on: ubuntu-latest
     
     steps:
