@@ -7,6 +7,12 @@ import { Link } from 'wouter';
 import Navigation from '@/components/navigation';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { apiRequest } from '@/lib/queryClient';
 
 interface TimeSlot {
   id: string;
@@ -20,6 +26,13 @@ interface TimeSlot {
 export default function ManageSchedule() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [newSlot, setNewSlot] = useState({
+    dayOfWeek: '',
+    startTime: '',
+    endTime: '',
+    isRecurring: true
+  });
 
   const { data: schedule = [], isLoading } = useQuery({
     queryKey: ['teacher-schedule'],
@@ -96,11 +109,50 @@ export default function ManageSchedule() {
     }
   };
 
+  const createSlotMutation = useMutation({
+    mutationFn: async (slotData: typeof newSlot) => {
+      return await apiRequest('POST', '/api/teacher/schedule', {
+        ...slotData,
+        teacherId: 'teacher@codeconnect.com' // Default teacher ID for demo
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher-schedule'] });
+      setIsAddDialogOpen(false);
+      setNewSlot({
+        dayOfWeek: '',
+        startTime: '',
+        endTime: '',
+        isRecurring: true
+      });
+      toast({
+        title: "Success",
+        description: "Time slot created successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to create time slot",
+        variant: "destructive",
+      });
+    }
+  });
+
   const addNewTimeSlot = () => {
-    toast({
-      title: "Add Time Slot",
-      description: "Time slot creation form will open here. Feature coming soon!",
-    });
+    setIsAddDialogOpen(true);
+  };
+
+  const handleCreateSlot = () => {
+    if (!newSlot.dayOfWeek || !newSlot.startTime || !newSlot.endTime) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    createSlotMutation.mutate(newSlot);
   };
 
   const groupedByDay = scheduleData.reduce((acc: any, slot: TimeSlot) => {
@@ -124,14 +176,94 @@ export default function ManageSchedule() {
             <p className="text-gray-600 mt-2">Set your availability and manage time slots</p>
           </div>
           <div className="flex gap-3">
-            <Button 
-              onClick={addNewTimeSlot}
-              className="flex items-center gap-2"
-              data-testid="button-add-time-slot"
-            >
-              <Plus className="w-4 h-4" />
-              Add Time Slot
-            </Button>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  className="flex items-center gap-2"
+                  data-testid="button-add-time-slot"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Time Slot
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Add New Time Slot</DialogTitle>
+                  <DialogDescription>
+                    Create a new time slot for your teaching schedule.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="dayOfWeek">Day of Week</Label>
+                    <Select
+                      value={newSlot.dayOfWeek}
+                      onValueChange={(value) => setNewSlot({ ...newSlot, dayOfWeek: value })}
+                    >
+                      <SelectTrigger data-testid="select-day">
+                        <SelectValue placeholder="Select a day" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Monday">Monday</SelectItem>
+                        <SelectItem value="Tuesday">Tuesday</SelectItem>
+                        <SelectItem value="Wednesday">Wednesday</SelectItem>
+                        <SelectItem value="Thursday">Thursday</SelectItem>
+                        <SelectItem value="Friday">Friday</SelectItem>
+                        <SelectItem value="Saturday">Saturday</SelectItem>
+                        <SelectItem value="Sunday">Sunday</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="startTime">Start Time</Label>
+                      <Input
+                        id="startTime"
+                        type="time"
+                        value={newSlot.startTime}
+                        onChange={(e) => setNewSlot({ ...newSlot, startTime: e.target.value })}
+                        data-testid="input-start-time"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="endTime">End Time</Label>
+                      <Input
+                        id="endTime"
+                        type="time"
+                        value={newSlot.endTime}
+                        onChange={(e) => setNewSlot({ ...newSlot, endTime: e.target.value })}
+                        data-testid="input-end-time"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="isRecurring"
+                      checked={newSlot.isRecurring}
+                      onCheckedChange={(checked) => setNewSlot({ ...newSlot, isRecurring: checked })}
+                      data-testid="switch-recurring"
+                    />
+                    <Label htmlFor="isRecurring">Recurring weekly</Label>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsAddDialogOpen(false)}
+                    data-testid="button-cancel"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleCreateSlot}
+                    disabled={createSlotMutation.isPending}
+                    data-testid="button-create-slot"
+                  >
+                    {createSlotMutation.isPending ? 'Creating...' : 'Create Slot'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
             <Link href="/">
               <Button variant="outline" data-testid="button-home">
                 <Home className="w-4 h-4 mr-2" />
