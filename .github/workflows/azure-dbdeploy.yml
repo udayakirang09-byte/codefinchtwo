@@ -98,52 +98,12 @@ jobs:
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-    - name: Check existing data
+    - name: Sync complete Replit data to Azure
       run: |
-        echo "📊 Checking existing data in Azure database..."
-        node -e "
-          const { Client } = require('pg');
-          const client = new Client({ connectionString: process.env.DATABASE_URL });
-          
-          async function checkData() {
-            try {
-              await client.connect();
-              
-              const userResult = await client.query('SELECT COUNT(*) as user_count FROM users');
-              const mentorResult = await client.query('SELECT COUNT(*) as mentor_count FROM mentors');
-              const studentResult = await client.query('SELECT COUNT(*) as student_count FROM students');
-              
-              console.log('👥 Current data counts:');
-              console.log('Users:', userResult.rows[0].user_count);
-              console.log('Mentors:', mentorResult.rows[0].mentor_count);
-              console.log('Students:', studentResult.rows[0].student_count);
-              
-              // If data is insufficient, we'll need to seed
-              const userCount = parseInt(userResult.rows[0].user_count);
-              if (userCount < 15) {
-                console.log('⚠️ Insufficient data detected, seeding required');
-                process.env.NEED_SEEDING = 'true';
-              } else {
-                console.log('✅ Sufficient data exists, skipping seeding');
-                process.env.NEED_SEEDING = 'false';
-              }
-              
-              await client.end();
-            } catch (err) {
-              console.log('📊 No existing data found, seeding required');
-              process.env.NEED_SEEDING = 'true';
-            }
-          }
-          
-          checkData();
-        "
-      env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-    - name: Seed database with production data
-      run: |
-        echo "🌱 Seeding Azure database with production data..."
-        cd server && npx tsx seed.ts
+        echo "🔄 Syncing complete Replit data to Azure database..."
+        echo "📊 This will copy all 29 records from Replit → Azure"
+        echo "🗑️ Azure database will be cleared and populated with fresh data"
+        cd server && npx tsx sync-to-azure.ts
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
         NODE_ENV: production
@@ -183,10 +143,18 @@ jobs:
                 console.log(\`- \${account.email} (\${account.role})\`);
               });
               
-              if (testAccounts.rows.length === 3) {
-                console.log('✅ All test accounts ready');
+              // Verify complete sync from Replit (should have 19 users, 5 mentors, 5 students)
+              const userCount = parseInt(userResult.rows[0].count);
+              const mentorCount = parseInt(mentorResult.rows[0].count);
+              const studentCount = parseInt(studentResult.rows[0].count);
+              
+              if (testAccounts.rows.length >= 3 && userCount >= 19 && mentorCount >= 5 && studentCount >= 5) {
+                console.log('✅ Complete Replit data sync verified!');
+                console.log(\`📊 Successfully synced: \${userCount} users, \${mentorCount} mentors, \${studentCount} students\`);
               } else {
-                console.log('❌ Missing test accounts');
+                console.log('❌ Incomplete data sync detected');
+                console.log(\`Expected: ≥19 users, ≥5 mentors, ≥5 students, 3 test accounts\`);
+                console.log(\`Got: \${userCount} users, \${mentorCount} mentors, \${studentCount} students, \${testAccounts.rows.length} test accounts\`);
                 process.exit(1);
               }
               
