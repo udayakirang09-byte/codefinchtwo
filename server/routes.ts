@@ -222,20 +222,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
-      // Verify password using bcrypt
+      // Verify password using multiple methods for compatibility
       let isValidPassword = false;
-      try {
-        const bcrypt = await import('bcrypt');
-        isValidPassword = await bcrypt.compare(password.trim(), user.password);
-      } catch (bcryptError: any) {
-        console.error('❌ bcrypt import/compare failed, using fallback:', bcryptError);
-        // Fallback crypto verification
-        const crypto = await import('crypto');
-        if (user.password.includes(':')) {
+      
+      console.log('🔐 [AZURE DEBUG] Password verification:', {
+        inputPassword: password?.trim(),
+        storedPassword: user.password,
+        storedLength: user.password?.length,
+        isHashed: user.password?.startsWith('$2'),
+        hasColon: user.password?.includes(':')
+      });
+      
+      // Method 1: Try bcrypt (for hashed passwords)
+      if (user.password.startsWith('$2')) {
+        try {
+          const bcrypt = await import('bcrypt');
+          isValidPassword = await bcrypt.compare(password.trim(), user.password);
+          console.log('🔐 [AZURE DEBUG] bcrypt verification result:', isValidPassword);
+        } catch (bcryptError: any) {
+          console.error('❌ bcrypt import/compare failed:', bcryptError);
+        }
+      }
+      // Method 2: Try pbkdf2 (for hash:salt format)
+      else if (user.password.includes(':')) {
+        try {
+          const crypto = await import('crypto');
           const [hash, salt] = user.password.split(':');
           const hashVerify = crypto.pbkdf2Sync(password.trim(), salt, 1000, 64, 'sha512').toString('hex');
           isValidPassword = hash === hashVerify;
+          console.log('🔐 [AZURE DEBUG] pbkdf2 verification result:', isValidPassword);
+        } catch (cryptoError: any) {
+          console.error('❌ pbkdf2 verification failed:', cryptoError);
         }
+      }
+      // Method 3: Try plain text comparison (for legacy Azure passwords)
+      else {
+        // Direct comparison for plain text passwords (like Azure database)
+        isValidPassword = password.trim() === user.password;
+        console.log('🔐 [AZURE DEBUG] Plain text verification result:', isValidPassword);
+        console.log('🔐 [AZURE DEBUG] Plain text comparison:', {
+          input: `"${password.trim()}"`,
+          stored: `"${user.password}"`,
+          match: isValidPassword
+        });
       }
       
       if (!isValidPassword) {
