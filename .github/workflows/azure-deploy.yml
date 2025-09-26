@@ -54,11 +54,131 @@ jobs:
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-    - name: Deploy database schema
+    - name: Create missing tables directly
       run: |
-        echo "🔄 Starting database schema deployment..."
-        timeout 300 npm run db:push --force || echo "⚠️ Schema sync completed or timed out - tables may already exist"
-        echo "✅ Database schema deployment completed"
+        echo "🔧 Creating missing tables directly on Azure..."
+        node -e "
+          const { Client } = require('pg');
+          const client = new Client({ connectionString: process.env.DATABASE_URL });
+          
+          async function createTables() {
+            try {
+              await client.connect();
+              
+              // Create mentors table
+              await client.query(\`
+                CREATE TABLE IF NOT EXISTS mentors (
+                  id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
+                  user_id varchar NOT NULL,
+                  title varchar NOT NULL,
+                  description text NOT NULL,
+                  specialties jsonb DEFAULT '[]'::jsonb,
+                  experience integer NOT NULL,
+                  rating decimal(3,2) DEFAULT 0.00,
+                  total_students integer DEFAULT 0,
+                  hourly_rate decimal(10,2),
+                  country varchar NOT NULL DEFAULT 'NA-Country',
+                  is_active boolean DEFAULT true,
+                  available_slots jsonb DEFAULT '[]'::jsonb,
+                  created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+                  updated_at timestamp DEFAULT CURRENT_TIMESTAMP
+                );
+              \`);
+              
+              // Create teacher_audio_metrics table
+              await client.query(\`
+                CREATE TABLE IF NOT EXISTS teacher_audio_metrics (
+                  id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
+                  mentor_id varchar NOT NULL,
+                  mentor_name varchar NOT NULL,
+                  audio_score decimal(3,2) NOT NULL,
+                  engagement_level varchar NOT NULL DEFAULT 'medium',
+                  total_sessions integer DEFAULT 0,
+                  avg_session_duration decimal(8,2) DEFAULT 0.00,
+                  student_feedback_score decimal(3,2) DEFAULT 0.00,
+                  improvement_areas text,
+                  strengths text,
+                  last_updated timestamp DEFAULT CURRENT_TIMESTAMP,
+                  created_at timestamp DEFAULT CURRENT_TIMESTAMP
+                );
+              \`);
+              
+              // Create home_section_controls table
+              await client.query(\`
+                CREATE TABLE IF NOT EXISTS home_section_controls (
+                  id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
+                  section_name varchar UNIQUE NOT NULL,
+                  is_visible boolean DEFAULT true,
+                  display_order integer DEFAULT 0,
+                  title varchar,
+                  description text,
+                  background_color varchar DEFAULT '#ffffff',
+                  text_color varchar DEFAULT '#000000',
+                  updated_by varchar,
+                  created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+                  updated_at timestamp DEFAULT CURRENT_TIMESTAMP
+                );
+              \`);
+              
+              console.log('✅ Tables created successfully');
+              await client.end();
+            } catch (err) {
+              console.log('❌ Table creation failed:', err.message);
+              process.exit(1);
+            }
+          }
+          
+          createTables();
+        "
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    - name: Seed database with sample data
+      run: |
+        echo "🌱 Seeding database with sample data..."
+        node -e "
+          const { Client } = require('pg');
+          const client = new Client({ connectionString: process.env.DATABASE_URL });
+          
+          async function seedData() {
+            try {
+              await client.connect();
+              
+              // Seed mentors
+              await client.query(\`
+                INSERT INTO mentors (id, user_id, title, description, experience, country) VALUES 
+                ('ment001', 'user001', 'Senior Python Developer', 'Expert in Python and web development', 5, 'USA'),
+                ('ment002', 'user002', 'JavaScript Mentor', 'Full-stack JavaScript specialist', 3, 'Canada')
+                ON CONFLICT (id) DO NOTHING;
+              \`);
+              
+              // Seed teacher audio metrics
+              await client.query(\`
+                INSERT INTO teacher_audio_metrics (mentor_id, mentor_name, audio_score, engagement_level, total_sessions) VALUES 
+                ('ment001', 'Dr. Sarah Johnson', 9.2, 'high', 45),
+                ('ment002', 'Prof. Michael Chen', 7.8, 'medium', 32)
+                ON CONFLICT (id) DO NOTHING;
+              \`);
+              
+              // Seed home section controls
+              await client.query(\`
+                INSERT INTO home_section_controls (section_name, is_visible, title) VALUES 
+                ('hero', true, 'Welcome to CodeConnect'),
+                ('features', true, 'Our Features'),
+                ('testimonials', true, 'Student Success Stories')
+                ON CONFLICT (section_name) DO NOTHING;
+              \`);
+              
+              console.log('✅ Database seeded successfully');
+              await client.end();
+            } catch (err) {
+              console.log('❌ Database seeding failed:', err.message);
+              process.exit(1);
+            }
+          }
+          
+          seedData();
+        "
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
@@ -96,11 +216,6 @@ jobs:
           
           checkTables();
         "
-      env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
-    
-    - name: Seed database with sample data
-      run: npx tsx server/seed.ts
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
     
