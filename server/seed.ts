@@ -1,8 +1,267 @@
 import { db } from "./db.js";
-import { users, mentors, students, bookings, reviews, achievements, teacherQualifications, teacherSubjects, successStories } from "../shared/schema.js";
+import { users, mentors, students, bookings, reviews, achievements, teacherQualifications, teacherSubjects, successStories, qualifications, specializations, subjects } from "../shared/schema.js";
 import { inArray } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import bcrypt from "bcrypt";
+
+async function insertDropdownData() {
+  console.log("🎓 Inserting master qualifications dropdown data...");
+  await db.insert(qualifications).values([
+    {
+      name: "Bachelor of Science in Computer Science",
+      description: "Undergraduate degree in Computer Science",
+      category: "undergraduate", 
+      displayOrder: 1,
+      isActive: true
+    },
+    {
+      name: "Bachelor of Engineering in Software Engineering",
+      description: "Undergraduate degree in Software Engineering",
+      category: "undergraduate",
+      displayOrder: 2,
+      isActive: true
+    },
+    {
+      name: "Master of Science in Computer Science",
+      description: "Graduate degree in Computer Science",
+      category: "graduate",
+      displayOrder: 3,
+      isActive: true
+    },
+    {
+      name: "Master of Engineering in Software Engineering", 
+      description: "Graduate degree in Software Engineering",
+      category: "graduate",
+      displayOrder: 4,
+      isActive: true
+    },
+    {
+      name: "PhD in Computer Science",
+      description: "Doctoral degree in Computer Science",
+      category: "doctorate",
+      displayOrder: 5,
+      isActive: true
+    },
+    {
+      name: "Associate Degree in Programming",
+      description: "2-year programming degree",
+      category: "associate",
+      displayOrder: 6,
+      isActive: true
+    },
+    {
+      name: "Bootcamp Certificate",
+      description: "Programming bootcamp completion certificate",
+      category: "certificate",
+      displayOrder: 7,
+      isActive: true
+    },
+    {
+      name: "Self-Taught",
+      description: "Self-taught programming experience",
+      category: "experience",
+      displayOrder: 8,
+      isActive: true
+    }
+  ]).onConflictDoNothing();
+
+  console.log("🎯 Inserting specializations dropdown data...");
+  await db.insert(specializations).values([
+    {
+      name: "Frontend Development",
+      description: "User interface and client-side development",
+      category: "web",
+      displayOrder: 1,
+      isActive: true
+    },
+    {
+      name: "Backend Development", 
+      description: "Server-side and database development",
+      category: "web",
+      displayOrder: 2,
+      isActive: true
+    },
+    {
+      name: "Full Stack Development",
+      description: "Both frontend and backend development",
+      category: "web",
+      displayOrder: 3,
+      isActive: true
+    },
+    {
+      name: "Mobile App Development",
+      description: "iOS and Android app development",
+      category: "mobile",
+      displayOrder: 4,
+      isActive: true
+    },
+    {
+      name: "Data Science",
+      description: "Data analysis and machine learning",
+      category: "data",
+      displayOrder: 5,
+      isActive: true
+    },
+    {
+      name: "DevOps",
+      description: "Development operations and infrastructure",
+      category: "infrastructure",
+      displayOrder: 6,
+      isActive: true
+    },
+    {
+      name: "Game Development",
+      description: "Video game programming",
+      category: "games",
+      displayOrder: 7,
+      isActive: true
+    },
+    {
+      name: "Cybersecurity",
+      description: "Security and ethical hacking",
+      category: "security",
+      displayOrder: 8,
+      isActive: true
+    },
+    {
+      name: "AI/Machine Learning",
+      description: "Artificial Intelligence and ML development",
+      category: "ai",
+      displayOrder: 9,
+      isActive: true
+    }
+  ]).onConflictDoNothing();
+
+  console.log("📚 Inserting subjects dropdown data...");
+  await db.insert(subjects).values([
+    {
+      name: "JavaScript",
+      description: "Modern JavaScript programming language",
+      category: "programming-language",
+      displayOrder: 1,
+      isActive: true
+    },
+    {
+      name: "Python",
+      description: "Python programming language",
+      category: "programming-language", 
+      displayOrder: 2,
+      isActive: true
+    },
+    {
+      name: "React",
+      description: "React frontend framework",
+      category: "framework",
+      displayOrder: 3,
+      isActive: true
+    },
+    {
+      name: "Node.js",
+      description: "Node.js backend runtime",
+      category: "framework",
+      displayOrder: 4,
+      isActive: true
+    },
+    {
+      name: "Java",
+      description: "Java programming language",
+      category: "programming-language",
+      displayOrder: 5,
+      isActive: true
+    },
+    {
+      name: "C++",
+      description: "C++ programming language",
+      category: "programming-language",
+      displayOrder: 6,
+      isActive: true
+    },
+    {
+      name: "HTML/CSS",
+      description: "Web markup and styling",
+      category: "web-basics",
+      displayOrder: 7,
+      isActive: true
+    },
+    {
+      name: "TypeScript",
+      description: "TypeScript programming language",
+      category: "programming-language",
+      displayOrder: 8,
+      isActive: true
+    },
+    {
+      name: "Vue.js",
+      description: "Vue.js frontend framework",
+      category: "framework",
+      displayOrder: 9,
+      isActive: true
+    },
+    {
+      name: "Angular",
+      description: "Angular frontend framework",
+      category: "framework",
+      displayOrder: 10,
+      isActive: true
+    },
+    {
+      name: "Express.js",
+      description: "Express.js web framework",
+      category: "framework",
+      displayOrder: 11,
+      isActive: true
+    },
+    {
+      name: "Django",
+      description: "Django Python web framework",
+      category: "framework",
+      displayOrder: 12,
+      isActive: true
+    },
+    {
+      name: "Flask",
+      description: "Flask Python microframework",
+      category: "framework",
+      displayOrder: 13,
+      isActive: true
+    },
+    {
+      name: "Spring Boot",
+      description: "Spring Boot Java framework",
+      category: "framework",
+      displayOrder: 14,
+      isActive: true
+    },
+    {
+      name: "SQL",
+      description: "Database query language",
+      category: "database",
+      displayOrder: 15,
+      isActive: true
+    },
+    {
+      name: "MongoDB",
+      description: "NoSQL database",
+      category: "database",
+      displayOrder: 16,
+      isActive: true
+    },
+    {
+      name: "Git",
+      description: "Version control system",
+      category: "tools",
+      displayOrder: 17,
+      isActive: true
+    },
+    {
+      name: "AWS",
+      description: "Amazon Web Services cloud platform",
+      category: "cloud",
+      displayOrder: 18,
+      isActive: true
+    }
+  ]).onConflictDoNothing();
+}
 
 async function seedDatabase() {
   try {
@@ -19,8 +278,11 @@ async function seedDatabase() {
     );
     
     if (testAccounts.length === 3) {
-      console.log("✅ All test accounts already exist, skipping seed");
+      console.log("✅ All test accounts already exist, skipping user data seed");
       console.log("🔐 Found test accounts:", testAccounts.map((u: any) => `${u.email} (${u.role})`));
+      
+      // Still insert dropdown data if missing
+      await insertDropdownData();
       return;
     } else if (testAccounts.length > 0) {
       console.log(`⚠️ Only ${testAccounts.length}/3 test accounts exist, will create missing accounts`);
@@ -496,6 +758,264 @@ async function seedDatabase() {
         featured: true
       }
     ]);
+
+    // Insert master dropdown data for teacher signup form
+    console.log("🎓 Inserting master qualifications dropdown data...");
+    await db.insert(qualifications).values([
+      {
+        name: "Bachelor of Science in Computer Science",
+        description: "Undergraduate degree in Computer Science",
+        category: "undergraduate", 
+        displayOrder: 1,
+        isActive: true
+      },
+      {
+        name: "Bachelor of Engineering in Software Engineering",
+        description: "Undergraduate degree in Software Engineering",
+        category: "undergraduate",
+        displayOrder: 2,
+        isActive: true
+      },
+      {
+        name: "Master of Science in Computer Science",
+        description: "Graduate degree in Computer Science",
+        category: "graduate",
+        displayOrder: 3,
+        isActive: true
+      },
+      {
+        name: "Master of Engineering in Software Engineering", 
+        description: "Graduate degree in Software Engineering",
+        category: "graduate",
+        displayOrder: 4,
+        isActive: true
+      },
+      {
+        name: "PhD in Computer Science",
+        description: "Doctoral degree in Computer Science",
+        category: "doctorate",
+        displayOrder: 5,
+        isActive: true
+      },
+      {
+        name: "Associate Degree in Programming",
+        description: "2-year programming degree",
+        category: "associate",
+        displayOrder: 6,
+        isActive: true
+      },
+      {
+        name: "Bootcamp Certificate",
+        description: "Programming bootcamp completion certificate",
+        category: "certificate",
+        displayOrder: 7,
+        isActive: true
+      },
+      {
+        name: "Self-Taught",
+        description: "Self-taught programming experience",
+        category: "experience",
+        displayOrder: 8,
+        isActive: true
+      }
+    ]).onConflictDoNothing();
+
+    console.log("🎯 Inserting specializations dropdown data...");
+    await db.insert(specializations).values([
+      {
+        name: "Frontend Development",
+        description: "User interface and client-side development",
+        category: "web",
+        displayOrder: 1,
+        isActive: true
+      },
+      {
+        name: "Backend Development", 
+        description: "Server-side and database development",
+        category: "web",
+        displayOrder: 2,
+        isActive: true
+      },
+      {
+        name: "Full Stack Development",
+        description: "Both frontend and backend development",
+        category: "web",
+        displayOrder: 3,
+        isActive: true
+      },
+      {
+        name: "Mobile App Development",
+        description: "iOS and Android app development",
+        category: "mobile",
+        displayOrder: 4,
+        isActive: true
+      },
+      {
+        name: "Data Science",
+        description: "Data analysis and machine learning",
+        category: "data",
+        displayOrder: 5,
+        isActive: true
+      },
+      {
+        name: "DevOps",
+        description: "Development operations and infrastructure",
+        category: "infrastructure",
+        displayOrder: 6,
+        isActive: true
+      },
+      {
+        name: "Game Development",
+        description: "Video game programming",
+        category: "games",
+        displayOrder: 7,
+        isActive: true
+      },
+      {
+        name: "Cybersecurity",
+        description: "Security and ethical hacking",
+        category: "security",
+        displayOrder: 8,
+        isActive: true
+      },
+      {
+        name: "AI/Machine Learning",
+        description: "Artificial Intelligence and ML development",
+        category: "ai",
+        displayOrder: 9,
+        isActive: true
+      }
+    ]).onConflictDoNothing();
+
+    console.log("📚 Inserting subjects dropdown data...");
+    await db.insert(subjects).values([
+      {
+        name: "JavaScript",
+        description: "Modern JavaScript programming language",
+        category: "programming-language",
+        displayOrder: 1,
+        isActive: true
+      },
+      {
+        name: "Python",
+        description: "Python programming language",
+        category: "programming-language", 
+        displayOrder: 2,
+        isActive: true
+      },
+      {
+        name: "React",
+        description: "React frontend framework",
+        category: "framework",
+        displayOrder: 3,
+        isActive: true
+      },
+      {
+        name: "Node.js",
+        description: "Node.js backend runtime",
+        category: "framework",
+        displayOrder: 4,
+        isActive: true
+      },
+      {
+        name: "Java",
+        description: "Java programming language",
+        category: "programming-language",
+        displayOrder: 5,
+        isActive: true
+      },
+      {
+        name: "C++",
+        description: "C++ programming language",
+        category: "programming-language",
+        displayOrder: 6,
+        isActive: true
+      },
+      {
+        name: "HTML/CSS",
+        description: "Web markup and styling",
+        category: "web-basics",
+        displayOrder: 7,
+        isActive: true
+      },
+      {
+        name: "TypeScript",
+        description: "TypeScript programming language",
+        category: "programming-language",
+        displayOrder: 8,
+        isActive: true
+      },
+      {
+        name: "Vue.js",
+        description: "Vue.js frontend framework",
+        category: "framework",
+        displayOrder: 9,
+        isActive: true
+      },
+      {
+        name: "Angular",
+        description: "Angular frontend framework",
+        category: "framework",
+        displayOrder: 10,
+        isActive: true
+      },
+      {
+        name: "Express.js",
+        description: "Express.js web framework",
+        category: "framework",
+        displayOrder: 11,
+        isActive: true
+      },
+      {
+        name: "Django",
+        description: "Django Python web framework",
+        category: "framework",
+        displayOrder: 12,
+        isActive: true
+      },
+      {
+        name: "Flask",
+        description: "Flask Python microframework",
+        category: "framework",
+        displayOrder: 13,
+        isActive: true
+      },
+      {
+        name: "Spring Boot",
+        description: "Spring Boot Java framework",
+        category: "framework",
+        displayOrder: 14,
+        isActive: true
+      },
+      {
+        name: "SQL",
+        description: "Database query language",
+        category: "database",
+        displayOrder: 15,
+        isActive: true
+      },
+      {
+        name: "MongoDB",
+        description: "NoSQL database",
+        category: "database",
+        displayOrder: 16,
+        isActive: true
+      },
+      {
+        name: "Git",
+        description: "Version control system",
+        category: "tools",
+        displayOrder: 17,
+        isActive: true
+      },
+      {
+        name: "AWS",
+        description: "Amazon Web Services cloud platform",
+        category: "cloud",
+        displayOrder: 18,
+        isActive: true
+      }
+    ]).onConflictDoNothing();
 
     console.log("✅ Database seeding completed successfully!");
     console.log("📊 Production dataset created:");
