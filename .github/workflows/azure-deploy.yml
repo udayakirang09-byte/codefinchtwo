@@ -65,6 +65,21 @@ jobs:
             try {
               await client.connect();
               
+              // Create users table first (required for mentors FK)
+              await client.query(\`
+                CREATE TABLE IF NOT EXISTS users (
+                  id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
+                  email varchar UNIQUE NOT NULL,
+                  password varchar NOT NULL DEFAULT 'Hello111',
+                  first_name varchar,
+                  last_name varchar,
+                  profile_image_url varchar,
+                  role varchar NOT NULL DEFAULT 'student',
+                  created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+                  updated_at timestamp DEFAULT CURRENT_TIMESTAMP
+                );
+              \`);
+              
               // Create mentors table
               await client.query(\`
                 CREATE TABLE IF NOT EXISTS mentors (
@@ -149,7 +164,15 @@ jobs:
             try {
               await client.connect();
               
-              // Seed mentors (now that country column is guaranteed to exist)
+              // Seed users first (required for mentors FK)
+              await client.query(\`
+                INSERT INTO users (id, email, password, role, first_name, last_name) VALUES
+                ('user001', 'mentor1@example.com', 'Hello111', 'mentor', 'Sarah', 'Johnson'),
+                ('user002', 'mentor2@example.com', 'Hello111', 'mentor', 'Michael', 'Chen')
+                ON CONFLICT (id) DO NOTHING;
+              \`);
+              
+              // Seed mentors (now that users exist for FK)
               await client.query(\`
                 INSERT INTO mentors (id, user_id, title, description, experience, country) VALUES 
                 ('ment001', 'user001', 'Senior Python Developer', 'Expert in Python and web development', 5, 'USA'),
