@@ -148,8 +148,8 @@ server/dist/
 server/.env
 server/.env.*
 
-# Package managers
-package-lock.json
+# Package managers (keep package-lock.json for CI)
+# package-lock.json  # Keep this for GitHub Actions
 yarn.lock
 pnpm-lock.yaml
 
