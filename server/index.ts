@@ -3,8 +3,52 @@ import { createServer } from "http";
 import { WebSocketServer } from "ws";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import cors from "cors";
 
 const app = express();
+
+// Azure-specific debugging
+console.log('🔐 [AZURE DEBUG] Environment check:', {
+  nodeEnv: process.env.NODE_ENV,
+  hasDatabaseUrl: !!process.env.DATABASE_URL,
+  azurePostgresPassword: !!process.env.AZURE_POSTGRES_PASSWORD,
+  replitDomains: process.env.REPLIT_DOMAINS
+});
+
+// Enhanced CORS configuration for Azure and Replit
+const corsOptions = {
+  origin: (origin: any, callback: any) => {
+    // Allow requests with no origin (mobile apps, Postman, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Azure-specific domains and Replit domains
+    const allowedOrigins = [
+      /https:\/\/.*\.azurewebsites\.net$/,
+      /https:\/\/.*\.replit\.dev$/,
+      /https:\/\/.*\.worf\.replit\.dev$/,
+      'http://localhost:3000',
+      'http://localhost:5000',
+      'https://localhost:3000',
+      'https://localhost:5000'
+    ];
+    
+    // Check if origin matches any pattern
+    const isAllowed = allowedOrigins.some(pattern => {
+      if (pattern instanceof RegExp) {
+        return pattern.test(origin);
+      }
+      return pattern === origin;
+    });
+    
+    console.log('🌐 [AZURE DEBUG] CORS check:', { origin, isAllowed });
+    callback(null, isAllowed);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
