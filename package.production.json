@@ -51,6 +51,8 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.2",
     "vite": "^5.4.19",
+    "vite-plugin-checker": "^0.8.0",
+    "@vitejs/plugin-react": "^4.3.4",
     "wouter": "^3.3.5",
     "ws": "^8.18.0",
     "zod": "^3.24.2",
