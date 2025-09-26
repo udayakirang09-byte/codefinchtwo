@@ -1459,7 +1459,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .orderBy(bookings.scheduledAt);
       
       // Format the data to match the expected structure
-      const formattedClasses = teacherBookings.map(booking => ({
+      const formattedClasses = teacherBookings.map((booking: any) => ({
         id: booking.id,
         student: {
           user: {
@@ -1511,15 +1511,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       // Calculate real stats from actual bookings
-      const completedBookings = teacherBookings.filter(b => b.status === 'completed');
-      const scheduledBookings = teacherBookings.filter(b => b.status === 'scheduled');
+      const completedBookings = teacherBookings.filter((b: any) => b.status === 'completed');
+      const scheduledBookings = teacherBookings.filter((b: any) => b.status === 'scheduled');
       
       // Calculate unique students
-      const uniqueStudentIds = new Set(teacherBookings.map(b => b.studentId));
+      const uniqueStudentIds = new Set(teacherBookings.map((b: any) => b.studentId));
       const totalStudents = uniqueStudentIds.size;
       
       // Calculate real earnings (using $150 per session as default since amount field not in schema)
-      const totalEarnings = completedBookings.reduce((sum, b) => sum + 150, 0);
+      const totalEarnings = completedBookings.reduce((sum: number, b: any) => sum + 150, 0);
       const monthlyEarnings = Math.round(totalEarnings * 0.3); // Assume 30% this month
       
       // Get real reviews for average rating
