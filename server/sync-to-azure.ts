@@ -249,6 +249,9 @@ async function syncDataToAzure() {
   }
 }
 
+// DETACHED: Replit DB sync to Azure DB functionality disabled
+// Uncomment below to re-enable sync when needed
+/*
 // Run sync if this file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   syncDataToAzure()
@@ -261,5 +264,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       process.exit(1);
     });
 }
+*/
 
 export { syncDataToAzure };
