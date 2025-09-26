@@ -81,10 +81,13 @@ jobs:
               
               console.log('🏗️ Creating fresh database schema...');
               
+              // Enable pgcrypto extension for UUID generation
+              await client.query('CREATE EXTENSION IF NOT EXISTS pgcrypto;');
+              
               // Create users table first
               await client.query(\`
                 CREATE TABLE users (
-                  id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
+                  id varchar PRIMARY KEY,
                   email varchar UNIQUE NOT NULL,
                   password varchar NOT NULL DEFAULT 'Hello111',
                   first_name varchar,
@@ -99,7 +102,7 @@ jobs:
               // Create mentors table with FK to users
               await client.query(\`
                 CREATE TABLE mentors (
-                  id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
+                  id varchar PRIMARY KEY,
                   user_id varchar NOT NULL REFERENCES users(id),
                   title varchar NOT NULL,
                   description text NOT NULL,
@@ -119,7 +122,7 @@ jobs:
               // Create teacher_audio_metrics table
               await client.query(\`
                 CREATE TABLE teacher_audio_metrics (
-                  id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
+                  id varchar PRIMARY KEY,
                   mentor_id varchar NOT NULL,
                   mentor_name varchar NOT NULL,
                   audio_score decimal(3,2) NOT NULL,
@@ -137,7 +140,7 @@ jobs:
               // Create home_section_controls table
               await client.query(\`
                 CREATE TABLE home_section_controls (
-                  id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
+                  id varchar PRIMARY KEY,
                   section_name varchar UNIQUE NOT NULL,
                   is_visible boolean DEFAULT true,
                   display_order integer DEFAULT 0,
