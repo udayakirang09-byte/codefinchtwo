@@ -15,25 +15,46 @@ let pool: pg.Pool;
 let db: any;
 
 try {
-  console.log('🔗 Initializing PostgreSQL connection pool...');
+  console.log('🔗 [AZURE DEBUG] Initializing PostgreSQL connection pool...');
+  console.log('🔗 [AZURE DEBUG] Database configuration:', {
+    hasUrl: !!process.env.DATABASE_URL,
+    nodeEnv: process.env.NODE_ENV,
+    sslMode: process.env.NODE_ENV === 'production' ? 'enabled' : 'disabled'
+  });
   
   // Force disable native bindings on Azure to avoid compilation issues
   if (process.env.NODE_ENV === 'production') {
-    // Note: pg native bindings are handled at runtime, not via defaults
-    console.log('🛡️ Using JavaScript-only pg driver for Azure compatibility');
+    console.log('🛡️ [AZURE DEBUG] Using JavaScript-only pg driver for Azure compatibility');
   }
   
   pool = new Pool({ 
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    // Azure-specific connection settings
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    // Azure-optimized connection settings
+    max: 5, // Reduced for Azure App Service
+    idleTimeoutMillis: 10000, // 10 seconds
+    connectionTimeoutMillis: 5000, // 5 seconds for Azure
+    // Azure-specific settings
+    allowExitOnIdle: true,
+    statement_timeout: 30000, // 30 seconds
+    query_timeout: 30000, // 30 seconds
   });
   
   db = drizzle({ client: pool, schema });
-  console.log('✅ PostgreSQL connection pool initialized successfully');
+  
+  // Test connection immediately on Azure
+  if (process.env.NODE_ENV === 'production') {
+    console.log('🧪 [AZURE DEBUG] Testing database connection...');
+    pool.query('SELECT 1', (err, result) => {
+      if (err) {
+        console.error('❌ [AZURE DEBUG] Database connection test failed:', err);
+      } else {
+        console.log('✅ [AZURE DEBUG] Database connection test successful');
+      }
+    });
+  }
+  
+  console.log('✅ [AZURE DEBUG] PostgreSQL connection pool initialized successfully');
 } catch (pgError: any) {
   console.error('❌ PostgreSQL connection failed:', pgError);
   console.error('⚠️ This is likely due to native pg bindings compilation on Azure');
