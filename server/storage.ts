@@ -344,7 +344,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(mentors.isActive, true))
       .orderBy(desc(mentors.rating));
 
-    return result.map(({ mentors: mentor, users: user }) => ({
+    return result.map(({ mentors: mentor, users: user }: { mentors: Mentor; users: User }) => ({
       ...mentor,
       user: user!,
     }));
@@ -366,11 +366,12 @@ export class DatabaseStorage implements IStorage {
   }
 
 
-  async createMentor(mentorData: any): Promise<Mentor> {
+  async createMentor(mentorData: InsertMentor): Promise<Mentor> {
+    const data = mentorData as any;
     const processedData = {
       ...mentorData,
-      specialties: mentorData.specialties ? Array.from(mentorData.specialties as string[]) : [],
-      availableSlots: mentorData.availableSlots ? Array.from(mentorData.availableSlots as any[]) : []
+      specialties: data.specialties ? Array.from(data.specialties as string[]) : [],
+      availableSlots: data.availableSlots ? Array.from(data.availableSlots as any[]) : []
     };
     const [mentor] = await db.insert(mentors).values([processedData]).returning();
     return mentor;
@@ -408,10 +409,11 @@ export class DatabaseStorage implements IStorage {
     return student;
   }
 
-  async createStudent(studentData: any): Promise<Student> {
+  async createStudent(studentData: InsertStudent): Promise<Student> {
+    const data = studentData as any;
     const processedData = {
       ...studentData,
-      interests: studentData.interests ? Array.from(studentData.interests as string[]) : []
+      interests: data.interests ? Array.from(data.interests as string[]) : []
     };
     const [student] = await db.insert(students).values([processedData]).returning();
     return student;
@@ -431,7 +433,7 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(users, eq(students.userId, users.id))
       .orderBy(desc(bookings.scheduledAt));
 
-    return result.map(({ bookings: booking, students: student, mentors: mentor, users: user }) => ({
+    return result.map(({ bookings: booking, students: student, mentors: mentor, users: user }: { bookings: Booking; students: Student; mentors: Mentor; users: User }) => ({
       ...booking,
       student: { ...student!, user: user! },
       mentor: { ...mentor!, user: user! },
@@ -461,7 +463,7 @@ export class DatabaseStorage implements IStorage {
     return mentor;
   }
   
-  async updateUser(id: string, updates: any): Promise<void> {
+  async updateUser(id: string, updates: Partial<InsertUser>): Promise<void> {
     await db.update(users).set(updates).where(eq(users.id, id));
   }
   
@@ -479,7 +481,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(bookings.studentId, studentId))
       .orderBy(desc(bookings.scheduledAt));
 
-    return result.map(({ bookings: booking, students: student, mentors: mentor, users: user }) => ({
+    return result.map(({ bookings: booking, students: student, mentors: mentor, users: user }: { bookings: Booking; students: Student; mentors: Mentor; users: User }) => ({
       ...booking,
       student: { ...student!, user: user! },
       mentor: { ...mentor!, user: user! },
@@ -496,14 +498,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(bookings.mentorId, mentorId))
       .orderBy(desc(bookings.scheduledAt));
 
-    return result.map(({ bookings: booking, students: student, mentors: mentor, users: user }) => ({
+    return result.map(({ bookings: booking, students: student, mentors: mentor, users: user }: { bookings: Booking; students: Student; mentors: Mentor; users: User }) => ({
       ...booking,
       student: { ...student!, user: user! },
       mentor: { ...mentor!, user: user! },
     }));
   }
 
-  async createBooking(bookingData: any): Promise<Booking> {
+  async createBooking(bookingData: InsertBooking): Promise<Booking> {
     const [booking] = await db.insert(bookings).values(bookingData).returning();
     return booking;
   }
@@ -593,20 +595,21 @@ export class DatabaseStorage implements IStorage {
       .where(eq(reviews.mentorId, mentorId))
       .orderBy(desc(reviews.createdAt));
 
-    return result.map(({ reviews: review, students: student, mentors: mentor, users: user }) => ({
+    return result.map(({ reviews: review, students: student, mentors: mentor, users: user }: { reviews: Review; students: Student; mentors: Mentor; users: User }) => ({
       ...review,
       student: { ...student!, user: user! },
       mentor: { ...mentor!, user: user! },
     }));
   }
 
-  async createReview(reviewData: any): Promise<Review> {
+  async createReview(reviewData: InsertReview): Promise<Review> {
     const [review] = await db.insert(reviews).values(reviewData).returning();
     
     // Update mentor rating
-    const mentorReviews = await this.getReviewsByMentor(reviewData.mentorId);
+    const data = reviewData as any;
+    const mentorReviews = await this.getReviewsByMentor(data.mentorId);
     const averageRating = mentorReviews.reduce((sum, r) => sum + r.rating, 0) / mentorReviews.length;
-    await this.updateMentorRating(reviewData.mentorId, averageRating);
+    await this.updateMentorRating(data.mentorId, averageRating);
     
     return review;
   }
@@ -658,7 +661,7 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(desc(videoSessions.createdAt));
 
-    return recordings.map(record => ({
+    return recordings.map((record: any) => ({
       ...record.video_sessions!,
       booking: {
         ...record.bookings!,
@@ -1066,8 +1069,8 @@ export class DatabaseStorage implements IStorage {
 
     // Get user counts
     const allUsers = await db.select().from(users);
-    const studentsCount = allUsers.filter(u => u.role === 'student').length;
-    const teachersCount = allUsers.filter(u => u.role === 'mentor').length;
+    const studentsCount = allUsers.filter((u: User) => u.role === 'student').length;
+    const teachersCount = allUsers.filter((u: User) => u.role === 'mentor').length;
 
     // Calculate financial metrics
     let totalAdminRevenue = 0;
@@ -1089,7 +1092,7 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
-    const conflictAmount = conflicts.reduce((sum, conflict) => {
+    const conflictAmount = conflicts.reduce((sum: number, conflict: UnsettledFinance) => {
       return sum + parseFloat(conflict.conflictAmount);
     }, 0);
 
@@ -1105,7 +1108,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Admin operations
-  async getSystemStats(): Promise<any> {
+  async getSystemStats(): Promise<{
+    totalUsers: number;
+    totalMentors: number;
+    totalStudents: number;
+    totalBookings: number;
+    completedBookings: number;
+    completionRate: number;
+  }> {
     const allUsers = await db.select().from(users);
     const allMentors = await db.select().from(mentors);
     const allStudents = await db.select().from(students);
@@ -1586,7 +1596,7 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(users, eq(mentors.userId, users.id))
       .groupBy(teacherAudioMetrics.mentorId, users.firstName, users.lastName, users.email);
 
-    return results.map(row => ({
+    return results.map((row: any) => ({
       mentorId: row.mentorId,
       mentorName: row.mentorName,
       encourageInvolvement: Math.round(row.avgEncourageInvolvement * 10) / 10,
