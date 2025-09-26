@@ -79,7 +79,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         body: { ...req.body, password: '[HIDDEN]' } 
       });
       
-      const { firstName, lastName, email, password, role, mentorData } = req.body;
+      const { firstName, lastName, email, password, role, mentorData }: {
+        firstName: string;
+        lastName: string;
+        email: string;
+        password: string;
+        role: string;
+        mentorData?: any;
+      } = req.body;
       
       if (!firstName || !lastName || !email || !password || !role) {
         console.error('❌ Missing required fields');
@@ -186,7 +193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/auth/login", async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const { email, password }: { email: string; password: string } = req.body;
       
       // Check credentials against database users
       const user = await storage.getUserByEmail(email.trim());
@@ -289,7 +296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/auth/forgot-password", async (req, res) => {
     try {
-      const { email } = req.body;
+      const { email }: { email: string } = req.body;
       
       // Generate reset code and store it temporarily
       const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -380,7 +387,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/sessions", async (req, res) => {
     // This route is only used during login - no auth required
     try {
-      const { userId, sessionToken, userAgent, ipAddress } = req.body;
+      const { userId, sessionToken, userAgent, ipAddress }: {
+        userId: string;
+        sessionToken: string;
+        userAgent?: string;
+        ipAddress?: string;
+      } = req.body;
       
       if (!userId || !sessionToken) {
         return res.status(400).json({ message: "Missing required session data" });
@@ -786,7 +798,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/bookings/:id/status", async (req, res) => {
     try {
       const { id } = req.params;
-      const { status } = req.body;
+      const { status }: { status: string } = req.body;
       
       if (!["scheduled", "completed", "cancelled"].includes(status)) {
         return res.status(400).json({ message: "Invalid status" });
@@ -1191,7 +1203,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log(`💬 POST /api/chat-sessions/${req.params.sessionId}/messages - Sending message with timing validation`);
     try {
       const { sessionId } = req.params;
-      const { senderId, message, studentUserId, mentorUserId } = req.body;
+      const { senderId, message, studentUserId, mentorUserId }: {
+        senderId: string;
+        message: string;
+        studentUserId?: string;
+        mentorUserId?: string;
+      } = req.body;
 
       if (!senderId || !message) {
         return res.status(400).json({ message: "Sender ID and message are required" });
