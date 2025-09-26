@@ -1528,7 +1528,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(reviews.mentorId, mentorId));
       
       const avgRating = teacherReviews.length > 0 
-        ? Number((teacherReviews.reduce((sum, r) => sum + r.rating, 0) / teacherReviews.length).toFixed(1))
+        ? Number((teacherReviews.reduce((sum: number, r: any) => sum + r.rating, 0) / teacherReviews.length).toFixed(1))
         : 0;
       
       const teacherStats = {
@@ -1541,7 +1541,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         averageRating: avgRating,
         totalReviews: teacherReviews.length,
         feedbackResponseRate: completedBookings.length > 0 ? Math.round((teacherReviews.length / completedBookings.length) * 100) : 0,
-        totalHours: completedBookings.reduce((sum, b) => sum + (b.duration || 60), 0) / 60 // Convert minutes to hours
+        totalHours: completedBookings.reduce((sum: number, b: any) => sum + (b.duration || 60), 0) / 60 // Convert minutes to hours
       };
       
       res.json(teacherStats);
@@ -1600,7 +1600,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }> = [];
       
       // Add upcoming class notifications
-      upcomingBookings.forEach(booking => {
+      upcomingBookings.forEach((booking: any) => {
         const timeToClass = new Date(booking.scheduledAt).getTime() - Date.now();
         if (timeToClass > 0 && timeToClass < 24 * 60 * 60 * 1000) { // Within 24 hours
           notifications.push({
@@ -1820,7 +1820,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (teacherProfile.programmingLanguages && teacherProfile.programmingLanguages.length > 0) {
         // Check if the course category matches any programming language experience
-        const languageExperience = teacherProfile.programmingLanguages.find(lang => {
+        const languageExperience = teacherProfile.programmingLanguages.find((lang: any) => {
           const courseCategoryLower = category.toLowerCase();
           const languageLower = lang.language.toLowerCase();
           
@@ -2753,7 +2753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`📅 Retrieved ${mentorTimeSlots.length} time slots for mentor ${mentor[0].id}`);
       
       // Transform to expected format
-      const schedule = mentorTimeSlots.map(slot => ({
+      const schedule = mentorTimeSlots.map((slot: any) => ({
         id: slot.id,
         dayOfWeek: slot.dayOfWeek,
         startTime: slot.startTime,
@@ -2882,7 +2882,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ));
       
       // Transform to format needed by booking pages
-      const availableTimes = mentorTimeSlots.map(slot => ({
+      const availableTimes = mentorTimeSlots.map((slot: any) => ({
         id: slot.id,
         dayOfWeek: slot.dayOfWeek,
         startTime: slot.startTime,
@@ -2891,7 +2891,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
       
       // Group by day of week
-      const groupedByDay = availableTimes.reduce((acc: any, slot) => {
+      const groupedByDay = availableTimes.reduce((acc: any, slot: any) => {
         if (!acc[slot.dayOfWeek]) {
           acc[slot.dayOfWeek] = [];
         }
@@ -2908,7 +2908,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`✅ Found ${availableTimes.length} available time slots`);
       
       // Deduplicate times for booking form (same time can appear on multiple days)
-      const timeSet = new Set(availableTimes.map(slot => slot.time));
+      const timeSet = new Set(availableTimes.map((slot: any) => slot.time));
       const uniqueTimes = Array.from(timeSet).sort();
 
       res.json({
@@ -3005,7 +3005,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         )
       );
       
-      const configMap = configs.reduce((acc, config) => {
+      const configMap = configs.reduce((acc: any, config: any) => {
         acc[config.configKey] = config.configValue;
         return acc;
       }, {} as Record<string, string | null>);

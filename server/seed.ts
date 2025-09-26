@@ -40,8 +40,8 @@ async function seedDatabase() {
       }
     ]).returning();
 
-    const teacherUser = insertedUsers.find(u => u.email === "teacher@codeconnect.com");
-    const studentUser = insertedUsers.find(u => u.email === "udayakirang99@gmail.com");
+    const teacherUser = insertedUsers.find((u: any) => u.email === "teacher@codeconnect.com");
+    const studentUser = insertedUsers.find((u: any) => u.email === "udayakirang99@gmail.com");
 
     if (!teacherUser || !studentUser) {
       throw new Error("Failed to create required users");

@@ -291,22 +291,22 @@ export class AIAnalyticsEngine {
     const newMetrics: InsertBusinessMetric[] = [
       {
         metricName: 'total_users',
-        metricValue: events.filter(e => e.eventType === 'user_registration').length.toString(),
+        metricValue: events.filter((e: any) => e.eventType === 'user_registration').length.toString(),
         metricType: 'users',
         period: 'weekly',
         date: new Date()
       },
       {
         metricName: 'session_count',
-        metricValue: events.filter(e => e.eventType === 'session_start').length.toString(),
+        metricValue: events.filter((e: any) => e.eventType === 'session_start').length.toString(),
         metricType: 'sessions',
         period: 'weekly', 
         date: new Date()
       },
       {
         metricName: 'booking_conversion',
-        metricValue: ((events.filter(e => e.eventType === 'booking_created').length / 
-                     Math.max(events.filter(e => e.eventType === 'page_view').length, 1)) * 100).toString(),
+        metricValue: ((events.filter((e: any) => e.eventType === 'booking_created').length / 
+                     Math.max(events.filter((e: any) => e.eventType === 'page_view').length, 1)) * 100).toString(),
         metricType: 'conversion_rate',
         period: 'weekly',
         date: new Date()
