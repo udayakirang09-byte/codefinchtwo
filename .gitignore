@@ -203,3 +203,51 @@ junit.xml
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# ================================
+# PRODUCTION CODE MERGE EXCLUSIONS
+# ================================
+
+# Environment variables (NEVER commit these)
+.env.database
+.env.azure
+.env.production
+
+# Deployment artifacts (generated during CI/CD)
+/deploy/
+package.production.json.bak
+*.deployment
+web.config.bak
+azure-logs/
+deployment-logs/
+
+# Database files and backups (contain sensitive data)
+*.sql.backup
+*.dump
+*.csv.export
+/tmp/replit_*.txt
+/tmp/insert_*.sql
+
+# Local development files
+/tmp/logs/
+.log-mapping.json
+
+# Build artifacts for production
+*.zip.bak
+dist.tar.gz
+
+# Secret management files (for production)
+secrets.json
+keys/
+certificates/
+*.pem
+*.key
+*.crt
+
+# Azure-specific files
+web.config.backup
+startup.sh.bak
+
+# Production debugging files
+production-debug.log
+azure-debug.log
