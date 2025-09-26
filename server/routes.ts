@@ -4335,6 +4335,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('HomeSectionControls table test failed:', error);
       }
       
+      try {
+        await storage.getTeacherAudioMetricsAggregates();
+        tableTests.teacherAudioMetrics = true;
+      } catch (error) {
+        console.error('TeacherAudioMetrics table test failed:', error);
+      }
+      
       const environment = {
         NODE_ENV: process.env.NODE_ENV,
         hasDatabase: !!process.env.DATABASE_URL,
