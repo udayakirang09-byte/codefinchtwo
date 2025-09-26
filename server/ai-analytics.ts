@@ -316,7 +316,7 @@ export class AIAnalyticsEngine {
     return {
       insights: [...behaviorInsights, ...predictions, ...anomalies],
       metrics: newMetrics,
-      predictions: predictions.map(p => p.data)
+      predictions: predictions.map((p: any) => p.data)
     };
   }
 }

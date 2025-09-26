@@ -1811,7 +1811,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         mentorId: mentor.id
       };
-      const validatedData = insertCourseSchema.parse(courseDataWithMentor);
+      const validatedData: any = insertCourseSchema.parse(courseDataWithMentor);
 
       // Validate that teacher has experience in the course category
       const { category, title } = validatedData;

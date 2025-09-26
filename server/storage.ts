@@ -292,7 +292,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async createUser(userData: InsertUser): Promise<User> {
+  async createUser(userData: any): Promise<User> {
     const [user] = await db.insert(users).values(userData).returning();
     return user;
   }
@@ -366,7 +366,7 @@ export class DatabaseStorage implements IStorage {
   }
 
 
-  async createMentor(mentorData: InsertMentor): Promise<Mentor> {
+  async createMentor(mentorData: any): Promise<Mentor> {
     const processedData = {
       ...mentorData,
       specialties: mentorData.specialties ? Array.from(mentorData.specialties as string[]) : [],
@@ -408,7 +408,7 @@ export class DatabaseStorage implements IStorage {
     return student;
   }
 
-  async createStudent(studentData: InsertStudent): Promise<Student> {
+  async createStudent(studentData: any): Promise<Student> {
     const processedData = {
       ...studentData,
       interests: studentData.interests ? Array.from(studentData.interests as string[]) : []
@@ -503,7 +503,7 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async createBooking(bookingData: InsertBooking): Promise<Booking> {
+  async createBooking(bookingData: any): Promise<Booking> {
     const [booking] = await db.insert(bookings).values(bookingData).returning();
     return booking;
   }
@@ -540,7 +540,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Course operations - fixed implementation
-  async createCourse(courseData: InsertCourse): Promise<Course> {
+  async createCourse(courseData: any): Promise<Course> {
     const processedData = {
       ...courseData,
       tags: courseData.tags ? Array.from(courseData.tags as string[]) : []
@@ -550,7 +550,7 @@ export class DatabaseStorage implements IStorage {
     return course;
   }
 
-  async updateCourse(id: string, courseData: Partial<InsertCourse>): Promise<void> {
+  async updateCourse(id: string, courseData: any): Promise<void> {
     const processedData: any = {
       ...courseData,
       updatedAt: new Date()
@@ -600,7 +600,7 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async createReview(reviewData: InsertReview): Promise<Review> {
+  async createReview(reviewData: any): Promise<Review> {
     const [review] = await db.insert(reviews).values(reviewData).returning();
     
     // Update mentor rating
@@ -1009,7 +1009,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Payment Workflow operations
-  async createPaymentWorkflow(workflowData: InsertPaymentWorkflow): Promise<PaymentWorkflow> {
+  async createPaymentWorkflow(workflowData: any): Promise<PaymentWorkflow> {
     // Ensure processingErrors is a proper array
     const processedData = {
       ...workflowData,
@@ -1524,7 +1524,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Teacher Audio Analytics operations
-  async createTeacherAudioMetrics(metrics: InsertTeacherAudioMetrics): Promise<TeacherAudioMetrics> {
+  async createTeacherAudioMetrics(metrics: any): Promise<TeacherAudioMetrics> {
     // Calculate overall score from key metrics
     const overallScore = (
       metrics.encourageInvolvement + 

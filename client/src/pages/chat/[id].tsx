@@ -16,7 +16,7 @@ interface ChatMessage {
 
 export default function ChatClass() {
   const [, params] = useRoute("/chat/:id");
-  const classId = params?.id;
+  const classId = params?.id!;
   
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
