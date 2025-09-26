@@ -245,8 +245,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Create session for the user
-      const { nanoid } = await import('nanoid');
-      const sessionToken = nanoid(32);
+      let sessionToken: string;
+      try {
+        const { nanoid } = await import('nanoid');
+        sessionToken = nanoid(32);
+      } catch (nanoidError: any) {
+        console.error('❌ nanoid import failed, using fallback:', nanoidError);
+        sessionToken = Math.random().toString(36).substring(2, 34);
+      }
       const userAgent = req.headers['user-agent'] || 'Unknown';
       const ipAddress = req.ip || req.connection.remoteAddress || 'Unknown';
       
@@ -289,7 +295,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
       
       // Import email service dynamically to avoid startup errors
-      const { sendEmail, generateResetEmail } = await import('./email');
+      let sendEmail: any, generateResetEmail: any;
+      try {
+        const emailModule = await import('./email');
+        sendEmail = emailModule.sendEmail;
+        generateResetEmail = emailModule.generateResetEmail;
+      } catch (emailError: any) {
+        console.error('❌ Email module import failed:', emailError);
+        return res.status(503).json({ 
+          error: 'Email service temporarily unavailable',
+          details: process.env.NODE_ENV === 'development' ? emailError.message : undefined
+        });
+      }
       
       // Generate email content
       const emailContent = generateResetEmail(email, resetCode);
@@ -3952,7 +3969,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Question is required' });
       }
 
-      const { aiHelpService } = await import('./ai-help');
+      let aiHelpService: any;
+      try {
+        const aiModule = await import('./ai-help');
+        aiHelpService = aiModule.aiHelpService;
+      } catch (aiError: any) {
+        console.error('❌ AI help module import failed:', aiError);
+        return res.status(503).json({ 
+          error: 'AI service temporarily unavailable',
+          details: process.env.NODE_ENV === 'development' ? aiError.message : undefined
+        });
+      }
       const result = await aiHelpService.generateHelpResponse(question, category, userId);
       
       console.log('✅ AI Help Response generated successfully');
@@ -3979,7 +4006,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Analyze ticket sentiment
-      const { aiHelpService } = await import('./ai-help');
+      let aiHelpService: any;
+      try {
+        const aiModule = await import('./ai-help');
+        aiHelpService = aiModule.aiHelpService;
+      } catch (aiError: any) {
+        console.error('❌ AI help module import failed:', aiError);
+        return res.status(503).json({ 
+          error: 'AI service temporarily unavailable',
+          details: process.env.NODE_ENV === 'development' ? aiError.message : undefined
+        });
+      }
       const analysis = await aiHelpService.analyzeTicketSentiment(description);
       
       // Create ticket
@@ -4007,7 +4044,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('📚 Fetching Knowledge Base Articles');
       const { search, category } = req.query;
       
-      const { aiHelpService } = await import('./ai-help');
+      let aiHelpService: any;
+      try {
+        const aiModule = await import('./ai-help');
+        aiHelpService = aiModule.aiHelpService;
+      } catch (aiError: any) {
+        console.error('❌ AI help module import failed:', aiError);
+        return res.status(503).json({ 
+          error: 'AI service temporarily unavailable',
+          details: process.env.NODE_ENV === 'development' ? aiError.message : undefined
+        });
+      }
       if (search) {
         const articles = await aiHelpService.searchKnowledgeBase(search as string, category as string);
         res.json(articles);
