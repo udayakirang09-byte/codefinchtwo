@@ -293,7 +293,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(userData: any): Promise<User> {
-    const [user] = await db.insert(users).values(userData).returning();
+    // Generate UUID manually for Azure PostgreSQL compatibility
+    const { randomUUID } = await import('crypto');
+    const userDataWithId = {
+      ...userData,
+      id: userData.id || randomUUID()
+    };
+    const [user] = await db.insert(users).values(userDataWithId).returning();
     return user;
   }
 
@@ -367,9 +373,12 @@ export class DatabaseStorage implements IStorage {
 
 
   async createMentor(mentorData: InsertMentor): Promise<Mentor> {
+    // Generate UUID manually for Azure PostgreSQL compatibility
+    const { randomUUID } = await import('crypto');
     const data = mentorData as any;
     const processedData = {
       ...mentorData,
+      id: data.id || randomUUID(),
       specialties: data.specialties ? Array.from(data.specialties as string[]) : [],
       availableSlots: data.availableSlots ? Array.from(data.availableSlots as any[]) : []
     };
@@ -410,9 +419,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createStudent(studentData: InsertStudent): Promise<Student> {
+    // Generate UUID manually for Azure PostgreSQL compatibility
+    const { randomUUID } = await import('crypto');
     const data = studentData as any;
     const processedData = {
       ...studentData,
+      id: data.id || randomUUID(),
       interests: data.interests ? Array.from(data.interests as string[]) : []
     };
     const [student] = await db.insert(students).values([processedData]).returning();
