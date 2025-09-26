@@ -98,11 +98,13 @@ jobs:
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-    - name: Sync complete Replit data to Azure
+    - name: Sync complete Replit data to Azure (with safety checks)
       run: |
         echo "🔄 Syncing complete Replit data to Azure database..."
         echo "📊 This will copy all 29 records from Replit → Azure"
-        echo "🗑️ Azure database will be cleared and populated with fresh data"
+        echo "🛡️ SAFETY: Will NOT sync if Azure has >50 records (protects real data)"
+        echo "⚠️ WARNING: Will warn if Azure has 10-50 records"
+        echo "✅ SAFE: Will sync if Azure has <10 records"
         cd server && npx tsx sync-to-azure.ts
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}

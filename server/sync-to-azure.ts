@@ -54,7 +54,51 @@ async function syncDataToAzure() {
       return;
     }
 
-    // Step 2: Clear target database tables (in dependency order)
+    // Step 2: Check Azure database for existing real data
+    console.log("\n🔍 Checking Azure database for existing data...");
+    
+    const currentAzureData = {
+      users: (await db.select().from(users)).length,
+      mentors: (await db.select().from(mentors)).length,
+      students: (await db.select().from(students)).length,
+      bookings: (await db.select().from(bookings)).length,
+      reviews: (await db.select().from(reviews)).length
+    };
+
+    const azureTotalRecords = Object.values(currentAzureData).reduce((sum, count) => sum + count, 0);
+    
+    console.log("📊 Current Azure database counts:");
+    Object.entries(currentAzureData).forEach(([table, count]) => {
+      console.log(`   ${table}: ${count}`);
+    });
+    console.log(`📈 Total Azure records: ${azureTotalRecords}`);
+
+    // Safety check: Don't overwrite significant production data
+    const forceSync = process.env.FORCE_SYNC === 'true';
+    
+    if (azureTotalRecords > 50 && !forceSync) {
+      console.log("\n🛡️ SAFETY CHECK: Azure database contains significant data!");
+      console.log(`❌ Refusing to sync - Azure has ${azureTotalRecords} records (threshold: 50)`);
+      console.log("🔒 This protects your real production data from being overwritten");
+      console.log("💡 To force sync, set FORCE_SYNC=true environment variable");
+      console.log("💡 Or manually clear Azure database first");
+      return;
+    }
+    
+    if (forceSync && azureTotalRecords > 50) {
+      console.log("\n⚠️ FORCE SYNC MODE: Overriding safety check!");
+      console.log(`🔥 Will overwrite ${azureTotalRecords} records in Azure database`);
+    }
+
+    if (azureTotalRecords > 10) {
+      console.log("\n⚠️ WARNING: Azure database has moderate data");
+      console.log(`🔍 Azure: ${azureTotalRecords} records, Replit: ${totalRecords} records`);
+      console.log("🔄 Proceeding with sync (under safety threshold of 50 records)");
+    } else {
+      console.log("\n✅ Safe to sync - Azure has minimal data");
+    }
+
+    // Step 3: Clear target database tables (in dependency order)
     console.log("\n🗑️ Clearing target database tables...");
     
     try {
