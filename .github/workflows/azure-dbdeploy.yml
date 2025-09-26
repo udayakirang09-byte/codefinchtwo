@@ -1,0 +1,203 @@
+name: Azure Database Deployment
+
+on:
+  workflow_call:
+    secrets:
+      DATABASE_URL:
+        required: true
+      AZURE_POSTGRES_PASSWORD:
+        required: true
+
+jobs:
+  deploy-database:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Test Azure database connection
+      run: |
+        echo "🔗 Testing Azure database connection..."
+        node -e "
+          const { Client } = require('pg');
+          const client = new Client({ connectionString: process.env.DATABASE_URL });
+          
+          async function testConnection() {
+            try {
+              await client.connect();
+              const result = await client.query('SELECT current_database(), current_user, COUNT(*) as table_count FROM information_schema.tables WHERE table_schema = \\'public\\'');
+              console.log('✅ Azure database connection successful:', result.rows[0]);
+              await client.end();
+            } catch (err) {
+              console.log('❌ Azure database connection failed:', err.message);
+              process.exit(1);
+            }
+          }
+          
+          testConnection();
+        "
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    - name: Deploy database schema using Drizzle
+      run: |
+        echo "🏗️ Deploying complete database schema to Azure..."
+        npm run db:push --force
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        NODE_ENV: production
+
+    - name: Verify schema deployment
+      run: |
+        echo "🔍 Verifying schema deployment..."
+        node -e "
+          const { Client } = require('pg');
+          const client = new Client({ connectionString: process.env.DATABASE_URL });
+          
+          async function verifySchema() {
+            try {
+              await client.connect();
+              
+              // Check table count
+              const tableResult = await client.query('SELECT COUNT(*) as table_count FROM information_schema.tables WHERE table_schema = \\'public\\'');
+              console.log('📊 Tables deployed:', tableResult.rows[0].table_count);
+              
+              // Check for key tables
+              const keyTables = await client.query(\`
+                SELECT table_name FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name IN ('users', 'mentors', 'students', 'bookings', 'reviews', 'achievements')
+                ORDER BY table_name
+              \`);
+              console.log('🔑 Key tables found:', keyTables.rows.map(r => r.table_name));
+              
+              if (keyTables.rows.length < 6) {
+                console.log('❌ Missing key tables');
+                process.exit(1);
+              }
+              
+              console.log('✅ Schema deployment verified');
+              await client.end();
+            } catch (err) {
+              console.log('❌ Schema verification failed:', err.message);
+              process.exit(1);
+            }
+          }
+          
+          verifySchema();
+        "
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    - name: Check existing data
+      run: |
+        echo "📊 Checking existing data in Azure database..."
+        node -e "
+          const { Client } = require('pg');
+          const client = new Client({ connectionString: process.env.DATABASE_URL });
+          
+          async function checkData() {
+            try {
+              await client.connect();
+              
+              const userResult = await client.query('SELECT COUNT(*) as user_count FROM users');
+              const mentorResult = await client.query('SELECT COUNT(*) as mentor_count FROM mentors');
+              const studentResult = await client.query('SELECT COUNT(*) as student_count FROM students');
+              
+              console.log('👥 Current data counts:');
+              console.log('Users:', userResult.rows[0].user_count);
+              console.log('Mentors:', mentorResult.rows[0].mentor_count);
+              console.log('Students:', studentResult.rows[0].student_count);
+              
+              // If data is insufficient, we'll need to seed
+              const userCount = parseInt(userResult.rows[0].user_count);
+              if (userCount < 15) {
+                console.log('⚠️ Insufficient data detected, seeding required');
+                process.env.NEED_SEEDING = 'true';
+              } else {
+                console.log('✅ Sufficient data exists, skipping seeding');
+                process.env.NEED_SEEDING = 'false';
+              }
+              
+              await client.end();
+            } catch (err) {
+              console.log('📊 No existing data found, seeding required');
+              process.env.NEED_SEEDING = 'true';
+            }
+          }
+          
+          checkData();
+        "
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    - name: Seed database with production data
+      run: |
+        echo "🌱 Seeding Azure database with production data..."
+        cd server && tsx seed.ts
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        NODE_ENV: production
+
+    - name: Verify final database state
+      run: |
+        echo "✅ Verifying final Azure database state..."
+        node -e "
+          const { Client } = require('pg');
+          const client = new Client({ connectionString: process.env.DATABASE_URL });
+          
+          async function verifyFinalState() {
+            try {
+              await client.connect();
+              
+              // Get final counts
+              const userResult = await client.query('SELECT COUNT(*) as count FROM users');
+              const mentorResult = await client.query('SELECT COUNT(*) as count FROM mentors');
+              const studentResult = await client.query('SELECT COUNT(*) as count FROM students');
+              const bookingResult = await client.query('SELECT COUNT(*) as count FROM bookings');
+              
+              console.log('🎉 Final Azure database state:');
+              console.log('Users:', userResult.rows[0].count);
+              console.log('Mentors:', mentorResult.rows[0].count);
+              console.log('Students:', studentResult.rows[0].count);
+              console.log('Bookings:', bookingResult.rows[0].count);
+              
+              // Verify test accounts exist
+              const testAccounts = await client.query(\`
+                SELECT email, role FROM users 
+                WHERE email IN ('teacher@codeconnect.com', 'udayakirang99@gmail.com', 'admin@codeconnect.com')
+                ORDER BY role
+              \`);
+              
+              console.log('🔐 Test accounts verified:');
+              testAccounts.rows.forEach(account => {
+                console.log(\`- \${account.email} (\${account.role})\`);
+              });
+              
+              if (testAccounts.rows.length === 3) {
+                console.log('✅ All test accounts ready');
+              } else {
+                console.log('❌ Missing test accounts');
+                process.exit(1);
+              }
+              
+              await client.end();
+            } catch (err) {
+              console.log('❌ Final verification failed:', err.message);
+              process.exit(1);
+            }
+          }
+          
+          verifyFinalState();
+        "
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
