@@ -11,7 +11,11 @@ import { Video, VideoOff, Mic, MicOff, Users, MessageCircle, Phone, Settings, Al
 
 export default function VideoClass() {
   const [, params] = useRoute("/video-class/:id");
-  const classId = params?.id!;
+  const classId = params?.id;
+  
+  if (!classId) {
+    return <div>Invalid class ID</div>;
+  }
   
   const [teacherAlerts, setTeacherAlerts] = useState<string[]>([]);
   const [multipleLoginUsers, setMultipleLoginUsers] = useState<Array<{userId: string, sessionCount: number, user: any}>>([]);

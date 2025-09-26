@@ -13,7 +13,11 @@ import type { MentorWithUser, ReviewWithDetails } from "@shared/schema";
 export default function MentorProfile() {
   const [match, params] = useRoute("/mentors/:id");
   const [, navigate] = useLocation();
-  const mentorId = params?.id!;
+  const mentorId = params?.id;
+  
+  if (!mentorId) {
+    return <div>Mentor not found</div>;
+  }
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
 
