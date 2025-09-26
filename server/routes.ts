@@ -96,9 +96,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Hash password securely
       console.log('🔐 Hashing password...');
-      const bcrypt = await import('bcrypt');
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(password.trim(), saltRounds);
+      let hashedPassword: string;
+      try {
+        const bcrypt = await import('bcrypt');
+        const saltRounds = 10;
+        hashedPassword = await bcrypt.hash(password.trim(), saltRounds);
+      } catch (bcryptError: any) {
+        console.error('❌ bcrypt import/hash failed:', bcryptError);
+        // Fallback to basic crypto if bcrypt fails on Azure
+        const crypto = await import('crypto');
+        const salt = crypto.randomBytes(16).toString('hex');
+        hashedPassword = crypto.pbkdf2Sync(password.trim(), salt, 1000, 64, 'sha512').toString('hex') + ':' + salt;
+        console.log('⚠️ Using fallback crypto hashing');
+      }
       
       // Create user with hashed password
       console.log('👤 Creating user record...');
@@ -106,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         firstName,
         lastName,
         email: email.trim(),
-        password: hashedPassword, // Store hashed password
+        password: hashedPassword!, // Store hashed password
         role
       });
       
@@ -186,8 +196,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Verify password using bcrypt
-      const bcrypt = await import('bcrypt');
-      const isValidPassword = await bcrypt.compare(password.trim(), user.password);
+      let isValidPassword = false;
+      try {
+        const bcrypt = await import('bcrypt');
+        isValidPassword = await bcrypt.compare(password.trim(), user.password);
+      } catch (bcryptError: any) {
+        console.error('❌ bcrypt import/compare failed, using fallback:', bcryptError);
+        // Fallback crypto verification
+        const crypto = await import('crypto');
+        if (user.password.includes(':')) {
+          const [hash, salt] = user.password.split(':');
+          const hashVerify = crypto.pbkdf2Sync(password.trim(), salt, 1000, 64, 'sha512').toString('hex');
+          isValidPassword = hash === hashVerify;
+        }
+      }
       
       if (!isValidPassword) {
         return res.status(401).json({ message: "Invalid credentials" });
