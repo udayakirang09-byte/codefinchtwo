@@ -2,10 +2,16 @@ import { db } from "./db.js";
 import { users, mentors, students, bookings, reviews, achievements, teacherQualifications, teacherSubjects, successStories } from "../shared/schema.js";
 import { inArray } from "drizzle-orm";
 import { randomUUID } from "crypto";
+import bcrypt from "bcrypt";
 
 async function seedDatabase() {
   try {
     console.log("🌱 Starting database seeding...");
+
+    // Hash the default password for all accounts
+    const defaultPassword = "Hello111";
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+    console.log("🔐 Generated password hash for all accounts");
 
     // Check if specific test accounts already exist to avoid duplicates
     const testAccounts = await db.select().from(users).where(
@@ -32,7 +38,7 @@ async function seedDatabase() {
       {
         id: randomUUID(),
         email: "teacher@codeconnect.com",
-        password: "Hello111",
+        password: hashedPassword,
         firstName: "John",
         lastName: "Smith",
         role: "mentor",
@@ -41,7 +47,7 @@ async function seedDatabase() {
       {
         id: randomUUID(),
         email: "udayakirang99@gmail.com", 
-        password: "Hello111",
+        password: hashedPassword,
         firstName: "Udaya",
         lastName: "Kiran",
         role: "student",
@@ -50,7 +56,7 @@ async function seedDatabase() {
       {
         id: randomUUID(),
         email: "admin@codeconnect.com",
-        password: "Hello111", 
+        password: hashedPassword, 
         firstName: "Admin",
         lastName: "User",
         role: "admin"
@@ -59,7 +65,7 @@ async function seedDatabase() {
       {
         id: randomUUID(),
         email: "sarah.chen@codeconnect.com",
-        password: "Hello111",
+        password: hashedPassword,
         firstName: "Sarah",
         lastName: "Chen",
         role: "mentor",
@@ -68,7 +74,7 @@ async function seedDatabase() {
       {
         id: randomUUID(),
         email: "mike.johnson@codeconnect.com",
-        password: "Hello111",
+        password: hashedPassword,
         firstName: "Mike",
         lastName: "Johnson",
         role: "mentor",
@@ -77,7 +83,7 @@ async function seedDatabase() {
       {
         id: randomUUID(),
         email: "elena.rodriguez@codeconnect.com",
-        password: "Hello111",
+        password: hashedPassword,
         firstName: "Elena",
         lastName: "Rodriguez",
         role: "mentor",
@@ -86,7 +92,7 @@ async function seedDatabase() {
       {
         id: randomUUID(),
         email: "david.kim@codeconnect.com",
-        password: "Hello111",
+        password: hashedPassword,
         firstName: "David",
         lastName: "Kim",
         role: "mentor",
@@ -96,7 +102,7 @@ async function seedDatabase() {
       {
         id: randomUUID(),
         email: "emma.wilson@gmail.com",
-        password: "Hello111",
+        password: hashedPassword,
         firstName: "Emma",
         lastName: "Wilson",
         role: "student",
@@ -105,7 +111,7 @@ async function seedDatabase() {
       {
         id: randomUUID(),
         email: "alex.taylor@gmail.com",
-        password: "Hello111",
+        password: hashedPassword,
         firstName: "Alex",
         lastName: "Taylor",
         role: "student",
@@ -114,7 +120,7 @@ async function seedDatabase() {
       {
         id: randomUUID(),
         email: "maya.patel@gmail.com",
-        password: "Hello111",
+        password: hashedPassword,
         firstName: "Maya",
         lastName: "Patel",
         role: "student",
@@ -123,7 +129,7 @@ async function seedDatabase() {
       {
         id: randomUUID(),
         email: "lucas.brown@gmail.com",
-        password: "Hello111",
+        password: hashedPassword,
         firstName: "Lucas",
         lastName: "Brown",
         role: "student",
@@ -133,7 +139,7 @@ async function seedDatabase() {
       {
         id: randomUUID(),
         email: "sophia.garcia@codeconnect.com",
-        password: "Hello111",
+        password: hashedPassword,
         firstName: "Sophia",
         lastName: "Garcia",
         role: "student",
@@ -142,7 +148,7 @@ async function seedDatabase() {
       {
         id: randomUUID(),
         email: "ethan.davis@gmail.com",
-        password: "Hello111",
+        password: hashedPassword,
         firstName: "Ethan",
         lastName: "Davis",
         role: "student",
@@ -151,7 +157,7 @@ async function seedDatabase() {
       {
         id: randomUUID(),
         email: "olivia.martinez@gmail.com",
-        password: "Hello111",
+        password: hashedPassword,
         firstName: "Olivia",
         lastName: "Martinez",
         role: "student",
@@ -160,7 +166,7 @@ async function seedDatabase() {
       {
         id: randomUUID(),
         email: "liam.anderson@gmail.com",
-        password: "Hello111",
+        password: hashedPassword,
         firstName: "Liam",
         lastName: "Anderson",
         role: "student",
@@ -169,7 +175,7 @@ async function seedDatabase() {
       {
         id: randomUUID(),
         email: "ava.thomas@gmail.com",
-        password: "Hello111",
+        password: hashedPassword,
         firstName: "Ava",
         lastName: "Thomas",
         role: "student",
@@ -178,7 +184,7 @@ async function seedDatabase() {
       {
         id: randomUUID(),
         email: "noah.jackson@gmail.com",
-        password: "Hello111",
+        password: hashedPassword,
         firstName: "Noah",
         lastName: "Jackson",
         role: "student",
@@ -187,7 +193,7 @@ async function seedDatabase() {
       {
         id: randomUUID(),
         email: "isabella.white@gmail.com",
-        password: "Hello111",
+        password: hashedPassword,
         firstName: "Isabella",
         lastName: "White",
         role: "student",
@@ -196,7 +202,7 @@ async function seedDatabase() {
       {
         id: randomUUID(),
         email: "mason.harris@gmail.com",
-        password: "Hello111",
+        password: hashedPassword,
         firstName: "Mason",
         lastName: "Harris",
         role: "student",
@@ -205,7 +211,7 @@ async function seedDatabase() {
       {
         id: randomUUID(),
         email: "mia.clark@gmail.com",
-        password: "Hello111",
+        password: hashedPassword,
         firstName: "Mia",
         lastName: "Clark",
         role: "student",
