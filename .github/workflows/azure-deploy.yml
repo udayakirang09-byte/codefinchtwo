@@ -34,14 +34,22 @@ jobs:
       run: |
         echo "Testing database connection..."
         node -e "
-          const { neon } = require('@neondatabase/serverless');
-          const sql = neon(process.env.DATABASE_URL);
-          sql\`SELECT 1 as test\`.then(result => {
-            console.log('✅ Database connection successful:', result);
-          }).catch(err => {
-            console.log('❌ Database connection failed:', err.message);
-            process.exit(1);
-          });
+          const { Client } = require('pg');
+          const client = new Client({ connectionString: process.env.DATABASE_URL });
+          
+          async function testConnection() {
+            try {
+              await client.connect();
+              const result = await client.query('SELECT 1 as test');
+              console.log('✅ Database connection successful:', result.rows);
+              await client.end();
+            } catch (err) {
+              console.log('❌ Database connection failed:', err.message);
+              process.exit(1);
+            }
+          }
+          
+          testConnection();
         "
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -58,24 +66,28 @@ jobs:
       run: |
         echo "🔍 Verifying tables were created..."
         node -e "
-          const { neon } = require('@neondatabase/serverless');
-          const sql = neon(process.env.DATABASE_URL);
+          const { Client } = require('pg');
+          const client = new Client({ connectionString: process.env.DATABASE_URL });
           
           async function checkTables() {
             try {
-              const tables = await sql\`
+              await client.connect();
+              const result = await client.query(\`
                 SELECT table_name FROM information_schema.tables 
                 WHERE table_schema = 'public' 
                 AND table_name IN ('mentors', 'teacher_audio_metrics', 'home_section_controls')
-              \`;
-              console.log('📊 Found tables:', tables.map(t => t.table_name));
+              \`);
+              const tableNames = result.rows.map(t => t.table_name);
+              console.log('📊 Found tables:', tableNames);
               
-              if (tables.length === 3) {
+              if (result.rows.length === 3) {
                 console.log('✅ All required tables exist');
               } else {
-                console.log('❌ Missing tables - only found:', tables.length);
+                console.log('❌ Missing tables - only found:', result.rows.length);
+                console.log('Expected: mentors, teacher_audio_metrics, home_section_controls');
                 process.exit(1);
               }
+              await client.end();
             } catch (err) {
               console.log('❌ Table verification failed:', err.message);
               process.exit(1);
