@@ -1,5 +1,0 @@
-2025-09-23T12:19:00.9660000Z Job is waiting for a hosted runner to come online.
-2025-09-23T12:19:00.9670000Z Job is about to start running on the hosted runner: GitHub Actions 1000000122
-2025-09-23T12:19:00.9610000Z Requested labels: ubuntu-latest
-2025-09-23T12:19:00.9610000Z Job defined at: udayakirang09-byte/codefinchtwo/.github/workflows/azure-deploy.yml@refs/heads/main
-2025-09-23T12:19:00.9610000Z Waiting for a runner to pick up this job...
