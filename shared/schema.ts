@@ -203,41 +203,17 @@ export const achievementsRelations = relations(achievements, ({ one }) => ({
 }));
 
 // Insert schemas
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertUserSchema = createInsertSchema(users);
 
-export const insertMentorSchema = createInsertSchema(mentors).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  rating: true,
-  totalStudents: true,
-});
+export const insertMentorSchema = createInsertSchema(mentors);
 
-export const insertStudentSchema = createInsertSchema(students).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertStudentSchema = createInsertSchema(students);
 
-export const insertBookingSchema = createInsertSchema(bookings).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertBookingSchema = createInsertSchema(bookings);
 
-export const insertReviewSchema = createInsertSchema(reviews).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertReviewSchema = createInsertSchema(reviews);
 
-export const insertAchievementSchema = createInsertSchema(achievements).omit({
-  id: true,
-  earnedAt: true,
-});
+export const insertAchievementSchema = createInsertSchema(achievements);
 
 // Types
 export type User = typeof users.$inferSelect;
@@ -401,36 +377,17 @@ export const userSessionsRelations = relations(userSessions, ({ one }) => ({
 }));
 
 // Additional Insert Schemas
-export const insertChatSessionSchema = createInsertSchema(chatSessions).omit({
-  id: true,
-  startedAt: true,
-});
+export const insertChatSessionSchema = createInsertSchema(chatSessions);
 
-export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
-  id: true,
-  sentAt: true,
-});
+export const insertChatMessageSchema = createInsertSchema(chatMessages);
 
-export const insertVideoSessionSchema = createInsertSchema(videoSessions).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertVideoSessionSchema = createInsertSchema(videoSessions);
 
-export const insertClassFeedbackSchema = createInsertSchema(classFeedback).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertClassFeedbackSchema = createInsertSchema(classFeedback);
 
-export const insertNotificationSchema = createInsertSchema(notifications).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertNotificationSchema = createInsertSchema(notifications);
 
-export const insertUserSessionSchema = createInsertSchema(userSessions).omit({
-  id: true,
-  createdAt: true,
-  lastActivity: true,
-});
+export const insertUserSessionSchema = createInsertSchema(userSessions);
 
 // Additional Types
 export type ChatSession = typeof chatSessions.$inferSelect;
@@ -501,22 +458,11 @@ export const timeSlotsRelations = relations(timeSlots, ({ one }) => ({
 export const footerLinksRelations = relations(footerLinks, ({ }) => ({}));
 
 // Additional Insert Schemas
-export const insertAdminConfigSchema = createInsertSchema(adminConfig).omit({
-  id: true,
-  updatedAt: true,
-});
+export const insertAdminConfigSchema = createInsertSchema(adminConfig);
 
-export const insertTimeSlotSchema = createInsertSchema(timeSlots).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertTimeSlotSchema = createInsertSchema(timeSlots);
 
-export const insertFooterLinkSchema = createInsertSchema(footerLinks).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertFooterLinkSchema = createInsertSchema(footerLinks);
 
 // Courses Table
 export const courses = pgTable("courses", {
@@ -1140,50 +1086,22 @@ export const insertAudioAnalyticsSchema = createInsertSchema(audioAnalytics).omi
   createdAt: true,
 });
 
-export const insertPredictiveModelSchema = createInsertSchema(predictiveModels).omit({
-  id: true,
-  lastTrained: true,
-  createdAt: true,
-});
+export const insertPredictiveModelSchema = createInsertSchema(predictiveModels);
 
-export const insertCloudDeploymentSchema = createInsertSchema(cloudDeployments).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertCloudDeploymentSchema = createInsertSchema(cloudDeployments);
 
-export const insertTechnologyStackSchema = createInsertSchema(technologyStack).omit({
-  id: true,
-  lastChecked: true,
-  updatedAt: true,
-});
+export const insertTechnologyStackSchema = createInsertSchema(technologyStack);
 
-export const insertQuantumTaskSchema = createInsertSchema(quantumTasks).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertQuantumTaskSchema = createInsertSchema(quantumTasks);
 
-export const insertSuccessStorySchema = createInsertSchema(successStories).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertSuccessStorySchema = createInsertSchema(successStories);
 
 // Help System Insert Schemas
-export const insertHelpTicketSchema = createInsertSchema(helpTickets).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertHelpTicketSchema = createInsertSchema(helpTickets);
 
-export const insertHelpKnowledgeBaseSchema = createInsertSchema(helpKnowledgeBase).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertHelpKnowledgeBaseSchema = createInsertSchema(helpKnowledgeBase);
 
-export const insertHelpTicketMessageSchema = createInsertSchema(helpTicketMessages).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertHelpTicketMessageSchema = createInsertSchema(helpTicketMessages);
 
 // Payment System Types
 export type PaymentMethod = typeof paymentMethods.$inferSelect;
@@ -1451,39 +1369,15 @@ export const subjects = pgTable("subjects", {
 }));
 
 // Insert Schemas
-export const insertForumCategorySchema = createInsertSchema(forumCategories).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertForumCategorySchema = createInsertSchema(forumCategories);
 
-export const insertForumPostSchema = createInsertSchema(forumPosts).omit({
-  id: true,
-  views: true,
-  likes: true,
-  replies: true,
-  lastReplyAt: true,
-  lastReplyByUserId: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertForumPostSchema = createInsertSchema(forumPosts);
 
-export const insertForumReplySchema = createInsertSchema(forumReplies).omit({
-  id: true,
-  likes: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertForumReplySchema = createInsertSchema(forumReplies);
 
-export const insertForumLikeSchema = createInsertSchema(forumLikes).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertForumLikeSchema = createInsertSchema(forumLikes);
 
-export const insertProjectCategorySchema = createInsertSchema(projectCategories).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertProjectCategorySchema = createInsertSchema(projectCategories);
 
 export const insertProjectSchema = createInsertSchema(projects).omit({
   id: true,
@@ -1640,18 +1534,9 @@ export const homeSectionControls = pgTable("home_section_controls", {
 }));
 
 // Schema definitions for teacher audio metrics
-export const insertTeacherAudioMetricsSchema = createInsertSchema(teacherAudioMetrics).omit({
-  id: true,
-  overallScore: true, // calculated automatically
-  computedAt: true,
-  createdAt: true,
-});
+export const insertTeacherAudioMetricsSchema = createInsertSchema(teacherAudioMetrics);
 
-export const insertHomeSectionControlsSchema = createInsertSchema(homeSectionControls).omit({
-  id: true,
-  updatedAt: true,
-  createdAt: true,
-});
+export const insertHomeSectionControlsSchema = createInsertSchema(homeSectionControls);
 
 // Types for teacher audio metrics
 export type TeacherAudioMetrics = typeof teacherAudioMetrics.$inferSelect;
