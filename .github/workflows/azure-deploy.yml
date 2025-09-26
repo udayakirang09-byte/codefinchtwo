@@ -54,20 +54,36 @@ jobs:
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-    - name: Create missing tables directly
+    - name: Complete database refresh
       run: |
-        echo "🔧 Creating missing tables directly on Azure..."
+        echo "🔄 Performing complete database refresh on Azure..."
         node -e "
           const { Client } = require('pg');
           const client = new Client({ connectionString: process.env.DATABASE_URL });
           
-          async function createTables() {
+          async function refreshDatabase() {
             try {
               await client.connect();
               
-              // Create users table first (required for mentors FK)
+              console.log('🗑️ Dropping all existing tables...');
+              
+              // Drop all tables in reverse dependency order
+              const dropQueries = [
+                'DROP TABLE IF EXISTS teacher_audio_metrics CASCADE;',
+                'DROP TABLE IF EXISTS home_section_controls CASCADE;',
+                'DROP TABLE IF EXISTS mentors CASCADE;',
+                'DROP TABLE IF EXISTS users CASCADE;'
+              ];
+              
+              for (const query of dropQueries) {
+                await client.query(query);
+              }
+              
+              console.log('🏗️ Creating fresh database schema...');
+              
+              // Create users table first
               await client.query(\`
-                CREATE TABLE IF NOT EXISTS users (
+                CREATE TABLE users (
                   id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
                   email varchar UNIQUE NOT NULL,
                   password varchar NOT NULL DEFAULT 'Hello111',
@@ -80,11 +96,11 @@ jobs:
                 );
               \`);
               
-              // Create mentors table
+              // Create mentors table with FK to users
               await client.query(\`
-                CREATE TABLE IF NOT EXISTS mentors (
+                CREATE TABLE mentors (
                   id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
-                  user_id varchar NOT NULL,
+                  user_id varchar NOT NULL REFERENCES users(id),
                   title varchar NOT NULL,
                   description text NOT NULL,
                   specialties jsonb DEFAULT '[]'::jsonb,
@@ -100,14 +116,9 @@ jobs:
                 );
               \`);
               
-              // Ensure missing columns exist (fix schema drift)
-              await client.query(\`
-                ALTER TABLE mentors ADD COLUMN IF NOT EXISTS country varchar NOT NULL DEFAULT 'NA-Country';
-              \`);
-              
               // Create teacher_audio_metrics table
               await client.query(\`
-                CREATE TABLE IF NOT EXISTS teacher_audio_metrics (
+                CREATE TABLE teacher_audio_metrics (
                   id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
                   mentor_id varchar NOT NULL,
                   mentor_name varchar NOT NULL,
@@ -125,7 +136,7 @@ jobs:
               
               // Create home_section_controls table
               await client.query(\`
-                CREATE TABLE IF NOT EXISTS home_section_controls (
+                CREATE TABLE home_section_controls (
                   id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
                   section_name varchar UNIQUE NOT NULL,
                   is_visible boolean DEFAULT true,
@@ -140,72 +151,69 @@ jobs:
                 );
               \`);
               
-              console.log('✅ Tables created successfully');
+              console.log('✅ Fresh database schema created successfully');
               await client.end();
             } catch (err) {
-              console.log('❌ Table creation failed:', err.message);
+              console.log('❌ Database refresh failed:', err.message);
               process.exit(1);
             }
           }
           
-          createTables();
+          refreshDatabase();
         "
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-    - name: Seed database with sample data
+    - name: Seed fresh database with sample data
       run: |
-        echo "🌱 Seeding database with sample data..."
+        echo "🌱 Seeding fresh database with sample data..."
         node -e "
           const { Client } = require('pg');
           const client = new Client({ connectionString: process.env.DATABASE_URL });
           
-          async function seedData() {
+          async function seedFreshData() {
             try {
               await client.connect();
               
-              // Seed users first (required for mentors FK)
+              console.log('👥 Seeding users...');
               await client.query(\`
                 INSERT INTO users (id, email, password, role, first_name, last_name) VALUES
                 ('user001', 'mentor1@example.com', 'Hello111', 'mentor', 'Sarah', 'Johnson'),
-                ('user002', 'mentor2@example.com', 'Hello111', 'mentor', 'Michael', 'Chen')
-                ON CONFLICT (id) DO NOTHING;
+                ('user002', 'mentor2@example.com', 'Hello111', 'mentor', 'Michael', 'Chen');
               \`);
               
-              // Seed mentors (now that users exist for FK)
+              console.log('👨‍🏫 Seeding mentors...');
               await client.query(\`
                 INSERT INTO mentors (id, user_id, title, description, experience, country) VALUES 
                 ('ment001', 'user001', 'Senior Python Developer', 'Expert in Python and web development', 5, 'USA'),
-                ('ment002', 'user002', 'JavaScript Mentor', 'Full-stack JavaScript specialist', 3, 'Canada')
-                ON CONFLICT (id) DO NOTHING;
+                ('ment002', 'user002', 'JavaScript Mentor', 'Full-stack JavaScript specialist', 3, 'Canada');
               \`);
               
-              // Seed teacher audio metrics (with fixed IDs for idempotency)
+              console.log('📊 Seeding teacher audio metrics...');
               await client.query(\`
                 INSERT INTO teacher_audio_metrics (id, mentor_id, mentor_name, audio_score, engagement_level, total_sessions) VALUES 
                 ('tam001', 'ment001', 'Dr. Sarah Johnson', 9.2, 'high', 45),
-                ('tam002', 'ment002', 'Prof. Michael Chen', 7.8, 'medium', 32)
-                ON CONFLICT (id) DO NOTHING;
+                ('tam002', 'ment002', 'Prof. Michael Chen', 7.8, 'medium', 32);
               \`);
               
-              // Seed home section controls
+              console.log('🏠 Seeding home section controls...');
               await client.query(\`
                 INSERT INTO home_section_controls (section_name, is_visible, title) VALUES 
                 ('hero', true, 'Welcome to CodeConnect'),
                 ('features', true, 'Our Features'),
-                ('testimonials', true, 'Student Success Stories')
-                ON CONFLICT (section_name) DO NOTHING;
+                ('testimonials', true, 'Student Success Stories');
               \`);
               
-              console.log('✅ Database seeded successfully');
+              console.log('✅ Fresh database seeded successfully with all sample data');
               await client.end();
             } catch (err) {
               console.log('❌ Database seeding failed:', err.message);
+              console.log('Error details:', err);
               process.exit(1);
             }
           }
           
-          seedData();
+          seedFreshData();
         "
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
