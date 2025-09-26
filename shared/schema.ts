@@ -540,18 +540,10 @@ export const teacherProfilesRelations = relations(teacherProfiles, ({ one }) => 
 }));
 
 // Course Insert Schema
-export const insertCourseSchema = createInsertSchema(courses).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertCourseSchema = createInsertSchema(courses);
 
 // Teacher Profile Insert Schema
-export const insertTeacherProfileSchema = createInsertSchema(teacherProfiles).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertTeacherProfileSchema = createInsertSchema(teacherProfiles);
 
 // Additional Types
 export type Course = typeof courses.$inferSelect;
@@ -1024,67 +1016,28 @@ export const helpTicketMessagesRelations = relations(helpTicketMessages, ({ one 
 }));
 
 // Payment System Insert Schemas
-export const insertPaymentMethodSchema = createInsertSchema(paymentMethods).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertPaymentMethodSchema = createInsertSchema(paymentMethods);
 
-export const insertTransactionFeeConfigSchema = createInsertSchema(transactionFeeConfig).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertTransactionFeeConfigSchema = createInsertSchema(transactionFeeConfig);
 
-export const insertPaymentTransactionSchema = createInsertSchema(paymentTransactions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertPaymentTransactionSchema = createInsertSchema(paymentTransactions);
 
-export const insertUnsettledFinanceSchema = createInsertSchema(unsettledFinances).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertUnsettledFinanceSchema = createInsertSchema(unsettledFinances);
 
-export const insertPaymentWorkflowSchema = createInsertSchema(paymentWorkflows).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertPaymentWorkflowSchema = createInsertSchema(paymentWorkflows);
 
 // Insert Schemas for new tables
-export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents).omit({
-  id: true,
-  timestamp: true,
-});
+export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents);
 
-export const insertAiInsightSchema = createInsertSchema(aiInsights).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertAiInsightSchema = createInsertSchema(aiInsights);
 
-export const insertBusinessMetricSchema = createInsertSchema(businessMetrics).omit({
-  id: true,
-  calculatedAt: true,
-});
+export const insertBusinessMetricSchema = createInsertSchema(businessMetrics);
 
-export const insertComplianceMonitoringSchema = createInsertSchema(complianceMonitoring).omit({
-  id: true,
-  detectedAt: true,
-});
+export const insertComplianceMonitoringSchema = createInsertSchema(complianceMonitoring);
 
-export const insertChatAnalyticsSchema = createInsertSchema(chatAnalytics).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertChatAnalyticsSchema = createInsertSchema(chatAnalytics);
 
-export const insertAudioAnalyticsSchema = createInsertSchema(audioAnalytics).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertAudioAnalyticsSchema = createInsertSchema(audioAnalytics);
 
 export const insertPredictiveModelSchema = createInsertSchema(predictiveModels);
 
@@ -1379,69 +1332,25 @@ export const insertForumLikeSchema = createInsertSchema(forumLikes);
 
 export const insertProjectCategorySchema = createInsertSchema(projectCategories);
 
-export const insertProjectSchema = createInsertSchema(projects).omit({
-  id: true,
-  views: true,
-  likes: true,
-  comments: true,
-  publishedAt: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertProjectSchema = createInsertSchema(projects);
 
-export const insertProjectCommentSchema = createInsertSchema(projectComments).omit({
-  id: true,
-  likes: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertProjectCommentSchema = createInsertSchema(projectComments);
 
-export const insertProjectLikeSchema = createInsertSchema(projectLikes).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertProjectLikeSchema = createInsertSchema(projectLikes);
 
-export const insertEventCategorySchema = createInsertSchema(eventCategories).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertEventCategorySchema = createInsertSchema(eventCategories);
 
-export const insertEventSchema = createInsertSchema(events).omit({
-  id: true,
-  currentParticipants: true,
-  publishedAt: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertEventSchema = createInsertSchema(events);
 
-export const insertEventRegistrationSchema = createInsertSchema(eventRegistrations).omit({
-  id: true,
-  attendedAt: true,
-  cancelledAt: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertEventRegistrationSchema = createInsertSchema(eventRegistrations);
 
-export const insertEventCommentSchema = createInsertSchema(eventComments).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertEventCommentSchema = createInsertSchema(eventComments);
 
-export const insertQualificationSchema = createInsertSchema(qualifications).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertQualificationSchema = createInsertSchema(qualifications);
 
-export const insertSpecializationSchema = createInsertSchema(specializations).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertSpecializationSchema = createInsertSchema(specializations);
 
-export const insertSubjectSchema = createInsertSchema(subjects).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertSubjectSchema = createInsertSchema(subjects);
 
 // Types
 export type ForumCategory = typeof forumCategories.$inferSelect;
