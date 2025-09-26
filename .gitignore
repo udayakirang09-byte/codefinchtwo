@@ -29,3 +29,5 @@ server/public/     # we copy build here; don't track it
 server/dist/
 server/.env
 server/.env.*
+.cache/
+.local/
