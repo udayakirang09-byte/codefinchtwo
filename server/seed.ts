@@ -22,11 +22,12 @@ async function seedDatabase() {
       console.log("📝 No test accounts found, creating all production data");
     }
 
-    // Insert only missing users
-    console.log("📝 Inserting missing users...");
+    // Create complete production dataset (19 users total)
+    console.log("📝 Creating complete production dataset...");
     const existingEmails = new Set(testAccounts.map((u: any) => u.email));
     
     const usersToInsert = [
+      // Core test accounts
       {
         email: "teacher@codeconnect.com",
         password: "Hello111",
@@ -49,6 +50,145 @@ async function seedDatabase() {
         firstName: "Admin",
         lastName: "User",
         role: "admin"
+      },
+      // Additional mentors (4 more to reach 5 total)
+      {
+        email: "sarah.chen@codeconnect.com",
+        password: "Hello111",
+        firstName: "Sarah",
+        lastName: "Chen",
+        role: "mentor",
+        profileImageUrl: "https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=150&h=150&fit=crop&crop=face"
+      },
+      {
+        email: "mike.johnson@codeconnect.com",
+        password: "Hello111",
+        firstName: "Mike",
+        lastName: "Johnson",
+        role: "mentor",
+        profileImageUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face"
+      },
+      {
+        email: "elena.rodriguez@codeconnect.com",
+        password: "Hello111",
+        firstName: "Elena",
+        lastName: "Rodriguez",
+        role: "mentor",
+        profileImageUrl: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=150&h=150&fit=crop&crop=face"
+      },
+      {
+        email: "david.kim@codeconnect.com",
+        password: "Hello111",
+        firstName: "David",
+        lastName: "Kim",
+        role: "mentor",
+        profileImageUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
+      },
+      // Additional students (4 more to reach 5 total)
+      {
+        email: "emma.wilson@gmail.com",
+        password: "Hello111",
+        firstName: "Emma",
+        lastName: "Wilson",
+        role: "student",
+        profileImageUrl: "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=150&h=150&fit=crop&crop=face"
+      },
+      {
+        email: "alex.taylor@gmail.com",
+        password: "Hello111",
+        firstName: "Alex",
+        lastName: "Taylor",
+        role: "student",
+        profileImageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
+      },
+      {
+        email: "maya.patel@gmail.com",
+        password: "Hello111",
+        firstName: "Maya",
+        lastName: "Patel",
+        role: "student",
+        profileImageUrl: "https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=150&h=150&fit=crop&crop=face"
+      },
+      {
+        email: "lucas.brown@gmail.com",
+        password: "Hello111",
+        firstName: "Lucas",
+        lastName: "Brown",
+        role: "student",
+        profileImageUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face"
+      },
+      // Additional users for complete dataset (8 more to reach 19 total)
+      {
+        email: "sophia.garcia@codeconnect.com",
+        password: "Hello111",
+        firstName: "Sophia",
+        lastName: "Garcia",
+        role: "student",
+        profileImageUrl: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=150&h=150&fit=crop&crop=face"
+      },
+      {
+        email: "ethan.davis@gmail.com",
+        password: "Hello111",
+        firstName: "Ethan",
+        lastName: "Davis",
+        role: "student",
+        profileImageUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
+      },
+      {
+        email: "olivia.martinez@gmail.com",
+        password: "Hello111",
+        firstName: "Olivia",
+        lastName: "Martinez",
+        role: "student",
+        profileImageUrl: "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=150&h=150&fit=crop&crop=face"
+      },
+      {
+        email: "liam.anderson@gmail.com",
+        password: "Hello111",
+        firstName: "Liam",
+        lastName: "Anderson",
+        role: "student",
+        profileImageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
+      },
+      {
+        email: "ava.thomas@gmail.com",
+        password: "Hello111",
+        firstName: "Ava",
+        lastName: "Thomas",
+        role: "student",
+        profileImageUrl: "https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=150&h=150&fit=crop&crop=face"
+      },
+      {
+        email: "noah.jackson@gmail.com",
+        password: "Hello111",
+        firstName: "Noah",
+        lastName: "Jackson",
+        role: "student",
+        profileImageUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face"
+      },
+      {
+        email: "isabella.white@gmail.com",
+        password: "Hello111",
+        firstName: "Isabella",
+        lastName: "White",
+        role: "student",
+        profileImageUrl: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=150&h=150&fit=crop&crop=face"
+      },
+      {
+        email: "mason.harris@gmail.com",
+        password: "Hello111",
+        firstName: "Mason",
+        lastName: "Harris",
+        role: "student",
+        profileImageUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
+      },
+      {
+        email: "mia.clark@gmail.com",
+        password: "Hello111",
+        firstName: "Mia",
+        lastName: "Clark",
+        role: "student",
+        profileImageUrl: "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=150&h=150&fit=crop&crop=face"
       }
     ].filter(user => !existingEmails.has(user.email));
 
@@ -62,19 +202,23 @@ async function seedDatabase() {
     
     // Combine existing and newly inserted users
     const allUsers = [...testAccounts, ...insertedUsers];
+    console.log(`📊 Total users created: ${allUsers.length}`);
 
-    const teacherUser = allUsers.find((u: any) => u.email === "teacher@codeconnect.com");
-    const studentUser = allUsers.find((u: any) => u.email === "udayakirang99@gmail.com");
+    // Find mentor users (should be 5 total)
+    const mentorUsers = allUsers.filter((u: any) => u.role === "mentor");
+    const studentUsers = allUsers.filter((u: any) => u.role === "student");
+    
+    console.log(`🔍 Found ${mentorUsers.length} mentors and ${studentUsers.length} students`);
 
-    if (!teacherUser || !studentUser) {
-      throw new Error("Failed to create required users");
+    if (mentorUsers.length < 5 || studentUsers.length < 5) {
+      throw new Error(`Insufficient users: need 5 mentors (got ${mentorUsers.length}) and 5 students (got ${studentUsers.length})`);
     }
 
-    // Insert mentor
-    console.log("👨‍🏫 Inserting mentor...");
-    const insertedMentors = await db.insert(mentors).values([
+    // Insert all 5 mentors
+    console.log("👨‍🏫 Inserting 5 mentors...");
+    const mentorData = [
       {
-        userId: teacherUser.id,
+        userId: mentorUsers[0].id, // teacher@codeconnect.com
         title: "Senior JavaScript Developer & Mentor",
         description: "Experienced software developer with 8+ years in the industry. Specializes in JavaScript, React, and Node.js. Passionate about teaching programming fundamentals and helping students build real-world projects.",
         specialties: ["JavaScript", "React", "Node.js", "Web Development", "Programming Fundamentals"],
@@ -85,20 +229,104 @@ async function seedDatabase() {
           { day: "Wednesday", times: ["10:00"] },
           { day: "Friday", times: ["15:00"] }
         ]
-      }
-    ]).returning();
-
-    // Insert student
-    console.log("👨‍🎓 Inserting student...");
-    const insertedStudents = await db.insert(students).values([
+      },
       {
-        userId: studentUser.id,
+        userId: mentorUsers[1].id, // sarah.chen@codeconnect.com
+        title: "Frontend React Specialist",
+        description: "React expert with 6 years of experience in building modern web applications. Specializes in component architecture, state management, and performance optimization.",
+        specialties: ["React", "TypeScript", "Redux", "CSS-in-JS", "Testing"],
+        experience: 6,
+        hourlyRate: "40.00",
+        availableSlots: [
+          { day: "Tuesday", times: ["10:00", "15:00"] },
+          { day: "Thursday", times: ["09:00"] },
+          { day: "Saturday", times: ["11:00"] }
+        ]
+      },
+      {
+        userId: mentorUsers[2].id, // mike.johnson@codeconnect.com
+        title: "Full-Stack Python Developer",
+        description: "Full-stack developer with expertise in Python, Django, and modern JavaScript frameworks. Passionate about teaching clean code principles and software architecture.",
+        specialties: ["Python", "Django", "PostgreSQL", "Docker", "API Design"],
+        experience: 7,
+        hourlyRate: "50.00",
+        availableSlots: [
+          { day: "Monday", times: ["11:00"] },
+          { day: "Wednesday", times: ["14:00", "16:00"] },
+          { day: "Friday", times: ["09:00"] }
+        ]
+      },
+      {
+        userId: mentorUsers[3].id, // elena.rodriguez@codeconnect.com
+        title: "Mobile App Development Expert",
+        description: "Mobile development specialist with experience in React Native and Flutter. Helps students build cross-platform mobile applications from scratch.",
+        specialties: ["React Native", "Flutter", "Mobile UX", "API Integration", "App Store Deployment"],
+        experience: 5,
+        hourlyRate: "42.00",
+        availableSlots: [
+          { day: "Tuesday", times: ["13:00"] },
+          { day: "Thursday", times: ["10:00", "15:00"] },
+          { day: "Sunday", times: ["14:00"] }
+        ]
+      },
+      {
+        userId: mentorUsers[4].id, // david.kim@codeconnect.com
+        title: "Data Science & AI Mentor",
+        description: "Data scientist with 9 years of experience in machine learning and AI. Teaches practical data science skills and helps students build AI-powered applications.",
+        specialties: ["Python", "Machine Learning", "Data Analysis", "TensorFlow", "Jupyter"],
+        experience: 9,
+        hourlyRate: "55.00",
+        availableSlots: [
+          { day: "Wednesday", times: ["09:00"] },
+          { day: "Friday", times: ["11:00", "16:00"] },
+          { day: "Saturday", times: ["10:00"] }
+        ]
+      }
+    ];
+
+    const insertedMentors = await db.insert(mentors).values(mentorData).returning();
+
+    // Insert all 5 students
+    console.log("👨‍🎓 Inserting 5 students...");
+    const studentData = [
+      {
+        userId: studentUsers[0].id, // udayakirang99@gmail.com
         age: 16,
         interests: ["JavaScript", "Web Development", "Game Development"],
         skillLevel: "beginner",
         parentEmail: "parent@example.com"
+      },
+      {
+        userId: studentUsers[1].id, // emma.wilson@gmail.com
+        age: 15,
+        interests: ["React", "Frontend Design", "UI/UX"],
+        skillLevel: "beginner",
+        parentEmail: "parent.wilson@gmail.com"
+      },
+      {
+        userId: studentUsers[2].id, // alex.taylor@gmail.com
+        age: 17,
+        interests: ["Python", "Data Science", "Machine Learning"],
+        skillLevel: "intermediate",
+        parentEmail: "parent.taylor@gmail.com"
+      },
+      {
+        userId: studentUsers[3].id, // maya.patel@gmail.com
+        age: 16,
+        interests: ["Mobile Development", "React Native", "App Design"],
+        skillLevel: "beginner",
+        parentEmail: "parent.patel@gmail.com"
+      },
+      {
+        userId: studentUsers[4].id, // lucas.brown@gmail.com
+        age: 18,
+        interests: ["Full Stack", "Node.js", "Database Design"],
+        skillLevel: "intermediate",
+        parentEmail: "parent.brown@gmail.com"
       }
-    ]).returning();
+    ];
+
+    const insertedStudents = await db.insert(students).values(studentData).returning();
 
     const mentor = insertedMentors[0];
     const student = insertedStudents[0];
@@ -221,7 +449,12 @@ async function seedDatabase() {
     ]);
 
     console.log("✅ Database seeding completed successfully!");
-    console.log("🔐 Test accounts created:");
+    console.log("📊 Production dataset created:");
+    console.log("   - 19 users total");
+    console.log("   - 5 mentors with specialties");
+    console.log("   - 5 students with interests");
+    console.log("   - Complete relational data");
+    console.log("🔐 Test accounts available:");
     console.log("   - teacher@codeconnect.com / Hello111 (mentor)");
     console.log("   - udayakirang99@gmail.com / Hello111 (student)");
     console.log("   - admin@codeconnect.com / Hello111 (admin)");
