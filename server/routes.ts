@@ -75,8 +75,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Signup endpoint
   app.post("/api/auth/signup", async (req, res) => {
     try {
-      console.log('🚀 Signup request received:', { 
-        body: { ...req.body, password: '[HIDDEN]' } 
+      console.log('🚀 [AZURE DEBUG] Signup request received:', { 
+        body: { ...req.body, password: '[HIDDEN]' },
+        headers: req.headers,
+        ip: req.ip,
+        nodeEnv: process.env.NODE_ENV,
+        hasDatabaseUrl: !!process.env.DATABASE_URL
       });
       
       const { firstName, lastName, email, password, role, mentorData }: {
@@ -193,10 +197,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/auth/login", async (req, res) => {
     try {
+      console.log('🔐 [AZURE DEBUG] Login attempt:', {
+        email: req.body?.email,
+        hasPassword: !!req.body?.password,
+        body: req.body,
+        headers: req.headers,
+        ip: req.ip,
+        nodeEnv: process.env.NODE_ENV,
+        hasDatabaseUrl: !!process.env.DATABASE_URL
+      });
+      
       const { email, password }: { email: string; password: string } = req.body;
       
       // Check credentials against database users
+      console.log('🔍 [AZURE DEBUG] Looking up user:', email?.trim());
       const user = await storage.getUserByEmail(email.trim());
+      console.log('👤 [AZURE DEBUG] User lookup result:', {
+        found: !!user,
+        userRole: user?.role,
+        userId: user?.id
+      });
       
       if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
