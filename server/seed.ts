@@ -13,18 +13,18 @@ async function seedDatabase() {
     
     if (testAccounts.length === 3) {
       console.log("✅ All test accounts already exist, skipping seed");
-      console.log("🔐 Found test accounts:", testAccounts.map(u => `${u.email} (${u.role})`));
+      console.log("🔐 Found test accounts:", testAccounts.map((u: any) => `${u.email} (${u.role})`));
       return;
     } else if (testAccounts.length > 0) {
       console.log(`⚠️ Only ${testAccounts.length}/3 test accounts exist, will create missing accounts`);
-      console.log("🔐 Existing test accounts:", testAccounts.map(u => `${u.email} (${u.role})`));
+      console.log("🔐 Existing test accounts:", testAccounts.map((u: any) => `${u.email} (${u.role})`));
     } else {
       console.log("📝 No test accounts found, creating all production data");
     }
 
     // Insert only missing users
     console.log("📝 Inserting missing users...");
-    const existingEmails = new Set(testAccounts.map(u => u.email));
+    const existingEmails = new Set(testAccounts.map((u: any) => u.email));
     
     const usersToInsert = [
       {
@@ -54,7 +54,7 @@ async function seedDatabase() {
 
     let insertedUsers = [];
     if (usersToInsert.length > 0) {
-      console.log("📝 Creating missing accounts:", usersToInsert.map(u => u.email));
+      console.log("📝 Creating missing accounts:", usersToInsert.map((u: any) => u.email));
       insertedUsers = await db.insert(users).values(usersToInsert).returning();
     } else {
       console.log("📝 No new users to create");

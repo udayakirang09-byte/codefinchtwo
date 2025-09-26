@@ -114,7 +114,7 @@ async function syncDataToAzure() {
       await db.delete(users);
       
       console.log("✅ Target tables cleared successfully");
-    } catch (error) {
+    } catch (error: any) {
       console.log("⚠️ Some tables may already be empty:", error.message);
     }
 
@@ -233,7 +233,7 @@ async function syncDataToAzure() {
     );
     
     console.log("🔐 Test accounts found:");
-    testAccounts.forEach(account => {
+    testAccounts.forEach((account: any) => {
       console.log(`   - ${account.email} (${account.role})`);
     });
 
