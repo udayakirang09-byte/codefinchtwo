@@ -18,11 +18,12 @@ import type { MentorWithUser } from "@shared/schema";
 export default function Booking() {
   const [, navigate] = useLocation();
   const [match, params] = useRoute("/booking/:mentorId");
-  const mentorId = params?.mentorId;
   
-  if (!mentorId) {
+  if (!params) {
     return <div>Invalid mentor ID</div>;
   }
+  
+  const mentorId = (params as { mentorId: string }).mentorId;
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();

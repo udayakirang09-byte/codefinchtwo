@@ -9,11 +9,12 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function FeedbackForm() {
   const [, params] = useRoute("/feedback/:id");
-  const classId = params?.id;
   
-  if (!classId) {
+  if (!params) {
     return <div>Invalid class ID</div>;
   }
+  
+  const classId = (params as { id: string }).id;
   const { toast } = useToast();
   
   const [rating, setRating] = useState(0);
