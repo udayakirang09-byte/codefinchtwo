@@ -1,20 +1,32 @@
 import { db } from "./db.js";
 import { users, mentors, students, bookings, reviews, achievements, teacherQualifications, teacherSubjects, successStories } from "../shared/schema.js";
+import { inArray } from "drizzle-orm";
 
 async function seedDatabase() {
   try {
     console.log("🌱 Starting database seeding...");
 
-    // Check if data already exists to avoid duplicates
-    const existingUsers = await db.select().from(users).limit(1);
-    if (existingUsers.length > 0) {
-      console.log("✅ Database already has data, skipping seed");
+    // Check if specific test accounts already exist to avoid duplicates
+    const testAccounts = await db.select().from(users).where(
+      inArray(users.email, ['teacher@codeconnect.com', 'udayakirang99@gmail.com', 'admin@codeconnect.com'])
+    );
+    
+    if (testAccounts.length === 3) {
+      console.log("✅ All test accounts already exist, skipping seed");
+      console.log("🔐 Found test accounts:", testAccounts.map(u => `${u.email} (${u.role})`));
       return;
+    } else if (testAccounts.length > 0) {
+      console.log(`⚠️ Only ${testAccounts.length}/3 test accounts exist, will create missing accounts`);
+      console.log("🔐 Existing test accounts:", testAccounts.map(u => `${u.email} (${u.role})`));
+    } else {
+      console.log("📝 No test accounts found, creating all production data");
     }
 
-    // Insert users
-    console.log("📝 Inserting users...");
-    const insertedUsers = await db.insert(users).values([
+    // Insert only missing users
+    console.log("📝 Inserting missing users...");
+    const existingEmails = new Set(testAccounts.map(u => u.email));
+    
+    const usersToInsert = [
       {
         email: "teacher@codeconnect.com",
         password: "Hello111",
@@ -38,10 +50,21 @@ async function seedDatabase() {
         lastName: "User",
         role: "admin"
       }
-    ]).returning();
+    ].filter(user => !existingEmails.has(user.email));
 
-    const teacherUser = insertedUsers.find((u: any) => u.email === "teacher@codeconnect.com");
-    const studentUser = insertedUsers.find((u: any) => u.email === "udayakirang99@gmail.com");
+    let insertedUsers = [];
+    if (usersToInsert.length > 0) {
+      console.log("📝 Creating missing accounts:", usersToInsert.map(u => u.email));
+      insertedUsers = await db.insert(users).values(usersToInsert).returning();
+    } else {
+      console.log("📝 No new users to create");
+    }
+    
+    // Combine existing and newly inserted users
+    const allUsers = [...testAccounts, ...insertedUsers];
+
+    const teacherUser = allUsers.find((u: any) => u.email === "teacher@codeconnect.com");
+    const studentUser = allUsers.find((u: any) => u.email === "udayakirang99@gmail.com");
 
     if (!teacherUser || !studentUser) {
       throw new Error("Failed to create required users");
