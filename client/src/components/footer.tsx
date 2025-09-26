@@ -127,11 +127,6 @@ export default function Footer() {
             <h3 className="font-semibold text-lg mb-4" data-testid="text-support-section">Support</h3>
             <ul className="space-y-2 text-white/80">
               <li>
-                <Link href="/help" className="hover:text-white transition-colors" data-testid="link-help-center">
-                  Help Center
-                </Link>
-              </li>
-              <li>
                 <Link href="/safety-guidelines" className="hover:text-white transition-colors" data-testid="link-safety-guidelines">
                   Safety Guidelines
                 </Link>
