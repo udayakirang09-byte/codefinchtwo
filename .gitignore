@@ -1,20 +1,138 @@
-# root
+# Dependencies
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Production builds
 dist/
-*.log
+build/
+.next/
+.nuxt/
+.vuepress/dist/
+
+# Environment variables
 .env
 .env.*
-.replit
-replit.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env.test
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+
+# Gatsby files
+.cache/
+public
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
 .DS_Store
+*.swp
+*.swo
+*~
+
+# OS generated files
 Thumbs.db
-*.zip
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 
-# replit-generated assets (big/noisy)
+# Replit specific files - COMPREHENSIVE
+.replit
+.replit/*
+replit.*
+.cache/
+.cache/**/*
+.local/
+.local/**/*
+.upm/
+.upm/**/*
+.config/
+.config/**/*
 attached_assets/
-attached_assets/**
+attached_assets/**/*
 
-# client: keep src/public, ignore generated stuff
+# Python cache (if any Python tools)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Client specific ignores
 client/node_modules/
 client/dist/
 client/build/
@@ -23,11 +141,65 @@ client/.cache/
 client/.env
 client/.env.*
 
-# server
+# Server specific ignores
 server/node_modules/
-server/public/     # we copy build here; don't track it
+server/public/
 server/dist/
 server/.env
 server/.env.*
-.cache/
-.local/
+
+# Package managers
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# IDE and editor files
+*.sublime-project
+*.sublime-workspace
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Testing
+coverage/
+.nyc_output/
+junit.xml
+
+# Linting
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# yarn v2
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
