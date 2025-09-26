@@ -81,9 +81,6 @@ jobs:
               
               console.log('🏗️ Creating fresh database schema...');
               
-              // Enable pgcrypto extension for UUID generation
-              await client.query('CREATE EXTENSION IF NOT EXISTS pgcrypto;');
-              
               // Create users table first
               await client.query(\`
                 CREATE TABLE users (
@@ -201,10 +198,10 @@ jobs:
               
               console.log('🏠 Seeding home section controls...');
               await client.query(\`
-                INSERT INTO home_section_controls (section_name, is_visible, title) VALUES 
-                ('hero', true, 'Welcome to CodeConnect'),
-                ('features', true, 'Our Features'),
-                ('testimonials', true, 'Student Success Stories');
+                INSERT INTO home_section_controls (id, section_name, is_visible, title) VALUES 
+                ('home-hero', 'hero', true, 'Welcome to CodeConnect'),
+                ('home-features', 'features', true, 'Our Features'),
+                ('home-testimonials', 'testimonials', true, 'Student Success Stories');
               \`);
               
               console.log('✅ Fresh database seeded successfully with all sample data');
