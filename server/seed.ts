@@ -1,6 +1,7 @@
 import { db } from "./db.js";
 import { users, mentors, students, bookings, reviews, achievements, teacherQualifications, teacherSubjects, successStories } from "../shared/schema.js";
 import { inArray } from "drizzle-orm";
+import { randomUUID } from "crypto";
 
 async function seedDatabase() {
   try {
@@ -29,6 +30,7 @@ async function seedDatabase() {
     const usersToInsert = [
       // Core test accounts
       {
+        id: randomUUID(),
         email: "teacher@codeconnect.com",
         password: "Hello111",
         firstName: "John",
@@ -37,6 +39,7 @@ async function seedDatabase() {
         profileImageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
       },
       {
+        id: randomUUID(),
         email: "udayakirang99@gmail.com", 
         password: "Hello111",
         firstName: "Udaya",
@@ -45,6 +48,7 @@ async function seedDatabase() {
         profileImageUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
       },
       {
+        id: randomUUID(),
         email: "admin@codeconnect.com",
         password: "Hello111", 
         firstName: "Admin",
@@ -53,6 +57,7 @@ async function seedDatabase() {
       },
       // Additional mentors (4 more to reach 5 total)
       {
+        id: randomUUID(),
         email: "sarah.chen@codeconnect.com",
         password: "Hello111",
         firstName: "Sarah",
@@ -61,6 +66,7 @@ async function seedDatabase() {
         profileImageUrl: "https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=150&h=150&fit=crop&crop=face"
       },
       {
+        id: randomUUID(),
         email: "mike.johnson@codeconnect.com",
         password: "Hello111",
         firstName: "Mike",
@@ -69,6 +75,7 @@ async function seedDatabase() {
         profileImageUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face"
       },
       {
+        id: randomUUID(),
         email: "elena.rodriguez@codeconnect.com",
         password: "Hello111",
         firstName: "Elena",
@@ -77,6 +84,7 @@ async function seedDatabase() {
         profileImageUrl: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=150&h=150&fit=crop&crop=face"
       },
       {
+        id: randomUUID(),
         email: "david.kim@codeconnect.com",
         password: "Hello111",
         firstName: "David",
@@ -86,6 +94,7 @@ async function seedDatabase() {
       },
       // Additional students (4 more to reach 5 total)
       {
+        id: randomUUID(),
         email: "emma.wilson@gmail.com",
         password: "Hello111",
         firstName: "Emma",
@@ -94,6 +103,7 @@ async function seedDatabase() {
         profileImageUrl: "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=150&h=150&fit=crop&crop=face"
       },
       {
+        id: randomUUID(),
         email: "alex.taylor@gmail.com",
         password: "Hello111",
         firstName: "Alex",
@@ -102,6 +112,7 @@ async function seedDatabase() {
         profileImageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
       },
       {
+        id: randomUUID(),
         email: "maya.patel@gmail.com",
         password: "Hello111",
         firstName: "Maya",
@@ -110,6 +121,7 @@ async function seedDatabase() {
         profileImageUrl: "https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=150&h=150&fit=crop&crop=face"
       },
       {
+        id: randomUUID(),
         email: "lucas.brown@gmail.com",
         password: "Hello111",
         firstName: "Lucas",
@@ -119,6 +131,7 @@ async function seedDatabase() {
       },
       // Additional users for complete dataset (8 more to reach 19 total)
       {
+        id: randomUUID(),
         email: "sophia.garcia@codeconnect.com",
         password: "Hello111",
         firstName: "Sophia",
@@ -127,6 +140,7 @@ async function seedDatabase() {
         profileImageUrl: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=150&h=150&fit=crop&crop=face"
       },
       {
+        id: randomUUID(),
         email: "ethan.davis@gmail.com",
         password: "Hello111",
         firstName: "Ethan",
@@ -135,6 +149,7 @@ async function seedDatabase() {
         profileImageUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
       },
       {
+        id: randomUUID(),
         email: "olivia.martinez@gmail.com",
         password: "Hello111",
         firstName: "Olivia",
@@ -143,6 +158,7 @@ async function seedDatabase() {
         profileImageUrl: "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=150&h=150&fit=crop&crop=face"
       },
       {
+        id: randomUUID(),
         email: "liam.anderson@gmail.com",
         password: "Hello111",
         firstName: "Liam",
@@ -151,6 +167,7 @@ async function seedDatabase() {
         profileImageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
       },
       {
+        id: randomUUID(),
         email: "ava.thomas@gmail.com",
         password: "Hello111",
         firstName: "Ava",
@@ -159,6 +176,7 @@ async function seedDatabase() {
         profileImageUrl: "https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=150&h=150&fit=crop&crop=face"
       },
       {
+        id: randomUUID(),
         email: "noah.jackson@gmail.com",
         password: "Hello111",
         firstName: "Noah",
@@ -167,6 +185,7 @@ async function seedDatabase() {
         profileImageUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face"
       },
       {
+        id: randomUUID(),
         email: "isabella.white@gmail.com",
         password: "Hello111",
         firstName: "Isabella",
@@ -175,6 +194,7 @@ async function seedDatabase() {
         profileImageUrl: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=150&h=150&fit=crop&crop=face"
       },
       {
+        id: randomUUID(),
         email: "mason.harris@gmail.com",
         password: "Hello111",
         firstName: "Mason",
@@ -183,6 +203,7 @@ async function seedDatabase() {
         profileImageUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
       },
       {
+        id: randomUUID(),
         email: "mia.clark@gmail.com",
         password: "Hello111",
         firstName: "Mia",
@@ -218,6 +239,7 @@ async function seedDatabase() {
     console.log("👨‍🏫 Inserting 5 mentors...");
     const mentorData = [
       {
+        id: randomUUID(),
         userId: mentorUsers[0].id, // teacher@codeconnect.com
         title: "Senior JavaScript Developer & Mentor",
         description: "Experienced software developer with 8+ years in the industry. Specializes in JavaScript, React, and Node.js. Passionate about teaching programming fundamentals and helping students build real-world projects.",
@@ -231,6 +253,7 @@ async function seedDatabase() {
         ]
       },
       {
+        id: randomUUID(),
         userId: mentorUsers[1].id, // sarah.chen@codeconnect.com
         title: "Frontend React Specialist",
         description: "React expert with 6 years of experience in building modern web applications. Specializes in component architecture, state management, and performance optimization.",
@@ -244,6 +267,7 @@ async function seedDatabase() {
         ]
       },
       {
+        id: randomUUID(),
         userId: mentorUsers[2].id, // mike.johnson@codeconnect.com
         title: "Full-Stack Python Developer",
         description: "Full-stack developer with expertise in Python, Django, and modern JavaScript frameworks. Passionate about teaching clean code principles and software architecture.",
@@ -257,6 +281,7 @@ async function seedDatabase() {
         ]
       },
       {
+        id: randomUUID(),
         userId: mentorUsers[3].id, // elena.rodriguez@codeconnect.com
         title: "Mobile App Development Expert",
         description: "Mobile development specialist with experience in React Native and Flutter. Helps students build cross-platform mobile applications from scratch.",
@@ -270,6 +295,7 @@ async function seedDatabase() {
         ]
       },
       {
+        id: randomUUID(),
         userId: mentorUsers[4].id, // david.kim@codeconnect.com
         title: "Data Science & AI Mentor",
         description: "Data scientist with 9 years of experience in machine learning and AI. Teaches practical data science skills and helps students build AI-powered applications.",
@@ -290,6 +316,7 @@ async function seedDatabase() {
     console.log("👨‍🎓 Inserting 5 students...");
     const studentData = [
       {
+        id: randomUUID(),
         userId: studentUsers[0].id, // udayakirang99@gmail.com
         age: 16,
         interests: ["JavaScript", "Web Development", "Game Development"],
@@ -297,6 +324,7 @@ async function seedDatabase() {
         parentEmail: "parent@example.com"
       },
       {
+        id: randomUUID(),
         userId: studentUsers[1].id, // emma.wilson@gmail.com
         age: 15,
         interests: ["React", "Frontend Design", "UI/UX"],
@@ -304,6 +332,7 @@ async function seedDatabase() {
         parentEmail: "parent.wilson@gmail.com"
       },
       {
+        id: randomUUID(),
         userId: studentUsers[2].id, // alex.taylor@gmail.com
         age: 17,
         interests: ["Python", "Data Science", "Machine Learning"],
@@ -311,6 +340,7 @@ async function seedDatabase() {
         parentEmail: "parent.taylor@gmail.com"
       },
       {
+        id: randomUUID(),
         userId: studentUsers[3].id, // maya.patel@gmail.com
         age: 16,
         interests: ["Mobile Development", "React Native", "App Design"],
@@ -318,6 +348,7 @@ async function seedDatabase() {
         parentEmail: "parent.patel@gmail.com"
       },
       {
+        id: randomUUID(),
         userId: studentUsers[4].id, // lucas.brown@gmail.com
         age: 18,
         interests: ["Full Stack", "Node.js", "Database Design"],
@@ -335,6 +366,7 @@ async function seedDatabase() {
     console.log("📅 Inserting bookings...");
     const insertedBookings = await db.insert(bookings).values([
       {
+        id: randomUUID(),
         studentId: student.id,
         mentorId: mentor.id,
         scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
@@ -343,9 +375,10 @@ async function seedDatabase() {
         notes: "Introduction to JavaScript fundamentals"
       },
       {
+        id: randomUUID(),
         studentId: student.id,
         mentorId: mentor.id,
-        scheduledAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last week
+        scheduledAt: new Date(Date.now() - 7 * 24 * 60 * 1000), // Last week
         duration: 60,
         status: "completed",
         notes: "Completed lesson on variables and functions"
@@ -356,6 +389,7 @@ async function seedDatabase() {
     console.log("⭐ Inserting reviews...");
     await db.insert(reviews).values([
       {
+        id: randomUUID(),
         bookingId: insertedBookings[1].id, // For completed booking
         studentId: student.id,
         mentorId: mentor.id,
@@ -368,12 +402,14 @@ async function seedDatabase() {
     console.log("🏆 Inserting achievements...");
     await db.insert(achievements).values([
       {
+        id: randomUUID(),
         studentId: student.id,
         title: "First Steps",
         description: "Completed your first coding lesson",
         badgeIcon: "🎯"
       },
       {
+        id: randomUUID(),
         studentId: student.id,
         title: "JavaScript Basics",
         description: "Mastered JavaScript variables and functions",
@@ -385,6 +421,7 @@ async function seedDatabase() {
     console.log("🎓 Inserting teacher qualifications...");
     await db.insert(teacherQualifications).values([
       {
+        id: randomUUID(),
         mentorId: mentor.id,
         qualification: "Bachelor of Science in Computer Science",
         specialization: "Software Engineering",
@@ -392,6 +429,7 @@ async function seedDatabase() {
         priority: 1
       },
       {
+        id: randomUUID(),
         mentorId: mentor.id,
         qualification: "Certified JavaScript Developer",
         specialization: "Frontend Development", 
@@ -404,18 +442,21 @@ async function seedDatabase() {
     console.log("📖 Inserting teacher subjects...");
     await db.insert(teacherSubjects).values([
       {
+        id: randomUUID(),
         mentorId: mentor.id,
         subject: "JavaScript Programming",
         experience: "5 years",
         priority: 1
       },
       {
+        id: randomUUID(),
         mentorId: mentor.id,
         subject: "React Development",
         experience: "4 years", 
         priority: 2
       },
       {
+        id: randomUUID(),
         mentorId: mentor.id,
         subject: "Node.js Backend",
         experience: "3 years",
@@ -427,6 +468,7 @@ async function seedDatabase() {
     console.log("🌟 Inserting success stories...");
     await db.insert(successStories).values([
       {
+        id: randomUUID(),
         studentName: "Sarah M.",
         mentorName: "teacher@codeconnect.com",
         studentAge: 16,
@@ -437,6 +479,7 @@ async function seedDatabase() {
         featured: true
       },
       {
+        id: randomUUID(),
         studentName: "Alex K.",
         mentorName: "teacher@codeconnect.com",
         studentAge: 17,
