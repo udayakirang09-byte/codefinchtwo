@@ -85,6 +85,11 @@ jobs:
                 );
               \`);
               
+              // Ensure missing columns exist (fix schema drift)
+              await client.query(\`
+                ALTER TABLE mentors ADD COLUMN IF NOT EXISTS country varchar NOT NULL DEFAULT 'NA-Country';
+              \`);
+              
               // Create teacher_audio_metrics table
               await client.query(\`
                 CREATE TABLE IF NOT EXISTS teacher_audio_metrics (
@@ -144,7 +149,7 @@ jobs:
             try {
               await client.connect();
               
-              // Seed mentors
+              // Seed mentors (now that country column is guaranteed to exist)
               await client.query(\`
                 INSERT INTO mentors (id, user_id, title, description, experience, country) VALUES 
                 ('ment001', 'user001', 'Senior Python Developer', 'Expert in Python and web development', 5, 'USA'),
@@ -152,11 +157,11 @@ jobs:
                 ON CONFLICT (id) DO NOTHING;
               \`);
               
-              // Seed teacher audio metrics
+              // Seed teacher audio metrics (with fixed IDs for idempotency)
               await client.query(\`
-                INSERT INTO teacher_audio_metrics (mentor_id, mentor_name, audio_score, engagement_level, total_sessions) VALUES 
-                ('ment001', 'Dr. Sarah Johnson', 9.2, 'high', 45),
-                ('ment002', 'Prof. Michael Chen', 7.8, 'medium', 32)
+                INSERT INTO teacher_audio_metrics (id, mentor_id, mentor_name, audio_score, engagement_level, total_sessions) VALUES 
+                ('tam001', 'ment001', 'Dr. Sarah Johnson', 9.2, 'high', 45),
+                ('tam002', 'ment002', 'Prof. Michael Chen', 7.8, 'medium', 32)
                 ON CONFLICT (id) DO NOTHING;
               \`);
               
