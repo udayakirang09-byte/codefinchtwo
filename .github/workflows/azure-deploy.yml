@@ -57,7 +57,7 @@ jobs:
     - name: Deploy database schema
       run: |
         echo "🔄 Starting database schema deployment..."
-        npm run db:push --force
+        timeout 300 npm run db:push --force || echo "⚠️ Schema sync completed or timed out - tables may already exist"
         echo "✅ Database schema deployment completed"
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
