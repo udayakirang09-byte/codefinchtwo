@@ -75,20 +75,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Signup endpoint
   app.post("/api/auth/signup", async (req, res) => {
     try {
+      console.log('🚀 Signup request received:', { 
+        body: { ...req.body, password: '[HIDDEN]' } 
+      });
+      
       const { firstName, lastName, email, password, role, mentorData } = req.body;
       
+      if (!firstName || !lastName || !email || !password || !role) {
+        console.error('❌ Missing required fields');
+        return res.status(400).json({ message: "All fields are required" });
+      }
+      
       // Check if user already exists
+      console.log('🔍 Checking if user exists...');
       const existingUser = await storage.getUserByEmail(email.trim());
       if (existingUser) {
+        console.log('❌ User already exists');
         return res.status(400).json({ message: "User already exists with this email" });
       }
       
       // Hash password securely
+      console.log('🔐 Hashing password...');
       const bcrypt = await import('bcrypt');
       const saltRounds = 10;
       const hashedPassword = await bcrypt.hash(password.trim(), saltRounds);
       
       // Create user with hashed password
+      console.log('👤 Creating user record...');
       const user = await storage.createUser({
         firstName,
         lastName,
@@ -97,8 +110,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role
       });
       
+      console.log('✅ User created successfully');
+      
       // Create corresponding student/mentor record
       if (role === 'student' || role === 'both') {
+        console.log('👨‍🎓 Creating student record...');
         await storage.createStudent({
           userId: user.id,
           age: 16,
@@ -107,6 +123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (role === 'mentor' || role === 'both') {
+        console.log('👨‍🏫 Creating mentor record...');
         // Create mentor record with educational subjects
         const mentor = await storage.createMentor({
           userId: user.id,
@@ -120,6 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Create teacher profile with qualification and subject data
         if (mentorData) {
+          console.log('📋 Creating teacher profile...');
           await storage.createTeacherProfile({
             userId: user.id,
             qualifications: mentorData.qualifications || [],
@@ -129,6 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      console.log('🎉 Signup completed successfully for:', email);
       res.status(201).json({ 
         success: true, 
         message: "Account created successfully",
@@ -140,9 +159,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           lastName: user.lastName
         } 
       });
-    } catch (error) {
-      console.error("Signup error:", error);
-      res.status(500).json({ message: "Signup failed" });
+    } catch (error: any) {
+      console.error("❌ Signup error:", error);
+      console.error("❌ Error details:", {
+        message: error.message,
+        stack: error.stack,
+        code: error.code,
+        name: error.name
+      });
+      res.status(500).json({ 
+        message: "Internal server error",
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Please try again'
+      });
     }
   });
 
