@@ -79,7 +79,93 @@ export default function Signup() {
     e.preventDefault();
     setLoading(true);
 
-    // Basic validation
+    // Comprehensive validation
+    // Name validation
+    const nameRegex = /^[a-zA-Z\s'-]+$/;
+    if (!nameRegex.test(formData.firstName)) {
+      toast({
+        title: "Invalid First Name",
+        description: "First name can only contain letters, spaces, hyphens, and apostrophes.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (!nameRegex.test(formData.lastName)) {
+      toast({
+        title: "Invalid Last Name",
+        description: "Last name can only contain letters, spaces, hyphens, and apostrophes.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Role validation
+    if (!formData.role) {
+      toast({
+        title: "Role Required",
+        description: "Please select your role (student, mentor, or both).",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Password validation
+    if (formData.password.length < 8) {
+      toast({
+        title: "Password Too Short",
+        description: "Password must be at least 8 characters long.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (!/[A-Z]/.test(formData.password)) {
+      toast({
+        title: "Weak Password",
+        description: "Password must contain at least one uppercase letter.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (!/[a-z]/.test(formData.password)) {
+      toast({
+        title: "Weak Password",
+        description: "Password must contain at least one lowercase letter.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (!/[0-9]/.test(formData.password)) {
+      toast({
+        title: "Weak Password",
+        description: "Password must contain at least one number.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Password Mismatch",
@@ -90,14 +176,56 @@ export default function Signup() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      toast({
-        title: "Password Too Short",
-        description: "Password must be at least 6 characters long.",
-        variant: "destructive",
-      });
-      setLoading(false);
-      return;
+    // Mentor data validation
+    if (formData.role === "mentor" || formData.role === "both") {
+      const validQualifications = formData.qualifications.filter(q => q.qualification.trim() !== "");
+      const validSubjects = formData.subjects.filter(s => s.subject.trim() !== "");
+
+      if (validQualifications.length === 0) {
+        toast({
+          title: "Qualifications Required",
+          description: "Mentors must provide at least one educational qualification.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (validSubjects.length === 0) {
+        toast({
+          title: "Subjects Required",
+          description: "Mentors must specify at least one teaching subject.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Validate that qualifications have required fields
+      for (const qual of validQualifications) {
+        if (!qual.specialization) {
+          toast({
+            title: "Incomplete Qualification",
+            description: "Each qualification must include a specialization.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Validate that subjects have experience
+      for (const subj of validSubjects) {
+        if (!subj.experience.trim()) {
+          toast({
+            title: "Experience Required",
+            description: "Please specify teaching experience for each subject.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+      }
     }
 
     try {
