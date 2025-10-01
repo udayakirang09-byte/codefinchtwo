@@ -144,10 +144,90 @@ export default function Booking() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.studentName || !formData.parentEmail || !formData.selectedDate || !formData.selectedTime) {
+    // Comprehensive validation
+    // Student name validation
+    const trimmedStudentName = formData.studentName.trim();
+    if (!trimmedStudentName) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
+        title: "Student Name Required",
+        description: "Please enter the student's name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const nameRegex = /^[a-zA-Z\s'-]+$/;
+    if (!nameRegex.test(trimmedStudentName)) {
+      toast({
+        title: "Invalid Student Name",
+        description: "Student name can only contain letters, spaces, hyphens, and apostrophes.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Student age validation (optional but if provided must be valid)
+    if (formData.studentAge) {
+      const age = parseInt(formData.studentAge);
+      if (isNaN(age) || age < 5 || age > 18) {
+        toast({
+          title: "Invalid Age",
+          description: "Student age must be between 5 and 18 years.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    // Parent email validation
+    const trimmedParentEmail = formData.parentEmail.trim();
+    if (!trimmedParentEmail) {
+      toast({
+        title: "Parent Email Required",
+        description: "Please enter the parent/guardian email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedParentEmail)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Date validation
+    if (!formData.selectedDate) {
+      toast({
+        title: "Date Required",
+        description: "Please select a session date.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const selectedDate = new Date(formData.selectedDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (selectedDate < today) {
+      toast({
+        title: "Invalid Date",
+        description: "Please select a future date for the session.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Time validation
+    if (!formData.selectedTime) {
+      toast({
+        title: "Time Required",
+        description: "Please select a session time.",
         variant: "destructive",
       });
       return;
