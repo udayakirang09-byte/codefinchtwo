@@ -114,14 +114,130 @@ export default function Events() {
   });
 
   const handleCreateEvent = () => {
-    if (!newEvent.title || !newEvent.description || !newEvent.categoryId || !newEvent.startDate || !newEvent.endDate) {
+    // Comprehensive validation
+    // Title validation
+    const trimmedTitle = newEvent.title.trim();
+    if (!trimmedTitle) {
       toast({
-        title: "Missing fields",
-        description: "Please fill in all required fields.",
+        title: "Title Required",
+        description: "Please enter an event title.",
         variant: "destructive"
       });
       return;
     }
+
+    if (trimmedTitle.length < 5) {
+      toast({
+        title: "Title Too Short",
+        description: "Event title must be at least 5 characters long.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (trimmedTitle.length > 100) {
+      toast({
+        title: "Title Too Long",
+        description: "Event title must be less than 100 characters.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Description validation
+    const trimmedDescription = newEvent.description.trim();
+    if (!trimmedDescription) {
+      toast({
+        title: "Description Required",
+        description: "Please provide an event description.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (trimmedDescription.length < 20) {
+      toast({
+        title: "Description Too Short",
+        description: "Event description must be at least 20 characters long.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Category validation
+    if (!newEvent.categoryId) {
+      toast({
+        title: "Category Required",
+        description: "Please select an event category.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Date validation
+    if (!newEvent.startDate) {
+      toast({
+        title: "Start Date Required",
+        description: "Please select a start date and time.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!newEvent.endDate) {
+      toast({
+        title: "End Date Required",
+        description: "Please select an end date and time.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const startDate = new Date(newEvent.startDate);
+    const endDate = new Date(newEvent.endDate);
+    const now = new Date();
+
+    if (startDate < now) {
+      toast({
+        title: "Invalid Start Date",
+        description: "Event start date must be in the future.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (endDate <= startDate) {
+      toast({
+        title: "Invalid End Date",
+        description: "Event end date must be after the start date.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Location validation
+    if (!newEvent.location.trim()) {
+      toast({
+        title: "Location Required",
+        description: "Please specify the event location.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Price validation (optional but if provided must be valid)
+    if (newEvent.price && newEvent.price.trim()) {
+      const priceValue = newEvent.price.trim();
+      if (priceValue.toLowerCase() !== 'free' && !/^\$?\d+(\.\d{1,2})?$/.test(priceValue)) {
+        toast({
+          title: "Invalid Price",
+          description: "Price must be 'Free' or a valid amount (e.g., $10, 50, 25.99).",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     createEventMutation.mutate(newEvent);
   };
 
