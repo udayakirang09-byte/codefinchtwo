@@ -214,17 +214,41 @@ export default function Signup() {
         }
       }
 
-      // Validate that subjects have experience
-      for (const subj of validSubjects) {
-        if (!subj.experience.trim()) {
+      // Validate that subjects have experience and vice versa
+      for (const subj of formData.subjects) {
+        const hasSubject = subj.subject.trim() !== "";
+        const hasExperience = subj.experience.trim() !== "";
+        
+        if (hasSubject && !hasExperience) {
           toast({
             title: "Experience Required",
-            description: "Please specify teaching experience for each subject.",
+            description: "Please specify teaching experience for each subject you've entered.",
             variant: "destructive",
           });
           setLoading(false);
           return;
         }
+        
+        if (!hasSubject && hasExperience) {
+          toast({
+            title: "Subject Required",
+            description: "Please select a subject for each experience you've entered.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // Ensure at least one complete subject-experience pair
+      if (validSubjects.length === 0) {
+        toast({
+          title: "Subjects Required",
+          description: "Mentors must specify at least one teaching subject with experience.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
       }
     }
 
