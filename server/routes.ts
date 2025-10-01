@@ -27,6 +27,8 @@ import {
   systemAlerts,
   students,
   reviews,
+  achievements,
+  classFeedback,
   type InsertAdminConfig, 
   type InsertFooterLink, 
   type InsertTimeSlot, 
@@ -1141,62 +1143,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { studentId } = req.params;
       
-      // Mock progress data - in production this would fetch from database
+      // Get actual student bookings
+      const studentBookings = await db.select()
+        .from(bookings)
+        .where(eq(bookings.studentId, studentId));
+      
+      const completedBookings = studentBookings.filter(b => b.status === 'completed');
+      const totalHours = completedBookings.reduce((sum, booking) => sum + (booking.duration || 0), 0) / 60;
+      
+      // Get actual achievements
+      const studentAchievements = await db.select()
+        .from(achievements)
+        .where(eq(achievements.studentId, studentId))
+        .orderBy(achievements.earnedAt);
+      
+      // Get recent completed classes with mentor info
+      const recentBookings = await db.select({
+        id: bookings.id,
+        scheduledAt: bookings.scheduledAt,
+        mentorId: bookings.mentorId
+      })
+      .from(bookings)
+      .where(and(
+        eq(bookings.studentId, studentId),
+        eq(bookings.status, 'completed')
+      ))
+      .orderBy(sql`${bookings.scheduledAt} DESC`)
+      .limit(5);
+      
+      // Enrich recent classes with mentor info and ratings
+      const recentClasses = await Promise.all(
+        recentBookings.map(async (booking) => {
+          const [mentor] = await db.select().from(mentors).where(eq(mentors.id, booking.mentorId)).limit(1);
+          const [mentorUser] = mentor ? await db.select().from(users).where(eq(users.id, mentor.userId)).limit(1) : [];
+          const [review] = await db.select().from(reviews).where(eq(reviews.bookingId, booking.id)).limit(1);
+          
+          return {
+            id: booking.id,
+            subject: mentor?.title || 'Coding Session',
+            mentor: mentorUser ? `${mentorUser.firstName} ${mentorUser.lastName}` : 'Unknown',
+            rating: review?.rating || 0,
+            completedAt: booking.scheduledAt
+          };
+        })
+      );
+      
       const progressData = {
-        totalClasses: 15,
-        completedClasses: 12,
-        hoursLearned: 47,
-        achievements: [
-          { 
-            id: 1, 
-            title: "First Steps", 
-            description: "Completed your first coding class", 
-            earned: true, 
-            date: "2024-01-15" 
-          },
-          { 
-            id: 2, 
-            title: "Python Master", 
-            description: "Completed 5 Python classes", 
-            earned: true, 
-            date: "2024-01-20" 
-          },
-          { 
-            id: 3, 
-            title: "Consistent Learner", 
-            description: "Attended classes for 7 days straight", 
-            earned: false, 
-            progress: 5 
-          }
-        ],
-        recentClasses: [
-          { 
-            id: 1, 
-            subject: "HTML & CSS Basics", 
-            mentor: "Alex Rivera", 
-            rating: 5, 
-            completedAt: "2024-01-22" 
-          },
-          { 
-            id: 2, 
-            subject: "JavaScript Functions", 
-            mentor: "Sarah Johnson", 
-            rating: 4, 
-            completedAt: "2024-01-21" 
-          },
-          { 
-            id: 3, 
-            subject: "Python Variables", 
-            mentor: "Mike Chen", 
-            rating: 5, 
-            completedAt: "2024-01-20" 
-          }
-        ],
-        skillLevels: [
-          { skill: "JavaScript", level: 75, classes: 5 },
-          { skill: "Python", level: 60, classes: 4 },
-          { skill: "HTML/CSS", level: 85, classes: 3 }
-        ]
+        totalClasses: studentBookings.length,
+        completedClasses: completedBookings.length,
+        hoursLearned: Math.round(totalHours),
+        achievements: studentAchievements.map(ach => ({
+          id: ach.id,
+          title: ach.title,
+          description: ach.description,
+          earned: true,
+          date: ach.earnedAt
+        })),
+        recentClasses,
+        skillLevels: [] // Will be empty until we have skill tracking system
       };
 
       res.json(progressData);
@@ -1690,37 +1694,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Teacher reviews endpoint
   app.get("/api/teacher/reviews", async (req, res) => {
     try {
-      const teacherId = req.query.teacherId || 'ment002';
+      const teacherId = req.query.teacherId as string;
       
-      // Return mock reviews for now until database is properly structured
-      const teacherReviews = [
-        {
-          id: '1',
-          rating: 5,
-          comment: 'Excellent teaching style! Very patient and knowledgeable.',
-          createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-          studentName: 'Alex Johnson',
-          subject: 'JavaScript Fundamentals'
-        },
-        {
-          id: '2',
-          rating: 4,
-          comment: 'Great explanations, helped me understand React concepts.',
-          createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-          studentName: 'Sarah Chen',
-          subject: 'React Development'
-        },
-        {
-          id: '3',
-          rating: 5,
-          comment: 'Amazing mentor! Made complex topics easy to understand.',
-          createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-          studentName: 'Michael Davis',
-          subject: 'Python Programming'
-        }
-      ];
+      if (!teacherId) {
+        return res.json([]);
+      }
       
-      res.json(teacherReviews);
+      // Get user by ID
+      const [user] = await db.select().from(users).where(eq(users.id, teacherId)).limit(1);
+      if (!user) {
+        return res.json([]);
+      }
+      
+      // Get mentor record
+      const [mentor] = await db.select().from(mentors).where(eq(mentors.userId, user.id)).limit(1);
+      if (!mentor) {
+        return res.json([]);
+      }
+      
+      // Get actual reviews from database
+      const mentorReviews = await db.select({
+        id: reviews.id,
+        rating: reviews.rating,
+        comment: reviews.comment,
+        createdAt: reviews.createdAt,
+        studentId: reviews.studentId
+      })
+      .from(reviews)
+      .where(eq(reviews.mentorId, mentor.id))
+      .orderBy(reviews.createdAt);
+      
+      // Enrich with student names
+      const enrichedReviews = await Promise.all(
+        mentorReviews.map(async (review) => {
+          const [student] = await db.select().from(students).where(eq(students.id, review.studentId)).limit(1);
+          const [studentUser] = student ? await db.select().from(users).where(eq(users.id, student.userId)).limit(1) : [];
+          
+          return {
+            id: review.id,
+            rating: review.rating,
+            comment: review.comment || '',
+            createdAt: review.createdAt,
+            studentName: studentUser ? `${studentUser.firstName} ${studentUser.lastName}` : 'Anonymous',
+            subject: 'General'
+          };
+        })
+      );
+      
+      res.json(enrichedReviews);
     } catch (error) {
       console.error("Error fetching teacher reviews:", error);
       res.status(500).json({ message: "Failed to fetch reviews" });
@@ -2699,37 +2720,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentTime = new Date();
       const next72Hours = new Date(currentTime.getTime() + 72 * 60 * 60 * 1000);
       
-      // Sample upcoming classes data
-      const upcomingClasses = [
-        {
-          id: '1',
-          mentorName: 'Sarah Johnson',
-          subject: 'Python Basics',
-          scheduledAt: new Date(Date.now() + 50 * 60 * 1000), // 50 minutes from now
-          duration: 60,
-          videoEnabled: false,
-          chatEnabled: true,
-          feedbackEnabled: false,
-        },
-        {
-          id: '2',
-          mentorName: 'Mike Chen',
-          subject: 'JavaScript Functions',
-          scheduledAt: new Date(Date.now() + 30 * 60 * 60 * 1000), // 30 hours from now
-          duration: 90,
-          videoEnabled: false,
-          chatEnabled: true,
-          feedbackEnabled: false,
-        },
-      ];
+      // Get actual upcoming bookings from database
+      const upcomingBookings = await db.select({
+        id: bookings.id,
+        scheduledAt: bookings.scheduledAt,
+        duration: bookings.duration,
+        mentorId: bookings.mentorId,
+        status: bookings.status
+      })
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.status, 'scheduled'),
+          sql`${bookings.scheduledAt} >= ${currentTime}`,
+          sql`${bookings.scheduledAt} <= ${next72Hours}`
+        )
+      );
       
-      // Filter for next 72 hours
-      const filtered = upcomingClasses.filter(cls => {
-        const classTime = new Date(cls.scheduledAt);
-        return classTime >= currentTime && classTime <= next72Hours;
-      });
+      // Enrich with mentor names
+      const enrichedClasses = await Promise.all(
+        upcomingBookings.map(async (booking) => {
+          const [mentor] = await db.select().from(mentors).where(eq(mentors.id, booking.mentorId)).limit(1);
+          const [mentorUser] = mentor ? await db.select().from(users).where(eq(users.id, mentor.userId)).limit(1) : [];
+          
+          return {
+            id: booking.id,
+            mentorName: mentorUser ? `${mentorUser.firstName} ${mentorUser.lastName}` : 'Unknown Mentor',
+            subject: mentor?.title || 'Coding Session',
+            scheduledAt: booking.scheduledAt,
+            duration: booking.duration,
+            videoEnabled: false,
+            chatEnabled: true,
+            feedbackEnabled: false
+          };
+        })
+      );
       
-      res.json(filtered);
+      res.json(enrichedClasses);
     } catch (error) {
       console.error("Error loading upcoming classes:", error);
       res.status(500).json({ error: "Failed to load upcoming classes" });
@@ -2741,34 +2768,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentTime = new Date();
       const last12Hours = new Date(currentTime.getTime() - 12 * 60 * 60 * 1000);
       
-      // Sample completed classes data
-      const completedClasses = [
-        {
-          id: '3',
-          mentorName: 'Alex Rivera',
-          subject: 'HTML & CSS Intro',
-          completedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-          feedbackDeadline: new Date(Date.now() + 10 * 60 * 60 * 1000), // 10 hours from now
-          hasSubmittedFeedback: false,
-        },
-        {
-          id: '4',
-          mentorName: 'Lisa Wang',
-          subject: 'React Components',
-          completedAt: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
-          feedbackDeadline: new Date(Date.now() + 8 * 60 * 60 * 1000), // 8 hours from now
-          hasSubmittedFeedback: false,
-        },
-      ];
+      // Get actual completed bookings from database
+      const completedBookings = await db.select({
+        id: bookings.id,
+        scheduledAt: bookings.scheduledAt,
+        mentorId: bookings.mentorId,
+        studentId: bookings.studentId,
+        status: bookings.status
+      })
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.status, 'completed'),
+          sql`${bookings.scheduledAt} >= ${last12Hours}`
+        )
+      );
       
-      // Filter for last 12 hours that need feedback
-      const filtered = completedClasses.filter(cls => {
-        const completedTime = new Date(cls.completedAt);
-        const deadlineTime = new Date(cls.feedbackDeadline);
-        return completedTime >= last12Hours && 
-               !cls.hasSubmittedFeedback && 
-               currentTime <= deadlineTime;
-      });
+      // Enrich with mentor names and check feedback status
+      const enrichedClasses = await Promise.all(
+        completedBookings.map(async (booking) => {
+          const [mentor] = await db.select().from(mentors).where(eq(mentors.id, booking.mentorId)).limit(1);
+          const [mentorUser] = mentor ? await db.select().from(users).where(eq(users.id, mentor.userId)).limit(1) : [];
+          
+          // Check if feedback exists
+          const [feedback] = await db.select().from(classFeedback).where(eq(classFeedback.bookingId, booking.id)).limit(1);
+          
+          const completedAt = new Date(booking.scheduledAt);
+          const feedbackDeadline = new Date(completedAt.getTime() + 12 * 60 * 60 * 1000); // 12 hours after completion
+          
+          // Only include if within feedback window and no feedback submitted
+          if (!feedback && currentTime <= feedbackDeadline) {
+            return {
+              id: booking.id,
+              mentorName: mentorUser ? `${mentorUser.firstName} ${mentorUser.lastName}` : 'Unknown Mentor',
+              subject: mentor?.title || 'Coding Session',
+              completedAt,
+              feedbackDeadline,
+              hasSubmittedFeedback: false
+            };
+          }
+          return null;
+        })
+      );
+      
+      // Filter out null values
+      const filtered = enrichedClasses.filter(cls => cls !== null);
       
       res.json(filtered);
     } catch (error) {
@@ -2787,30 +2831,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUserByEmail(email as string);
       if (!user) {
         console.log(`No user found for email: ${email}`);
-        // Return sample data if no user found
-        const sampleSchedule = [
-          { id: '1', dayOfWeek: 'Monday', startTime: '10:00', endTime: '12:00', isAvailable: true, isRecurring: true },
-          { id: '2', dayOfWeek: 'Monday', startTime: '14:00', endTime: '16:00', isAvailable: false, isRecurring: true },
-          { id: '3', dayOfWeek: 'Wednesday', startTime: '10:00', endTime: '12:00', isAvailable: true, isRecurring: true },
-          { id: '4', dayOfWeek: 'Friday', startTime: '15:00', endTime: '17:00', isAvailable: true, isRecurring: true },
-          { id: '5', dayOfWeek: 'Saturday', startTime: '09:00', endTime: '11:00', isAvailable: false, isRecurring: false },
-        ];
-        return res.json(sampleSchedule);
+        return res.json([]);
       }
       
       // Get mentor for this user
       const mentor = await db.select().from(mentors).where(eq(mentors.userId, user.id)).limit(1);
       if (mentor.length === 0) {
         console.log(`No mentor found for user: ${user.id}`);
-        // Return sample data if no mentor found
-        const sampleSchedule = [
-          { id: '1', dayOfWeek: 'Monday', startTime: '10:00', endTime: '12:00', isAvailable: true, isRecurring: true },
-          { id: '2', dayOfWeek: 'Monday', startTime: '14:00', endTime: '16:00', isAvailable: false, isRecurring: true },
-          { id: '3', dayOfWeek: 'Wednesday', startTime: '10:00', endTime: '12:00', isAvailable: true, isRecurring: true },
-          { id: '4', dayOfWeek: 'Friday', startTime: '15:00', endTime: '17:00', isAvailable: true, isRecurring: true },
-          { id: '5', dayOfWeek: 'Saturday', startTime: '09:00', endTime: '11:00', isAvailable: false, isRecurring: false },
-        ];
-        return res.json(sampleSchedule);
+        return res.json([]);
       }
       
       // Get time slots from database
@@ -3508,44 +3536,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Seed sample analytics data for demonstration
+  // Analytics seeding endpoint - disabled in production
+  // This endpoint was used for demonstration purposes only
   app.post("/api/admin/seed-analytics", async (req, res) => {
-    try {
-      // Get existing users
-      const users = await storage.getUsers();
-      
-      const sampleEvents = [
-        { eventType: 'user_registration', eventName: 'new_signup', properties: { source: 'homepage' } },
-        { eventType: 'session_start', eventName: 'user_login', properties: { device: 'desktop' } },
-        { eventType: 'booking_created', eventName: 'mentor_booked', properties: { mentor_type: 'coding' } },
-        { eventType: 'page_view', eventName: 'dashboard_view', properties: { page: 'dashboard' } },
-        { eventType: 'video_session', eventName: 'session_completed', properties: { duration: 45 } }
-      ];
-
-      const events = [];
-      for (let i = 0; i < 20; i++) {
-        const randomEvent = sampleEvents[Math.floor(Math.random() * sampleEvents.length)];
-        const randomUser = users.length > 0 ? users[Math.floor(Math.random() * users.length)] : null;
-        
-        events.push({
-          userId: randomUser?.id || null,
-          sessionId: `session_${i}`,
-          eventType: randomEvent.eventType,
-          eventName: randomEvent.eventName,
-          properties: randomEvent.properties,
-          url: '/dashboard',
-          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          ipAddress: '192.168.1.1',
-          timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000) // Random time in last 7 days
-        });
-      }
-      
-      await db.insert(analyticsEvents).values(events);
-      res.json({ message: "Sample analytics data seeded successfully", count: events.length });
-    } catch (error) {
-      console.error("Error seeding analytics:", error);
-      res.status(500).json({ message: "Failed to seed analytics data" });
-    }
+    res.status(404).json({ message: "Analytics seeding is disabled. Use real analytics tracking instead." });
   });
 
   // ========================================
