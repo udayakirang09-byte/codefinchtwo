@@ -18,16 +18,63 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
 
+    // Comprehensive validation
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
+    // Email validation
+    if (!trimmedEmail) {
+      toast({
+        title: "Email Required",
+        description: "Please enter your email address.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Password validation
+    if (!trimmedPassword) {
+      toast({
+        title: "Password Required",
+        description: "Please enter your password.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (trimmedPassword.length < 6) {
+      toast({
+        title: "Invalid Password",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
     try {
-      console.log('🔐 Login attempt:', { email: email.trim(), password: password.trim() });
+      console.log('🔐 Login attempt:', { email: trimmedEmail, password: trimmedPassword });
       
       // Call backend login API
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          email: email.trim(), 
-          password: password.trim() 
+          email: trimmedEmail, 
+          password: trimmedPassword 
         })
       });
       
