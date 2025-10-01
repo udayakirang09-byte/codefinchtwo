@@ -1,0 +1,1 @@
+# Deployment trigger - DATABASE_URL_AZURE secret added
