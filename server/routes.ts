@@ -1148,8 +1148,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(bookings)
         .where(eq(bookings.studentId, studentId));
       
-      const completedBookings = studentBookings.filter(b => b.status === 'completed');
-      const totalHours = completedBookings.reduce((sum, booking) => sum + (booking.duration || 0), 0) / 60;
+      const completedBookings = studentBookings.filter((b: any) => b.status === 'completed');
+      const totalHours = completedBookings.reduce((sum: number, booking: any) => sum + (booking.duration || 0), 0) / 60;
       
       // Get actual achievements
       const studentAchievements = await db.select()
@@ -1173,7 +1173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Enrich recent classes with mentor info and ratings
       const recentClasses = await Promise.all(
-        recentBookings.map(async (booking) => {
+        recentBookings.map(async (booking: any) => {
           const [mentor] = await db.select().from(mentors).where(eq(mentors.id, booking.mentorId)).limit(1);
           const [mentorUser] = mentor ? await db.select().from(users).where(eq(users.id, mentor.userId)).limit(1) : [];
           const [review] = await db.select().from(reviews).where(eq(reviews.bookingId, booking.id)).limit(1);
@@ -1192,7 +1192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalClasses: studentBookings.length,
         completedClasses: completedBookings.length,
         hoursLearned: Math.round(totalHours),
-        achievements: studentAchievements.map(ach => ({
+        achievements: studentAchievements.map((ach: any) => ({
           id: ach.id,
           title: ach.title,
           description: ach.description,
@@ -1726,7 +1726,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Enrich with student names
       const enrichedReviews = await Promise.all(
-        mentorReviews.map(async (review) => {
+        mentorReviews.map(async (review: any) => {
           const [student] = await db.select().from(students).where(eq(students.id, review.studentId)).limit(1);
           const [studentUser] = student ? await db.select().from(users).where(eq(users.id, student.userId)).limit(1) : [];
           
@@ -2739,7 +2739,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Enrich with mentor names
       const enrichedClasses = await Promise.all(
-        upcomingBookings.map(async (booking) => {
+        upcomingBookings.map(async (booking: any) => {
           const [mentor] = await db.select().from(mentors).where(eq(mentors.id, booking.mentorId)).limit(1);
           const [mentorUser] = mentor ? await db.select().from(users).where(eq(users.id, mentor.userId)).limit(1) : [];
           
@@ -2786,7 +2786,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Enrich with mentor names and check feedback status
       const enrichedClasses = await Promise.all(
-        completedBookings.map(async (booking) => {
+        completedBookings.map(async (booking: any) => {
           const [mentor] = await db.select().from(mentors).where(eq(mentors.id, booking.mentorId)).limit(1);
           const [mentorUser] = mentor ? await db.select().from(users).where(eq(users.id, mentor.userId)).limit(1) : [];
           
