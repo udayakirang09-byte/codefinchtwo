@@ -8,7 +8,7 @@ import { Code, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
-  const [email, setEmail] = useState("udayakirang09@gmail.com");
+  const [email, setEmail] = useState("udayakirang99@gmail.com");
   const [password, setPassword] = useState("Hello111");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -81,7 +81,7 @@ export default function Login() {
       if (!response.ok) {
         toast({
           title: "Login Failed",
-          description: "Invalid email or password. Try: udayakirang09@gmail.com, teacher@codeconnect.com, or admin@codeconnect.com with password Hello111",
+          description: "Invalid email or password. Please check your credentials and try again.",
           variant: "destructive",
         });
         setLoading(false);
@@ -138,7 +138,7 @@ export default function Login() {
           <div className="text-xs text-blue-600 bg-blue-50 p-3 rounded-lg mt-2 space-y-1">
             <strong>📚 Test Accounts:</strong><br />
             <div className="font-mono">
-              <div>👨‍🎓 Student: udayakirang09@gmail.com</div>
+              <div>👨‍🎓 Student: udayakirang99@gmail.com</div>
               <div>👨‍🏫 Teacher: teacher@codeconnect.com</div>
               <div>👨‍💼 Admin: admin@codeconnect.com</div>
               <div className="mt-1">🔑 Password: <strong>Hello111</strong> (for all)</div>
