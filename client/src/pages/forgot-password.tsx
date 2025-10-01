@@ -135,9 +135,15 @@ export default function ForgotPassword() {
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="flex items-center justify-center mb-4">
-            <Code className="text-primary mr-2" size={32} />
-            <span className="text-2xl font-bold">CodeConnect</span>
+          <div className="flex justify-between items-center mb-4">
+            <Link href="/" className="text-sm text-muted-foreground hover:underline" data-testid="link-home">
+              ← Home
+            </Link>
+            <div className="flex items-center flex-1 justify-center">
+              <Code className="text-primary mr-2" size={32} />
+              <span className="text-2xl font-bold">CodeConnect</span>
+            </div>
+            <div className="w-16"></div>
           </div>
           <CardTitle className="text-xl" data-testid="title-forgot-password">
             {step === "email" && "Reset Your Password"}
