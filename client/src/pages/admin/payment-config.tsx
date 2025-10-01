@@ -250,13 +250,69 @@ export default function AdminPaymentConfig() {
   const handleUpiSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!upiForm.upiId || !upiForm.upiProvider) {
+    // Comprehensive validation
+    // UPI ID validation
+    const trimmedUpiId = upiForm.upiId.trim();
+    if (!trimmedUpiId) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
+        title: "UPI ID Required",
+        description: "Please enter a UPI ID.",
         variant: "destructive",
       });
       return;
+    }
+
+    // Check for whitespace in UPI ID
+    if (/\s/.test(trimmedUpiId)) {
+      toast({
+        title: "Invalid UPI ID",
+        description: "UPI ID cannot contain spaces.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Basic UPI ID format validation (should contain @ symbol)
+    if (!trimmedUpiId.includes('@')) {
+      toast({
+        title: "Invalid UPI ID Format",
+        description: "UPI ID must be in the format username@provider (e.g., admin@phonepe).",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate UPI ID length
+    if (trimmedUpiId.length < 5 || trimmedUpiId.length > 50) {
+      toast({
+        title: "Invalid UPI ID Length",
+        description: "UPI ID must be between 5 and 50 characters.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // UPI Provider validation
+    if (!upiForm.upiProvider) {
+      toast({
+        title: "UPI Provider Required",
+        description: "Please select a UPI provider.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Display name validation (optional but must be valid if provided)
+    if (upiForm.displayName && upiForm.displayName.trim()) {
+      const trimmedDisplayName = upiForm.displayName.trim();
+      if (trimmedDisplayName.length > 100) {
+        toast({
+          title: "Display Name Too Long",
+          description: "Display name must be less than 100 characters.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     addUpiMutation.mutate(upiForm);
@@ -265,13 +321,172 @@ export default function AdminPaymentConfig() {
   const handleFeeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!feeForm.feePercentage || !feeForm.minimumFee) {
+    // Comprehensive validation
+    // Fee percentage validation
+    const trimmedFeePercentage = feeForm.feePercentage.trim();
+    if (!trimmedFeePercentage) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
+        title: "Fee Percentage Required",
+        description: "Please enter a fee percentage.",
         variant: "destructive",
       });
       return;
+    }
+
+    const feePercentageValue = parseFloat(trimmedFeePercentage);
+    if (isNaN(feePercentageValue)) {
+      toast({
+        title: "Invalid Fee Percentage",
+        description: "Please enter a valid numeric value for fee percentage.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (feePercentageValue < 0) {
+      toast({
+        title: "Invalid Fee Percentage",
+        description: "Fee percentage cannot be negative.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (feePercentageValue > 100) {
+      toast({
+        title: "Invalid Fee Percentage",
+        description: "Fee percentage cannot exceed 100%.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check for valid decimal places (max 2)
+    const feeDecimalPart = trimmedFeePercentage.split('.')[1];
+    if (feeDecimalPart && feeDecimalPart.length > 2) {
+      toast({
+        title: "Invalid Fee Percentage Format",
+        description: "Fee percentage can have at most 2 decimal places.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Minimum fee validation
+    const trimmedMinimumFee = feeForm.minimumFee.trim();
+    if (!trimmedMinimumFee) {
+      toast({
+        title: "Minimum Fee Required",
+        description: "Please enter a minimum fee amount.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const minimumFeeValue = parseFloat(trimmedMinimumFee);
+    if (isNaN(minimumFeeValue)) {
+      toast({
+        title: "Invalid Minimum Fee",
+        description: "Please enter a valid numeric value for minimum fee.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (minimumFeeValue < 0) {
+      toast({
+        title: "Invalid Minimum Fee",
+        description: "Minimum fee cannot be negative.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (minimumFeeValue > 10000) {
+      toast({
+        title: "Minimum Fee Too High",
+        description: "Minimum fee must be less than ₹10,000.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check for valid decimal places (max 2)
+    const minFeeDecimalPart = trimmedMinimumFee.split('.')[1];
+    if (minFeeDecimalPart && minFeeDecimalPart.length > 2) {
+      toast({
+        title: "Invalid Minimum Fee Format",
+        description: "Minimum fee can have at most 2 decimal places.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Maximum fee validation (optional but must be valid if provided)
+    if (feeForm.maximumFee && feeForm.maximumFee.trim()) {
+      const trimmedMaximumFee = feeForm.maximumFee.trim();
+      const maximumFeeValue = parseFloat(trimmedMaximumFee);
+      
+      if (isNaN(maximumFeeValue)) {
+        toast({
+          title: "Invalid Maximum Fee",
+          description: "Please enter a valid numeric value for maximum fee.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (maximumFeeValue < 0) {
+        toast({
+          title: "Invalid Maximum Fee",
+          description: "Maximum fee cannot be negative.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (maximumFeeValue > 100000) {
+        toast({
+          title: "Maximum Fee Too High",
+          description: "Maximum fee must be less than ₹100,000.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if maximum fee is less than minimum fee
+      if (maximumFeeValue < minimumFeeValue) {
+        toast({
+          title: "Invalid Fee Range",
+          description: "Maximum fee must be greater than or equal to minimum fee.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check for valid decimal places (max 2)
+      const maxFeeDecimalPart = trimmedMaximumFee.split('.')[1];
+      if (maxFeeDecimalPart && maxFeeDecimalPart.length > 2) {
+        toast({
+          title: "Invalid Maximum Fee Format",
+          description: "Maximum fee can have at most 2 decimal places.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    // Description validation (optional but must be valid if provided)
+    if (feeForm.description && feeForm.description.trim()) {
+      const trimmedDescription = feeForm.description.trim();
+      if (trimmedDescription.length > 500) {
+        toast({
+          title: "Description Too Long",
+          description: "Description must be less than 500 characters.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     updateFeeMutation.mutate(feeForm);

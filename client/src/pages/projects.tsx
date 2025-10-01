@@ -108,14 +108,124 @@ export default function Projects() {
   });
 
   const handleShareProject = () => {
-    if (!newProject.title || !newProject.description || !newProject.categoryId) {
+    // Comprehensive validation
+    // Title validation
+    const trimmedTitle = newProject.title.trim();
+    if (!trimmedTitle) {
       toast({
-        title: "Missing fields",
-        description: "Please fill in all required fields.",
+        title: "Title Required",
+        description: "Please enter a project title.",
         variant: "destructive"
       });
       return;
     }
+
+    if (trimmedTitle.length < 5) {
+      toast({
+        title: "Title Too Short",
+        description: "Project title must be at least 5 characters long.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (trimmedTitle.length > 100) {
+      toast({
+        title: "Title Too Long",
+        description: "Project title must be less than 100 characters.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Description validation
+    const trimmedDescription = newProject.description.trim();
+    if (!trimmedDescription) {
+      toast({
+        title: "Description Required",
+        description: "Please provide a project description.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (trimmedDescription.length < 20) {
+      toast({
+        title: "Description Too Short",
+        description: "Project description must be at least 20 characters long.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (trimmedDescription.length > 5000) {
+      toast({
+        title: "Description Too Long",
+        description: "Project description must be less than 5000 characters.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Category validation
+    if (!newProject.categoryId) {
+      toast({
+        title: "Category Required",
+        description: "Please select a category for your project.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Technologies/Tags validation (optional but limit if provided)
+    if (newProject.technologies && newProject.technologies.trim()) {
+      const techArray = newProject.technologies.split(',').map(tech => tech.trim()).filter(Boolean);
+      if (techArray.length > 5) {
+        toast({
+          title: "Too Many Technologies",
+          description: "You can add a maximum of 5 technologies/tags.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
+    // GitHub URL validation (optional but must be valid if provided)
+    if (newProject.githubUrl && newProject.githubUrl.trim()) {
+      const trimmedGithubUrl = newProject.githubUrl.trim();
+      try {
+        const url = new URL(trimmedGithubUrl);
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+          throw new Error('Invalid protocol');
+        }
+      } catch {
+        toast({
+          title: "Invalid GitHub URL",
+          description: "Please enter a valid URL starting with http:// or https://",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
+    // Live Demo URL validation (optional but must be valid if provided)
+    if (newProject.liveUrl && newProject.liveUrl.trim()) {
+      const trimmedLiveUrl = newProject.liveUrl.trim();
+      try {
+        const url = new URL(trimmedLiveUrl);
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+          throw new Error('Invalid protocol');
+        }
+      } catch {
+        toast({
+          title: "Invalid Live Demo URL",
+          description: "Please enter a valid URL starting with http:// or https://",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     shareProjectMutation.mutate(newProject);
   };
 

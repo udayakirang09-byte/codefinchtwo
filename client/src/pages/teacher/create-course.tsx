@@ -67,18 +67,156 @@ export default function CreateCourse() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title || !formData.description || !formData.category) {
+    // Comprehensive validation
+    // Title validation
+    const trimmedTitle = formData.title.trim();
+    if (!trimmedTitle) {
       toast({
-        title: "Missing Fields",
-        description: "Please fill in all required fields",
+        title: "Title Required",
+        description: "Please enter a course title.",
         variant: "destructive",
       });
       return;
     }
 
+    if (trimmedTitle.length < 5) {
+      toast({
+        title: "Title Too Short",
+        description: "Course title must be at least 5 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (trimmedTitle.length > 100) {
+      toast({
+        title: "Title Too Long",
+        description: "Course title must be less than 100 characters.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Description validation
+    const trimmedDescription = formData.description.trim();
+    if (!trimmedDescription) {
+      toast({
+        title: "Description Required",
+        description: "Please provide a course description.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (trimmedDescription.length < 20) {
+      toast({
+        title: "Description Too Short",
+        description: "Course description must be at least 20 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Category validation
+    if (!formData.category) {
+      toast({
+        title: "Category Required",
+        description: "Please select a category for your course.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Duration validation (optional but must be valid if provided)
+    if (formData.duration && formData.duration.trim()) {
+      const trimmedDuration = formData.duration.trim();
+      // Check if duration contains numbers
+      if (!/\d+/.test(trimmedDuration)) {
+        toast({
+          title: "Invalid Duration",
+          description: "Duration must include a numeric value (e.g., '8 weeks', '20 hours').",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    // Price validation (optional but must be valid if provided)
+    if (formData.price && formData.price.trim()) {
+      const priceValue = parseFloat(formData.price);
+      if (isNaN(priceValue)) {
+        toast({
+          title: "Invalid Price",
+          description: "Please enter a valid price.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (priceValue < 0) {
+        toast({
+          title: "Invalid Price",
+          description: "Price cannot be negative.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (priceValue > 999999) {
+        toast({
+          title: "Price Too High",
+          description: "Price must be less than ₹999,999.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check for valid decimal places (max 2)
+      const decimalPart = formData.price.split('.')[1];
+      if (decimalPart && decimalPart.length > 2) {
+        toast({
+          title: "Invalid Price Format",
+          description: "Price can have at most 2 decimal places.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    // Max students validation (optional but must be valid if provided)
+    if (formData.maxStudents && formData.maxStudents.trim()) {
+      const maxStudentsValue = parseInt(formData.maxStudents);
+      if (isNaN(maxStudentsValue)) {
+        toast({
+          title: "Invalid Max Students",
+          description: "Please enter a valid number for max students.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (maxStudentsValue < 1) {
+        toast({
+          title: "Invalid Max Students",
+          description: "Maximum students must be at least 1.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (maxStudentsValue > 1000) {
+        toast({
+          title: "Max Students Too High",
+          description: "Maximum students cannot exceed 1000.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     createCourseMutation.mutate({
       ...formData,
-      price: formData.price || "0", // Keep price as string for decimal field
+      price: formData.price || "0",
       maxStudents: parseInt(formData.maxStudents) || 10
     });
   };
