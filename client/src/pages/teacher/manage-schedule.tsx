@@ -176,9 +176,9 @@ export default function ManageSchedule() {
       <Navigation />
       
       <div className="max-w-6xl mx-auto p-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Manage Schedule</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Manage Schedule</h1>
             <p className="text-gray-600 mt-2">Set your availability and manage time slots</p>
           </div>
           <div className="flex gap-3">
@@ -220,7 +220,7 @@ export default function ManageSchedule() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="startTime">Start Time</Label>
                       <Input

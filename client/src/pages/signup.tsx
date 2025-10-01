@@ -360,8 +360,8 @@ export default function Signup() {
                 <div className="space-y-4">
                   <Label className="text-base font-medium">Educational Qualifications (Top 3)</Label>
                   {formData.qualifications.map((qual, index) => (
-                    <div key={index} className="grid grid-cols-12 gap-3">
-                      <div className="col-span-5 space-y-1">
+                    <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                      <div className="sm:col-span-5 space-y-1">
                         <Label className="text-sm font-medium">{index === 0 ? "Highest" : index === 1 ? "Second" : "Third"} Qualification</Label>
                         <Select 
                           value={qual.qualification} 
@@ -380,7 +380,7 @@ export default function Signup() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="col-span-4 space-y-1">
+                      <div className="sm:col-span-4 space-y-1">
                         <Label className="text-sm font-medium">Specialization</Label>
                         <Select 
                           value={qual.specialization} 
@@ -399,7 +399,7 @@ export default function Signup() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="col-span-3 space-y-1">
+                      <div className="sm:col-span-3 space-y-1">
                         <Label className="text-sm font-medium">Score/Grade</Label>
                         <Input
                           placeholder="e.g., 3.8 GPA"
@@ -417,8 +417,8 @@ export default function Signup() {
                 <div className="space-y-4">
                   <Label className="text-base font-medium">Teaching Subjects & Experience</Label>
                   {formData.subjects.map((subj, index) => (
-                    <div key={index} className="grid grid-cols-12 gap-3">
-                      <div className="col-span-7 space-y-1">
+                    <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                      <div className="sm:col-span-7 space-y-1">
                         <Label className="text-sm font-medium">Subject {index + 1}</Label>
                         <Select 
                           value={subj.subject} 
@@ -437,7 +437,7 @@ export default function Signup() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="col-span-5 space-y-1">
+                      <div className="sm:col-span-5 space-y-1">
                         <Label className="text-sm font-medium">Teaching Experience</Label>
                         <Input
                           placeholder="e.g., 5 years, Advanced level"

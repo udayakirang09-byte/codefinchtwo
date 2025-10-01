@@ -120,7 +120,7 @@ export default function MentorProfile() {
                 <p className="text-xl text-muted-foreground mb-2" data-testid="text-mentor-title">
                   {mentor.title}
                 </p>
-                <div className="flex items-center space-x-6 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-sm text-muted-foreground">
                   <div className="flex items-center" data-testid="stat-mentor-rating">
                     <Star className="text-accent mr-1" size={16} />
                     <span>{parseFloat(mentor.rating || "0").toFixed(1)} ({reviews.length} reviews)</span>

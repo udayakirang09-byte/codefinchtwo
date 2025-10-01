@@ -40,14 +40,15 @@ export default function DiscoverySection() {
         </div>
         
         {/* Filter tabs */}
-        <div className="flex justify-center mb-12">
-          <div className="bg-card rounded-xl p-2 shadow-lg">
-            <div className="flex space-x-2">
+        <div className="flex justify-center mb-12 px-4">
+          <div className="bg-card rounded-xl p-2 shadow-lg max-w-full">
+            <div className="flex flex-wrap gap-2 justify-center">
               {filters.map((filter) => (
                 <Button
                   key={filter.id}
                   variant={activeFilter === filter.id ? "default" : "ghost"}
                   onClick={() => setActiveFilter(filter.id)}
+                  className="text-xs sm:text-sm"
                   data-testid={`button-filter-${filter.id}`}
                 >
                   {filter.label}
