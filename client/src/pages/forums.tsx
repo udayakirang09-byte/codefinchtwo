@@ -87,14 +87,88 @@ export default function Forums() {
   });
 
   const handleCreatePost = () => {
-    if (!newPost.title || !newPost.content || !newPost.categoryId) {
+    // Comprehensive validation
+    // Title validation
+    const trimmedTitle = newPost.title.trim();
+    if (!trimmedTitle) {
       toast({
-        title: "Missing fields",
-        description: "Please fill in all required fields.",
+        title: "Title Required",
+        description: "Please enter a post title.",
         variant: "destructive"
       });
       return;
     }
+
+    if (trimmedTitle.length < 5) {
+      toast({
+        title: "Title Too Short",
+        description: "Post title must be at least 5 characters long.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (trimmedTitle.length > 150) {
+      toast({
+        title: "Title Too Long",
+        description: "Post title must be less than 150 characters.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Content validation
+    const trimmedContent = newPost.content.trim();
+    if (!trimmedContent) {
+      toast({
+        title: "Content Required",
+        description: "Please provide content for your post.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (trimmedContent.length < 10) {
+      toast({
+        title: "Content Too Short",
+        description: "Post content must be at least 10 characters long.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (trimmedContent.length > 10000) {
+      toast({
+        title: "Content Too Long",
+        description: "Post content must be less than 10,000 characters.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Category validation
+    if (!newPost.categoryId) {
+      toast({
+        title: "Category Required",
+        description: "Please select a category for your post.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Tags validation (optional but limit total number)
+    if (newPost.tags && newPost.tags.trim()) {
+      const tagsArray = newPost.tags.split(',').map(tag => tag.trim()).filter(Boolean);
+      if (tagsArray.length > 5) {
+        toast({
+          title: "Too Many Tags",
+          description: "You can add a maximum of 5 tags.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     createPostMutation.mutate(newPost);
   };
 
