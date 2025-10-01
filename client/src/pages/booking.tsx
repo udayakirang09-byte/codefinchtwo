@@ -291,9 +291,18 @@ export default function Booking() {
     <div className="min-h-screen">
       <Navigation />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <h1 className="text-3xl font-bold text-foreground mb-8" data-testid="text-booking-title">
-          Book a Session with {mentor.user.firstName} {mentor.user.lastName}
-        </h1>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <h1 className="text-3xl font-bold text-foreground" data-testid="text-booking-title">
+            Book a Session with {mentor.user.firstName} {mentor.user.lastName}
+          </h1>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate("/")}
+            data-testid="button-go-to-mentors"
+          >
+            ← Go To Mentors List
+          </Button>
+        </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Mentor Info */}
@@ -358,7 +367,7 @@ export default function Booking() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="studentName">Student Name *</Label>
                     <Input
@@ -398,7 +407,7 @@ export default function Booking() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="selectedDate">Preferred Date *</Label>
                     <Input
@@ -407,9 +416,15 @@ export default function Booking() {
                       value={formData.selectedDate}
                       onChange={(e) => handleInputChange("selectedDate", e.target.value)}
                       min={new Date().toISOString().split('T')[0]}
+                      max={(() => {
+                        const maxDate = new Date();
+                        maxDate.setDate(maxDate.getDate() + 5);
+                        return maxDate.toISOString().split('T')[0];
+                      })()}
                       required
                       data-testid="input-session-date"
                     />
+                    <p className="text-xs text-muted-foreground">Bookings available for next 5 days only</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="selectedTime">Preferred Time *</Label>
@@ -418,11 +433,15 @@ export default function Booking() {
                         <SelectValue placeholder="Select time" />
                       </SelectTrigger>
                       <SelectContent>
-                        {timeSlots.map((time: string) => (
-                          <SelectItem key={time} value={time}>
-                            {time}
-                          </SelectItem>
-                        ))}
+                        {timeSlots.length > 0 ? (
+                          timeSlots.map((time: string) => (
+                            <SelectItem key={time} value={time}>
+                              {time}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-slots" disabled>No time slots available</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
