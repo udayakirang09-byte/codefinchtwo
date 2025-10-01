@@ -33,6 +33,9 @@ export default function ManageSchedule() {
     endTime: '',
     isRecurring: true
   });
+  
+  // Get authenticated user email from localStorage
+  const userEmail = localStorage.getItem('userEmail') || 'teacher@codeconnect.com';
 
   const { data: schedule = [], isLoading } = useQuery({
     queryKey: ['teacher-schedule'],
@@ -62,15 +65,6 @@ export default function ManageSchedule() {
     }
   });
 
-  const sampleSchedule: TimeSlot[] = [
-    { id: '1', dayOfWeek: 'Monday', startTime: '10:00', endTime: '12:00', isAvailable: true, isRecurring: true },
-    { id: '2', dayOfWeek: 'Monday', startTime: '14:00', endTime: '16:00', isAvailable: false, isRecurring: true },
-    { id: '3', dayOfWeek: 'Wednesday', startTime: '10:00', endTime: '12:00', isAvailable: true, isRecurring: true },
-    { id: '4', dayOfWeek: 'Friday', startTime: '15:00', endTime: '17:00', isAvailable: true, isRecurring: true },
-    { id: '5', dayOfWeek: 'Saturday', startTime: '09:00', endTime: '11:00', isAvailable: false, isRecurring: false },
-  ];
-
-  const scheduleData = schedule.length > 0 ? schedule : sampleSchedule;
 
   const toggleAvailability = (slotId: string, currentStatus: boolean) => {
     updateSlotMutation.mutate({ 
@@ -113,7 +107,7 @@ export default function ManageSchedule() {
     mutationFn: async (slotData: typeof newSlot) => {
       return await apiRequest('POST', '/api/teacher/schedule', {
         ...slotData,
-        teacherId: 'teacher@codeconnect.com' // Default teacher ID for demo
+        teacherId: userEmail
       });
     },
     onSuccess: () => {
@@ -144,6 +138,7 @@ export default function ManageSchedule() {
   };
 
   const handleCreateSlot = () => {
+    // Validate required fields
     if (!newSlot.dayOfWeek || !newSlot.startTime || !newSlot.endTime) {
       toast({
         title: "Error",
@@ -152,10 +147,21 @@ export default function ManageSchedule() {
       });
       return;
     }
+    
+    // Validate time range
+    if (newSlot.startTime >= newSlot.endTime) {
+      toast({
+        title: "Invalid Time Range",
+        description: "End time must be after start time",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     createSlotMutation.mutate(newSlot);
   };
 
-  const groupedByDay = scheduleData.reduce((acc: any, slot: TimeSlot) => {
+  const groupedByDay = schedule.reduce((acc: any, slot: TimeSlot) => {
     if (!acc[slot.dayOfWeek]) {
       acc[slot.dayOfWeek] = [];
     }
