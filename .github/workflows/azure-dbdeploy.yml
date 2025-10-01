@@ -25,8 +25,17 @@ jobs:
       run: npm ci
     
     - name: Test Azure database connection
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
       run: |
         echo "🔗 Testing Azure database connection..."
+        if [ -z "$DATABASE_URL" ]; then
+          echo "❌ ERROR: DATABASE_URL is empty!"
+          echo "📋 Available secrets: DATABASE_URL, AZURE_POSTGRES_PASSWORD"
+          exit 1
+        fi
+        echo "🔍 Connection string length: ${#DATABASE_URL} characters"
+        echo "🔍 Connection string starts with: ${DATABASE_URL:0:30}..."
         node -e "
           const { Client } = require('pg');
           const client = new Client({ connectionString: process.env.DATABASE_URL });
@@ -45,18 +54,18 @@ jobs:
           
           testConnection();
         "
-      env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
     - name: Deploy database schema using Drizzle
-      run: |
-        echo "🏗️ Deploying complete database schema to Azure..."
-        npm run db:push --force
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
         NODE_ENV: production
+      run: |
+        echo "🏗️ Deploying complete database schema to Azure..."
+        npm run db:push --force
 
     - name: Verify schema deployment
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
       run: |
         echo "🔍 Verifying schema deployment..."
         node -e "
@@ -95,21 +104,21 @@ jobs:
           
           verifySchema();
         "
-      env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
     - name: Seed complete production data directly in Azure
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        NODE_ENV: production
       run: |
         echo "🌱 Seeding complete production data directly in Azure database..."
         echo "📊 This will create all 29 records: 19 users + 5 mentors + 5 students"
         echo "🔐 Including 3 test accounts: teacher@codeconnect.com, udayakirang99@gmail.com, admin@codeconnect.com"
         echo "🛡️ Production-ready data with safety checks"
         cd server && npx tsx seed.ts
-      env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        NODE_ENV: production
 
     - name: Verify final database state
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
       run: |
         echo "✅ Verifying final Azure database state..."
         node -e "
@@ -168,5 +177,3 @@ jobs:
           
           verifyFinalState();
         "
-      env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
