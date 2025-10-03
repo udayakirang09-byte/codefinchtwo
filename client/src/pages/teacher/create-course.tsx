@@ -30,6 +30,7 @@ export default function CreateCourse() {
     price: '',
     difficulty: '',
     maxStudents: '',
+    maxClasses: '',
     prerequisites: ''
   });
 
@@ -40,7 +41,8 @@ export default function CreateCourse() {
       .then(config => {
         setFormData(prev => ({
           ...prev,
-          maxStudents: config.maxStudentsPerCourse.toString()
+          maxStudents: config.maxStudentsPerCourse.toString(),
+          maxClasses: config.maxClassesPerCourse.toString()
         }));
       })
       .catch(err => console.error('Failed to load course config:', err));
@@ -67,13 +69,14 @@ export default function CreateCourse() {
         const config = await configResponse.json();
         setFormData({
           title: '', description: '', category: '', duration: '', 
-          price: '', difficulty: '', maxStudents: config.maxStudentsPerCourse.toString(), prerequisites: ''
+          price: '', difficulty: '', maxStudents: config.maxStudentsPerCourse.toString(), 
+          maxClasses: config.maxClassesPerCourse.toString(), prerequisites: ''
         });
       } catch (err) {
         // Fallback to empty if config fetch fails
         setFormData({
           title: '', description: '', category: '', duration: '', 
-          price: '', difficulty: '', maxStudents: '', prerequisites: ''
+          price: '', difficulty: '', maxStudents: '', maxClasses: '', prerequisites: ''
         });
       }
       console.log('✅ Toast triggered and form reset');
@@ -471,7 +474,7 @@ export default function CreateCourse() {
                   variant="outline"
                   onClick={() => setFormData({
                     title: '', description: '', category: '', duration: '', 
-                    price: '', difficulty: '', maxStudents: '', prerequisites: ''
+                    price: '', difficulty: '', maxStudents: '', maxClasses: '', prerequisites: ''
                   })}
                   data-testid="button-clear-form"
                 >

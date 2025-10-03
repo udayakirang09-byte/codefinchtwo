@@ -478,6 +478,7 @@ export const courses = pgTable("courses", {
   duration: varchar("duration"), // e.g., "2 hours", "1 week", etc.
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   maxStudents: integer("max_students").default(10),
+  maxClasses: integer("max_classes").default(8),
   prerequisites: text("prerequisites"),
   tags: jsonb("tags").$type<string[]>().default([]),
   isActive: boolean("is_active").default(true),
