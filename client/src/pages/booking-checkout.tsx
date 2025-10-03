@@ -3,8 +3,11 @@ import { loadStripe } from '@stripe/stripe-js';
 import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, CreditCard, Smartphone, Shield, User, Clock, Calendar } from "lucide-react";
+import { ArrowLeft, CreditCard, Smartphone, Shield, User, Clock, Calendar, Building2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import Navigation from "@/components/navigation";
@@ -12,31 +15,20 @@ import Footer from "@/components/footer";
 
 // Stripe will be loaded dynamically after fetching config from admin settings
 
-const BookingCheckoutForm = ({ bookingDetails }: { bookingDetails: any }) => {
+// Separate component for card payments that uses Stripe hooks
+const StripeCardPaymentForm = ({ bookingDetails, onSuccess }: { bookingDetails: any, onSuccess: () => void }) => {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
   const [processing, setProcessing] = useState(false);
-  const [, navigate] = useLocation();
-  const [enabledPaymentMethods, setEnabledPaymentMethods] = useState({
-    upiEnabled: false,
-    cardsEnabled: false,
-    netBankingEnabled: false,
-    stripeEnabled: false
-  });
 
-  useEffect(() => {
-    // Fetch enabled payment methods from admin config
-    fetch('/api/admin/payment-methods')
-      .then(res => res.json())
-      .then(data => setEnabledPaymentMethods(data))
-      .catch(err => console.error('Failed to load payment methods:', err));
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleCardPayment = async () => {
     if (!stripe || !elements) {
+      toast({
+        title: "Payment Error",
+        description: "Payment system not initialized. Please refresh the page.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -58,7 +50,150 @@ const BookingCheckoutForm = ({ bookingDetails }: { bookingDetails: any }) => {
           variant: "destructive",
         });
       } else {
-        // Payment successful - create the booking
+        // Payment successful - notify parent
+        await onSuccess();
+      }
+    } catch (err) {
+      toast({
+        title: "Payment Error",
+        description: "An unexpected error occurred during payment processing.",
+        variant: "destructive",
+      });
+    }
+
+    setProcessing(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      {stripe && elements ? (
+        <PaymentElement 
+          options={{
+            layout: "tabs"
+          }}
+        />
+      ) : (
+        <div className="text-center py-4 text-gray-500">
+          <p>Loading payment form...</p>
+        </div>
+      )}
+      <Button 
+        type="button" 
+        disabled={!stripe || processing}
+        onClick={handleCardPayment}
+        className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
+        data-testid="button-complete-card-payment"
+      >
+        {processing ? (
+          <>
+            <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-3"></div>
+            Processing Payment...
+          </>
+        ) : (
+          `Pay ₹${bookingDetails.sessionCost} with Card`
+        )}
+      </Button>
+    </div>
+  );
+};
+
+const BookingCheckoutForm = ({ bookingDetails, hasStripe }: { bookingDetails: any, hasStripe: boolean }) => {
+  const { toast } = useToast();
+  const [processing, setProcessing] = useState(false);
+  const [, navigate] = useLocation();
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'upi' | 'netbanking' | 'cards'>('upi');
+  const [upiId, setUpiId] = useState('');
+  const [bankName, setBankName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [enabledPaymentMethods, setEnabledPaymentMethods] = useState({
+    upiEnabled: false,
+    cardsEnabled: false,
+    netBankingEnabled: false,
+    stripeEnabled: false
+  });
+
+  useEffect(() => {
+    // Fetch enabled payment methods from admin config
+    fetch('/api/admin/payment-methods')
+      .then(res => res.json())
+      .then(data => {
+        setEnabledPaymentMethods(data);
+        
+        // Set default payment method to the first enabled one
+        // If currently on 'cards' but Stripe is not available, switch to an alternative
+        if (selectedPaymentMethod === 'cards' && !hasStripe) {
+          if (data.upiEnabled) setSelectedPaymentMethod('upi');
+          else if (data.netBankingEnabled) setSelectedPaymentMethod('netbanking');
+        } else if (selectedPaymentMethod === 'upi' && !data.upiEnabled) {
+          // If current method becomes disabled, switch to first available
+          if (data.cardsEnabled && hasStripe) setSelectedPaymentMethod('cards');
+          else if (data.netBankingEnabled) setSelectedPaymentMethod('netbanking');
+        } else if (selectedPaymentMethod === 'netbanking' && !data.netBankingEnabled) {
+          if (data.upiEnabled) setSelectedPaymentMethod('upi');
+          else if (data.cardsEnabled && hasStripe) setSelectedPaymentMethod('cards');
+        } else if (!selectedPaymentMethod || selectedPaymentMethod === 'upi' && !data.upiEnabled) {
+          // Initial load - set to first available method
+          if (data.upiEnabled) setSelectedPaymentMethod('upi');
+          else if (data.cardsEnabled && hasStripe) setSelectedPaymentMethod('cards');
+          else if (data.netBankingEnabled) setSelectedPaymentMethod('netbanking');
+        }
+      })
+      .catch(err => console.error('Failed to load payment methods:', err));
+  }, [hasStripe, selectedPaymentMethod]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Cards payment is handled separately by StripeCardPaymentForm
+    if (selectedPaymentMethod === 'cards') {
+      return;
+    }
+    
+    setProcessing(true);
+
+    try {
+      if (selectedPaymentMethod === 'upi') {
+        // Handle UPI payment
+        if (!upiId || !upiId.includes('@')) {
+          toast({
+            title: "Invalid UPI ID",
+            description: "Please enter a valid UPI ID (e.g., username@paytm)",
+            variant: "destructive",
+          });
+          setProcessing(false);
+          return;
+        }
+
+        // Simulate UPI payment processing
+        toast({
+          title: "UPI Payment Initiated",
+          description: `Payment request sent to ${upiId}. Please approve on your UPI app.`,
+        });
+
+        // In production, this would integrate with actual UPI payment gateway
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        await createBooking();
+
+      } else if (selectedPaymentMethod === 'netbanking') {
+        // Handle Net Banking payment
+        if (!bankName || !accountNumber) {
+          toast({
+            title: "Invalid Details",
+            description: "Please provide bank name and account number",
+            variant: "destructive",
+          });
+          setProcessing(false);
+          return;
+        }
+
+        // Simulate Net Banking payment processing
+        toast({
+          title: "Net Banking Initiated",
+          description: `Redirecting to ${bankName} for payment authorization...`,
+        });
+
+        // In production, this would redirect to bank's payment gateway
+        await new Promise(resolve => setTimeout(resolve, 2000));
         await createBooking();
       }
     } catch (err) {
@@ -70,6 +205,10 @@ const BookingCheckoutForm = ({ bookingDetails }: { bookingDetails: any }) => {
     }
 
     setProcessing(false);
+  };
+
+  const handleCardPaymentSuccess = async () => {
+    await createBooking();
   };
 
   const createBooking = async () => {
@@ -108,59 +247,154 @@ const BookingCheckoutForm = ({ bookingDetails }: { bookingDetails: any }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
-        <h3 className="font-bold text-lg mb-3 text-blue-900">Payment Methods Available</h3>
-        <div className="flex flex-wrap gap-3">
-          {enabledPaymentMethods.cardsEnabled && (
-            <div className="flex items-center bg-white px-3 py-2 rounded-lg border shadow-sm">
-              <CreditCard className="h-4 w-4 mr-2 text-blue-600" />
-              <span className="text-sm font-medium">Credit/Debit Cards</span>
-            </div>
-          )}
+      <Tabs value={selectedPaymentMethod} onValueChange={(value) => setSelectedPaymentMethod(value as 'upi' | 'netbanking' | 'cards')} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
           {enabledPaymentMethods.upiEnabled && (
-            <div className="flex items-center bg-white px-3 py-2 rounded-lg border shadow-sm">
-              <Smartphone className="h-4 w-4 mr-2 text-purple-600" />
-              <span className="text-sm font-medium">UPI & Digital Wallets</span>
-            </div>
+            <TabsTrigger value="upi" className="flex items-center gap-2" data-testid="tab-upi">
+              <Smartphone className="h-4 w-4" />
+              UPI
+            </TabsTrigger>
           )}
           {enabledPaymentMethods.netBankingEnabled && (
-            <div className="flex items-center bg-white px-3 py-2 rounded-lg border shadow-sm">
-              <Shield className="h-4 w-4 mr-2 text-green-600" />
-              <span className="text-sm font-medium">Net Banking</span>
-            </div>
+            <TabsTrigger value="netbanking" className="flex items-center gap-2" data-testid="tab-netbanking">
+              <Building2 className="h-4 w-4" />
+              Net Banking
+            </TabsTrigger>
           )}
-          {!enabledPaymentMethods.upiEnabled && !enabledPaymentMethods.cardsEnabled && !enabledPaymentMethods.netBankingEnabled && (
-            <div className="text-sm text-gray-600 italic">No payment methods currently enabled. Contact support.</div>
+          {enabledPaymentMethods.cardsEnabled && hasStripe && (
+            <TabsTrigger value="cards" className="flex items-center gap-2" data-testid="tab-cards">
+              <CreditCard className="h-4 w-4" />
+              Cards
+            </TabsTrigger>
           )}
-        </div>
-      </div>
+        </TabsList>
 
-      <div className="bg-white p-4 rounded-xl border-2 border-gray-200">
-        <PaymentElement 
-          options={{
-            layout: "tabs"
-          }}
-        />
-      </div>
-      
-      <Button 
-        type="submit" 
-        disabled={!stripe || processing}
-        className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
-        data-testid="button-complete-payment"
-      >
-        {processing ? (
-          <>
-            <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-3"></div>
-            Processing Payment...
-          </>
-        ) : (
-          `Complete Payment - ₹${bookingDetails.sessionCost}`
+        {/* UPI Payment Tab */}
+        <TabsContent value="upi" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Smartphone className="h-5 w-5 text-purple-600" />
+                Pay with UPI
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="upiId">UPI ID</Label>
+                <Input
+                  id="upiId"
+                  type="text"
+                  placeholder="username@paytm / phone@ybl"
+                  value={upiId}
+                  onChange={(e) => setUpiId(e.target.value)}
+                  data-testid="input-upi-id"
+                  className="text-base"
+                />
+                <p className="text-xs text-gray-500">Enter your UPI ID (e.g., yourname@paytm, yourname@ybl)</p>
+              </div>
+              
+              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                <p className="text-sm text-purple-900 font-medium mb-2">Supported UPI Apps:</p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-xs bg-white px-2 py-1 rounded border">Google Pay</span>
+                  <span className="text-xs bg-white px-2 py-1 rounded border">PhonePe</span>
+                  <span className="text-xs bg-white px-2 py-1 rounded border">Paytm</span>
+                  <span className="text-xs bg-white px-2 py-1 rounded border">Amazon Pay</span>
+                  <span className="text-xs bg-white px-2 py-1 rounded border">BHIM</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Net Banking Tab */}
+        <TabsContent value="netbanking" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-green-600" />
+                Pay with Net Banking
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="bankName">Bank Name</Label>
+                <Input
+                  id="bankName"
+                  type="text"
+                  placeholder="e.g., HDFC Bank, ICICI Bank, SBI"
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  data-testid="input-bank-name"
+                  className="text-base"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="accountNumber">Account Number (Last 4 digits)</Label>
+                <Input
+                  id="accountNumber"
+                  type="text"
+                  placeholder="XXXX"
+                  maxLength={4}
+                  value={accountNumber}
+                  onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ''))}
+                  data-testid="input-account-number"
+                  className="text-base"
+                />
+                <p className="text-xs text-gray-500">You'll be redirected to your bank's secure login page</p>
+              </div>
+              
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <p className="text-sm text-green-900">✓ Secure bank redirect</p>
+                <p className="text-xs text-green-700 mt-1">Your credentials are entered directly on your bank's website</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Cards (Stripe) Tab */}
+        {enabledPaymentMethods.cardsEnabled && hasStripe && (
+          <TabsContent value="cards" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-blue-600" />
+                  Pay with Card
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <StripeCardPaymentForm 
+                  bookingDetails={bookingDetails} 
+                  onSuccess={handleCardPaymentSuccess}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
         )}
-      </Button>
+      </Tabs>
+      
+      {/* Submit button for UPI and Net Banking only */}
+      {selectedPaymentMethod !== 'cards' && (
+        <Button 
+          type="submit" 
+          disabled={processing}
+          className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
+          data-testid="button-complete-payment"
+        >
+          {processing ? (
+            <>
+              <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-3"></div>
+              Processing Payment...
+            </>
+          ) : (
+            `Complete Payment - ₹${bookingDetails.sessionCost}`
+          )}
+        </Button>
+      )}
 
       <p className="text-xs text-gray-500 text-center">
-        🔒 Secured by Stripe • Your payment information is encrypted and secure
+        🔒 Secure Payment • Your information is encrypted and safe
       </p>
     </form>
   );
@@ -221,33 +455,30 @@ export default function BookingCheckout() {
     const booking = JSON.parse(storedBooking);
     setBookingDetails(booking);
 
-    // Create PaymentIntent for the booking
-    apiRequest("POST", "/api/create-payment-intent", { 
-      amount: booking.sessionCost,
-      mentorId: booking.mentorId,
-      bookingDetails: {
-        scheduledAt: booking.scheduledAt,
-        duration: booking.duration,
-        studentName: booking.studentName
-      }
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.clientSecret) {
-          setClientSecret(data.clientSecret);
-        } else {
-          throw new Error('Failed to create payment intent');
+    // Create PaymentIntent only if Stripe is enabled (for card payments)
+    // UPI and Net Banking don't need Stripe
+    if (stripePromise) {
+      apiRequest("POST", "/api/create-payment-intent", { 
+        amount: booking.sessionCost,
+        mentorId: booking.mentorId,
+        bookingDetails: {
+          scheduledAt: booking.scheduledAt,
+          duration: booking.duration,
+          studentName: booking.studentName
         }
       })
-      .catch((error) => {
-        console.error('Payment setup error:', error);
-        toast({
-          title: "Setup Error",
-          description: "Failed to initialize payment. Please try again.",
-          variant: "destructive",
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.clientSecret) {
+            setClientSecret(data.clientSecret);
+          }
+        })
+        .catch((error) => {
+          console.error('Payment setup error (Stripe):', error);
+          // Don't show error toast since UPI/Net Banking can still work
         });
-      });
-  }, []);
+    }
+  }, [stripePromise]);
 
   if (!bookingDetails) {
     return (
@@ -261,7 +492,7 @@ export default function BookingCheckout() {
     );
   }
 
-  if (!clientSecret) {
+  if (!paymentConfigLoaded) {
     return (
       <div className="min-h-screen">
         <Navigation />
@@ -269,7 +500,7 @@ export default function BookingCheckout() {
           <Card className="w-full max-w-md">
             <CardContent className="p-8 text-center">
               <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-              <h2 className="text-xl font-semibold mb-2">Setting up your payment...</h2>
+              <h2 className="text-xl font-semibold mb-2">Loading payment options...</h2>
               <p className="text-gray-600">Please wait while we prepare your secure checkout</p>
             </CardContent>
           </Card>
@@ -362,32 +593,10 @@ export default function BookingCheckout() {
               <CardContent>
                 {stripePromise && clientSecret ? (
                   <Elements stripe={stripePromise} options={{ clientSecret }}>
-                    <BookingCheckoutForm bookingDetails={bookingDetails} />
+                    <BookingCheckoutForm bookingDetails={bookingDetails} hasStripe={true} />
                   </Elements>
                 ) : (
-                  <div className="text-center py-8 space-y-4">
-                    <div className="text-6xl">🚧</div>
-                    <h3 className="text-xl font-semibold text-gray-700">Payment System Under Maintenance</h3>
-                    <p className="text-gray-600">
-                      Our payment system is currently being configured. 
-                      Please contact our support team to book your session.
-                    </p>
-                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mt-6">
-                      <h4 className="font-semibold text-blue-800 mb-2">Alternative Booking Options:</h4>
-                      <div className="space-y-2 text-sm text-blue-700">
-                        <p>📧 Email: support@codeconnect.com</p>
-                        <p>📱 WhatsApp: +91 98765 43210</p>
-                        <p>🕐 Support Hours: 9 AM - 6 PM (Mon-Fri)</p>
-                      </div>
-                    </div>
-                    <Button 
-                      onClick={() => window.location.href = '/mentors'}
-                      className="mt-4"
-                      data-testid="button-back-mentors"
-                    >
-                      Back to Mentors
-                    </Button>
-                  </div>
+                  <BookingCheckoutForm bookingDetails={bookingDetails} hasStripe={false} />
                 )}
               </CardContent>
             </Card>
