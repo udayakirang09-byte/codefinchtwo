@@ -63,7 +63,9 @@ export default function TeacherPaymentConfig() {
     queryKey: ['teacher-payment-methods', userId],
     queryFn: async () => {
       try {
+        console.log('🔍 Fetching payment methods for userId:', userId);
         const result = await apiRequest('GET', `/api/payment-methods/${userId}`);
+        console.log('✅ Payment methods fetched:', result);
         return (result as unknown as PaymentMethod[]) || [];
       } catch (error) {
         console.error('Failed to fetch payment methods:', error);
@@ -72,6 +74,13 @@ export default function TeacherPaymentConfig() {
     },
     enabled: !!userId,
   });
+
+  // Debug: Log payment methods whenever they change
+  useEffect(() => {
+    console.log('📋 Payment methods state updated:', paymentMethods);
+    console.log('📋 Is array?', Array.isArray(paymentMethods));
+    console.log('📋 Length:', paymentMethods?.length);
+  }, [paymentMethods]);
 
   // Add UPI payment method mutation
   const addUpiMutation = useMutation({

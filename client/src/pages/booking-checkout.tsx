@@ -10,9 +10,7 @@ import { apiRequest } from "@/lib/queryClient";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 
-// Load Stripe
-const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY || import.meta.env.TESTING_VITE_STRIPE_PUBLIC_KEY;
-const stripePromise = (stripePublicKey && stripePublicKey !== 'NA') ? loadStripe(stripePublicKey) : null;
+// Stripe will be loaded dynamically after fetching config from admin settings
 
 const BookingCheckoutForm = ({ bookingDetails }: { bookingDetails: any }) => {
   const stripe = useStripe();
@@ -171,12 +169,41 @@ export default function BookingCheckout() {
   const [location] = useLocation();
   const [clientSecret, setClientSecret] = useState("");
   const [bookingDetails, setBookingDetails] = useState<any>(null);
+  const [stripePromise, setStripePromise] = useState<any>(null);
+  const [paymentConfigLoaded, setPaymentConfigLoaded] = useState(false);
   const { toast } = useToast();
 
   // Extract parameters from URL
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const mentorId = urlParams.get('mentorId');
   const amount = parseFloat(urlParams.get('amount') || '0');
+
+  // Fetch payment config and load Stripe
+  useEffect(() => {
+    fetch('/api/admin/payment-config')
+      .then(res => res.json())
+      .then(data => {
+        console.log('💳 Payment config loaded:', data);
+        if (data.stripeEnabled && data.stripePublishableKey && data.stripePublishableKey !== 'NA') {
+          console.log('✅ Loading Stripe with key:', data.stripePublishableKey.substring(0, 20) + '...');
+          setStripePromise(loadStripe(data.stripePublishableKey));
+        } else {
+          // Fallback to environment variables
+          const envKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY || import.meta.env.TESTING_VITE_STRIPE_PUBLIC_KEY;
+          if (envKey && envKey !== 'NA') {
+            console.log('✅ Loading Stripe with env key:', envKey.substring(0, 20) + '...');
+            setStripePromise(loadStripe(envKey));
+          } else {
+            console.log('❌ No Stripe key configured');
+          }
+        }
+        setPaymentConfigLoaded(true);
+      })
+      .catch(err => {
+        console.error('Failed to load payment config:', err);
+        setPaymentConfigLoaded(true);
+      });
+  }, []);
 
   useEffect(() => {
     // Get booking details from sessionStorage
