@@ -58,17 +58,19 @@ export default function TeacherPaymentConfig() {
   });
 
   // Fetch teacher's payment methods
+  const userId = getTeacherUserId();
   const { data: paymentMethods = [], isLoading: methodsLoading, refetch: refetchMethods } = useQuery({
-    queryKey: ['teacher-payment-methods'],
+    queryKey: ['teacher-payment-methods', userId],
     queryFn: async () => {
       try {
-        const result = await apiRequest('GET', `/api/payment-methods/${getTeacherUserId()}`);
+        const result = await apiRequest('GET', `/api/payment-methods/${userId}`);
         return (result as unknown as PaymentMethod[]) || [];
       } catch (error) {
         console.error('Failed to fetch payment methods:', error);
         return [] as PaymentMethod[];
       }
     },
+    enabled: !!userId,
   });
 
   // Add UPI payment method mutation

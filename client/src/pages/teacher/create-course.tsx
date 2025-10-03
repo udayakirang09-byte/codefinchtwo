@@ -247,7 +247,8 @@ export default function CreateCourse() {
     createCourseMutation.mutate({
       ...formData,
       price: formData.price || "0",
-      maxStudents: parseInt(formData.maxStudents) || 10
+      maxStudents: parseInt(formData.maxStudents) || 10,
+      maxClasses: parseInt(formData.maxClasses) || 8
     });
   };
 
