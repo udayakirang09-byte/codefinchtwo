@@ -3216,6 +3216,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/admin/preferred-payment-method", async (req, res) => {
+    try {
+      const config = await db.select().from(adminConfig)
+        .where(eq(adminConfig.configKey, 'admin_preferred_payment_method'))
+        .limit(1);
+      
+      res.json({ 
+        preferredMethod: config[0]?.configValue || 'upi' // default to UPI
+      });
+    } catch (error) {
+      console.error("Error loading preferred payment method:", error);
+      res.status(500).json({ error: "Failed to load preferred payment method" });
+    }
+  });
+
+  app.patch("/api/admin/preferred-payment-method", async (req, res) => {
+    try {
+      const { preferredMethod } = req.body;
+      
+      if (!['upi', 'card', 'bank_account', 'stripe'].includes(preferredMethod)) {
+        return res.status(400).json({ error: "Invalid payment method" });
+      }
+      
+      await db.insert(adminConfig).values({
+        configKey: 'admin_preferred_payment_method',
+        configValue: preferredMethod,
+        description: 'Admin preferred payment receiving method'
+      }).onConflictDoUpdate({
+        target: adminConfig.configKey,
+        set: { configValue: preferredMethod, updatedAt: new Date() }
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error saving preferred payment method:", error);
+      res.status(500).json({ error: "Failed to save preferred payment method" });
+    }
+  });
+
   app.get("/api/admin/course-config", async (req, res) => {
     try {
       // Load course configuration from adminConfig table
