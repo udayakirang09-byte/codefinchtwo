@@ -472,13 +472,26 @@ export default function ManageSchedule() {
             {daysOfWeek.map((day) => (
               <Card key={day}>
                 <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Calendar className="w-5 h-5 mr-2" />
-                    {day}
-                  </CardTitle>
-                  <CardDescription>
-                    {groupedByDay[day] ? `${groupedByDay[day].length} time slots` : 'No slots scheduled'}
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center">
+                        <Calendar className="w-5 h-5 mr-2" />
+                        {day}
+                      </CardTitle>
+                      <CardDescription>
+                        {groupedByDay[day] ? `${groupedByDay[day].length} time slots` : 'No slots scheduled'}
+                      </CardDescription>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={addNewTimeSlot}
+                      data-testid={`button-add-slot-${day.toLowerCase()}`}
+                    >
+                      <Plus className="w-3 h-3 mr-1" />
+                      Add Slot
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {groupedByDay[day] ? (
@@ -546,16 +559,7 @@ export default function ManageSchedule() {
                     <div className="text-center py-8 text-gray-500">
                       <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                       <p>No time slots for {day}</p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="mt-3" 
-                        onClick={addNewTimeSlot}
-                        data-testid={`button-add-${day.toLowerCase()}`}
-                      >
-                        <Plus className="w-3 h-3 mr-1" />
-                        Add Slot
-                      </Button>
+                      <p className="text-sm mt-2">Click "Add Slot" above to create your first time slot</p>
                     </div>
                   )}
                 </CardContent>
