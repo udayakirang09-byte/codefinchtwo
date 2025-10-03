@@ -75,6 +75,7 @@ function Router() {
       <Route path="/events" component={Events} />
       <Route path="/achievement-badges" component={AchievementBadges} />
       <Route path="/help" component={Help} />
+      <Route path="/admin" component={AdminHome} />
       <Route path="/admin/user-management" component={UserManagement} />
       <Route path="/admin/mentor-approval" component={MentorApproval} />
       <Route path="/admin/analytics" component={AdminAnalytics} />
