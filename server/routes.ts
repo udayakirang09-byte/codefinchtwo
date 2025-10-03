@@ -4082,6 +4082,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let processedCount = 0;
       const errors = [];
 
+      // Get configured teacher payout wait hours
+      const feeConfig = await storage.getActiveTransactionFeeConfig();
+      const teacherPayoutWaitHours = feeConfig?.teacherPayoutWaitHours || 24;
+      console.log(`⏰ Using configured teacher payout wait period: ${teacherPayoutWaitHours} hours`);
+
       for (const workflow of workflowsToProcess) {
         try {
           console.log(`⚙️ Processing workflow ${workflow.id}: ${workflow.currentStage}`);
@@ -4097,23 +4102,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           switch (workflow.currentStage) {
             case 'payment_received':
               // Student has paid, waiting for class completion
-              // Move to waiting_24h only after class scheduled time
+              // Move to waiting stage only after class scheduled time
               if (!workflow.nextActionAt) break;
               
               const classEndTime = new Date(workflow.nextActionAt);
               if (now >= classEndTime) {
-                // Class is complete, now wait 24 hours for teacher payout
+                // Class is complete, now wait configured hours for teacher payout
                 const payoutEligibleAt = new Date(classEndTime);
-                payoutEligibleAt.setHours(payoutEligibleAt.getHours() + 24); // 24 hours after class
+                payoutEligibleAt.setHours(payoutEligibleAt.getHours() + teacherPayoutWaitHours);
                 
                 await storage.updatePaymentWorkflowStage(workflow.id, 'waiting_24h', payoutEligibleAt);
-                console.log(`✅ Workflow ${workflow.id}: Class completed, teacher payout eligible at ${payoutEligibleAt}`);
+                console.log(`✅ Workflow ${workflow.id}: Class completed, teacher payout eligible at ${payoutEligibleAt} (${teacherPayoutWaitHours}h wait)`);
                 processedCount++;
               }
               break;
               
             case 'waiting_24h':
-              // Check if 24 hours have passed since class completion
+              // Check if configured wait hours have passed since class completion
               if (!transaction.teacherPayoutEligibleAt) {
                 errors.push({ workflowId: workflow.id, error: 'No teacher payout eligible time set' });
                 continue;
@@ -4121,10 +4126,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               const payoutEligibleAt = new Date(transaction.teacherPayoutEligibleAt);
               if (now >= payoutEligibleAt) {
-                // 24 hours have passed, release payment to teacher
+                // Configured wait hours have passed, release payment to teacher
                 await storage.updatePaymentWorkflowStage(workflow.id, 'teacher_payout', undefined);
                 await storage.updatePaymentTransactionStatus(workflow.transactionId, 'processing', 'admin_to_teacher');
-                console.log(`💰 Workflow ${workflow.id}: 24h elapsed, releasing payment to teacher`);
+                console.log(`💰 Workflow ${workflow.id}: ${teacherPayoutWaitHours}h wait elapsed, releasing payment to teacher`);
                 
                 // In production, trigger actual payment transfer here
                 // For now, mark as completed after brief delay
@@ -4184,6 +4189,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`💳 Creating payment for booking ${bookingId}`);
       
+      // Get configured payment settings
+      const feeConfig = await storage.getActiveTransactionFeeConfig();
+      const teacherPayoutWaitHours = feeConfig?.teacherPayoutWaitHours || 24;
+      
       // Calculate transaction fee (2% default)
       const feePercentage = 0.02;
       const transactionFee = parseFloat((amount * feePercentage).toFixed(2));
@@ -4203,7 +4212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         workflowStage: 'student_to_admin',
         scheduledAt: new Date(),
         cancellationDeadline: new Date(Date.now() + 5 * 60 * 60 * 1000), // 5 hours from now
-        teacherPayoutEligibleAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours from now
+        teacherPayoutEligibleAt: new Date(Date.now() + teacherPayoutWaitHours * 60 * 60 * 1000) // Configured hours
       });
       
       // Create automated workflow
@@ -4214,7 +4223,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         nextStage: 'waiting_24h',
         nextActionAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour (simulating class completion)
         cancellationWindowHours: 5,
-        teacherPayoutDelayHours: 24
+        teacherPayoutDelayHours: teacherPayoutWaitHours
       });
       
       console.log(`✅ Created payment workflow ${workflow.id} for booking ${bookingId}`);

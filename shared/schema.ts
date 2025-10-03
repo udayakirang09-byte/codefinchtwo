@@ -597,6 +597,7 @@ export const transactionFeeConfig = pgTable("transaction_fee_config", {
   feePercentage: decimal("fee_percentage", { precision: 5, scale: 2 }).default("2.00"), // 2% default
   minimumFee: decimal("minimum_fee", { precision: 10, scale: 2 }).default("0.50"), // Minimum fee amount
   maximumFee: decimal("maximum_fee", { precision: 10, scale: 2 }), // Optional maximum cap
+  teacherPayoutWaitHours: integer("teacher_payout_wait_hours").default(24), // Hours to wait after class completion before releasing payment to teacher (default 24 hours)
   isActive: boolean("is_active").default(true),
   description: text("description"),
   updatedBy: varchar("updated_by").references(() => users.id).notNull(),

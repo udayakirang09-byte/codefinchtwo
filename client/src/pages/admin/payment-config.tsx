@@ -45,6 +45,7 @@ interface TransactionFeeConfig {
   feePercentage: string;
   minimumFee: string;
   maximumFee?: string;
+  teacherPayoutWaitHours?: number;
   isActive: boolean;
   description?: string;
 }
@@ -75,6 +76,7 @@ export default function AdminPaymentConfig() {
     feePercentage: '2.00',
     minimumFee: '0.50',
     maximumFee: '',
+    teacherPayoutWaitHours: 24,
     description: 'Standard transaction processing fee'
   });
 
@@ -154,6 +156,19 @@ export default function AdminPaymentConfig() {
     return () => clearInterval(interval);
   }, [refetchAnalytics]);
 
+  // Populate fee form when config loads
+  useEffect(() => {
+    if (currentFeeConfig) {
+      setFeeForm({
+        feePercentage: currentFeeConfig.feePercentage || '2.00',
+        minimumFee: currentFeeConfig.minimumFee || '0.50',
+        maximumFee: currentFeeConfig.maximumFee || '',
+        teacherPayoutWaitHours: currentFeeConfig.teacherPayoutWaitHours || 24,
+        description: currentFeeConfig.description || 'Standard transaction processing fee'
+      });
+    }
+  }, [currentFeeConfig]);
+
   // Add UPI payment method mutation
   const addUpiMutation = useMutation({
     mutationFn: async (upiData: typeof upiForm) => {
@@ -204,6 +219,9 @@ export default function AdminPaymentConfig() {
         feePercentage: feeData.feePercentage,
         minimumFee: feeData.minimumFee,
         maximumFee: feeData.maximumFee || null,
+        teacherPayoutWaitHours: typeof feeData.teacherPayoutWaitHours === 'number' 
+          ? feeData.teacherPayoutWaitHours 
+          : parseInt(String(feeData.teacherPayoutWaitHours)) || 24,
         description: feeData.description,
         updatedBy: getAdminUserId(),
       });
@@ -211,7 +229,7 @@ export default function AdminPaymentConfig() {
     onSuccess: () => {
       toast({
         title: "Fee Configuration Updated",
-        description: "Transaction fee settings have been updated successfully!",
+        description: "Transaction fee and payout settings have been updated successfully!",
       });
       refetchFeeConfig();
     },
@@ -759,7 +777,7 @@ export default function AdminPaymentConfig() {
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Current Configuration</h3>
                     <Card className="p-4 bg-muted/50">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">Fee Percentage</p>
                           <p className="text-xl font-bold" data-testid="text-current-fee-percentage">{currentFeeConfig.feePercentage}%</p>
@@ -772,6 +790,12 @@ export default function AdminPaymentConfig() {
                           <p className="text-sm font-medium text-muted-foreground">Maximum Fee</p>
                           <p className="text-xl font-bold" data-testid="text-current-max-fee">
                             {currentFeeConfig.maximumFee ? `₹${currentFeeConfig.maximumFee}` : 'No Limit'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Teacher Payout Wait</p>
+                          <p className="text-xl font-bold" data-testid="text-current-payout-wait-hours">
+                            {currentFeeConfig.teacherPayoutWaitHours || 24} hours
                           </p>
                         </div>
                       </div>
@@ -841,6 +865,27 @@ export default function AdminPaymentConfig() {
                         />
                       </div>
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="teacherPayoutWaitHours">Teacher Payout Wait Period (Hours) *</Label>
+                    <div className="relative">
+                      <Input
+                        id="teacherPayoutWaitHours"
+                        type="number"
+                        step="1"
+                        min="1"
+                        max="168"
+                        placeholder="24"
+                        value={feeForm.teacherPayoutWaitHours}
+                        onChange={(e) => setFeeForm(prev => ({ ...prev, teacherPayoutWaitHours: parseInt(e.target.value) || 24 }))}
+                        data-testid="input-teacher-payout-wait-hours"
+                      />
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">hours</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Number of hours to wait after class completion before releasing payment to teacher (1-168 hours, default 24).
+                    </p>
                   </div>
 
                   <div className="space-y-2">

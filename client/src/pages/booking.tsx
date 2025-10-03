@@ -244,6 +244,11 @@ export default function Booking() {
       return;
     }
 
+    // Subject validation (optional to allow backward compatibility with pending bookings)
+    if (!formData.subject) {
+      console.warn('Subject not selected, defaulting to General Programming');
+    }
+
     const scheduledAt = new Date(`${formData.selectedDate}T${formData.selectedTime}`);
     
     // Get authenticated user info
@@ -269,6 +274,7 @@ export default function Booking() {
       mentorName: `${mentor.user.firstName} ${mentor.user.lastName}`,
       scheduledAt: scheduledAt.toISOString(),
       duration: duration,
+      subject: formData.subject || 'General Programming', // Default if not selected
       notes: formData.notes,
       studentAge: parseInt(formData.studentAge) || null,
       studentName: formData.studentName,

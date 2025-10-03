@@ -80,6 +80,7 @@ const BookingCheckoutForm = ({ bookingDetails }: { bookingDetails: any }) => {
         mentorId: bookingDetails.mentorId,
         scheduledAt: new Date(bookingDetails.scheduledAt),
         duration: bookingDetails.duration,
+        subject: bookingDetails.subject || 'General Programming', // Default for backward compatibility
         notes: bookingDetails.notes,
         studentAge: bookingDetails.studentAge,
       };
