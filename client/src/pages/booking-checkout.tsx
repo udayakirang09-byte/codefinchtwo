@@ -20,6 +20,20 @@ const BookingCheckoutForm = ({ bookingDetails }: { bookingDetails: any }) => {
   const { toast } = useToast();
   const [processing, setProcessing] = useState(false);
   const [, navigate] = useLocation();
+  const [enabledPaymentMethods, setEnabledPaymentMethods] = useState({
+    upiEnabled: false,
+    cardsEnabled: false,
+    netBankingEnabled: false,
+    stripeEnabled: false
+  });
+
+  useEffect(() => {
+    // Fetch enabled payment methods from admin config
+    fetch('/api/admin/payment-methods')
+      .then(res => res.json())
+      .then(data => setEnabledPaymentMethods(data))
+      .catch(err => console.error('Failed to load payment methods:', err));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,18 +112,27 @@ const BookingCheckoutForm = ({ bookingDetails }: { bookingDetails: any }) => {
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
         <h3 className="font-bold text-lg mb-3 text-blue-900">Payment Methods Available</h3>
         <div className="flex flex-wrap gap-3">
-          <div className="flex items-center bg-white px-3 py-2 rounded-lg border shadow-sm">
-            <CreditCard className="h-4 w-4 mr-2 text-blue-600" />
-            <span className="text-sm font-medium">Credit/Debit Cards</span>
-          </div>
-          <div className="flex items-center bg-white px-3 py-2 rounded-lg border shadow-sm">
-            <Smartphone className="h-4 w-4 mr-2 text-purple-600" />
-            <span className="text-sm font-medium">UPI & Digital Wallets</span>
-          </div>
-          <div className="flex items-center bg-white px-3 py-2 rounded-lg border shadow-sm">
-            <Shield className="h-4 w-4 mr-2 text-green-600" />
-            <span className="text-sm font-medium">Net Banking</span>
-          </div>
+          {enabledPaymentMethods.cardsEnabled && (
+            <div className="flex items-center bg-white px-3 py-2 rounded-lg border shadow-sm">
+              <CreditCard className="h-4 w-4 mr-2 text-blue-600" />
+              <span className="text-sm font-medium">Credit/Debit Cards</span>
+            </div>
+          )}
+          {enabledPaymentMethods.upiEnabled && (
+            <div className="flex items-center bg-white px-3 py-2 rounded-lg border shadow-sm">
+              <Smartphone className="h-4 w-4 mr-2 text-purple-600" />
+              <span className="text-sm font-medium">UPI & Digital Wallets</span>
+            </div>
+          )}
+          {enabledPaymentMethods.netBankingEnabled && (
+            <div className="flex items-center bg-white px-3 py-2 rounded-lg border shadow-sm">
+              <Shield className="h-4 w-4 mr-2 text-green-600" />
+              <span className="text-sm font-medium">Net Banking</span>
+            </div>
+          )}
+          {!enabledPaymentMethods.upiEnabled && !enabledPaymentMethods.cardsEnabled && !enabledPaymentMethods.netBankingEnabled && (
+            <div className="text-sm text-gray-600 italic">No payment methods currently enabled. Contact support.</div>
+          )}
         </div>
       </div>
 

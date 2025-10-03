@@ -27,9 +27,9 @@ type PaymentMethod = {
   createdAt: string;
 };
 
-// Get current teacher user ID (in production, this would come from auth)
+// Get current teacher user ID from localStorage (authenticated user)
 function getTeacherUserId(): string {
-  return 'teacher-001'; // This would be dynamic based on logged-in teacher
+  return localStorage.getItem('userEmail') || '';
 }
 
 export default function TeacherPaymentConfig() {
