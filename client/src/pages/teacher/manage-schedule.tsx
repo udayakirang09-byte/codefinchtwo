@@ -27,6 +27,8 @@ export default function ManageSchedule() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingSlot, setEditingSlot] = useState<TimeSlot | null>(null);
   const [newSlot, setNewSlot] = useState({
     dayOfWeek: '',
     startTime: '',
@@ -36,6 +38,14 @@ export default function ManageSchedule() {
   
   // Get authenticated user email from localStorage
   const userEmail = localStorage.getItem('userEmail') || 'teacher@codeconnect.com';
+
+  // Helper function to format time in AM/PM
+  const formatTimeAMPM = (time24: string): string => {
+    const [hour, minute] = time24.split(':').map(Number);
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
+  };
 
   const { data: schedule = [], isLoading } = useQuery({
     queryKey: ['teacher-schedule', userEmail],
@@ -98,9 +108,50 @@ export default function ManageSchedule() {
   });
 
   const deleteTimeSlot = (slotId: string) => {
-    if (confirm('Are you sure you want to delete this time slot?')) {
+    if (window.confirm('Are you sure you want to delete this time slot?')) {
       deleteSlotMutation.mutate(slotId);
     }
+  };
+
+  const openEditDialog = (slot: TimeSlot) => {
+    setEditingSlot(slot);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSlot = () => {
+    if (!editingSlot) return;
+
+    // Validate required fields
+    if (!editingSlot.dayOfWeek || !editingSlot.startTime || !editingSlot.endTime) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Validate time range
+    if (editingSlot.startTime >= editingSlot.endTime) {
+      toast({
+        title: "Invalid Time Range",
+        description: "End time must be after start time",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    updateSlotMutation.mutate({
+      slotId: editingSlot.id,
+      updates: {
+        dayOfWeek: editingSlot.dayOfWeek,
+        startTime: editingSlot.startTime,
+        endTime: editingSlot.endTime,
+        isRecurring: editingSlot.isRecurring
+      }
+    });
+    setIsEditDialogOpen(false);
+    setEditingSlot(null);
   };
 
   const createSlotMutation = useMutation({
@@ -270,6 +321,93 @@ export default function ManageSchedule() {
                 </div>
               </DialogContent>
             </Dialog>
+
+            {/* Edit Time Slot Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Edit Time Slot</DialogTitle>
+                  <DialogDescription>
+                    Update the details of this time slot.
+                  </DialogDescription>
+                </DialogHeader>
+                {editingSlot && (
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="edit-dayOfWeek">Day of Week</Label>
+                      <Select
+                        value={editingSlot.dayOfWeek}
+                        onValueChange={(value) => setEditingSlot({ ...editingSlot, dayOfWeek: value })}
+                      >
+                        <SelectTrigger data-testid="select-edit-day">
+                          <SelectValue placeholder="Select a day" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Monday">Monday</SelectItem>
+                          <SelectItem value="Tuesday">Tuesday</SelectItem>
+                          <SelectItem value="Wednesday">Wednesday</SelectItem>
+                          <SelectItem value="Thursday">Thursday</SelectItem>
+                          <SelectItem value="Friday">Friday</SelectItem>
+                          <SelectItem value="Saturday">Saturday</SelectItem>
+                          <SelectItem value="Sunday">Sunday</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="edit-startTime">Start Time</Label>
+                        <Input
+                          id="edit-startTime"
+                          type="time"
+                          value={editingSlot.startTime}
+                          onChange={(e) => setEditingSlot({ ...editingSlot, startTime: e.target.value })}
+                          data-testid="input-edit-start-time"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="edit-endTime">End Time</Label>
+                        <Input
+                          id="edit-endTime"
+                          type="time"
+                          value={editingSlot.endTime}
+                          onChange={(e) => setEditingSlot({ ...editingSlot, endTime: e.target.value })}
+                          data-testid="input-edit-end-time"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="edit-isRecurring"
+                        checked={editingSlot.isRecurring}
+                        onCheckedChange={(checked) => setEditingSlot({ ...editingSlot, isRecurring: checked })}
+                        data-testid="switch-edit-recurring"
+                      />
+                      <Label htmlFor="edit-isRecurring">Recurring weekly</Label>
+                    </div>
+                  </div>
+                )}
+                <div className="flex justify-end gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditDialogOpen(false);
+                      setEditingSlot(null);
+                    }}
+                    data-testid="button-edit-cancel"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleEditSlot}
+                    disabled={updateSlotMutation.isPending}
+                    data-testid="button-save-edit"
+                  >
+                    {updateSlotMutation.isPending ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
             <Link href="/">
               <Button variant="outline" data-testid="button-home">
                 <Home className="w-4 h-4 mr-2" />
@@ -314,7 +452,7 @@ export default function ManageSchedule() {
                             <div className="flex items-center text-gray-700">
                               <Clock className="w-4 h-4 mr-2" />
                               <span className="font-medium">
-                                {slot.startTime} - {slot.endTime}
+                                {formatTimeAMPM(slot.startTime)} - {formatTimeAMPM(slot.endTime)}
                               </span>
                             </div>
                             <Badge variant={slot.isAvailable ? "default" : "secondary"}>
@@ -335,6 +473,7 @@ export default function ManageSchedule() {
                             <Button
                               size="sm"
                               variant="outline"
+                              onClick={() => openEditDialog(slot)}
                               data-testid={`button-edit-${slot.id}`}
                             >
                               <Edit className="w-3 h-3" />
