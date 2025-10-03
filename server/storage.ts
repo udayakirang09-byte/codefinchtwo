@@ -350,10 +350,21 @@ export class DatabaseStorage implements IStorage {
       .where(eq(mentors.isActive, true))
       .orderBy(desc(mentors.rating));
 
-    return result.map(({ mentors: mentor, users: user }: { mentors: Mentor; users: User }) => ({
-      ...mentor,
-      user: user!,
-    }));
+    // Get all bookings to calculate actual student counts
+    const allBookings = await db.select().from(bookings);
+
+    return result.map(({ mentors: mentor, users: user }: { mentors: Mentor; users: User }) => {
+      // Calculate actual unique students for this mentor
+      const mentorBookings = allBookings.filter((b: any) => b.mentorId === mentor.id);
+      const uniqueStudentIds = new Set(mentorBookings.map((b: any) => b.studentId));
+      const actualStudentCount = uniqueStudentIds.size;
+
+      return {
+        ...mentor,
+        totalStudents: actualStudentCount, // Use actual count from bookings
+        user: user!,
+      };
+    });
   }
 
   async getMentor(id: string): Promise<MentorWithUser | undefined> {
@@ -365,8 +376,14 @@ export class DatabaseStorage implements IStorage {
 
     if (!result) return undefined;
 
+    // Calculate actual unique students for this mentor
+    const mentorBookings = await db.select().from(bookings).where(eq(bookings.mentorId, id));
+    const uniqueStudentIds = new Set(mentorBookings.map((b: any) => b.studentId));
+    const actualStudentCount = uniqueStudentIds.size;
+
     return {
       ...result.mentors,
+      totalStudents: actualStudentCount, // Use actual count from bookings
       user: result.users!,
     };
   }
