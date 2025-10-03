@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck, Mail, MessageSquare, Phone, CreditCard, Key, Lock, X } from "lucide-react";
+import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck, Mail, MessageSquare, Phone, CreditCard, Key, Lock, X, Building } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface SystemStats {
@@ -77,6 +77,7 @@ export default function AdminDashboard() {
 
   // Admin Payment Methods State
   const [adminPaymentMethods, setAdminPaymentMethods] = useState<any[]>([]);
+  const [preferredPaymentMethod, setPreferredPaymentMethod] = useState('upi');
   const [adminUpiForm, setAdminUpiForm] = useState({
     upiId: '',
     upiProvider: 'phonepe',
@@ -174,6 +175,12 @@ export default function AdminDashboard() {
       .then((res) => res.json())
       .then((config) => setPaymentConfig(config))
       .catch(() => console.error("Failed to load payment config"));
+    
+    // Load preferred payment method
+    fetch("/api/admin/preferred-payment-method")
+      .then((res) => res.json())
+      .then((data) => setPreferredPaymentMethod(data.preferredMethod))
+      .catch(() => console.error("Failed to load preferred payment method"));
     
     // Load payment methods
     fetch("/api/admin/payment-methods")
@@ -340,6 +347,38 @@ export default function AdminDashboard() {
       toast({
         title: "Error",
         description: "Error saving contact settings. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const savePreferredPaymentMethod = async (method: string) => {
+    try {
+      const response = await fetch("/api/admin/preferred-payment-method", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ preferredMethod: method })
+      });
+      
+      if (response.ok) {
+        setPreferredPaymentMethod(method);
+        toast({
+          title: "Success",
+          description: "Preferred payment method updated successfully!",
+        });
+      } else {
+        const error = await response.json();
+        toast({
+          title: "Error",
+          description: `Failed to update preferred payment method: ${error.error || 'Unknown error'}`,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error saving preferred payment method:", error);
+      toast({
+        title: "Error",
+        description: "Error updating preferred payment method. Please try again.",
         variant: "destructive",
       });
     }
@@ -1030,6 +1069,71 @@ export default function AdminDashboard() {
 
             {/* Admin Payment Methods Tab */}
             <TabsContent value="admin-payment-methods" className="space-y-6">
+              {/* Preferred Payment Receiving Method */}
+              <div className="border rounded-lg p-6 bg-gradient-to-r from-blue-50 to-purple-50">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-blue-600" />
+                  Preferred Payment Receiving Method
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Select which payment method should receive all student payments. After 24 hours, payments will be automatically transferred to teachers.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <button
+                    onClick={() => savePreferredPaymentMethod('upi')}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      preferredPaymentMethod === 'upi'
+                        ? 'border-blue-500 bg-blue-100'
+                        : 'border-gray-300 hover:border-blue-300'
+                    }`}
+                    data-testid="button-select-upi"
+                  >
+                    <DollarSign className="h-6 w-6 mx-auto mb-2 text-green-600" />
+                    <div className="font-medium">UPI / GPay</div>
+                    <div className="text-xs text-gray-600">Google Pay, PhonePe, etc.</div>
+                  </button>
+                  <button
+                    onClick={() => savePreferredPaymentMethod('card')}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      preferredPaymentMethod === 'card'
+                        ? 'border-blue-500 bg-blue-100'
+                        : 'border-gray-300 hover:border-blue-300'
+                    }`}
+                    data-testid="button-select-card"
+                  >
+                    <CreditCard className="h-6 w-6 mx-auto mb-2 text-blue-600" />
+                    <div className="font-medium">Debit Card</div>
+                    <div className="text-xs text-gray-600">Visa, Mastercard, RuPay</div>
+                  </button>
+                  <button
+                    onClick={() => savePreferredPaymentMethod('bank_account')}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      preferredPaymentMethod === 'bank_account'
+                        ? 'border-blue-500 bg-blue-100'
+                        : 'border-gray-300 hover:border-blue-300'
+                    }`}
+                    data-testid="button-select-bank"
+                  >
+                    <Building className="h-6 w-6 mx-auto mb-2 text-purple-600" />
+                    <div className="font-medium">Bank Account</div>
+                    <div className="text-xs text-gray-600">Net Banking</div>
+                  </button>
+                  <button
+                    onClick={() => savePreferredPaymentMethod('stripe')}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      preferredPaymentMethod === 'stripe'
+                        ? 'border-blue-500 bg-blue-100'
+                        : 'border-gray-300 hover:border-blue-300'
+                    }`}
+                    data-testid="button-select-stripe"
+                  >
+                    <CreditCard className="h-6 w-6 mx-auto mb-2 text-indigo-600" />
+                    <div className="font-medium">Stripe</div>
+                    <div className="text-xs text-gray-600">All payment methods</div>
+                  </button>
+                </div>
+              </div>
+
               <div className="border rounded-lg p-6 space-y-6">
                 <div>
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
