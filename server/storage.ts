@@ -347,21 +347,36 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(mentors)
       .leftJoin(users, eq(mentors.userId, users.id))
+      .leftJoin(teacherProfiles, eq(mentors.userId, teacherProfiles.userId))
       .where(eq(mentors.isActive, true))
       .orderBy(desc(mentors.rating));
 
     // Get all bookings to calculate actual student counts
     const allBookings = await db.select().from(bookings);
 
-    return result.map(({ mentors: mentor, users: user }: { mentors: Mentor; users: User }) => {
+    return result.map(({ mentors: mentor, users: user, teacher_profiles: profile }: any) => {
       // Calculate actual unique students for this mentor
       const mentorBookings = allBookings.filter((b: any) => b.mentorId === mentor.id);
       const uniqueStudentIds = new Set(mentorBookings.map((b: any) => b.studentId));
       const actualStudentCount = uniqueStudentIds.size;
 
+      // Calculate total experience from programming languages
+      let totalExperience = mentor.experience || 0;
+      if (profile?.programmingLanguages && Array.isArray(profile.programmingLanguages)) {
+        const summedExperience = profile.programmingLanguages.reduce(
+          (sum: number, lang: any) => sum + (lang.yearsOfExperience || 0), 
+          0
+        );
+        if (summedExperience > 0) {
+          totalExperience = summedExperience;
+        }
+      }
+
       return {
         ...mentor,
-        totalStudents: actualStudentCount, // Use actual count from bookings
+        totalStudents: actualStudentCount,
+        experience: totalExperience,
+        programmingLanguages: profile?.programmingLanguages || [],
         user: user!,
       };
     });
@@ -372,6 +387,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(mentors)
       .leftJoin(users, eq(mentors.userId, users.id))
+      .leftJoin(teacherProfiles, eq(mentors.userId, teacherProfiles.userId))
       .where(eq(mentors.id, id));
 
     if (!result) return undefined;
@@ -381,9 +397,25 @@ export class DatabaseStorage implements IStorage {
     const uniqueStudentIds = new Set(mentorBookings.map((b: any) => b.studentId));
     const actualStudentCount = uniqueStudentIds.size;
 
+    const profile = (result as any).teacher_profiles;
+    
+    // Calculate total experience from programming languages
+    let totalExperience = result.mentors.experience || 0;
+    if (profile?.programmingLanguages && Array.isArray(profile.programmingLanguages)) {
+      const summedExperience = profile.programmingLanguages.reduce(
+        (sum: number, lang: any) => sum + (lang.yearsOfExperience || 0), 
+        0
+      );
+      if (summedExperience > 0) {
+        totalExperience = summedExperience;
+      }
+    }
+
     return {
       ...result.mentors,
-      totalStudents: actualStudentCount, // Use actual count from bookings
+      totalStudents: actualStudentCount,
+      experience: totalExperience,
+      programmingLanguages: profile?.programmingLanguages || [],
       user: result.users!,
     };
   }
