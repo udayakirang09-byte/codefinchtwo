@@ -60,6 +60,13 @@ export default function AdminDashboard() {
     paypalClientSecret: ''
   });
 
+  const [paymentMethods, setPaymentMethods] = useState({
+    upiEnabled: true,
+    cardsEnabled: false,
+    netBankingEnabled: false,
+    stripeEnabled: false
+  });
+
   const [showSystemReports, setShowSystemReports] = useState(false);
   const [showPlatformSettings, setShowPlatformSettings] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -142,6 +149,12 @@ export default function AdminDashboard() {
       .then((res) => res.json())
       .then((config) => setPaymentConfig(config))
       .catch(() => console.error("Failed to load payment config"));
+    
+    // Load payment methods
+    fetch("/api/admin/payment-methods")
+      .then((res) => res.json())
+      .then((methods) => setPaymentMethods(methods))
+      .catch(() => console.error("Failed to load payment methods"));
   }, []);
 
   const handleViewDetails = async (category: string) => {
@@ -270,6 +283,27 @@ export default function AdminDashboard() {
       // Revert the UI state on failure
       setContactSettings(contactSettings);
       alert("❌ Error saving contact settings. Please try again.");
+    }
+  };
+
+  const savePaymentMethods = async (newMethods: typeof paymentMethods) => {
+    try {
+      const response = await fetch("/api/admin/payment-methods", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newMethods)
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("Failed to save payment methods:", error);
+        setPaymentMethods(paymentMethods);
+        alert(`❌ Failed to save payment methods: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error("Error saving payment methods:", error);
+      setPaymentMethods(paymentMethods);
+      alert("❌ Error saving payment methods. Please try again.");
     }
   };
 
@@ -610,6 +644,95 @@ export default function AdminDashboard() {
                   <Lock className="h-4 w-4 mr-2" />
                   Save Payment Configuration
                 </Button>
+              </div>
+
+              {/* Payment Methods Configuration */}
+              <div className="border-t pt-6 mt-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-purple-600" />
+                  Payment Methods (Student Checkout Options)
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Configure which payment methods are available to students during checkout
+                </p>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <CreditCard className="h-5 w-5 text-indigo-600" />
+                      <div>
+                        <p className="font-medium">UPI Payment</p>
+                        <p className="text-sm text-gray-600">PhonePe, Google Pay, Paytm, etc.</p>
+                      </div>
+                    </div>
+                    <Switch 
+                      checked={paymentMethods.upiEnabled}
+                      onCheckedChange={(checked) => {
+                        const newMethods = { ...paymentMethods, upiEnabled: checked };
+                        setPaymentMethods(newMethods);
+                        savePaymentMethods(newMethods);
+                      }}
+                      data-testid="switch-upi-enabled"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <CreditCard className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <p className="font-medium">Credit/Debit Cards</p>
+                        <p className="text-sm text-gray-600">Visa, Mastercard, Rupay, etc.</p>
+                      </div>
+                    </div>
+                    <Switch 
+                      checked={paymentMethods.cardsEnabled}
+                      onCheckedChange={(checked) => {
+                        const newMethods = { ...paymentMethods, cardsEnabled: checked };
+                        setPaymentMethods(newMethods);
+                        savePaymentMethods(newMethods);
+                      }}
+                      data-testid="switch-cards-enabled"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <CreditCard className="h-5 w-5 text-green-600" />
+                      <div>
+                        <p className="font-medium">Net Banking</p>
+                        <p className="text-sm text-gray-600">All major banks in India</p>
+                      </div>
+                    </div>
+                    <Switch 
+                      checked={paymentMethods.netBankingEnabled}
+                      onCheckedChange={(checked) => {
+                        const newMethods = { ...paymentMethods, netBankingEnabled: checked };
+                        setPaymentMethods(newMethods);
+                        savePaymentMethods(newMethods);
+                      }}
+                      data-testid="switch-netbanking-enabled"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <CreditCard className="h-5 w-5 text-purple-600" />
+                      <div>
+                        <p className="font-medium">Stripe (International)</p>
+                        <p className="text-sm text-gray-600">Credit cards from all countries</p>
+                      </div>
+                    </div>
+                    <Switch 
+                      checked={paymentMethods.stripeEnabled}
+                      onCheckedChange={(checked) => {
+                        const newMethods = { ...paymentMethods, stripeEnabled: checked };
+                        setPaymentMethods(newMethods);
+                        savePaymentMethods(newMethods);
+                      }}
+                      data-testid="switch-stripe-method-enabled"
+                    />
+                  </div>
+                </div>
               </div>
             </TabsContent>
           </Tabs>

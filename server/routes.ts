@@ -3155,6 +3155,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/admin/payment-methods", async (req, res) => {
+    try {
+      // Load payment methods from adminConfig table
+      const configs = await db.select().from(adminConfig).where(
+        or(
+          eq(adminConfig.configKey, 'payment_method_upi'),
+          eq(adminConfig.configKey, 'payment_method_cards'),
+          eq(adminConfig.configKey, 'payment_method_netbanking'),
+          eq(adminConfig.configKey, 'payment_method_stripe')
+        )
+      );
+      
+      const configMap = configs.reduce((acc: any, config: any) => {
+        acc[config.configKey] = config.configValue;
+        return acc;
+      }, {} as Record<string, string | null>);
+      
+      const paymentMethods = {
+        upiEnabled: configMap['payment_method_upi'] === 'true' || configMap['payment_method_upi'] === null, // UPI enabled by default
+        cardsEnabled: configMap['payment_method_cards'] === 'true',
+        netBankingEnabled: configMap['payment_method_netbanking'] === 'true',
+        stripeEnabled: configMap['payment_method_stripe'] === 'true'
+      };
+      
+      res.json(paymentMethods);
+    } catch (error) {
+      console.error("Error loading payment methods:", error);
+      res.status(500).json({ error: "Failed to load payment methods" });
+    }
+  });
+
+  app.patch("/api/admin/payment-methods", async (req, res) => {
+    try {
+      const { upiEnabled, cardsEnabled, netBankingEnabled, stripeEnabled } = req.body;
+      
+      // Update payment methods in adminConfig table
+      const configUpdates = [
+        { key: 'payment_method_upi', value: upiEnabled.toString() },
+        { key: 'payment_method_cards', value: cardsEnabled.toString() },
+        { key: 'payment_method_netbanking', value: netBankingEnabled.toString() },
+        { key: 'payment_method_stripe', value: stripeEnabled.toString() }
+      ];
+      
+      await Promise.all(configUpdates.map(config =>
+        db.insert(adminConfig).values({
+          configKey: config.key,
+          configValue: config.value,
+          description: `Payment method configuration for ${config.key}`
+        }).onConflictDoUpdate({
+          target: adminConfig.configKey,
+          set: { configValue: config.value, updatedAt: new Date() }
+        })
+      ));
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error saving payment methods:", error);
+      res.status(500).json({ error: "Failed to save payment methods" });
+    }
+  });
+
   // AI Analytics & Business Intelligence Routes
   app.get("/api/admin/ai-insights", async (req, res) => {
     try {
