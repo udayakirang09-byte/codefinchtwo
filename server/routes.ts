@@ -3129,12 +3129,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update payment configuration in adminConfig table
       const configUpdates = [
-        { key: 'stripe_enabled', value: stripeEnabled.toString() },
-        { key: 'stripe_publishable_key', value: stripePublishableKey },
-        { key: 'stripe_secret_key', value: stripeSecretKey },
-        { key: 'razorpay_enabled', value: razorpayEnabled.toString() },
-        { key: 'razorpay_key_id', value: razorpayKeyId },
-        { key: 'razorpay_key_secret', value: razorpayKeySecret }
+        { key: 'stripe_enabled', value: stripeEnabled !== undefined ? stripeEnabled.toString() : 'false' },
+        { key: 'stripe_publishable_key', value: stripePublishableKey || '' },
+        { key: 'stripe_secret_key', value: stripeSecretKey || '' },
+        { key: 'razorpay_enabled', value: razorpayEnabled !== undefined ? razorpayEnabled.toString() : 'false' },
+        { key: 'razorpay_key_id', value: razorpayKeyId || '' },
+        { key: 'razorpay_key_secret', value: razorpayKeySecret || '' }
       ];
       
       await Promise.all(configUpdates.map(config =>
