@@ -274,17 +274,17 @@ export default function Mentors() {
                       <Users className="h-4 w-4 mr-1" />
                       {mentor.totalStudents || 0} students
                     </span>
-                    <span className="flex items-center">
-                      <BookOpen className="h-4 w-4 mr-1" />
-                      {mentor.experience || 0} years
+                    <span className="flex items-center" title="Total experience across all subjects">
+                      <Clock className="h-4 w-4 mr-1" />
+                      {mentor.experience || 0} years total
                     </span>
                   </div>
                   
                   <div className="mb-4">
                     <div className="flex flex-wrap gap-1 mb-2">
-                      {(mentor.specialties || []).map((specialty: string) => (
-                        <Badge key={specialty} variant="outline" className="text-xs">
-                          {specialty}
+                      {(mentor.subjectsWithExperience || []).map((item: any, idx: number) => (
+                        <Badge key={idx} variant="outline" className="text-xs" title={`${item.experience} years experience`}>
+                          {item.subject} ({item.experience}y)
                         </Badge>
                       ))}
                     </div>

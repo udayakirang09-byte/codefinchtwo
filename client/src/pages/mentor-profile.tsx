@@ -154,9 +154,9 @@ export default function MentorProfile() {
                     <Users className="mr-1" size={16} />
                     <span>{mentor.totalStudents} students taught</span>
                   </div>
-                  <div className="flex items-center" data-testid="stat-mentor-experience">
+                  <div className="flex items-center" data-testid="stat-mentor-experience" title="Total experience across all subjects">
                     <Clock className="mr-1" size={16} />
-                    <span>{mentor.experience} years experience</span>
+                    <span>{mentor.experience} years total experience</span>
                   </div>
                 </div>
               </div>
@@ -170,18 +170,23 @@ export default function MentorProfile() {
             </div>
 
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-foreground mb-4">Specialties</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-4">Subjects & Experience</h2>
               <div className="flex flex-wrap gap-3">
-                {mentor.specialties?.map((specialty, index) => (
-                  <Badge 
-                    key={index} 
-                    variant="secondary" 
-                    className="text-sm px-3 py-1"
-                    data-testid={`badge-specialty-${index}`}
-                  >
-                    {specialty}
-                  </Badge>
-                ))}
+                {mentor.subjectsWithExperience && mentor.subjectsWithExperience.length > 0 ? (
+                  mentor.subjectsWithExperience.map((item: any, index: number) => (
+                    <Badge 
+                      key={index} 
+                      variant="secondary" 
+                      className="text-sm px-3 py-1"
+                      data-testid={`badge-specialty-${index}`}
+                      title={`${item.experience} years experience in ${item.subject}`}
+                    >
+                      {item.subject} ({item.experience} years)
+                    </Badge>
+                  ))
+                ) : (
+                  <p className="text-muted-foreground">No subjects listed</p>
+                )}
               </div>
             </div>
 

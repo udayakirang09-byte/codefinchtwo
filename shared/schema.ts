@@ -239,7 +239,10 @@ export type Achievement = typeof achievements.$inferSelect;
 export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
 
 // Extended types with relations
-export type MentorWithUser = Mentor & { user: User };
+export type MentorWithUser = Mentor & { 
+  user: User;
+  subjectsWithExperience?: { subject: string; experience: string }[];
+};
 export type StudentWithUser = Student & { user: User };
 export type BookingWithDetails = Booking & {
   student: StudentWithUser;

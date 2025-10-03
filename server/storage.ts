@@ -360,11 +360,18 @@ export class DatabaseStorage implements IStorage {
       const uniqueStudentIds = new Set(mentorBookings.map((b: any) => b.studentId));
       const actualStudentCount = uniqueStudentIds.size;
 
-      // Calculate total experience from programming languages
+      // Calculate total experience from subjects and get subjects with experience
       let totalExperience = mentor.experience || 0;
-      if (profile?.programmingLanguages && Array.isArray(profile.programmingLanguages)) {
-        const summedExperience = profile.programmingLanguages.reduce(
-          (sum: number, lang: any) => sum + (lang.yearsOfExperience || 0), 
+      let subjectsWithExperience: { subject: string; experience: string }[] = [];
+      
+      if (profile?.subjects && Array.isArray(profile.subjects)) {
+        subjectsWithExperience = profile.subjects;
+        // Calculate total experience by summing up all subject experiences
+        const summedExperience = profile.subjects.reduce(
+          (sum: number, subj: any) => {
+            const exp = parseInt(subj.experience) || 0;
+            return sum + exp;
+          }, 
           0
         );
         if (summedExperience > 0) {
@@ -372,10 +379,15 @@ export class DatabaseStorage implements IStorage {
         }
       }
 
+      // Use subjects for specialties instead of the old specialties field
+      const specialties = subjectsWithExperience.map(s => s.subject);
+
       return {
         ...mentor,
         totalStudents: actualStudentCount,
         experience: totalExperience,
+        specialties: specialties,
+        subjectsWithExperience: subjectsWithExperience,
         programmingLanguages: profile?.programmingLanguages || [],
         user: user!,
       };
@@ -399,11 +411,18 @@ export class DatabaseStorage implements IStorage {
 
     const profile = (result as any).teacher_profiles;
     
-    // Calculate total experience from programming languages
+    // Calculate total experience from subjects and get subjects with experience
     let totalExperience = result.mentors.experience || 0;
-    if (profile?.programmingLanguages && Array.isArray(profile.programmingLanguages)) {
-      const summedExperience = profile.programmingLanguages.reduce(
-        (sum: number, lang: any) => sum + (lang.yearsOfExperience || 0), 
+    let subjectsWithExperience: { subject: string; experience: string }[] = [];
+    
+    if (profile?.subjects && Array.isArray(profile.subjects)) {
+      subjectsWithExperience = profile.subjects;
+      // Calculate total experience by summing up all subject experiences
+      const summedExperience = profile.subjects.reduce(
+        (sum: number, subj: any) => {
+          const exp = parseInt(subj.experience) || 0;
+          return sum + exp;
+        }, 
         0
       );
       if (summedExperience > 0) {
@@ -411,10 +430,15 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
+    // Use subjects for specialties instead of the old specialties field
+    const specialties = subjectsWithExperience.map(s => s.subject);
+
     return {
       ...result.mentors,
       totalStudents: actualStudentCount,
       experience: totalExperience,
+      specialties: specialties,
+      subjectsWithExperience: subjectsWithExperience,
       programmingLanguages: profile?.programmingLanguages || [],
       user: result.users!,
     };
