@@ -141,6 +141,30 @@ export default function ManageSchedule() {
       return;
     }
     
+    // Check for overlapping time slots (exclude the current slot being edited)
+    const slotsOnSameDay = groupedByDay[editingSlot.dayOfWeek] || [];
+    const hasOverlap = slotsOnSameDay.some((existingSlot: TimeSlot) => {
+      // Skip checking against the slot being edited
+      if (existingSlot.id === editingSlot.id) return false;
+      
+      // Two slots overlap if:
+      // - Edited slot starts before existing slot ends AND
+      // - Edited slot ends after existing slot starts
+      return (
+        editingSlot.startTime < existingSlot.endTime &&
+        editingSlot.endTime > existingSlot.startTime
+      );
+    });
+    
+    if (hasOverlap) {
+      toast({
+        title: "Overlapping Time Slot",
+        description: "This time slot overlaps with an existing slot on the same day. Please choose a different time.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     updateSlotMutation.mutate({
       slotId: editingSlot.id,
       updates: {
@@ -204,6 +228,27 @@ export default function ManageSchedule() {
       toast({
         title: "Invalid Time Range",
         description: "End time must be after start time",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Check for overlapping time slots
+    const slotsOnSameDay = groupedByDay[newSlot.dayOfWeek] || [];
+    const hasOverlap = slotsOnSameDay.some((existingSlot: TimeSlot) => {
+      // Two slots overlap if:
+      // - New slot starts before existing slot ends AND
+      // - New slot ends after existing slot starts
+      return (
+        newSlot.startTime < existingSlot.endTime &&
+        newSlot.endTime > existingSlot.startTime
+      );
+    });
+    
+    if (hasOverlap) {
+      toast({
+        title: "Overlapping Time Slot",
+        description: "This time slot overlaps with an existing slot on the same day. Please choose a different time.",
         variant: "destructive",
       });
       return;
