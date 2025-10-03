@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,13 +33,26 @@ export default function CreateCourse() {
     prerequisites: ''
   });
 
+  // Load course configuration defaults from admin
+  useEffect(() => {
+    fetch('/api/admin/course-config')
+      .then(res => res.json())
+      .then(config => {
+        setFormData(prev => ({
+          ...prev,
+          maxStudents: config.maxStudentsPerCourse.toString()
+        }));
+      })
+      .catch(err => console.error('Failed to load course config:', err));
+  }, []);
+
   const createCourseMutation = useMutation({
     mutationFn: async (courseData: any) => {
       // For now, using a demo teacher ID. In production, this would come from authentication
       const teacherId = 'teacher@codeconnect.com';
       return apiRequest('POST', `/api/teacher/courses?teacherId=${teacherId}`, courseData);
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       console.log('✅ Course creation successful:', data);
       toast({
         title: "Success",
@@ -47,11 +60,22 @@ export default function CreateCourse() {
       });
       // Fix: Use the correct query key that matches the existing query
       queryClient.invalidateQueries({ queryKey: [`/api/teacher/courses?teacherId=teacher@codeconnect.com`] });
-      // Reset form
-      setFormData({
-        title: '', description: '', category: '', duration: '', 
-        price: '', difficulty: '', maxStudents: '', prerequisites: ''
-      });
+      
+      // Reset form with admin defaults
+      try {
+        const configResponse = await fetch('/api/admin/course-config');
+        const config = await configResponse.json();
+        setFormData({
+          title: '', description: '', category: '', duration: '', 
+          price: '', difficulty: '', maxStudents: config.maxStudentsPerCourse.toString(), prerequisites: ''
+        });
+      } catch (err) {
+        // Fallback to empty if config fetch fails
+        setFormData({
+          title: '', description: '', category: '', duration: '', 
+          price: '', difficulty: '', maxStudents: '', prerequisites: ''
+        });
+      }
       console.log('✅ Toast triggered and form reset');
     },
     onError: (error) => {
