@@ -11,8 +11,8 @@ import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 
 // Load Stripe
-const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
-const stripePromise = stripePublicKey ? loadStripe(stripePublicKey) : null;
+const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY || import.meta.env.TESTING_VITE_STRIPE_PUBLIC_KEY;
+const stripePromise = (stripePublicKey && stripePublicKey !== 'NA') ? loadStripe(stripePublicKey) : null;
 
 const BookingCheckoutForm = ({ bookingDetails }: { bookingDetails: any }) => {
   const stripe = useStripe();
