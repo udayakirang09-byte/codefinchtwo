@@ -67,6 +67,11 @@ export default function AdminDashboard() {
     stripeEnabled: false
   });
 
+  const [courseConfig, setCourseConfig] = useState({
+    maxStudentsPerCourse: 8,
+    maxClassesPerCourse: 8
+  });
+
   const [showSystemReports, setShowSystemReports] = useState(false);
   const [showPlatformSettings, setShowPlatformSettings] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -155,6 +160,12 @@ export default function AdminDashboard() {
       .then((res) => res.json())
       .then((methods) => setPaymentMethods(methods))
       .catch(() => console.error("Failed to load payment methods"));
+    
+    // Load course configuration
+    fetch("/api/admin/course-config")
+      .then((res) => res.json())
+      .then((config) => setCourseConfig(config))
+      .catch(() => console.error("Failed to load course config"));
   }, []);
 
   const handleViewDetails = async (category: string) => {
@@ -304,6 +315,26 @@ export default function AdminDashboard() {
       console.error("Error saving payment methods:", error);
       setPaymentMethods(paymentMethods);
       alert("❌ Error saving payment methods. Please try again.");
+    }
+  };
+
+  const saveCourseConfig = async () => {
+    try {
+      const response = await fetch("/api/admin/course-config", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(courseConfig)
+      });
+      
+      if (response.ok) {
+        alert("✅ Course configuration saved successfully!");
+      } else {
+        const error = await response.json();
+        alert(`❌ Failed to save course configuration: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error("Error saving course config:", error);
+      alert("❌ Error saving course configuration. Please try again.");
     }
   };
 
@@ -474,9 +505,10 @@ export default function AdminDashboard() {
           </CardHeader>
         <CardContent>
           <Tabs defaultValue="contact" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="contact">Contact Settings</TabsTrigger>
               <TabsTrigger value="payment">Payment Configuration</TabsTrigger>
+              <TabsTrigger value="course">Course Configuration</TabsTrigger>
             </TabsList>
             
             <TabsContent value="contact" className="space-y-4">
@@ -732,6 +764,73 @@ export default function AdminDashboard() {
                       data-testid="switch-stripe-method-enabled"
                     />
                   </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="course" className="space-y-6">
+              <div className="border rounded-lg p-6 space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <BookOpen className="h-5 w-5 text-indigo-600" />
+                    Course Default Settings
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-6">
+                    Configure default limits for all courses on the platform. Teachers can use these defaults when creating courses.
+                  </p>
+
+                  <div className="space-y-4">
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <Label htmlFor="max-students" className="text-sm font-medium mb-2 block">
+                        Maximum Students Per Course
+                      </Label>
+                      <p className="text-xs text-gray-600 mb-3">
+                        Default maximum number of students allowed to enroll in a course
+                      </p>
+                      <Input
+                        id="max-students"
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={courseConfig.maxStudentsPerCourse}
+                        onChange={(e) => setCourseConfig(prev => ({ 
+                          ...prev, 
+                          maxStudentsPerCourse: parseInt(e.target.value) || 8 
+                        }))}
+                        className="max-w-xs"
+                        data-testid="input-max-students"
+                      />
+                    </div>
+
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <Label htmlFor="max-classes" className="text-sm font-medium mb-2 block">
+                        Maximum Classes Per Course
+                      </Label>
+                      <p className="text-xs text-gray-600 mb-3">
+                        Default maximum number of classes in a course
+                      </p>
+                      <Input
+                        id="max-classes"
+                        type="number"
+                        min="1"
+                        max="50"
+                        value={courseConfig.maxClassesPerCourse}
+                        onChange={(e) => setCourseConfig(prev => ({ 
+                          ...prev, 
+                          maxClassesPerCourse: parseInt(e.target.value) || 8 
+                        }))}
+                        className="max-w-xs"
+                        data-testid="input-max-classes"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-4 border-t">
+                  <Button onClick={saveCourseConfig} data-testid="button-save-course-config">
+                    <Lock className="h-4 w-4 mr-2" />
+                    Save Course Configuration
+                  </Button>
                 </div>
               </div>
             </TabsContent>
