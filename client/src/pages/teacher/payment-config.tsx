@@ -17,19 +17,20 @@ import Navigation from '@/components/navigation';
 type PaymentMethod = {
   id: string;
   userId: string;
-  type: 'upi' | 'card';
+  type: 'upi' | 'card' | 'stripe';
   upiId?: string;
   upiProvider?: string;
   cardNumber?: string;
   cardType?: string;
+  stripeAccountId?: string;
   displayName: string;
   isDefault: boolean;
   createdAt: string;
 };
 
-// Get current teacher user ID from localStorage (authenticated user)
+// Get current teacher user ID (UUID) from localStorage (authenticated user)
 function getTeacherUserId(): string {
-  return localStorage.getItem('userEmail') || '';
+  return localStorage.getItem('userId') || '';
 }
 
 export default function TeacherPaymentConfig() {
@@ -47,6 +48,12 @@ export default function TeacherPaymentConfig() {
   const [cardForm, setCardForm] = useState({
     cardNumber: '',
     cardType: 'visa',
+    displayName: ''
+  });
+
+  // Stripe Form State
+  const [stripeForm, setStripeForm] = useState({
+    stripeAccountId: '',
     displayName: ''
   });
 
@@ -149,6 +156,47 @@ export default function TeacherPaymentConfig() {
     },
   });
 
+  // Add Stripe payment method mutation
+  const addStripeMutation = useMutation({
+    mutationFn: async (stripeData: typeof stripeForm) => {
+      try {
+        const response = await apiRequest('POST', '/api/payment-methods', {
+          userId: getTeacherUserId(),
+          type: 'stripe',
+          stripeAccountId: stripeData.stripeAccountId,
+          displayName: stripeData.displayName || `Stripe - ${stripeData.stripeAccountId}`,
+          isDefault: !Array.isArray(paymentMethods) || paymentMethods.length === 0,
+        });
+        
+        // Check if response has error indication
+        if (response && typeof response === 'object' && 'error' in response) {
+          const errorMsg = (response as any).message || 'Payment method creation failed';
+          throw new Error(errorMsg);
+        }
+        
+        return response;
+      } catch (error: any) {
+        const errorMessage = error?.message || error?.error || 'Failed to add Stripe payment method';
+        throw new Error(errorMessage);
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Stripe Added",
+        description: "Your Stripe payment method has been added successfully!",
+      });
+      refetchMethods();
+      setStripeForm({ stripeAccountId: '', displayName: '' });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Add Stripe",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Set default payment method mutation
   const setDefaultMutation = useMutation({
     mutationFn: async (paymentMethodId: string) => {
@@ -199,6 +247,19 @@ export default function TeacherPaymentConfig() {
     addCardMutation.mutate(cardForm);
   };
 
+  const handleStripeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripeForm.stripeAccountId.trim()) {
+      toast({
+        title: "Stripe Account ID Required",
+        description: "Please enter your Stripe Connected Account ID",
+        variant: "destructive",
+      });
+      return;
+    }
+    addStripeMutation.mutate(stripeForm);
+  };
+
   // Auto-refresh timestamp
   useEffect(() => {
     const interval = setInterval(() => {
@@ -234,7 +295,7 @@ export default function TeacherPaymentConfig() {
 
         {/* Tabs for different sections */}
         <Tabs defaultValue="payment-methods" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="payment-methods" className="flex items-center space-x-2">
               <Wallet className="h-4 w-4" />
               <span>Payment Methods</span>
@@ -246,6 +307,10 @@ export default function TeacherPaymentConfig() {
             <TabsTrigger value="card-setup" className="flex items-center space-x-2">
               <CreditCard className="h-4 w-4" />
               <span>Card Setup</span>
+            </TabsTrigger>
+            <TabsTrigger value="stripe-setup" className="flex items-center space-x-2">
+              <CreditCard className="h-4 w-4" />
+              <span>Stripe Setup</span>
             </TabsTrigger>
           </TabsList>
 
@@ -280,13 +345,15 @@ export default function TeacherPaymentConfig() {
                         <div className="flex items-center space-x-3">
                           {method.type === 'upi' ? (
                             <IndianRupee className="h-5 w-5 text-green-600" />
+                          ) : method.type === 'stripe' ? (
+                            <CreditCard className="h-5 w-5 text-purple-600" />
                           ) : (
                             <CreditCard className="h-5 w-5 text-blue-600" />
                           )}
                           <div>
                             <div className="font-medium">{method.displayName}</div>
                             <div className="text-sm text-muted-foreground">
-                              {method.type === 'upi' ? method.upiId : `****${method.cardNumber?.slice(-4)}`}
+                              {method.type === 'upi' ? method.upiId : method.type === 'stripe' ? method.stripeAccountId : `****${method.cardNumber?.slice(-4)}`}
                             </div>
                           </div>
                           {method.isDefault && (
@@ -473,6 +540,77 @@ export default function TeacherPaymentConfig() {
                     <div className="text-sm text-blue-800">
                       <p className="font-medium mb-1">Secure Payment Processing</p>
                       <p>Your card details are encrypted and stored securely. We use industry-standard security measures to protect your financial information.</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Stripe Setup Tab */}
+          <TabsContent value="stripe-setup" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <CreditCard className="h-5 w-5" />
+                  <span>Stripe Configuration</span>
+                </CardTitle>
+                <CardDescription>
+                  Connect your Stripe account to receive payments from students globally
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <form onSubmit={handleStripeSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="stripe-account-id">Stripe Connected Account ID *</Label>
+                    <Input
+                      id="stripe-account-id"
+                      type="text"
+                      placeholder="acct_xxxxxxxxxxxxx"
+                      value={stripeForm.stripeAccountId}
+                      onChange={(e) => setStripeForm({ ...stripeForm, stripeAccountId: e.target.value })}
+                      data-testid="input-teacher-stripe-account-id"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Your Stripe Connected Account ID (starts with "acct_")
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="stripe-display-name">Display Name (Optional)</Label>
+                    <Input
+                      id="stripe-display-name"
+                      type="text"
+                      placeholder="My Stripe Account"
+                      value={stripeForm.displayName}
+                      onChange={(e) => setStripeForm({ ...stripeForm, displayName: e.target.value })}
+                      data-testid="input-teacher-stripe-display-name"
+                    />
+                  </div>
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={addStripeMutation.isPending}
+                    data-testid="button-add-teacher-stripe"
+                  >
+                    {addStripeMutation.isPending ? (
+                      <>Adding Stripe...</>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Stripe Payment Method
+                      </>
+                    )}
+                  </Button>
+                </form>
+
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <div className="flex items-start space-x-3">
+                    <div className="bg-purple-100 p-1 rounded">
+                      <CheckCircle className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <div className="text-sm text-purple-800">
+                      <p className="font-medium mb-1">Global Payment Processing</p>
+                      <p>Connect your Stripe account to accept payments from students worldwide. Stripe handles currency conversion and provides detailed analytics.</p>
                     </div>
                   </div>
                 </div>
