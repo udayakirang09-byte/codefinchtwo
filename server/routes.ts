@@ -29,6 +29,8 @@ import {
   reviews,
   achievements,
   classFeedback,
+  paymentTransactions,
+  paymentWorkflows,
   type InsertAdminConfig, 
   type InsertFooterLink, 
   type InsertTimeSlot, 
