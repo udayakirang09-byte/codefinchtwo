@@ -60,6 +60,7 @@ export const bookings = pgTable("bookings", {
   scheduledAt: timestamp("scheduled_at").notNull(),
   duration: integer("duration").notNull(), // minutes
   status: varchar("status").notNull().default("scheduled"), // scheduled, completed, cancelled
+  subject: varchar("subject"), // Subject/topic of the session (from teacher's specialties or courses)
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

@@ -152,9 +152,9 @@ export default function BookingSuccess() {
                   </div>
 
                   <div className="space-y-3">
-                    <Link href="/student/dashboard" data-testid="link-dashboard">
+                    <Link href="/student/active-classes" data-testid="link-dashboard">
                       <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                        Go to Student Dashboard
+                        Go to Student Home page
                       </Button>
                     </Link>
                     

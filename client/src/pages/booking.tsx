@@ -47,6 +47,7 @@ export default function Booking() {
     selectedDate: "",
     selectedTime: "",
     duration: "60",
+    subject: "",
     notes: "",
   });
 
@@ -68,6 +69,16 @@ export default function Booking() {
     rawTimes: string[]
   }>({
     queryKey: ["/api/mentors", mentorId, "available-times"],
+    enabled: !!mentorId,
+  });
+
+  // Fetch mentor subjects (specialties + course titles)
+  const { data: mentorSubjects } = useQuery<{
+    subjects: string[],
+    specialties: string[],
+    courses: Array<{title: string, category: string}>
+  }>({
+    queryKey: ["/api/mentors", mentorId, "subjects"],
     enabled: !!mentorId,
   });
 
@@ -513,6 +524,49 @@ export default function Booking() {
                       <SelectItem value="60">1 hour</SelectItem>
                       <SelectItem value="90">1.5 hours</SelectItem>
                       <SelectItem value="120">2 hours</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="subject">Subject *</Label>
+                  <Select onValueChange={(value) => handleInputChange("subject", value)} required>
+                    <SelectTrigger data-testid="select-session-subject">
+                      <SelectValue placeholder="Select a subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mentorSubjects && mentorSubjects.subjects.length > 0 ? (
+                        <>
+                          {mentorSubjects.specialties.length > 0 && (
+                            <>
+                              <SelectItem value="__specialties__" disabled className="font-semibold text-blue-600">
+                                Teacher Specialties
+                              </SelectItem>
+                              {mentorSubjects.specialties.map((specialty) => (
+                                <SelectItem key={specialty} value={specialty}>
+                                  {specialty}
+                                </SelectItem>
+                              ))}
+                            </>
+                          )}
+                          {mentorSubjects.courses.length > 0 && (
+                            <>
+                              <SelectItem value="__courses__" disabled className="font-semibold text-purple-600">
+                                Available Courses
+                              </SelectItem>
+                              {mentorSubjects.courses.map((course) => (
+                                <SelectItem key={course.title} value={course.title}>
+                                  {course.title} ({course.category})
+                                </SelectItem>
+                              ))}
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        <SelectItem value="General Programming">
+                          General Programming
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
