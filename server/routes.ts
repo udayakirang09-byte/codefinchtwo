@@ -2683,6 +2683,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }
 
+  // Process pending teacher payouts (called after 24hrs)
+  app.post("/api/admin/process-teacher-payouts", async (req, res) => {
+    try {
+      console.log('🔄 Processing pending teacher payouts...');
+      
+      // Find all transactions eligible for teacher payout
+      const eligibleTransactions = await db.select()
+        .from(paymentTransactions)
+        .where(
+          and(
+            eq(paymentTransactions.status, 'completed'),
+            eq(paymentTransactions.workflowStage, 'student_to_admin'),
+            sql`${paymentTransactions.teacherPayoutEligibleAt} <= ${new Date()}`
+          )
+        );
+
+      console.log(`📊 Found ${eligibleTransactions.length} transactions eligible for teacher payout`);
+
+      const processedPayouts = [];
+
+      for (const transaction of eligibleTransactions) {
+        try {
+          // Get teacher payment method (for now, we'll use a placeholder)
+          // In production, this would fetch the teacher's preferred payment method
+          
+          // Create teacher payout transaction
+          const teacherPayoutData = {
+            bookingId: transaction.bookingId,
+            transactionType: 'teacher_payout' as const,
+            amount: transaction.amount,
+            transactionFee: transaction.transactionFee,
+            netAmount: transaction.netAmount,
+            currency: transaction.currency || 'INR',
+            fromUserId: null, // Admin user ID would go here
+            toUserId: transaction.toUserId, // Teacher user ID
+            status: 'completed' as const,
+            workflowStage: 'admin_to_teacher' as const,
+            stripePaymentIntentId: transaction.stripePaymentIntentId,
+            completedAt: new Date(),
+            notes: `Teacher payout for transaction ${transaction.id}`
+          };
+
+          const teacherPayout = await storage.createPaymentTransaction(teacherPayoutData);
+          
+          // Update original transaction to mark that teacher payout is complete
+          await db.update(paymentTransactions)
+            .set({ 
+              workflowStage: 'completed',
+              updatedAt: new Date(),
+              notes: `Teacher payout completed via transaction ${teacherPayout.id}`
+            })
+            .where(eq(paymentTransactions.id, transaction.id));
+
+          processedPayouts.push({
+            originalTransactionId: transaction.id,
+            teacherPayoutId: teacherPayout.id,
+            amount: transaction.netAmount,
+            teacherId: transaction.toUserId
+          });
+
+          console.log(`✅ Teacher payout processed: ${teacherPayout.id} for transaction ${transaction.id}`);
+        } catch (error: any) {
+          console.error(`❌ Error processing teacher payout for transaction ${transaction.id}:`, error.message);
+        }
+      }
+
+      res.json({
+        success: true,
+        processedCount: processedPayouts.length,
+        payouts: processedPayouts
+      });
+    } catch (error: any) {
+      console.error('❌ Error processing teacher payouts:', error.message);
+      res.status(500).json({ 
+        success: false,
+        message: 'Failed to process teacher payouts: ' + error.message 
+      });
+    }
+  });
+
   // Admin Contact Features Toggle Routes
   app.get("/api/admin/contact-settings", async (req, res) => {
     try {
