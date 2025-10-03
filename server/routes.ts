@@ -3216,6 +3216,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/admin/course-config", async (req, res) => {
+    try {
+      // Load course configuration from adminConfig table
+      const configs = await db.select().from(adminConfig).where(
+        or(
+          eq(adminConfig.configKey, 'course_max_students_per_course'),
+          eq(adminConfig.configKey, 'course_max_classes_per_course')
+        )
+      );
+      
+      const configMap = configs.reduce((acc: any, config: any) => {
+        acc[config.configKey] = config.configValue;
+        return acc;
+      }, {} as Record<string, string | null>);
+      
+      const courseConfig = {
+        maxStudentsPerCourse: parseInt(configMap['course_max_students_per_course'] || '8'),
+        maxClassesPerCourse: parseInt(configMap['course_max_classes_per_course'] || '8')
+      };
+      
+      res.json(courseConfig);
+    } catch (error) {
+      console.error("Error loading course config:", error);
+      res.status(500).json({ error: "Failed to load course configuration" });
+    }
+  });
+
+  app.patch("/api/admin/course-config", async (req, res) => {
+    try {
+      const { maxStudentsPerCourse, maxClassesPerCourse } = req.body;
+      
+      // Update course configuration in adminConfig table
+      const configUpdates = [
+        { key: 'course_max_students_per_course', value: maxStudentsPerCourse.toString() },
+        { key: 'course_max_classes_per_course', value: maxClassesPerCourse.toString() }
+      ];
+      
+      await Promise.all(configUpdates.map(config =>
+        db.insert(adminConfig).values({
+          configKey: config.key,
+          configValue: config.value,
+          description: `Course configuration for ${config.key}`
+        }).onConflictDoUpdate({
+          target: adminConfig.configKey,
+          set: { configValue: config.value, updatedAt: new Date() }
+        })
+      ));
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error saving course config:", error);
+      res.status(500).json({ error: "Failed to save course configuration" });
+    }
+  });
+
   // AI Analytics & Business Intelligence Routes
   app.get("/api/admin/ai-insights", async (req, res) => {
     try {
