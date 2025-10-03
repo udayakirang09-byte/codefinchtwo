@@ -63,7 +63,7 @@ export default function Booking() {
 
   // Fetch available time slots from mentor's real schedule - MUST be before conditional returns
   const { data: availabilityData } = useQuery<{
-    timeSlots: Array<{id: string, time: string, dayOfWeek: string}>,
+    timeSlots: Array<{id: string, time: string, dayOfWeek: string, startTime: string, endTime: string}>,
     availableSlots: Array<{day: string, times: string[]}>,
     rawTimes: string[]
   }>({
@@ -280,12 +280,67 @@ export default function Booking() {
     return `${firstName?.charAt(0) || ""}${lastName?.charAt(0) || ""}`.toUpperCase();
   };
 
-  // Use real mentor availability or fallback to default times
-  const timeSlots = availabilityData?.rawTimes || [
-    "09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"
-  ];
+  // Helper function to generate hourly intervals from a time range
+  const generateHourlySlots = (startTime: string, endTime: string): string[] => {
+    const slots: string[] = [];
+    const [startHour, startMin] = startTime.split(':').map(Number);
+    const [endHour, endMin] = endTime.split(':').map(Number);
+    
+    // Generate hourly slots up to (but not including) the end time
+    for (let hour = startHour; hour < endHour; hour++) {
+      slots.push(`${hour.toString().padStart(2, '0')}:${startMin.toString().padStart(2, '0')}`);
+    }
+    
+    return slots;
+  };
 
-  console.log("📅 Available time slots for booking:", timeSlots);
+  // Helper function to format time in AM/PM
+  const formatTimeAMPM = (time24: string): string => {
+    const [hour, minute] = time24.split(':').map(Number);
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
+  };
+
+  // Get day of week from selected date (0 = Sunday, 1 = Monday, etc.)
+  const getDayOfWeek = (dateString: string): string => {
+    if (!dateString) return '';
+    const date = new Date(dateString + 'T00:00:00'); // Add time to avoid timezone issues
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return days[date.getDay()];
+  };
+
+  // Generate time slots based on selected date
+  const getAvailableTimeSlotsForDate = (): string[] => {
+    if (!formData.selectedDate || !availabilityData?.timeSlots) {
+      return [];
+    }
+
+    const dayOfWeek = getDayOfWeek(formData.selectedDate);
+    console.log(`📅 Selected date: ${formData.selectedDate}, Day: ${dayOfWeek}`);
+    
+    // Filter slots for the selected day
+    const daySlots = availabilityData.timeSlots.filter(
+      slot => slot.dayOfWeek.toLowerCase() === dayOfWeek.toLowerCase()
+    );
+    
+    console.log(`📅 Found ${daySlots.length} slots for ${dayOfWeek}:`, daySlots);
+    
+    // Generate hourly intervals for each slot
+    const allTimeSlots: string[] = [];
+    daySlots.forEach(slot => {
+      const hourlySlots = generateHourlySlots(slot.startTime, slot.endTime);
+      allTimeSlots.push(...hourlySlots);
+    });
+    
+    // Remove duplicates and sort
+    const uniqueSlots = Array.from(new Set(allTimeSlots)).sort();
+    console.log(`📅 Available time slots for ${dayOfWeek}:`, uniqueSlots);
+    
+    return uniqueSlots;
+  };
+
+  const timeSlots = getAvailableTimeSlotsForDate();
 
   return (
     <div className="min-h-screen">
@@ -436,7 +491,7 @@ export default function Booking() {
                         {timeSlots.length > 0 ? (
                           timeSlots.map((time: string) => (
                             <SelectItem key={time} value={time}>
-                              {time}
+                              {formatTimeAMPM(time)}
                             </SelectItem>
                           ))
                         ) : (
