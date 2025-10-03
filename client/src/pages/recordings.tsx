@@ -5,11 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Play, Calendar, Clock, Search, Filter, Shield, Lock, AlertTriangle, Video, Download } from "lucide-react";
+import { Play, Calendar, Clock, Search, Filter, Shield, Lock, AlertTriangle, Video, Download, Home } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 
 interface StudentRecording {
   id: string;
@@ -152,13 +153,23 @@ export default function StudentRecordings() {
         {/* Header */}
         <div className="relative overflow-hidden bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 p-8 rounded-3xl shadow-2xl border border-white/20">
           <div className="relative z-10">
-            <h1 className="text-4xl font-bold text-white mb-3 tracking-tight flex items-center gap-3">
-              <Video className="h-10 w-10" />
-              My Class Recordings
-            </h1>
-            <p className="text-purple-100 text-xl font-medium">
-              Access and review your completed class sessions
-            </p>
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex-1">
+                <h1 className="text-4xl font-bold text-white mb-3 tracking-tight flex items-center gap-3">
+                  <Video className="h-10 w-10" />
+                  My Class Recordings
+                </h1>
+                <p className="text-purple-100 text-xl font-medium">
+                  Access and review your completed class sessions
+                </p>
+              </div>
+              <Link href="/">
+                <Button variant="secondary" size="sm" data-testid="button-home">
+                  <Home className="h-4 w-4 mr-2" />
+                  Home
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
 

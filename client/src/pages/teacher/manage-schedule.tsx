@@ -38,9 +38,9 @@ export default function ManageSchedule() {
   const userEmail = localStorage.getItem('userEmail') || 'teacher@codeconnect.com';
 
   const { data: schedule = [], isLoading } = useQuery({
-    queryKey: ['teacher-schedule'],
+    queryKey: ['teacher-schedule', userEmail],
     queryFn: async () => {
-      const response = await fetch('/api/teacher/schedule');
+      const response = await fetch(`/api/teacher/schedule?teacherId=${encodeURIComponent(userEmail)}`);
       if (!response.ok) throw new Error('Failed to fetch schedule');
       return response.json();
     }

@@ -4,9 +4,11 @@ import Navigation from "@/components/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Trophy, Target, Calendar, BookOpen, Star, TrendingUp } from "lucide-react";
+import { Trophy, Target, Calendar, BookOpen, Star, TrendingUp, Home } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
+import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
 
 export default function StudentProgress() {
   // Get authenticated user from auth context
@@ -123,6 +125,15 @@ export default function StudentProgress() {
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
         <div className="mb-8 text-center">
+          <div className="flex justify-between items-center mb-4">
+            <Link href="/">
+              <Button variant="outline" size="sm" data-testid="button-home">
+                <Home className="h-4 w-4 mr-2" />
+                Home
+              </Button>
+            </Link>
+            <div className="flex-1"></div>
+          </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Your Learning Progress 📊</h1>
           <p className="text-xl text-gray-600">Track your coding journey and celebrate your achievements</p>
         </div>
