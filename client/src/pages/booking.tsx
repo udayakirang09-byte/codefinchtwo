@@ -352,10 +352,10 @@ export default function Booking() {
           </h1>
           <Button 
             variant="outline" 
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/mentors")}
             data-testid="button-go-to-mentors"
           >
-            ← Go To Mentors List
+            ← Go to Mentors List
           </Button>
         </div>
 

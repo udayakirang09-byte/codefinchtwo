@@ -8,7 +8,17 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
-import type { MentorWithUser, ReviewWithDetails } from "@shared/schema";
+import type { MentorWithUser, ReviewWithDetails, TimeSlot } from "@shared/schema";
+
+// Helper function to format time in AM/PM format
+const formatTimeAMPM = (time: string): string => {
+  if (!time) return '';
+  const [hours, minutes] = time.split(':');
+  const hour = parseInt(hours);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:${minutes} ${ampm}`;
+};
 
 export default function MentorProfile() {
   const [match, params] = useRoute("/mentors/:id");
@@ -30,6 +40,11 @@ export default function MentorProfile() {
   const { data: reviews = [] } = useQuery<ReviewWithDetails[]>({
     queryKey: ["/api/mentors", mentorId, "reviews"],
     enabled: !!mentorId,
+  });
+
+  const { data: timeSlots = [] } = useQuery<TimeSlot[]>({
+    queryKey: [`/api/teacher/schedule?teacherId=${mentor?.user?.email}`],
+    enabled: !!mentor?.user?.email,
   });
 
   if (!match || !mentorId) {
@@ -81,6 +96,16 @@ export default function MentorProfile() {
   const getInitials = (firstName: string | null, lastName: string | null) => {
     return `${firstName?.charAt(0) || ""}${lastName?.charAt(0) || ""}`.toUpperCase();
   };
+
+  // Group time slots by day of week
+  const groupedTimeSlots = timeSlots.reduce((acc: Record<string, string[]>, slot: TimeSlot) => {
+    if (!acc[slot.dayOfWeek]) {
+      acc[slot.dayOfWeek] = [];
+    }
+    const timeRange = `${formatTimeAMPM(slot.startTime)} - ${formatTimeAMPM(slot.endTime)}`;
+    acc[slot.dayOfWeek].push(timeRange);
+    return acc;
+  }, {});
 
   const stockImage = `https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600`;
 
@@ -272,23 +297,16 @@ export default function MentorProfile() {
               <CardContent className="p-6">
                 <h3 className="font-semibold text-foreground mb-4">Availability</h3>
                 <div className="space-y-2">
-                  {mentor.availableSlots && mentor.availableSlots.length > 0 ? (
-                    mentor.availableSlots.map((slot, index) => (
+                  {Object.keys(groupedTimeSlots).length > 0 ? (
+                    Object.entries(groupedTimeSlots).map(([day, times], index) => (
                       <div key={index} className="flex justify-between items-center text-sm" data-testid={`availability-${index}`}>
-                        <span className="text-muted-foreground">{slot.day}</span>
-                        <span className="text-foreground">{slot.times.join(", ")}</span>
+                        <span className="text-muted-foreground">{day}</span>
+                        <span className="text-foreground">{times.join(", ")}</span>
                       </div>
                     ))
                   ) : (
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground">Monday - Friday</span>
-                        <span className="text-foreground">4:00 PM - 8:00 PM</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground">Saturday</span>
-                        <span className="text-foreground">10:00 AM - 2:00 PM</span>
-                      </div>
+                    <div className="text-sm text-muted-foreground text-center py-4">
+                      No availability set. Please contact the mentor for scheduling.
                     </div>
                   )}
                 </div>

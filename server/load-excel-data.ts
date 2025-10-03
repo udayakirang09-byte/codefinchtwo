@@ -112,6 +112,23 @@ async function loadSubjects() {
   
   const subjects: SubjectData[] = [];
   
+  // Helper function to format level name based on category and grade
+  const formatLevelName = (board: string, category: string, grade: string): string => {
+    const gradeNum = grade.replace(/\D/g, ''); // Extract number from grade (e.g., "11th" -> "11")
+    
+    // Map categories to proper level names
+    if (category === 'LowerSecondary' || (parseInt(gradeNum) >= 8 && parseInt(gradeNum) <= 10)) {
+      return `${board}-IGCSE`;
+    } else if (grade.includes('11')) {
+      return `${board}-ASLevel`;
+    } else if (grade.includes('12')) {
+      return `${board}-ALevel`;
+    }
+    
+    // Default: use category as is
+    return `${board}-${category}`;
+  };
+  
   // Skip header row, start from row 2
   // Format is: "Board-Category-Grade-Subject" in single column
   for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
@@ -132,8 +149,12 @@ async function loadSubjects() {
         const grade = parts[2]; // 7th
         const subject = parts.slice(3).join('-'); // Mathematics (or "Further Mathematics")
         
+        // Create full formatted name: e.g., "CIE-IGCSE-8th-Physics" or "CIE-ASLevel-11th-Physics"
+        const levelName = formatLevelName(board, category, grade);
+        const fullName = `${levelName}-${grade}-${subject}`;
+        
         subjects.push({
-          name: subject,
+          name: fullName,
           description: `${board} ${subject} for ${grade} (${category})`,
           board: board,
           grade: grade,

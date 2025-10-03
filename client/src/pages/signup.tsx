@@ -455,16 +455,17 @@ export default function Signup() {
                           <SelectContent>
                             {subjects.map((subject) => (
                               <SelectItem key={subject.id} value={subject.name}>
-                                {subject.name} ({subject.board})
+                                {subject.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="sm:col-span-5 space-y-1">
-                        <Label className="text-sm font-medium">Teaching Experience</Label>
+                        <Label className="text-sm font-medium">Teaching Experience (Years)</Label>
                         <Input
-                          placeholder="e.g., 5 years, Advanced level"
+                          type="number"
+                          placeholder="e.g., 5"
                           value={subj.experience}
                           onChange={(e) => handleSubjectChange(index, "experience", e.target.value)}
                           data-testid={`input-experience-${index}`}
