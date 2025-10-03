@@ -17,9 +17,14 @@ export default function CreateCourse() {
   const queryClient = useQueryClient();
   const [showCreateForm, setShowCreateForm] = useState(true);
   
+  // Get logged-in user email from localStorage
+  const userEmail = localStorage.getItem('userEmail') || '';
+  
   // Fetch existing courses
   const { data: existingCourses = [], isLoading } = useQuery<any[]>({
-    queryKey: [`/api/teacher/courses?teacherId=teacher@codeconnect.com`],
+    queryKey: [`/api/teacher/courses`, userEmail],
+    queryFn: () => fetch(`/api/teacher/courses?teacherId=${userEmail}`).then(res => res.json()),
+    enabled: !!userEmail,
   });
 
   const [formData, setFormData] = useState({
@@ -50,9 +55,7 @@ export default function CreateCourse() {
 
   const createCourseMutation = useMutation({
     mutationFn: async (courseData: any) => {
-      // For now, using a demo teacher ID. In production, this would come from authentication
-      const teacherId = 'teacher@codeconnect.com';
-      return apiRequest('POST', `/api/teacher/courses?teacherId=${teacherId}`, courseData);
+      return apiRequest('POST', `/api/teacher/courses?teacherId=${userEmail}`, courseData);
     },
     onSuccess: async (data) => {
       console.log('✅ Course creation successful:', data);
@@ -60,8 +63,8 @@ export default function CreateCourse() {
         title: "Success",
         description: "Course created successfully!",
       });
-      // Fix: Use the correct query key that matches the existing query
-      queryClient.invalidateQueries({ queryKey: [`/api/teacher/courses?teacherId=teacher@codeconnect.com`] });
+      // Invalidate the query cache to refresh the courses list
+      queryClient.invalidateQueries({ queryKey: [`/api/teacher/courses`, userEmail] });
       
       // Reset form with admin defaults
       try {

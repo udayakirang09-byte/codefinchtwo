@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck, Mail, MessageSquare, Phone, CreditCard, Key, Lock, X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface SystemStats {
   totalUsers: number;
@@ -29,6 +30,7 @@ interface Alert {
 }
 
 export default function AdminDashboard() {
+  const { toast } = useToast();
   const [stats, setStats] = useState<SystemStats>({
     totalUsers: 0,
     totalMentors: 0,
@@ -263,14 +265,25 @@ export default function AdminDashboard() {
       });
       
       if (response.ok) {
-        alert("✅ Payment configuration saved successfully!");
+        toast({
+          title: "Success",
+          description: "Payment configuration saved successfully!",
+        });
       } else {
         const error = await response.json();
-        alert(`❌ Failed to save payment configuration: ${error.error || 'Unknown error'}`);
+        toast({
+          title: "Error",
+          description: `Failed to save payment configuration: ${error.error || 'Unknown error'}`,
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Error saving payment config:", error);
-      alert("❌ Error saving payment configuration. Please try again.");
+      toast({
+        title: "Error",
+        description: "Error saving payment configuration. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -287,13 +300,21 @@ export default function AdminDashboard() {
         console.error("Failed to save contact settings:", error);
         // Revert the UI state on failure
         setContactSettings(contactSettings);
-        alert(`❌ Failed to save contact settings: ${error.error || 'Unknown error'}`);
+        toast({
+          title: "Error",
+          description: `Failed to save contact settings: ${error.error || 'Unknown error'}`,
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Error saving contact settings:", error);
       // Revert the UI state on failure
       setContactSettings(contactSettings);
-      alert("❌ Error saving contact settings. Please try again.");
+      toast({
+        title: "Error",
+        description: "Error saving contact settings. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -309,12 +330,20 @@ export default function AdminDashboard() {
         const error = await response.json();
         console.error("Failed to save payment methods:", error);
         setPaymentMethods(paymentMethods);
-        alert(`❌ Failed to save payment methods: ${error.error || 'Unknown error'}`);
+        toast({
+          title: "Error",
+          description: `Failed to save payment methods: ${error.error || 'Unknown error'}`,
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Error saving payment methods:", error);
       setPaymentMethods(paymentMethods);
-      alert("❌ Error saving payment methods. Please try again.");
+      toast({
+        title: "Error",
+        description: "Error saving payment methods. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -327,14 +356,25 @@ export default function AdminDashboard() {
       });
       
       if (response.ok) {
-        alert("✅ Course configuration saved successfully!");
+        toast({
+          title: "Success",
+          description: "Course configuration saved successfully!",
+        });
       } else {
         const error = await response.json();
-        alert(`❌ Failed to save course configuration: ${error.error || 'Unknown error'}`);
+        toast({
+          title: "Error",
+          description: `Failed to save course configuration: ${error.error || 'Unknown error'}`,
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Error saving course config:", error);
-      alert("❌ Error saving course configuration. Please try again.");
+      toast({
+        title: "Error",
+        description: "Error saving course configuration. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
