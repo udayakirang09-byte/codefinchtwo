@@ -3222,7 +3222,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const configs = await db.select().from(adminConfig).where(
         or(
           eq(adminConfig.configKey, 'course_max_students_per_course'),
-          eq(adminConfig.configKey, 'course_max_classes_per_course')
+          eq(adminConfig.configKey, 'course_max_classes_per_course'),
+          eq(adminConfig.configKey, 'course_transaction_fee_percentage')
         )
       );
       
@@ -3233,7 +3234,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const courseConfig = {
         maxStudentsPerCourse: parseInt(configMap['course_max_students_per_course'] || '8'),
-        maxClassesPerCourse: parseInt(configMap['course_max_classes_per_course'] || '8')
+        maxClassesPerCourse: parseInt(configMap['course_max_classes_per_course'] || '8'),
+        transactionFeePercentage: parseFloat(configMap['course_transaction_fee_percentage'] || '2')
       };
       
       res.json(courseConfig);
@@ -3245,12 +3247,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/admin/course-config", async (req, res) => {
     try {
-      const { maxStudentsPerCourse, maxClassesPerCourse } = req.body;
+      const { maxStudentsPerCourse, maxClassesPerCourse, transactionFeePercentage } = req.body;
       
       // Update course configuration in adminConfig table
       const configUpdates = [
         { key: 'course_max_students_per_course', value: maxStudentsPerCourse.toString() },
-        { key: 'course_max_classes_per_course', value: maxClassesPerCourse.toString() }
+        { key: 'course_max_classes_per_course', value: maxClassesPerCourse.toString() },
+        { key: 'course_transaction_fee_percentage', value: (transactionFeePercentage || 2).toString() }
       ];
       
       await Promise.all(configUpdates.map(config =>

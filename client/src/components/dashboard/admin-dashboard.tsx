@@ -71,7 +71,8 @@ export default function AdminDashboard() {
 
   const [courseConfig, setCourseConfig] = useState({
     maxStudentsPerCourse: 8,
-    maxClassesPerCourse: 8
+    maxClassesPerCourse: 8,
+    transactionFeePercentage: 2
   });
 
   const [showSystemReports, setShowSystemReports] = useState(false);
@@ -861,6 +862,29 @@ export default function AdminDashboard() {
                         }))}
                         className="max-w-xs"
                         data-testid="input-max-classes"
+                      />
+                    </div>
+
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <Label htmlFor="transaction-fee" className="text-sm font-medium mb-2 block">
+                        Transaction Fee Percentage
+                      </Label>
+                      <p className="text-xs text-gray-600 mb-3">
+                        Platform transaction fee charged on each payment (%)
+                      </p>
+                      <Input
+                        id="transaction-fee"
+                        type="number"
+                        min="0"
+                        max="20"
+                        step="0.1"
+                        value={courseConfig.transactionFeePercentage}
+                        onChange={(e) => setCourseConfig(prev => ({ 
+                          ...prev, 
+                          transactionFeePercentage: parseFloat(e.target.value) || 2 
+                        }))}
+                        className="max-w-xs"
+                        data-testid="input-transaction-fee"
                       />
                     </div>
                   </div>
