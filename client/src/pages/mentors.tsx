@@ -272,17 +272,17 @@ export default function Mentors() {
                   <div className="flex items-center gap-4 mb-4 text-sm text-gray-600">
                     <span className="flex items-center">
                       <Users className="h-4 w-4 mr-1" />
-                      {mentor.totalStudents || 25}+ students
+                      {mentor.totalStudents || 0} students
                     </span>
                     <span className="flex items-center">
                       <BookOpen className="h-4 w-4 mr-1" />
-                      {mentor.experience || 5}+ years
+                      {mentor.experience || 0} years
                     </span>
                   </div>
                   
                   <div className="mb-4">
                     <div className="flex flex-wrap gap-1 mb-2">
-                      {(mentor.specialties || ['JavaScript', 'Python']).slice(0, 3).map((specialty: string) => (
+                      {(mentor.specialties || []).map((specialty: string) => (
                         <Badge key={specialty} variant="outline" className="text-xs">
                           {specialty}
                         </Badge>

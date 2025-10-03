@@ -93,7 +93,7 @@ export default function MentorCard({ mentor }: MentorCardProps) {
       </p>
       
       <div className="flex flex-wrap gap-2 mb-4">
-        {mentor.specialties?.slice(0, 3).map((specialty, index) => (
+        {mentor.specialties?.map((specialty, index) => (
           <Badge 
             key={index} 
             variant="secondary" 

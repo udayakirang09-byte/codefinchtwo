@@ -2401,8 +2401,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Convert to cents/paise
-        currency: "inr", // Indian Rupees for the Indian market
+        amount: Math.round(amount * 100), // Convert to cents
+        currency: "usd", // USD for international market
         metadata: {
           ...(courseId && { courseId }),
           ...(courseName && { courseName }),
@@ -2411,7 +2411,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
-      console.log(`💳 Payment intent created for ₹${amount} - ID: ${paymentIntent.id}`);
+      console.log(`💳 Payment intent created for $${amount} - ID: ${paymentIntent.id}`);
       
       res.json({ 
         clientSecret: paymentIntent.client_secret,
