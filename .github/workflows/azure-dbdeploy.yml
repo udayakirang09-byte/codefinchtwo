@@ -57,12 +57,20 @@ jobs:
           testConnection();
         "
 
+    - name: Drop existing Azure schema (clean slate)
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      run: |
+        echo "🗑️  Dropping all existing tables in Azure..."
+        echo "⚠️  This will remove all data and recreate from scratch"
+        cd server && npx tsx drop-azure-schema.ts
+
     - name: Deploy database schema using Drizzle
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
         NODE_ENV: production
       run: |
-        echo "🏗️ Deploying complete database schema to Azure..."
+        echo "🏗️ Creating fresh database schema from shared/schema.ts..."
         npm run db:push --force
 
     - name: Verify schema deployment
