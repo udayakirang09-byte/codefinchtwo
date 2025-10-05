@@ -96,7 +96,43 @@ jobs:
                 process.exit(1);
               }
               
-              console.log('✅ Schema deployment verified');
+              // Check for critical columns that must exist
+              const criticalColumns = [
+                { table: 'bookings', column: 'subject' },
+                { table: 'courses', column: 'max_classes' },
+                { table: 'transaction_fee_config', column: 'teacher_payout_wait_hours' },
+                { table: 'users', column: 'email' }
+              ];
+              
+              console.log('\\n🔍 Checking critical columns...');
+              let missingColumns = [];
+              
+              for (const check of criticalColumns) {
+                const result = await client.query(\`
+                  SELECT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name = '\${check.table}'
+                      AND column_name = '\${check.column}'
+                  )
+                \`);
+                
+                if (!result.rows[0].exists) {
+                  console.log(\`❌ Missing: \${check.table}.\${check.column}\`);
+                  missingColumns.push(\`\${check.table}.\${check.column}\`);
+                } else {
+                  console.log(\`✅ Found: \${check.table}.\${check.column}\`);
+                }
+              }
+              
+              if (missingColumns.length > 0) {
+                console.log(\`\\n❌ Schema incomplete! Missing columns:\`, missingColumns);
+                console.log('💡 This means drizzle-kit push did not apply all schema changes.');
+                console.log('   The schema exists in shared/schema.ts but was not pushed to Azure.');
+                process.exit(1);
+              }
+              
+              console.log('\\n✅ Schema deployment fully verified');
               await client.end();
             } catch (err) {
               console.log('❌ Schema verification failed:', err.message);
