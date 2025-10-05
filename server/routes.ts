@@ -680,7 +680,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         category: courses.category
       }).from(courses).where(eq(courses.mentorId, id));
 
-      const courseTitles = mentorCourses.map(course => course.title);
+      const courseTitles = mentorCourses.map((course: { title: string; category: string }) => course.title);
 
       // Combine unique subjects
       const combined = specialties.concat(courseTitles);
