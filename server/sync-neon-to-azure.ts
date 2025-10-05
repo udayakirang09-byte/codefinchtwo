@@ -183,7 +183,7 @@ async function syncNeonToAzure() {
 
             await azurePool.query(query, values);
             synced++;
-          } catch (err) {
+          } catch (err: any) {
             errors++;
             if (errors <= 2) {
               console.log(`  ⚠️  ${err.message}`);
@@ -194,7 +194,7 @@ async function syncNeonToAzure() {
         const status = errors > 0 ? ` (${errors} errors)` : '';
         console.log(`  ✅ ${synced}/${result.rows.length}${status}\n`);
 
-      } catch (err) {
+      } catch (err: any) {
         console.log(`  ❌ ${err.message}\n`);
       }
     }
