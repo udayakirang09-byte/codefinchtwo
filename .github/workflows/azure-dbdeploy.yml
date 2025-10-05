@@ -107,28 +107,23 @@ jobs:
           verifySchema();
         "
 
-    - name: Sync data from Neon to Azure (if Neon is available)
-      if: ${{ secrets.DATABASE_URL_NEON != '' }}
+    - name: Sync data from Neon to Azure or seed production data
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
         DATABASE_URL_NEON: ${{ secrets.DATABASE_URL_NEON }}
         NODE_ENV: production
       run: |
-        echo "🔄 Syncing data from Neon (Replit) to Azure..."
-        echo "📊 This will copy all existing data from your Replit database"
-        cd server && npx tsx sync-neon-to-azure.ts
-
-    - name: Seed production data (fallback if no Neon sync)
-      if: ${{ secrets.DATABASE_URL_NEON == '' }}
-      env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        NODE_ENV: production
-      run: |
-        echo "🌱 Seeding production data (Neon sync not available)..."
-        echo "📊 This will create all 34 records: 21 users + 7 mentors + 6 students"
-        echo "🔐 Including 5 test accounts: teacher@codeconnect.com, testteacher@apptest.com, udayakirang99@gmail.com, teststudent@apptest.com, admin@codeconnect.com"
-        echo "🛡️ Production-ready data with safety checks"
-        cd server && npx tsx seed.ts
+        if [ -n "$DATABASE_URL_NEON" ]; then
+          echo "🔄 Syncing data from Neon (Replit) to Azure..."
+          echo "📊 This will copy all existing data from your Replit database"
+          cd server && npx tsx sync-neon-to-azure.ts
+        else
+          echo "🌱 Seeding production data (Neon sync not available)..."
+          echo "📊 This will create all 34 records: 21 users + 7 mentors + 6 students"
+          echo "🔐 Including 5 test accounts: teacher@codeconnect.com, testteacher@apptest.com, udayakirang99@gmail.com, teststudent@apptest.com, admin@codeconnect.com"
+          echo "🛡️ Production-ready data with safety checks"
+          cd server && npx tsx seed.ts
+        fi
 
     - name: Verify final database state
       env:
