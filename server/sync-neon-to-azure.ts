@@ -1,12 +1,10 @@
 import { Pool } from 'pg';
-import * as schema from "@shared/schema";
 
-// Script to sync data from Neon (Replit) to Azure database
 async function syncNeonToAzure() {
-  console.log("🔄 Starting Neon → Azure database sync...");
-
   const neonUrl = process.env.DATABASE_URL_NEON;
   const azureUrl = process.env.DATABASE_URL;
+
+  console.log("🔄 Starting Neon → Azure database sync...");
 
   if (!neonUrl) {
     throw new Error("DATABASE_URL_NEON is required for source database");
@@ -48,7 +46,8 @@ async function syncNeonToAzure() {
     console.log(neonCounts.rows[0]);
 
     // Tables to sync in dependency order
-    const tables = [
+    // Core tables first, then dependent tables
+    const coreTables = [
       'users',
       'mentors',
       'students',
@@ -56,22 +55,67 @@ async function syncNeonToAzure() {
       'courses',
       'bookings',
       'reviews',
-      'achievements',
-      // Add other tables as needed
+      'achievements'
+    ];
+
+    const lookupTables = [
       'qualifications',
       'specializations',
-      'subjects',
+      'subjects'
+    ];
+
+    const junctionTables = [
       'teacher_qualifications',
       'teacher_specializations',
-      'teacher_subjects',
+      'teacher_subjects'
+    ];
+
+    const configTables = [
       'payment_configs',
       'teacher_payment_configs'
     ];
 
+    console.log("\n🗑️  Clearing Azure database (reverse dependency order)...");
+    
+    // Disable foreign key checks temporarily
+    await azurePool.query('SET session_replication_role = replica;');
+    
+    // Truncate all tables
+    const allTables = [...configTables, ...junctionTables, ...coreTables, ...lookupTables];
+    for (const table of allTables) {
+      try {
+        await azurePool.query(`TRUNCATE TABLE ${table} CASCADE`);
+        console.log(`  ✓ Cleared ${table}`);
+      } catch (error: any) {
+        if (!error.message.includes('does not exist')) {
+          console.log(`  ⚠️  Could not clear ${table}:`, error.message);
+        }
+      }
+    }
+    
+    // Re-enable foreign key checks
+    await azurePool.query('SET session_replication_role = DEFAULT;');
+
     console.log("\n🔄 Starting data sync...");
 
-    for (const table of tables) {
+    // Sync in proper dependency order
+    const tablesToSync = [...lookupTables, ...coreTables, ...junctionTables, ...configTables];
+
+    for (const table of tablesToSync) {
       try {
+        // Check if table exists in Neon
+        const tableExists = await neonPool.query(`
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = $1
+          )
+        `, [table]);
+
+        if (!tableExists.rows[0].exists) {
+          continue;
+        }
+
         // Get data from Neon
         const { rows } = await neonPool.query(`SELECT * FROM ${table}`);
         
@@ -82,28 +126,66 @@ async function syncNeonToAzure() {
 
         console.log(`📦 Syncing ${table}: ${rows.length} records`);
 
-        // Delete existing data in Azure (careful!)
-        await azurePool.query(`DELETE FROM ${table}`);
+        // Check if table exists in Azure
+        const azureTableExists = await azurePool.query(`
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = $1
+          )
+        `, [table]);
 
-        // Insert data into Azure
-        for (const row of rows) {
-          const columns = Object.keys(row);
-          const values = Object.values(row);
-          const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
-          
-          const insertQuery = `
-            INSERT INTO ${table} (${columns.join(', ')})
-            VALUES (${placeholders})
-            ON CONFLICT DO NOTHING
-          `;
-          
-          await azurePool.query(insertQuery, values);
+        if (!azureTableExists.rows[0].exists) {
+          console.log(`  ⚠️  Table ${table} does not exist in Azure, skipping`);
+          continue;
         }
 
-        console.log(`✅ Synced ${table}: ${rows.length} records`);
+        // Get Azure column info to handle JSON/JSONB differences
+        const azureColumns = await azurePool.query(`
+          SELECT column_name, data_type 
+          FROM information_schema.columns 
+          WHERE table_name = $1 AND table_schema = 'public'
+        `, [table]);
+        
+        const columnTypes = new Map(
+          azureColumns.rows.map((r: any) => [r.column_name, r.data_type])
+        );
+
+        // Insert data into Azure
+        let successCount = 0;
+        for (const row of rows) {
+          try {
+            const columns = Object.keys(row);
+            const values = Object.values(row).map((val, idx) => {
+              const colName = columns[idx];
+              const colType = columnTypes.get(colName);
+              
+              // Convert JSONB to JSON string for Azure
+              if (colType === 'json' && val !== null && typeof val === 'object') {
+                return JSON.stringify(val);
+              }
+              
+              return val;
+            });
+            
+            const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
+            
+            const insertQuery = `
+              INSERT INTO ${table} (${columns.join(', ')})
+              VALUES (${placeholders})
+              ON CONFLICT DO NOTHING
+            `;
+            
+            await azurePool.query(insertQuery, values);
+            successCount++;
+          } catch (error: any) {
+            console.log(`  ⚠️  Error inserting row:`, error.message);
+          }
+        }
+
+        console.log(`✅ Synced ${table}: ${successCount}/${rows.length} records`);
       } catch (error: any) {
         console.log(`⚠️  Warning syncing ${table}:`, error.message);
-        // Continue with other tables even if one fails
       }
     }
 
@@ -139,9 +221,9 @@ async function syncNeonToAzure() {
 
     if (!allMatch) {
       console.log("\n⚠️  Some counts don't match - review the sync");
-    } else {
-      console.log("\n✅ All data synced successfully!");
     }
+
+    console.log("\n🎉 Database sync completed!");
 
   } catch (error) {
     console.error("❌ Sync failed:", error);
@@ -152,10 +234,4 @@ async function syncNeonToAzure() {
   }
 }
 
-syncNeonToAzure().then(() => {
-  console.log("\n🎉 Database sync completed!");
-  process.exit(0);
-}).catch((error) => {
-  console.error("\n❌ Database sync failed:", error);
-  process.exit(1);
-});
+syncNeonToAzure().catch(console.error);
