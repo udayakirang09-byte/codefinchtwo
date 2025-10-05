@@ -4,7 +4,7 @@ async function syncNeonToAzure() {
   const neonUrl = process.env.DATABASE_URL_NEON;
   const azureUrl = process.env.DATABASE_URL;
 
-  console.log("🔄 Starting Neon → Azure database sync...");
+  console.log("🔄 Starting incremental Neon → Azure database sync...");
 
   if (!neonUrl) {
     throw new Error("DATABASE_URL_NEON is required for source database");
@@ -29,7 +29,7 @@ async function syncNeonToAzure() {
     await azurePool.query('SELECT 1');
     console.log("✅ Azure connected");
 
-    // Get counts from Neon
+    // Get counts from both databases
     const neonCounts = await neonPool.query(`
       SELECT 
         (SELECT COUNT(*) FROM users) as users,
@@ -42,11 +42,28 @@ async function syncNeonToAzure() {
         (SELECT COUNT(*) FROM teacher_profiles) as teacher_profiles
     `);
 
-    console.log("\n📊 Neon database current state:");
-    console.log(neonCounts.rows[0]);
+    const azureCounts = await azurePool.query(`
+      SELECT 
+        (SELECT COUNT(*) FROM users) as users,
+        (SELECT COUNT(*) FROM mentors) as mentors,
+        (SELECT COUNT(*) FROM students) as students,
+        (SELECT COUNT(*) FROM bookings) as bookings,
+        (SELECT COUNT(*) FROM reviews) as reviews,
+        (SELECT COUNT(*) FROM achievements) as achievements,
+        (SELECT COUNT(*) FROM courses) as courses,
+        (SELECT COUNT(*) FROM teacher_profiles) as teacher_profiles
+    `);
+
+    console.log("\n📊 Neon database (source):", neonCounts.rows[0]);
+    console.log("📊 Azure database (before sync):", azureCounts.rows[0]);
 
     // Tables to sync in dependency order
-    // Core tables first, then dependent tables
+    const lookupTables = [
+      'qualifications',
+      'specializations',
+      'subjects'
+    ];
+
     const coreTables = [
       'users',
       'mentors',
@@ -56,12 +73,6 @@ async function syncNeonToAzure() {
       'bookings',
       'reviews',
       'achievements'
-    ];
-
-    const lookupTables = [
-      'qualifications',
-      'specializations',
-      'subjects'
     ];
 
     const junctionTables = [
@@ -75,24 +86,8 @@ async function syncNeonToAzure() {
       'teacher_payment_configs'
     ];
 
-    console.log("\n🗑️  Clearing Azure database (reverse dependency order)...");
-    
-    // Truncate all tables (CASCADE handles foreign keys)
-    const allTables = [...configTables, ...junctionTables, ...coreTables, ...lookupTables];
-    for (const table of allTables) {
-      try {
-        await azurePool.query(`TRUNCATE TABLE ${table} CASCADE`);
-        console.log(`  ✓ Cleared ${table}`);
-      } catch (error: any) {
-        if (!error.message.includes('does not exist')) {
-          console.log(`  ⚠️  Could not clear ${table}:`, error.message);
-        }
-      }
-    }
+    console.log("\n🔄 Starting incremental sync (UPSERT only)...\n");
 
-    console.log("\n🔄 Starting data sync...");
-
-    // Sync in proper dependency order
     const tablesToSync = [...lookupTables, ...coreTables, ...junctionTables, ...configTables];
 
     for (const table of tablesToSync) {
@@ -114,11 +109,11 @@ async function syncNeonToAzure() {
         const { rows } = await neonPool.query(`SELECT * FROM ${table}`);
         
         if (rows.length === 0) {
-          console.log(`⏭️  Skipping ${table} (no data)`);
+          console.log(`⏭️  Skipping ${table} (no data in Neon)`);
           continue;
         }
 
-        console.log(`📦 Syncing ${table}: ${rows.length} records`);
+        console.log(`📦 Syncing ${table}: ${rows.length} records from Neon`);
 
         // Check if table exists in Azure
         const azureTableExists = await azurePool.query(`
@@ -145,8 +140,21 @@ async function syncNeonToAzure() {
           azureColumns.rows.map((r: any) => [r.column_name, { data_type: r.data_type, udt_name: r.udt_name }])
         );
 
-        // Insert data into Azure
-        let successCount = 0;
+        // Get primary key column
+        const pkResult = await azurePool.query(`
+          SELECT a.attname AS column_name
+          FROM pg_index i
+          JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+          WHERE i.indrelid = $1::regclass AND i.indisprimary
+        `, [table]);
+
+        const pkColumn = pkResult.rows[0]?.column_name || 'id';
+
+        // UPSERT data into Azure (insert or update on conflict)
+        let insertCount = 0;
+        let updateCount = 0;
+        let skipCount = 0;
+
         for (const row of rows) {
           try {
             const columns = Object.keys(row);
@@ -155,7 +163,6 @@ async function syncNeonToAzure() {
               const colInfo = columnTypes.get(colName);
               
               // Convert JSONB/JSON objects to strings for Azure
-              // Check both data_type and udt_name for json/jsonb
               if (colInfo && val !== null && typeof val === 'object' && 
                   (colInfo.data_type === 'json' || colInfo.data_type === 'jsonb' || 
                    colInfo.udt_name === 'json' || colInfo.udt_name === 'jsonb')) {
@@ -167,27 +174,45 @@ async function syncNeonToAzure() {
             
             const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
             
-            const insertQuery = `
-              INSERT INTO ${table} (${columns.join(', ')})
-              VALUES (${placeholders})
-              ON CONFLICT DO NOTHING
-            `;
+            // Create UPSERT query (INSERT ... ON CONFLICT DO UPDATE)
+            const updateColumns = columns
+              .filter(col => col !== pkColumn)
+              .map(col => `${col} = EXCLUDED.${col}`)
+              .join(', ');
+
+            const upsertQuery = updateColumns
+              ? `
+                INSERT INTO ${table} (${columns.join(', ')})
+                VALUES (${placeholders})
+                ON CONFLICT (${pkColumn}) DO UPDATE SET ${updateColumns}
+              `
+              : `
+                INSERT INTO ${table} (${columns.join(', ')})
+                VALUES (${placeholders})
+                ON CONFLICT (${pkColumn}) DO NOTHING
+              `;
             
-            await azurePool.query(insertQuery, values);
-            successCount++;
+            const result = await azurePool.query(upsertQuery, values);
+            
+            // Check if row was inserted or updated (PostgreSQL returns rowCount)
+            if (result.rowCount && result.rowCount > 0) {
+              insertCount++;
+            } else {
+              skipCount++;
+            }
           } catch (error: any) {
-            console.log(`  ⚠️  Error inserting row:`, error.message);
+            console.log(`  ⚠️  Error upserting row:`, error.message);
           }
         }
 
-        console.log(`✅ Synced ${table}: ${successCount}/${rows.length} records`);
+        console.log(`  ✅ ${insertCount} inserted/updated, ${skipCount} already up-to-date`);
       } catch (error: any) {
         console.log(`⚠️  Warning syncing ${table}:`, error.message);
       }
     }
 
     // Verify sync
-    const azureCounts = await azurePool.query(`
+    const azureCountsAfter = await azurePool.query(`
       SELECT 
         (SELECT COUNT(*) FROM users) as users,
         (SELECT COUNT(*) FROM mentors) as mentors,
@@ -200,13 +225,12 @@ async function syncNeonToAzure() {
     `);
 
     console.log("\n✅ Sync complete!");
-    console.log("\n📊 Azure database after sync:");
-    console.log(azureCounts.rows[0]);
+    console.log("\n📊 Azure database (after sync):", azureCountsAfter.rows[0]);
 
     // Compare counts
     console.log("\n🔍 Verification:");
     const neon = neonCounts.rows[0];
-    const azure = azureCounts.rows[0];
+    const azure = azureCountsAfter.rows[0];
     
     let allMatch = true;
     for (const key of Object.keys(neon)) {
@@ -220,7 +244,7 @@ async function syncNeonToAzure() {
       console.log("\n⚠️  Some counts don't match - review the sync");
     }
 
-    console.log("\n🎉 Database sync completed!");
+    console.log("\n🎉 Incremental database sync completed!");
 
   } catch (error) {
     console.error("❌ Sync failed:", error);
