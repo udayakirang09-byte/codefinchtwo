@@ -274,10 +274,10 @@ async function seedDatabase() {
 
     // Check if specific test accounts already exist to avoid duplicates
     const testAccounts = await db.select().from(users).where(
-      inArray(users.email, ['teacher@codeconnect.com', 'udayakirang99@gmail.com', 'admin@codeconnect.com'])
+      inArray(users.email, ['teacher@codeconnect.com', 'udayakirang99@gmail.com', 'admin@codeconnect.com', 'testteacher@apptest.com', 'teststudent@apptest.com'])
     );
     
-    if (testAccounts.length === 3) {
+    if (testAccounts.length === 5) {
       console.log("✅ All test accounts already exist, skipping user data seed");
       console.log("🔐 Found test accounts:", testAccounts.map((u: any) => `${u.email} (${u.role})`));
       
@@ -285,13 +285,13 @@ async function seedDatabase() {
       await insertDropdownData();
       return;
     } else if (testAccounts.length > 0) {
-      console.log(`⚠️ Only ${testAccounts.length}/3 test accounts exist, will create missing accounts`);
+      console.log(`⚠️ Only ${testAccounts.length}/5 test accounts exist, will create missing accounts`);
       console.log("🔐 Existing test accounts:", testAccounts.map((u: any) => `${u.email} (${u.role})`));
     } else {
       console.log("📝 No test accounts found, creating all production data");
     }
 
-    // Create complete production dataset (19 users total)
+    // Create complete production dataset (21 users total)
     console.log("📝 Creating complete production dataset...");
     const existingEmails = new Set(testAccounts.map((u: any) => u.email));
     
@@ -322,6 +322,25 @@ async function seedDatabase() {
         firstName: "Admin",
         lastName: "User",
         role: "admin"
+      },
+      // Replit test accounts
+      {
+        id: randomUUID(),
+        email: "testteacher@apptest.com",
+        password: hashedPassword,
+        firstName: "test",
+        lastName: "teacher",
+        role: "mentor",
+        profileImageUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
+      },
+      {
+        id: randomUUID(),
+        email: "teststudent@apptest.com",
+        password: hashedPassword,
+        firstName: "test",
+        lastName: "student",
+        role: "student",
+        profileImageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
       },
       // Additional mentors (4 more to reach 5 total)
       {
@@ -1019,13 +1038,15 @@ async function seedDatabase() {
 
     console.log("✅ Database seeding completed successfully!");
     console.log("📊 Production dataset created:");
-    console.log("   - 19 users total");
-    console.log("   - 5 mentors with specialties");
-    console.log("   - 5 students with interests");
+    console.log("   - 21 users total");
+    console.log("   - 7 mentors with specialties");
+    console.log("   - 6 students with interests");
     console.log("   - Complete relational data");
     console.log("🔐 Test accounts available:");
     console.log("   - teacher@codeconnect.com / Hello111 (mentor)");
+    console.log("   - testteacher@apptest.com / Hello111 (mentor - Replit sync)");
     console.log("   - udayakirang99@gmail.com / Hello111 (student)");
+    console.log("   - teststudent@apptest.com / Hello111 (student - Replit sync)");
     console.log("   - admin@codeconnect.com / Hello111 (admin)");
 
   } catch (error) {
