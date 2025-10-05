@@ -5,17 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Send, Users, Video, Phone, Paperclip } from "lucide-react";
-
-interface ChatMessage {
-  id: string;
-  sender: string;
-  message: string;
-  timestamp: Date;
-  isOwn: boolean;
-}
+import { useChat } from "@/hooks/use-chat";
+import { useAuth } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
 
 export default function ChatClass() {
   const [, params] = useRoute("/chat/:id");
+  const { user } = useAuth();
   
   if (!params) {
     return <div>Invalid class ID</div>;
@@ -23,48 +19,35 @@ export default function ChatClass() {
   
   const classId = (params as { id: string }).id;
   
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [isConnected, setIsConnected] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Fetch booking details to get class info
+  const { data: booking } = useQuery({
+    queryKey: ['/api/bookings', classId],
+    queryFn: async () => {
+      const response = await fetch(`/api/bookings/${classId}`);
+      if (!response.ok) throw new Error('Failed to fetch booking');
+      return response.json();
+    },
+    enabled: !!classId
+  });
+
   const classInfo = {
-    subject: "Python Basics",
-    mentor: "Sarah Johnson",
+    subject: booking?.subject || "Class Chat",
+    mentor: booking ? `${booking.mentor?.user?.firstName} ${booking.mentor?.user?.lastName}` : "Mentor",
     participants: 2
   };
 
-  useEffect(() => {
-    console.log(`💬 Initializing chat for class ${classId}`);
-    
-    // Simulate connection and initial messages
-    setTimeout(() => {
-      setIsConnected(true);
-      setMessages([
-        {
-          id: '1',
-          sender: 'Sarah Johnson',
-          message: 'Welcome to our Python Basics class! Feel free to ask questions anytime.',
-          timestamp: new Date(Date.now() - 5 * 60 * 1000),
-          isOwn: false
-        },
-        {
-          id: '2',
-          sender: 'You',
-          message: 'Thank you! Looking forward to learning Python.',
-          timestamp: new Date(Date.now() - 3 * 60 * 1000),
-          isOwn: true
-        },
-        {
-          id: '3',
-          sender: 'Sarah Johnson',
-          message: 'Great! We\'ll start with variables and data types. Let me know if you need clarification on anything.',
-          timestamp: new Date(Date.now() - 1 * 60 * 1000),
-          isOwn: false
-        }
-      ]);
-    }, 1000);
-  }, [classId]);
+  // Real WebSocket chat hook
+  const { isConnected, messages, sendMessage } = useChat({
+    sessionId: classId,
+    userId: user?.id || 'anonymous',
+    userName: user?.email?.split('@')[0] || 'User',
+    onMessageReceived: (message) => {
+      console.log('📥 Received message:', message);
+    }
+  });
 
   useEffect(() => {
     scrollToBottom();
@@ -77,37 +60,9 @@ export default function ChatClass() {
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
 
-    const message: ChatMessage = {
-      id: Date.now().toString(),
-      sender: 'You',
-      message: newMessage,
-      timestamp: new Date(),
-      isOwn: true
-    };
-
     console.log(`📤 Sending message in class ${classId}: ${newMessage}`);
-    setMessages(prev => [...prev, message]);
+    sendMessage(newMessage);
     setNewMessage("");
-
-    // Simulate mentor response
-    setTimeout(() => {
-      const responses = [
-        "Great question! Let me explain that...",
-        "I see what you mean. Here's how we can approach this...",
-        "That's exactly right! Well done.",
-        "Let me share my screen to show you this concept better."
-      ];
-      
-      const response: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        sender: 'Sarah Johnson',
-        message: responses[Math.floor(Math.random() * responses.length)],
-        timestamp: new Date(),
-        isOwn: false
-      };
-      
-      setMessages(prev => [...prev, response]);
-    }, 2000);
   };
 
   const handleJoinVideo = () => {

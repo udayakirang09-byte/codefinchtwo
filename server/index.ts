@@ -232,6 +232,89 @@ app.use((req, res, next) => {
               }
             }
             break;
+            
+          case 'join-chat-session':
+            // Handle chat session join (reuse video sessions for now)
+            const chatSessionId = data.sessionId;
+            const chatUserId = authenticatedUserId;
+            const chatUserName = data.userName;
+            
+            if (!videoSessions.has(chatSessionId)) {
+              videoSessions.set(chatSessionId, new Set());
+            }
+            
+            const chatParticipants = videoSessions.get(chatSessionId)!;
+            
+            // Add participant if not already in session
+            const existingParticipant = Array.from(chatParticipants).find((p: any) => p.userId === chatUserId);
+            if (!existingParticipant) {
+              const chatParticipant = { ws, userId: chatUserId, userName: chatUserName, sessionId: chatSessionId };
+              chatParticipants.add(chatParticipant);
+            }
+            
+            // Send confirmation
+            ws.send(JSON.stringify({
+              type: 'chat-session-joined',
+              sessionId: chatSessionId,
+              messages: [] // Could load message history here
+            }));
+            
+            log(`User ${chatUserName} joined chat session ${chatSessionId}`);
+            break;
+            
+          case 'send-chat-message':
+            // Broadcast chat message to all participants in the session
+            const msgSessionId = data.sessionId;
+            const msgUserId = authenticatedUserId;
+            const msgUserName = data.userName;
+            const msgText = data.message;
+            const msgId = data.messageId || `${Date.now()}-${msgUserId}`;
+            
+            if (videoSessions.has(msgSessionId)) {
+              const sessionParticipants = videoSessions.get(msgSessionId)!;
+              
+              const chatMessage = {
+                type: 'chat-message',
+                id: msgId,
+                sender: msgUserName,
+                senderId: msgUserId,
+                message: msgText,
+                timestamp: new Date().toISOString(),
+                sessionId: msgSessionId
+              };
+              
+              // Broadcast to all participants except sender
+              sessionParticipants.forEach((p: any) => {
+                if (p.userId !== msgUserId) {
+                  p.ws.send(JSON.stringify(chatMessage));
+                }
+              });
+              
+              log(`Chat message from ${msgUserName} in session ${msgSessionId}: ${msgText.substring(0, 50)}`);
+            }
+            break;
+            
+          case 'leave-chat-session':
+            // Handle chat session leave
+            const leaveChatSessionId = data.sessionId;
+            const leaveChatUserId = authenticatedUserId;
+            
+            if (videoSessions.has(leaveChatSessionId)) {
+              const sessionParticipants = videoSessions.get(leaveChatSessionId)!;
+              
+              // Remove participant
+              sessionParticipants.forEach((p: any) => {
+                if (p.userId === leaveChatUserId) {
+                  sessionParticipants.delete(p);
+                }
+              });
+              
+              // Clean up empty sessions
+              if (sessionParticipants.size === 0) {
+                videoSessions.delete(leaveChatSessionId);
+              }
+            }
+            break;
         }
       } catch (error) {
         log(`WebSocket message error: ${error}`);
