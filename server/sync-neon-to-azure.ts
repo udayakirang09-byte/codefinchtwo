@@ -4,13 +4,10 @@ async function syncNeonToAzure() {
   const neonUrl = process.env.DATABASE_URL_NEON;
   const azureUrl = process.env.DATABASE_URL;
 
-  console.log("🔄 Starting Neon → Azure database sync...");
+  console.log("🔄 Starting comprehensive Neon → Azure sync...\n");
 
-  if (!neonUrl) {
-    throw new Error("DATABASE_URL_NEON is required");
-  }
-  if (!azureUrl) {
-    throw new Error("DATABASE_URL is required");
+  if (!neonUrl || !azureUrl) {
+    throw new Error("Both DATABASE_URL_NEON and DATABASE_URL are required");
   }
 
   const neonPool = new Pool({ connectionString: neonUrl });
@@ -26,29 +23,81 @@ async function syncNeonToAzure() {
     await azurePool.query('SELECT 1');
     console.log("✅ Azure connected\n");
 
-    // Get current state
-    const neonCounts = await neonPool.query(`
-      SELECT 
-        (SELECT COUNT(*) FROM users) as users,
-        (SELECT COUNT(*) FROM mentors) as mentors,
-        (SELECT COUNT(*) FROM students) as students,
-        (SELECT COUNT(*) FROM bookings) as bookings
+    // STEP 1: FIX SCHEMA DIFFERENCES
+    console.log("🔧 STEP 1: Fixing schema differences...\n");
+
+    // Get all tables from Neon
+    const neonTables = await neonPool.query(`
+      SELECT tablename 
+      FROM pg_tables 
+      WHERE schemaname = 'public' 
+      ORDER BY tablename
     `);
 
-    const azureCounts = await azurePool.query(`
-      SELECT 
-        (SELECT COUNT(*) FROM users) as users,
-        (SELECT COUNT(*) FROM mentors) as mentors,
-        (SELECT COUNT(*) FROM students) as students,
-        (SELECT COUNT(*) FROM bookings) as bookings
-    `);
+    for (const { tablename } of neonTables.rows) {
+      // Check if table exists in Azure
+      const azureTableExists = await azurePool.query(
+        `SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = $1)`,
+        [tablename]
+      );
 
-    console.log("📊 Current state:");
-    console.log("  Neon:", neonCounts.rows[0]);
-    console.log("  Azure:", azureCounts.rows[0]);
-    console.log();
+      if (!azureTableExists.rows[0].exists) {
+        console.log(`⏭️  Table '${tablename}' missing in Azure (needs schema push)`);
+        continue;
+      }
 
-    // Tables in dependency order
+      // Get columns from both databases
+      const neonCols = await neonPool.query(`
+        SELECT column_name, data_type, udt_name, is_nullable, column_default
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = $1
+        ORDER BY ordinal_position
+      `, [tablename]);
+
+      const azureCols = await azurePool.query(`
+        SELECT column_name, data_type, udt_name, is_nullable, column_default
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = $1
+        ORDER BY ordinal_position
+      `, [tablename]);
+
+      const azureColMap = new Map(azureCols.rows.map(c => [c.column_name, c]));
+
+      // Check for missing columns
+      for (const neonCol of neonCols.rows) {
+        if (!azureColMap.has(neonCol.column_name)) {
+          console.log(`  🔧 Adding column: ${tablename}.${neonCol.column_name}`);
+          
+          // Build ALTER TABLE statement
+          let colType = neonCol.data_type;
+          if (neonCol.data_type === 'USER-DEFINED') {
+            colType = neonCol.udt_name;
+          }
+          if (neonCol.data_type === 'ARRAY') {
+            colType = neonCol.udt_name + '[]';
+          }
+          
+          const nullable = neonCol.is_nullable === 'YES' ? '' : ' NOT NULL';
+          const defaultVal = neonCol.column_default ? ` DEFAULT ${neonCol.column_default}` : '';
+          
+          try {
+            await azurePool.query(`
+              ALTER TABLE ${tablename} 
+              ADD COLUMN ${neonCol.column_name} ${colType}${defaultVal}${nullable}
+            `);
+            console.log(`    ✅ Added successfully`);
+          } catch (err: any) {
+            console.log(`    ⚠️  Could not add: ${err.message}`);
+          }
+        }
+      }
+    }
+
+    console.log("\n✅ Schema sync complete\n");
+
+    // STEP 2: SYNC DATA
+    console.log("💾 STEP 2: Syncing data...\n");
+
     const tables = [
       'qualifications',
       'specializations',
@@ -67,41 +116,31 @@ async function syncNeonToAzure() {
       'teacher_payment_configs'
     ];
 
-    console.log("🔄 Starting incremental sync (UPSERT)...\n");
-
     for (const table of tables) {
       try {
-        // Check if table exists in Neon
         const exists = await neonPool.query(
           `SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = $1)`,
           [table]
         );
 
-        if (!exists.rows[0].exists) {
-          continue;
-        }
+        if (!exists.rows[0].exists) continue;
 
-        // Get data from Neon
         const result = await neonPool.query(`SELECT * FROM ${table}`);
-        
-        if (result.rows.length === 0) {
-          continue;
-        }
+        if (result.rows.length === 0) continue;
 
         console.log(`📦 ${table}: ${result.rows.length} records`);
 
-        // Check if table exists in Azure
         const azureExists = await azurePool.query(
           `SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = $1)`,
           [table]
         );
 
         if (!azureExists.rows[0].exists) {
-          console.log(`  ⚠️  Table missing in Azure\n`);
+          console.log(`  ⚠️  Table missing, skipping\n`);
           continue;
         }
 
-        // Get column info from Azure
+        // Get Azure columns
         const cols = await azurePool.query(
           `SELECT column_name, data_type, udt_name 
            FROM information_schema.columns 
@@ -109,13 +148,7 @@ async function syncNeonToAzure() {
           [table]
         );
 
-        const colMap = new Map();
-        for (const col of cols.rows) {
-          colMap.set(col.column_name, {
-            dataType: col.data_type,
-            udtName: col.udt_name
-          });
-        }
+        const colMap = new Map(cols.rows.map(c => [c.column_name, { dataType: c.data_type, udtName: c.udt_name }]));
 
         // Get primary key
         const pkQuery = await azurePool.query(
@@ -131,102 +164,80 @@ async function syncNeonToAzure() {
 
         const pk = pkQuery.rows[0]?.column_name || 'id';
 
-        // Sync each row
         let synced = 0;
         let errors = 0;
 
         for (const row of result.rows) {
           try {
-            const columns = Object.keys(row);
-            const values = [];
-
-            // Process each value
-            for (let i = 0; i < columns.length; i++) {
-              const colName = columns[i];
-              let value = row[colName];
-
-              // Convert JSONB/JSON objects to strings
-              if (value !== null && typeof value === 'object') {
-                const colInfo = colMap.get(colName);
-                if (colInfo && 
-                    (colInfo.dataType === 'json' || colInfo.dataType === 'jsonb' ||
-                     colInfo.udtName === 'json' || colInfo.udtName === 'jsonb')) {
-                  value = JSON.stringify(value);
+            // Filter out columns that don't exist in Azure
+            const columns = Object.keys(row).filter(col => colMap.has(col));
+            const values = columns.map(col => {
+              let val = row[col];
+              
+              // Convert JSONB to string
+              if (val !== null && typeof val === 'object') {
+                const info = colMap.get(col);
+                if (info && (info.dataType === 'json' || info.dataType === 'jsonb' || 
+                             info.udtName === 'json' || info.udtName === 'jsonb')) {
+                  val = JSON.stringify(val);
                 }
               }
+              
+              return val;
+            });
 
-              values.push(value);
-            }
-
-            // Build UPSERT query
             const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
-            
-            const updateSet = columns
-              .filter(col => col !== pk)
-              .map(col => `${col} = EXCLUDED.${col}`)
-              .join(', ');
+            const updateSet = columns.filter(c => c !== pk).map(c => `${c} = EXCLUDED.${c}`).join(', ');
 
-            let query;
-            if (updateSet) {
-              query = `
-                INSERT INTO ${table} (${columns.join(', ')})
-                VALUES (${placeholders})
-                ON CONFLICT (${pk}) DO UPDATE SET ${updateSet}
-              `;
-            } else {
-              query = `
-                INSERT INTO ${table} (${columns.join(', ')})
-                VALUES (${placeholders})
-                ON CONFLICT (${pk}) DO NOTHING
-              `;
-            }
+            const query = updateSet
+              ? `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders}) ON CONFLICT (${pk}) DO UPDATE SET ${updateSet}`
+              : `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders}) ON CONFLICT (${pk}) DO NOTHING`;
 
             await azurePool.query(query, values);
             synced++;
           } catch (err: any) {
             errors++;
-            if (errors <= 2) {
-              console.log(`  ⚠️  ${err.message}`);
-            }
+            if (errors <= 2) console.log(`  ⚠️  ${err.message}`);
           }
         }
 
-        const status = errors > 0 ? ` (${errors} errors)` : '';
-        console.log(`  ✅ ${synced}/${result.rows.length}${status}\n`);
-
+        console.log(`  ✅ ${synced}/${result.rows.length}${errors > 0 ? ` (${errors} errors)` : ''}\n`);
       } catch (err: any) {
         console.log(`  ❌ ${err.message}\n`);
       }
     }
 
     // Final verification
-    const finalCounts = await azurePool.query(`
+    const neonCounts = await neonPool.query(`
       SELECT 
         (SELECT COUNT(*) FROM users) as users,
         (SELECT COUNT(*) FROM mentors) as mentors,
-        (SELECT COUNT(*) FROM students) as students,
-        (SELECT COUNT(*) FROM bookings) as bookings
+        (SELECT COUNT(*) FROM students) as students
     `);
 
-    console.log("📊 Final Azure state:", finalCounts.rows[0]);
+    const azureCounts = await azurePool.query(`
+      SELECT 
+        (SELECT COUNT(*) FROM users) as users,
+        (SELECT COUNT(*) FROM mentors) as mentors,
+        (SELECT COUNT(*) FROM students) as students
+    `);
 
-    console.log("\n🔍 Verification:");
+    console.log("📊 Final counts:");
+    console.log("  Neon: ", neonCounts.rows[0]);
+    console.log("  Azure:", azureCounts.rows[0]);
+
     const neon = neonCounts.rows[0];
-    const azure = finalCounts.rows[0];
-    
+    const azure = azureCounts.rows[0];
     let allMatch = true;
+    
+    console.log("\n🔍 Verification:");
     for (const key in neon) {
       const match = neon[key] === azure[key];
       console.log(`${match ? '✅' : '⚠️ '} ${key}: Neon=${neon[key]}, Azure=${azure[key]}`);
       if (!match) allMatch = false;
     }
 
-    if (allMatch) {
-      console.log("\n🎉 Perfect sync!");
-    } else {
-      console.log("\n⚠️  Some differences remain");
-    }
-
+    console.log(allMatch ? "\n🎉 Perfect sync!" : "\n⚠️  Some differences remain");
     console.log("\n✅ Sync complete");
 
   } catch (error) {
