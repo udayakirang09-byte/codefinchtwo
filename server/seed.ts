@@ -656,7 +656,7 @@ async function seedDatabase() {
         id: randomUUID(),
         studentId: student.id,
         mentorId: mentor.id,
-        scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+        scheduledAt: new Date(Date.now() + 20 * 60 * 1000), // 20 minutes from now
         duration: 60,
         status: "scheduled",
         notes: "Introduction to JavaScript fundamentals"

@@ -153,7 +153,13 @@ export default function StudentDashboard() {
       const completed = upcomingClassesData
         .filter((booking: any) => {
           const scheduledTime = new Date(booking.scheduledAt);
-          return booking.status === 'completed' && scheduledTime >= twelveHoursAgo;
+          const classEndTime = addMinutes(scheduledTime, booking.duration + 2);
+          
+          // Include both completed bookings AND scheduled bookings past their end time
+          return (
+            (booking.status === 'completed' && scheduledTime >= twelveHoursAgo) ||
+            (booking.status === 'scheduled' && now >= classEndTime && scheduledTime >= twelveHoursAgo)
+          );
         })
         .map((booking: any) => ({
           id: booking.id,
