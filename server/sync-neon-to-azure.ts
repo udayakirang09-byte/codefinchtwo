@@ -136,13 +136,13 @@ async function syncNeonToAzure() {
 
         // Get Azure column info to handle JSON/JSONB differences
         const azureColumns = await azurePool.query(`
-          SELECT column_name, data_type 
+          SELECT column_name, data_type, udt_name
           FROM information_schema.columns 
           WHERE table_name = $1 AND table_schema = 'public'
         `, [table]);
         
         const columnTypes = new Map(
-          azureColumns.rows.map((r: any) => [r.column_name, r.data_type])
+          azureColumns.rows.map((r: any) => [r.column_name, { data_type: r.data_type, udt_name: r.udt_name }])
         );
 
         // Insert data into Azure
@@ -152,10 +152,13 @@ async function syncNeonToAzure() {
             const columns = Object.keys(row);
             const values = Object.values(row).map((val, idx) => {
               const colName = columns[idx];
-              const colType = columnTypes.get(colName);
+              const colInfo = columnTypes.get(colName);
               
-              // Convert JSONB to JSON string for Azure
-              if (colType === 'json' && val !== null && typeof val === 'object') {
+              // Convert JSONB/JSON objects to strings for Azure
+              // Check both data_type and udt_name for json/jsonb
+              if (colInfo && val !== null && typeof val === 'object' && 
+                  (colInfo.data_type === 'json' || colInfo.data_type === 'jsonb' || 
+                   colInfo.udt_name === 'json' || colInfo.udt_name === 'jsonb')) {
                 return JSON.stringify(val);
               }
               
