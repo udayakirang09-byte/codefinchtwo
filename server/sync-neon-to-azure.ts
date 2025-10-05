@@ -77,10 +77,7 @@ async function syncNeonToAzure() {
 
     console.log("\n🗑️  Clearing Azure database (reverse dependency order)...");
     
-    // Disable foreign key checks temporarily
-    await azurePool.query('SET session_replication_role = replica;');
-    
-    // Truncate all tables
+    // Truncate all tables (CASCADE handles foreign keys)
     const allTables = [...configTables, ...junctionTables, ...coreTables, ...lookupTables];
     for (const table of allTables) {
       try {
@@ -92,9 +89,6 @@ async function syncNeonToAzure() {
         }
       }
     }
-    
-    // Re-enable foreign key checks
-    await azurePool.query('SET session_replication_role = DEFAULT;');
 
     console.log("\n🔄 Starting data sync...");
 
