@@ -171,6 +171,13 @@ async function syncNeonToAzure() {
           try {
             // Filter out columns that don't exist in Azure
             const columns = Object.keys(row).filter(col => colMap.has(col));
+            
+            if (columns.length === 0) {
+              errors++;
+              if (errors === 1) console.log(`  ⚠️  No matching columns found between Neon and Azure`);
+              continue;
+            }
+
             const values = columns.map(col => {
               let val = row[col];
               
