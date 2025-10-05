@@ -122,12 +122,12 @@ export default function StudentDashboard() {
   const processUpcomingClasses = () => {
     if (upcomingClassesData) {
       const now = new Date();
-      const next72Hours = addHours(now, 72);
       
       const upcoming = upcomingClassesData
         .filter((booking: any) => {
           const scheduledTime = new Date(booking.scheduledAt);
-          return booking.status === 'scheduled' && scheduledTime >= now && scheduledTime <= next72Hours;
+          const classEndTime = addMinutes(scheduledTime, booking.duration + 2); // class end + 2 minutes
+          return booking.status === 'scheduled' && now < classEndTime;
         })
         .map((booking: any) => ({
           id: booking.id,

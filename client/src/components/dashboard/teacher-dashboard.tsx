@@ -123,9 +123,11 @@ export default function TeacherDashboard() {
     enabled: !!user?.id
   });
   
-  const upcomingClasses = Array.isArray(teacherClasses) ? teacherClasses.filter((booking: any) => 
-    booking.status === 'scheduled' && new Date(booking.scheduledAt) > new Date()
-  ).map((booking: any) => ({
+  const upcomingClasses = Array.isArray(teacherClasses) ? teacherClasses.filter((booking: any) => {
+    const scheduledAt = new Date(booking.scheduledAt);
+    const classEndTime = addMinutes(scheduledAt, booking.duration + 2); // class end + 2 minutes
+    return booking.status === 'scheduled' && new Date() < classEndTime;
+  }).map((booking: any) => ({
     id: booking.id,
     studentName: booking.student?.user?.firstName + ' ' + (booking.student?.user?.lastName || ''),
     subject: booking.subject,
