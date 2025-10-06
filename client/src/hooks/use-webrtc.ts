@@ -29,6 +29,7 @@ export function useWebRTC({
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [connectionQuality, setConnectionQuality] = useState<'good' | 'poor' | 'disconnected'>('disconnected');
   const [isPolite, setIsPolite] = useState(false); // For perfect negotiation
+  const [error, setError] = useState<string | null>(null);
   
   const wsRef = useRef<WebSocket | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -260,10 +261,15 @@ export function useWebRTC({
   // Connect to WebSocket and join session
   const connect = useCallback(async () => {
     try {
+      setError(null); // Clear any previous errors
+      
       // Initialize local stream first
       const stream = await initializeLocalStream();
       if (!stream) {
-        throw new Error('Failed to initialize media stream');
+        const errorMessage = 'Camera and microphone access denied. Please allow access to join the video session.';
+        setError(errorMessage);
+        setConnectionQuality('disconnected');
+        throw new Error(errorMessage);
       }
       
       // Connect to WebSocket on specific path to avoid Vite HMR conflicts
@@ -405,6 +411,10 @@ export function useWebRTC({
     } catch (error) {
       console.error('Failed to connect:', error);
       setConnectionQuality('disconnected');
+      if (!error || typeof error !== 'object' || !('message' in error)) {
+        setError('Failed to connect to video session');
+      }
+      // Error message already set if it's the camera/mic error
     }
   }, [sessionId, userId, isTeacher, initializeLocalStream, sendOffer, handleOffer, handleAnswer, handleIceCandidate, onParticipantJoin, onParticipantLeave]);
 
@@ -458,6 +468,7 @@ export function useWebRTC({
     isVideoEnabled,
     isAudioEnabled,
     connectionQuality,
+    error,
     toggleVideo,
     toggleAudio,
     startScreenShare,

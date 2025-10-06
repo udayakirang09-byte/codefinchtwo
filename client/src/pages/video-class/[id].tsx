@@ -37,6 +37,7 @@ export default function VideoClass() {
     isVideoEnabled,
     isAudioEnabled, 
     connectionQuality,
+    error,
     toggleVideo,
     toggleAudio,
     startScreenShare,
@@ -195,12 +196,39 @@ export default function VideoClass() {
       {/* Connecting Overlay */}
       {!isConnected && (
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-purple-900 to-black z-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white mb-6"></div>
-            <h2 className="text-2xl font-bold text-white mb-2">Connecting to Class...</h2>
-            <p className="text-blue-200">
-              Please wait while we connect you to {classInfo.subject}
-            </p>
+          <div className="text-center max-w-md px-4">
+            {error ? (
+              <>
+                <AlertTriangle className="h-24 w-24 text-yellow-400 mb-6 mx-auto" />
+                <h2 className="text-2xl font-bold text-white mb-4">Unable to Connect</h2>
+                <p className="text-blue-200 mb-6">{error}</p>
+                <div className="flex gap-3 justify-center">
+                  <Button 
+                    onClick={() => window.location.reload()} 
+                    variant="default"
+                    data-testid="button-retry"
+                  >
+                    Retry
+                  </Button>
+                  <Button 
+                    onClick={() => setLocation('/')} 
+                    variant="outline"
+                    className="text-white border-white hover:bg-white/10"
+                    data-testid="button-back-home"
+                  >
+                    Go Home
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white mb-6 mx-auto"></div>
+                <h2 className="text-2xl font-bold text-white mb-2">Connecting to Class...</h2>
+                <p className="text-blue-200">
+                  Please wait while we connect you to {classInfo.subject}
+                </p>
+              </>
+            )}
           </div>
         </div>
       )}
