@@ -4127,6 +4127,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete('/api/payment-methods/:paymentMethodId', async (req, res) => {
+    try {
+      const { paymentMethodId } = req.params;
+      console.log(`💳 Deleting payment method: ${paymentMethodId}`);
+      await storage.deletePaymentMethod(paymentMethodId);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('❌ Error deleting payment method:', error);
+      res.status(500).json({ message: 'Failed to delete payment method' });
+    }
+  });
+
   // Transaction Fee Configuration API Routes
   app.get('/api/admin/transaction-fee-config', async (req, res) => {
     try {

@@ -238,6 +238,27 @@ export default function TeacherPaymentConfig() {
     },
   });
 
+  // Delete payment method mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (paymentMethodId: string) => {
+      return apiRequest('DELETE', `/api/payment-methods/${paymentMethodId}`, {});
+    },
+    onSuccess: () => {
+      toast({
+        title: "Payment Method Deleted",
+        description: "Your payment method has been removed successfully!",
+      });
+      refetchMethods();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Delete",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Submit handlers
   const handleUpiSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -393,6 +414,19 @@ export default function TeacherPaymentConfig() {
                               Set Default
                             </Button>
                           )}
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => {
+                              if (window.confirm(`Are you sure you want to delete "${method.displayName}"?`)) {
+                                deleteMutation.mutate(method.id);
+                              }
+                            }}
+                            disabled={deleteMutation.isPending}
+                            data-testid={`button-delete-${method.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     ))}
