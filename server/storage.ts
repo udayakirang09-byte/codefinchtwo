@@ -204,7 +204,16 @@ export interface IStorage {
   createHelpTicket(ticket: any): Promise<any>;
   
   // Admin operations
-  getSystemStats(): Promise<any>;
+  getSystemStats(): Promise<{
+    totalUsers: number;
+    totalMentors: number;
+    totalStudents: number;
+    totalBookings: number;
+    completedBookings: number;
+    completionRate: number;
+    activeClasses: number;
+    monthlyRevenue: number;
+  }>;
   getFinanceAnalytics(): Promise<{
     totalAdminRevenue: number;
     totalTeacherPayouts: number;
@@ -1207,20 +1216,39 @@ export class DatabaseStorage implements IStorage {
     totalBookings: number;
     completedBookings: number;
     completionRate: number;
+    activeClasses: number;
+    monthlyRevenue: number;
   }> {
     const allUsers = await db.select().from(users);
     const allMentors = await db.select().from(mentors);
     const allStudents = await db.select().from(students);
     const allBookings = await db.select().from(bookings);
-    const completedBookings = await db.select().from(bookings).where(eq(bookings.status, 'completed'));
+    const completedBookingsList = await db.select().from(bookings).where(eq(bookings.status, 'completed'));
+    
+    // Get active classes (scheduled bookings from all students)
+    const activeClasses = await db.select().from(bookings).where(eq(bookings.status, 'scheduled'));
+    
+    // Calculate monthly revenue (sum of all teacher fees from completed bookings in current month)
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    
+    // Get completed bookings from current month and sum their amounts
+    const monthlyCompletedBookings = completedBookingsList.filter((b: any) => {
+      const bookingDate = new Date(b.scheduledAt);
+      return bookingDate >= firstDayOfMonth && bookingDate <= lastDayOfMonth;
+    });
+    const monthlyRevenue = monthlyCompletedBookings.reduce((sum: number, b: any) => sum + (b.amount || 0), 0);
 
     return {
       totalUsers: allUsers.length || 0,
       totalMentors: allMentors.length || 0,
       totalStudents: allStudents.length || 0,
       totalBookings: allBookings.length || 0,
-      completedBookings: completedBookings.length || 0,
-      completionRate: allBookings.length > 0 ? (completedBookings.length / allBookings.length) * 100 : 0
+      completedBookings: completedBookingsList.length || 0,
+      completionRate: allBookings.length > 0 ? (completedBookingsList.length / allBookings.length) * 100 : 0,
+      activeClasses: activeClasses.length || 0,
+      monthlyRevenue: monthlyRevenue || 0
     };
   }
 
