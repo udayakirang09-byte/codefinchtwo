@@ -33,6 +33,8 @@ export default function StudentProgress() {
     totalClasses: number;
     completedClasses: number;
     hoursLearned: number;
+    overallProgress: number; // Average progress across all subjects
+    achievementsCount: number; // Number of completed classes
     achievements: Array<{
       id: number;
       title: string;
@@ -51,7 +53,8 @@ export default function StudentProgress() {
     skillLevels: Array<{
       skill: string;
       level: number;
-      classes: number;
+      classesCompleted: number;
+      totalClasses: number;
     }>;
   };
 
@@ -70,6 +73,8 @@ export default function StudentProgress() {
       totalClasses: 0,
       completedClasses: 0,
       hoursLearned: 0,
+      overallProgress: 0,
+      achievementsCount: 0,
       achievements: [],
       recentClasses: [],
       skillLevels: []
@@ -113,6 +118,8 @@ export default function StudentProgress() {
     totalClasses: 0,
     completedClasses: 0,
     hoursLearned: 0,
+    overallProgress: 0,
+    achievementsCount: 0,
     achievements: [],
     recentClasses: [],
     skillLevels: []
@@ -159,7 +166,7 @@ export default function StudentProgress() {
           <Card className="bg-gradient-to-r from-yellow-500 to-orange-600 text-white border-0">
             <CardContent className="p-6 text-center">
               <Trophy className="h-8 w-8 mx-auto mb-2" />
-              <div className="text-3xl font-bold">{safeProgressData.achievements.filter(a => a.earned).length}</div>
+              <div className="text-3xl font-bold">{safeProgressData.achievementsCount}</div>
               <div className="text-yellow-100">Achievements</div>
             </CardContent>
           </Card>
@@ -167,7 +174,7 @@ export default function StudentProgress() {
           <Card className="bg-gradient-to-r from-purple-500 to-pink-600 text-white border-0">
             <CardContent className="p-6 text-center">
               <TrendingUp className="h-8 w-8 mx-auto mb-2" />
-              <div className="text-3xl font-bold">{safeProgressData.totalClasses > 0 ? Math.round((safeProgressData.completedClasses / safeProgressData.totalClasses) * 100) : 0}%</div>
+              <div className="text-3xl font-bold">{safeProgressData.overallProgress}%</div>
               <div className="text-purple-100">Overall Progress</div>
             </CardContent>
           </Card>
@@ -192,7 +199,7 @@ export default function StudentProgress() {
                     </div>
                     <Progress value={skill.level} className="h-3" />
                     <div className="text-xs text-gray-500">
-                      {skill.classes} classes completed
+                      {skill.classesCompleted} classes completed
                     </div>
                   </div>
                 ))}

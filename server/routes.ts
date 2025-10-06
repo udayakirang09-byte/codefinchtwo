@@ -1212,7 +1212,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const totalHours = completedBookings.reduce((sum: number, booking: any) => sum + (booking.duration || 0), 0) / 60;
       
-      // Get actual achievements
+      // Calculate skill-based progress - group completed bookings by subject
+      const skillProgress: Record<string, { completed: number; total: number }> = {};
+      
+      studentBookings.forEach((booking: any) => {
+        const subject = booking.subject || 'General';
+        if (!skillProgress[subject]) {
+          skillProgress[subject] = { completed: 0, total: 0 };
+        }
+        skillProgress[subject].total++;
+        
+        // Check if this booking is completed
+        const isCompleted = booking.status === 'completed' || 
+          (booking.status === 'scheduled' && now >= new Date(new Date(booking.scheduledAt).getTime() + booking.duration * 60000));
+        
+        if (isCompleted) {
+          skillProgress[subject].completed++;
+        }
+      });
+      
+      // Convert to skill levels array with progress percentage
+      const skillLevels = Object.entries(skillProgress).map(([skill, progress]) => ({
+        skill,
+        level: Math.round((progress.completed / progress.total) * 100),
+        classesCompleted: progress.completed,
+        totalClasses: progress.total
+      }));
+      
+      // Calculate overall progress as average across all subjects
+      const overallProgress = skillLevels.length > 0
+        ? Math.round(skillLevels.reduce((sum, s) => sum + s.level, 0) / skillLevels.length)
+        : 0;
+      
+      // Get actual achievements (but also include completed classes count)
       const studentAchievements = await db.select()
         .from(achievements)
         .where(eq(achievements.studentId, studentId))
@@ -1232,7 +1264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           return {
             id: booking.id,
-            subject: mentor?.title || 'Coding Session',
+            subject: booking.subject || mentor?.title || 'Coding Session',
             mentor: mentorUser ? `${mentorUser.firstName} ${mentorUser.lastName}` : 'Unknown',
             rating: review?.rating || 0,
             completedAt: new Date(booking.scheduledAt).toLocaleDateString()
@@ -1244,6 +1276,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalClasses: studentBookings.length,
         completedClasses: completedBookings.length,
         hoursLearned: Math.round(totalHours),
+        overallProgress, // Add overall progress percentage
+        achievementsCount: completedBookings.length, // Achievements = number of completed classes
         achievements: studentAchievements.map((ach: any) => ({
           id: ach.id,
           title: ach.title,
@@ -1252,7 +1286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           date: ach.earnedAt
         })),
         recentClasses,
-        skillLevels: [] // Will be empty until we have skill tracking system
+        skillLevels // Now includes actual progress data
       };
 
       res.json(progressData);
