@@ -1275,8 +1275,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const progressData = {
         totalClasses: studentBookings.length,
         completedClasses: completedBookings.length,
-        hoursLearned: Math.max(1, Math.round(totalHours)), // Show at least 1 hour if any classes completed
-        overallProgress, // Add overall progress percentage
+        hoursLearned: parseFloat(totalHours.toFixed(1)), // Show decimal hours like 1.0
+        overallProgress: Math.round((completedBookings.length / Math.max(studentBookings.length, 1)) * 100), // Percentage of total classes completed
         achievementsCount: completedBookings.length, // Achievements = number of completed classes
         achievements: studentAchievements.map((ach: any) => ({
           id: ach.id,

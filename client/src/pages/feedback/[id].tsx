@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Star, CheckCircle, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function FeedbackForm() {
   const [, params] = useRoute("/feedback/:id");
@@ -16,13 +19,15 @@ export default function FeedbackForm() {
   
   const classId = (params as { id: string }).id;
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState("");
   const [whatWorked, setWhatWorked] = useState("");
   const [improvements, setImprovements] = useState("");
   const [wouldRecommend, setWouldRecommend] = useState<boolean | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [studentId, setStudentId] = useState<string>("");
 
   const [classInfo, setClassInfo] = useState({
     subject: "Loading...",
@@ -34,7 +39,7 @@ export default function FeedbackForm() {
   useEffect(() => {
     console.log(`⭐ Loading feedback form for class ${classId}`);
     
-    // Fetch actual booking data
+    // Fetch actual booking data and student ID
     const fetchBookingData = async () => {
       try {
         const response = await fetch(`/api/bookings/${classId}`);
@@ -50,6 +55,8 @@ export default function FeedbackForm() {
           completedAt,
           expiresAt
         });
+        
+        setStudentId(booking.studentId);
       } catch (error) {
         console.error('Error fetching booking data:', error);
         toast({
@@ -63,28 +70,22 @@ export default function FeedbackForm() {
     fetchBookingData();
   }, [classId, toast]);
 
-  const handleSubmitFeedback = async () => {
-    if (rating === 0) {
-      toast({
-        title: "Rating Required",
-        description: "Please provide a rating before submitting feedback.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    console.log(`📤 Submitting feedback for class ${classId}:`, {
-      rating,
-      feedback,
-      whatWorked,
-      improvements,
-      wouldRecommend
-    });
-
-    // Simulate API call
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+  const feedbackMutation = useMutation({
+    mutationFn: async (feedbackData: {
+      bookingId: string;
+      studentId: string;
+      mentorId: string;
+      rating: number;
+      feedback: string;
+      whatWorked: string;
+      improvements: string;
+      wouldRecommend: boolean;
+    }) => {
+      return await apiRequest('POST', '/api/class-feedback', feedbackData);
+    },
+    onSuccess: async () => {
+      // Invalidate all student-related caches to force refetch
+      await queryClient.invalidateQueries({ queryKey: ['/api/students'] });
       
       toast({
         title: "Feedback Submitted!",
@@ -96,15 +97,57 @@ export default function FeedbackForm() {
       setTimeout(() => {
         window.location.href = '/';
       }, 2000);
-
-    } catch (error) {
+    },
+    onError: (error) => {
+      console.error('Error submitting feedback:', error);
       toast({
         title: "Submission Failed",
         description: "Please try submitting your feedback again.",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
+    }
+  });
+
+  const handleSubmitFeedback = async () => {
+    if (rating === 0) {
+      toast({
+        title: "Rating Required",
+        description: "Please provide a rating before submitting feedback.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log(`📤 Submitting feedback for class ${classId}:`, {
+      rating,
+      feedback,
+      whatWorked,
+      improvements,
+      wouldRecommend
+    });
+
+    // First fetch the booking to get mentorId
+    try {
+      const response = await fetch(`/api/bookings/${classId}`);
+      if (!response.ok) throw new Error('Failed to fetch booking');
+      const booking = await response.json();
+
+      feedbackMutation.mutate({
+        bookingId: classId,
+        studentId: studentId,
+        mentorId: booking.mentorId,
+        rating,
+        feedback: `${feedback}\n\nWhat worked: ${whatWorked}\n\nImprovements: ${improvements}`,
+        whatWorked,
+        improvements,
+        wouldRecommend: wouldRecommend ?? false
+      });
+    } catch (error) {
+      toast({
+        title: "Submission Failed",
+        description: "Could not load class information. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -264,11 +307,11 @@ export default function FeedbackForm() {
             <div className="pt-6 border-t border-gray-200">
               <Button
                 onClick={handleSubmitFeedback}
-                disabled={rating === 0 || isSubmitting}
+                disabled={rating === 0 || feedbackMutation.isPending}
                 className="w-full py-4 text-lg bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700 disabled:opacity-50"
                 data-testid="button-submit-feedback"
               >
-                {isSubmitting ? (
+                {feedbackMutation.isPending ? (
                   <>
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                     Submitting Feedback...
