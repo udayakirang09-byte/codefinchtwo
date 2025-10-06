@@ -56,6 +56,7 @@ import Forums from "./pages/forums";
 import Projects from "./pages/projects";
 import Events from "./pages/events";
 import Recordings from "./pages/recordings";
+import CourseEnrollment from "./pages/course-enrollment";
 
 function Router() {
   return (
@@ -67,6 +68,7 @@ function Router() {
       <Route path="/booking-checkout" component={BookingCheckout} />
       <Route path="/booking-success" component={BookingSuccess} />
       <Route path="/courses" component={Courses} />
+      <Route path="/course-enrollment/:courseId" component={CourseEnrollment} />
       <Route path="/checkout" component={Checkout} />
       <Route path="/payment" component={Payment} />
       <Route path="/payment-success" component={PaymentSuccess} />

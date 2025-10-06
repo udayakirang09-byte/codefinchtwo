@@ -529,10 +529,47 @@ export const teacherProfiles = pgTable("teacher_profiles", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Course Enrollments Table
+export const courseEnrollments = pgTable("course_enrollments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  courseId: varchar("course_id").references(() => courses.id).notNull(),
+  studentId: varchar("student_id").references(() => students.id).notNull(),
+  mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
+  weeklySchedule: jsonb("weekly_schedule").$type<{
+    day: string;
+    time: string;
+  }[]>().default([]),
+  totalClasses: integer("total_classes").notNull(),
+  completedClasses: integer("completed_classes").default(0),
+  courseFee: decimal("course_fee", { precision: 10, scale: 2 }).notNull(),
+  status: varchar("status").notNull().default("active"), // active, completed, cancelled
+  enrolledAt: timestamp("enrolled_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Courses Relations
-export const coursesRelations = relations(courses, ({ one }) => ({
+export const coursesRelations = relations(courses, ({ one, many }) => ({
   mentor: one(mentors, {
     fields: [courses.mentorId],
+    references: [mentors.id],
+  }),
+  enrollments: many(courseEnrollments),
+}));
+
+// Course Enrollments Relations
+export const courseEnrollmentsRelations = relations(courseEnrollments, ({ one }) => ({
+  course: one(courses, {
+    fields: [courseEnrollments.courseId],
+    references: [courses.id],
+  }),
+  student: one(students, {
+    fields: [courseEnrollments.studentId],
+    references: [students.id],
+  }),
+  mentor: one(mentors, {
+    fields: [courseEnrollments.mentorId],
     references: [mentors.id],
   }),
 }));
@@ -548,12 +585,18 @@ export const teacherProfilesRelations = relations(teacherProfiles, ({ one }) => 
 // Course Insert Schema
 export const insertCourseSchema = createInsertSchema(courses);
 
+// Course Enrollment Insert Schema
+export const insertCourseEnrollmentSchema = createInsertSchema(courseEnrollments);
+
 // Teacher Profile Insert Schema
 export const insertTeacherProfileSchema = createInsertSchema(teacherProfiles);
 
 // Additional Types
 export type Course = typeof courses.$inferSelect;
 export type InsertCourse = z.infer<typeof insertCourseSchema>;
+
+export type CourseEnrollment = typeof courseEnrollments.$inferSelect;
+export type InsertCourseEnrollment = z.infer<typeof insertCourseEnrollmentSchema>;
 
 export type TeacherProfile = typeof teacherProfiles.$inferSelect;
 export type InsertTeacherProfile = z.infer<typeof insertTeacherProfileSchema>;

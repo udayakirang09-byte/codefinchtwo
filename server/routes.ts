@@ -1139,6 +1139,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get single course by ID
+  app.get("/api/courses/:courseId", async (req, res) => {
+    try {
+      const { courseId } = req.params;
+      
+      // Get course from database
+      const course = await storage.getCourse(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      // Get mentor details
+      const mentor = await storage.getMentor(course.mentorId);
+      
+      res.json({
+        ...course,
+        mentor: mentor || null,
+        image: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
+      });
+    } catch (error) {
+      console.error("Error fetching course:", error);
+      res.status(500).json({ message: "Failed to fetch course" });
+    }
+  });
+
+  // Course enrollment route
+  app.post("/api/course-enrollments", async (req, res) => {
+    try {
+      const { courseId, studentEmail, mentorId, schedule, totalClasses, courseFee } = req.body;
+
+      console.log(`📝 Course enrollment request: courseId=${courseId}, studentEmail=${studentEmail}`);
+
+      // Validate required fields
+      if (!courseId || !studentEmail || !mentorId || !schedule || !totalClasses) {
+        return res.status(400).json({ 
+          message: "Missing required fields" 
+        });
+      }
+
+      // Get student by email
+      const student = await storage.getStudentByEmail(studentEmail);
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      // Verify course exists
+      const course = await storage.getCourse(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      // Create enrollment
+      const enrollment = await storage.createCourseEnrollment({
+        courseId,
+        studentId: student.id,
+        mentorId,
+        weeklySchedule: schedule,
+        totalClasses,
+        courseFee: courseFee || course.price || "0",
+        status: "active"
+      });
+
+      console.log(`✅ Enrollment created: ${enrollment.id}`);
+
+      // Auto-create classes based on weekly schedule
+      const scheduledClasses = [];
+      let classesCreated = 0;
+      let currentDate = new Date();
+      const DAYS_MAP: { [key: string]: number } = {
+        sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+        thursday: 4, friday: 5, saturday: 6
+      };
+
+      while (classesCreated < totalClasses) {
+        for (const scheduleItem of schedule) {
+          if (classesCreated >= totalClasses) break;
+
+          const dayOfWeek = DAYS_MAP[scheduleItem.day.toLowerCase()];
+          let nextClassDate = new Date(currentDate);
+
+          // Find next occurrence of this day
+          while (nextClassDate.getDay() !== dayOfWeek || nextClassDate <= currentDate) {
+            nextClassDate.setDate(nextClassDate.getDate() + 1);
+          }
+
+          // Parse time and set it
+          const [hours, minutes] = scheduleItem.time.split(':').map(Number);
+          nextClassDate.setHours(hours, minutes, 0, 0);
+
+          // Create booking for this class
+          const booking = await storage.createBooking({
+            studentId: student.id,
+            mentorId,
+            scheduledAt: nextClassDate,
+            duration: 60, // Default 60 minutes
+            subject: course.title,
+            status: "scheduled",
+            notes: `Auto-created from course enrollment: ${course.title}`
+          });
+
+          scheduledClasses.push(booking);
+          classesCreated++;
+          
+          console.log(`📅 Class ${classesCreated}/${totalClasses} scheduled for ${nextClassDate.toISOString()}`);
+        }
+
+        // Move to next week
+        currentDate.setDate(currentDate.getDate() + 7);
+      }
+
+      console.log(`✅ ${scheduledClasses.length} classes auto-created for enrollment ${enrollment.id}`);
+
+      res.status(201).json({
+        enrollment,
+        scheduledClasses: scheduledClasses.length
+      });
+    } catch (error) {
+      console.error("Error creating course enrollment:", error);
+      res.status(500).json({ message: "Failed to create enrollment" });
+    }
+  });
+
   // Success Stories routes
   app.get("/api/success-stories", async (req, res) => {
     try {

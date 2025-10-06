@@ -3,6 +3,7 @@ import {
   mentors,
   students,
   courses,
+  courseEnrollments,
   bookings,
   achievements,
   reviews,
@@ -96,6 +97,7 @@ export interface IStorage {
   // Student operations
   getStudent(id: string): Promise<StudentWithUser | undefined>;
   getStudentByUserId(userId: string): Promise<Student | undefined>;
+  getStudentByEmail(email: string): Promise<Student | undefined>;
   getStudentBookings(studentId: string): Promise<BookingWithDetails[]>;
   createStudent(student: InsertStudent): Promise<Student>;
   
@@ -106,6 +108,9 @@ export interface IStorage {
   createCourse(course: InsertCourse): Promise<Course>;
   updateCourse(id: string, course: Partial<InsertCourse>): Promise<void>;
   deleteCourse(id: string): Promise<void>;
+  
+  // Course Enrollment operations
+  createCourseEnrollment(enrollment: any): Promise<any>;
   
   // Booking operations
   getBookings(): Promise<BookingWithDetails[]>;
@@ -530,6 +535,16 @@ export class DatabaseStorage implements IStorage {
     return student;
   }
 
+  async getStudentByEmail(email: string): Promise<Student | undefined> {
+    // First find the user by email
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    if (!user) return undefined;
+    
+    // Then get the student by userId
+    const [student] = await db.select().from(students).where(eq(students.userId, user.id));
+    return student;
+  }
+
   async createStudent(studentData: InsertStudent): Promise<Student> {
     // Generate UUID manually for Azure PostgreSQL compatibility
     const { randomUUID } = await import('crypto');
@@ -706,6 +721,19 @@ export class DatabaseStorage implements IStorage {
       .update(courses)
       .set({ isActive: false })
       .where(eq(courses.id, id));
+  }
+
+  // Course Enrollment operations
+  async createCourseEnrollment(enrollmentData: any): Promise<any> {
+    const { randomUUID } = await import('crypto');
+    const processedData = {
+      ...enrollmentData,
+      id: randomUUID(),
+      weeklySchedule: enrollmentData.weeklySchedule || []
+    };
+    
+    const [enrollment] = await db.insert(courseEnrollments).values([processedData]).returning();
+    return enrollment;
   }
 
   // Review operations
