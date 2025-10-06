@@ -262,9 +262,16 @@ export function useWebRTC({
   const connect = useCallback(async () => {
     try {
       setError(null); // Clear any previous errors
+      console.log('Starting connection process...');
       
-      // Initialize local stream first
-      const stream = await initializeLocalStream();
+      // Initialize local stream first with timeout
+      const streamPromise = initializeLocalStream();
+      const timeoutPromise = new Promise<null>((_, reject) => 
+        setTimeout(() => reject(new Error('Camera/microphone access timeout')), 10000)
+      );
+      
+      const stream = await Promise.race([streamPromise, timeoutPromise]);
+      
       if (!stream) {
         const errorMessage = 'Camera and microphone access denied. Please allow access to join the video session.';
         setError(errorMessage);
@@ -272,14 +279,17 @@ export function useWebRTC({
         throw new Error(errorMessage);
       }
       
+      console.log('Local stream initialized successfully');
+      
       // Connect to WebSocket on specific path to avoid Vite HMR conflicts
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${protocol}//${window.location.host}/video-signaling`;
       
+      console.log('Connecting to WebSocket:', wsUrl);
       wsRef.current = new WebSocket(wsUrl);
       
       wsRef.current.onopen = () => {
-        console.log('WebSocket connected');
+        console.log('WebSocket connected successfully');
         
         // Authenticate first
         if (wsRef.current) {
@@ -397,15 +407,22 @@ export function useWebRTC({
         }
       };
       
-      wsRef.current.onclose = () => {
-        console.log('WebSocket disconnected');
+      wsRef.current.onclose = (event) => {
+        console.log('WebSocket disconnected. Code:', event.code, 'Reason:', event.reason, 'Clean:', event.wasClean);
         setIsConnected(false);
         setConnectionQuality('disconnected');
+        
+        // Show error if connection closed unexpectedly
+        if (!event.wasClean) {
+          setError(`Connection lost: ${event.reason || 'Unknown error'}`);
+        }
       };
       
-      wsRef.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
+      wsRef.current.onerror = (error: Event) => {
+        console.error('WebSocket error event:', error);
+        console.error('WebSocket ready state:', wsRef.current?.readyState);
         setConnectionQuality('poor');
+        setError('WebSocket connection error. Please check your network connection.');
       };
       
     } catch (error) {

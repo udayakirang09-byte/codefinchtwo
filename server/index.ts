@@ -96,7 +96,7 @@ app.use((req, res, next) => {
   const videoSessions = new Map<string, Set<any>>();
   
   wss.on('connection', (ws: any, request: any) => {
-    log('WebSocket connection established');
+    log(`WebSocket connection established from ${request.socket.remoteAddress}`);
     
     // Track authentication status
     let isAuthenticated = false;
@@ -105,9 +105,11 @@ app.use((req, res, next) => {
     ws.on('message', (message: Buffer) => {
       try {
         const data = JSON.parse(message.toString());
+        log(`WebSocket received message type: ${data.type}`);
         
         // Require authentication for all operations except auth
         if (data.type !== 'authenticate' && !isAuthenticated) {
+          log('Unauthenticated request blocked');
           ws.send(JSON.stringify({
             type: 'error',
             message: 'Authentication required'
