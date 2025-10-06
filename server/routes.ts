@@ -1217,19 +1217,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(achievements.studentId, studentId))
         .orderBy(achievements.earnedAt);
       
-      // Get recent completed classes with mentor info
-      const recentBookings = await db.select({
-        id: bookings.id,
-        scheduledAt: bookings.scheduledAt,
-        mentorId: bookings.mentorId
-      })
-      .from(bookings)
-      .where(and(
-        eq(bookings.studentId, studentId),
-        eq(bookings.status, 'completed')
-      ))
-      .orderBy(sql`${bookings.scheduledAt} DESC`)
-      .limit(5);
+      // Use the already-calculated completedBookings and sort them by date, take most recent 5
+      const recentBookings = completedBookings
+        .sort((a: any, b: any) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime())
+        .slice(0, 5);
       
       // Enrich recent classes with mentor info and ratings
       const recentClasses = await Promise.all(
@@ -1243,7 +1234,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             subject: mentor?.title || 'Coding Session',
             mentor: mentorUser ? `${mentorUser.firstName} ${mentorUser.lastName}` : 'Unknown',
             rating: review?.rating || 0,
-            completedAt: booking.scheduledAt
+            completedAt: new Date(booking.scheduledAt).toLocaleDateString()
           };
         })
       );
