@@ -362,12 +362,24 @@ export class DatabaseStorage implements IStorage {
 
     // Get all bookings to calculate actual student counts
     const allBookings = await db.select().from(bookings);
+    
+    // Get all reviews to calculate ratings
+    const allReviews = await db.select().from(reviews);
 
     return result.map(({ mentors: mentor, users: user, teacher_profiles: profile }: any) => {
       // Calculate actual unique students for this mentor
       const mentorBookings = allBookings.filter((b: any) => b.mentorId === mentor.id);
       const uniqueStudentIds = new Set(mentorBookings.map((b: any) => b.studentId));
       const actualStudentCount = uniqueStudentIds.size;
+
+      // Calculate rating from reviews
+      const mentorReviews = allReviews.filter((r: any) => r.mentorId === mentor.id);
+      let calculatedRating = "0.00";
+      if (mentorReviews.length > 0) {
+        const totalRating = mentorReviews.reduce((sum: number, r: any) => sum + (r.rating || 0), 0);
+        const avgRating = totalRating / mentorReviews.length;
+        calculatedRating = avgRating.toFixed(2);
+      }
 
       // Calculate total experience from subjects and get subjects with experience
       let totalExperience = mentor.experience || 0;
@@ -393,6 +405,7 @@ export class DatabaseStorage implements IStorage {
 
       return {
         ...mentor,
+        rating: calculatedRating,
         totalStudents: actualStudentCount,
         experience: totalExperience,
         specialties: specialties,
@@ -417,6 +430,15 @@ export class DatabaseStorage implements IStorage {
     const mentorBookings = await db.select().from(bookings).where(eq(bookings.mentorId, id));
     const uniqueStudentIds = new Set(mentorBookings.map((b: any) => b.studentId));
     const actualStudentCount = uniqueStudentIds.size;
+
+    // Calculate rating from reviews
+    const mentorReviews = await db.select().from(reviews).where(eq(reviews.mentorId, id));
+    let calculatedRating = "0.00";
+    if (mentorReviews.length > 0) {
+      const totalRating = mentorReviews.reduce((sum: number, r: any) => sum + (r.rating || 0), 0);
+      const avgRating = totalRating / mentorReviews.length;
+      calculatedRating = avgRating.toFixed(2);
+    }
 
     const profile = (result as any).teacher_profiles;
     
@@ -444,6 +466,7 @@ export class DatabaseStorage implements IStorage {
 
     return {
       ...result.mentors,
+      rating: calculatedRating,
       totalStudents: actualStudentCount,
       experience: totalExperience,
       specialties: specialties,

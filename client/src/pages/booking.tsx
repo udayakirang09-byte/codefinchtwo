@@ -19,11 +19,7 @@ export default function Booking() {
   const [, navigate] = useLocation();
   const [match, params] = useRoute("/booking/:mentorId");
   
-  if (!params) {
-    return <div>Invalid mentor ID</div>;
-  }
-  
-  const mentorId = (params as { mentorId: string }).mentorId;
+  const mentorId = params ? (params as { mentorId: string }).mentorId : null;
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
