@@ -1228,17 +1228,23 @@ export class DatabaseStorage implements IStorage {
     // Get active classes (scheduled bookings from all students)
     const activeClasses = await db.select().from(bookings).where(eq(bookings.status, 'scheduled'));
     
-    // Calculate monthly revenue (sum of all teacher fees from completed bookings in current month)
+    // Calculate monthly revenue from payment transactions
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
     
-    // Get completed bookings from current month and sum their amounts
-    const monthlyCompletedBookings = completedBookingsList.filter((b: any) => {
-      const bookingDate = new Date(b.scheduledAt);
-      return bookingDate >= firstDayOfMonth && bookingDate <= lastDayOfMonth;
+    // Get all payment transactions for booking payments that are completed in current month
+    const allTransactions = await db.select().from(paymentTransactions);
+    const monthlyTransactions = allTransactions.filter((t: any) => {
+      if (t.transactionType !== 'booking_payment' || t.status !== 'completed') return false;
+      const transDate = new Date(t.scheduledAt || t.createdAt);
+      return transDate >= firstDayOfMonth && transDate <= lastDayOfMonth;
     });
-    const monthlyRevenue = monthlyCompletedBookings.reduce((sum: number, b: any) => sum + (b.amount || 0), 0);
+    
+    const monthlyRevenue = monthlyTransactions.reduce((sum: number, t: any) => {
+      const amount = typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount;
+      return sum + (amount || 0);
+    }, 0);
 
     return {
       totalUsers: allUsers.length || 0,

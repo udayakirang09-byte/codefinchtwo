@@ -17,6 +17,7 @@ interface SystemStats {
   activeClasses: number;
   monthlyRevenue: number;
   totalBookings: number;
+  completedBookings: number;
   averageRating: number;
   completionRate: number;
 }
@@ -38,6 +39,7 @@ export default function AdminDashboard() {
     activeClasses: 0,
     monthlyRevenue: 0,
     totalBookings: 0,
+    completedBookings: 0,
     averageRating: 0,
     completionRate: 0
   });
@@ -1394,83 +1396,71 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <h4 className="font-medium text-blue-900 mb-2">📊 User Growth</h4>
-                <p className="text-2xl font-bold text-blue-700">+15%</p>
-                <p className="text-sm text-blue-600">This month</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {stats.totalUsers?.toLocaleString() || '0'} total users
-                </p>
+                <h4 className="font-medium text-blue-900 mb-2">👥 Total Users</h4>
+                <p className="text-2xl font-bold text-blue-700">{stats.totalUsers?.toLocaleString() || '0'}</p>
+                <p className="text-sm text-blue-600">{stats.totalMentors || 0} mentors, {stats.totalStudents || 0} students</p>
               </div>
               
               <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <h4 className="font-medium text-green-900 mb-2">📈 Revenue</h4>
-                <p className="text-2xl font-bold text-green-700">₹2.5M</p>
-                <p className="text-sm text-green-600">+8% growth</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  ${stats.monthlyRevenue?.toLocaleString() || '0'} this month
-                </p>
+                <h4 className="font-medium text-green-900 mb-2">💵 Monthly Revenue</h4>
+                <p className="text-2xl font-bold text-green-700">${stats.monthlyRevenue?.toFixed(2) || '0.00'}</p>
+                <p className="text-sm text-green-600">Current month earnings</p>
               </div>
               
               <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                <h4 className="font-medium text-purple-900 mb-2">⭐ Platform Rating</h4>
-                <p className="text-2xl font-bold text-purple-700">4.8/5</p>
-                <p className="text-sm text-purple-600">Excellent</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Based on {stats.totalBookings?.toLocaleString() || '0'} reviews
-                </p>
+                <h4 className="font-medium text-purple-900 mb-2">📚 Total Bookings</h4>
+                <p className="text-2xl font-bold text-purple-700">{stats.totalBookings?.toLocaleString() || '0'}</p>
+                <p className="text-sm text-purple-600">{stats.completedBookings || 0} completed</p>
               </div>
               
               <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
-                <h4 className="font-medium text-orange-900 mb-2">🎯 Course Completion</h4>
-                <p className="text-2xl font-bold text-orange-700">92%</p>
-                <p className="text-sm text-orange-600">High success rate</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {stats.completionRate}% overall rate
-                </p>
+                <h4 className="font-medium text-orange-900 mb-2">✅ Completion Rate</h4>
+                <p className="text-2xl font-bold text-orange-700">{stats.completionRate?.toFixed(1) || '0'}%</p>
+                <p className="text-sm text-orange-600">Of all bookings</p>
               </div>
             </div>
             
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 border rounded-lg">
-                <h4 className="font-medium mb-3">📊 Monthly Analytics</h4>
+                <h4 className="font-medium mb-3">📊 Platform Statistics</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">New Students</span>
-                    <span className="font-medium">+127</span>
+                    <span className="text-sm text-gray-600">Total Mentors</span>
+                    <span className="font-medium">{stats.totalMentors || 0}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">New Mentors</span>
-                    <span className="font-medium">+8</span>
+                    <span className="text-sm text-gray-600">Total Students</span>
+                    <span className="font-medium">{stats.totalStudents || 0}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Sessions Completed</span>
-                    <span className="font-medium">1,245</span>
+                    <span className="text-sm text-gray-600">Completed Sessions</span>
+                    <span className="font-medium">{stats.completedBookings || 0}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Average Session Duration</span>
-                    <span className="font-medium">45 min</span>
+                    <span className="text-sm text-gray-600">Active Classes</span>
+                    <span className="font-medium">{stats.activeClasses || 0}</span>
                   </div>
                 </div>
               </div>
               
               <div className="p-4 border rounded-lg">
-                <h4 className="font-medium mb-3">🎯 Performance Metrics</h4>
+                <h4 className="font-medium mb-3">🎯 Performance Overview</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Server Uptime</span>
-                    <span className="font-medium text-green-600">99.9%</span>
+                    <span className="text-sm text-gray-600">Total Users</span>
+                    <span className="font-medium">{stats.totalUsers || 0}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Response Time</span>
-                    <span className="font-medium">45ms</span>
+                    <span className="text-sm text-gray-600">Total Bookings</span>
+                    <span className="font-medium">{stats.totalBookings || 0}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Active Sessions</span>
-                    <span className="font-medium">{stats.activeClasses}</span>
+                    <span className="font-medium">{stats.activeClasses || 0}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Payment Success Rate</span>
-                    <span className="font-medium text-green-600">98.5%</span>
+                    <span className="text-sm text-gray-600">Completion Rate</span>
+                    <span className="font-medium">{stats.completionRate?.toFixed(1) || '0'}%</span>
                   </div>
                 </div>
               </div>
@@ -1551,19 +1541,19 @@ export default function AdminDashboard() {
                 </div>
                 
                 <div className="p-4 border rounded-lg">
-                  <h5 className="font-medium mb-2">📱 Application Versions</h5>
+                  <h5 className="font-medium mb-2">📊 Platform Statistics</h5>
                   <div className="space-y-1">
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Mobile App</span>
-                      <span className="font-medium">v2.1.0</span>
+                      <span className="text-sm text-gray-600">Total Mentors</span>
+                      <span className="font-medium">{stats.totalMentors || 0}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Web Platform</span>
-                      <span className="font-medium">v3.4.2</span>
+                      <span className="text-sm text-gray-600">Total Students</span>
+                      <span className="font-medium">{stats.totalStudents || 0}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Admin Dashboard</span>
-                      <span className="font-medium">v1.8.5</span>
+                      <span className="text-sm text-gray-600">Active Classes</span>
+                      <span className="font-medium">{stats.activeClasses || 0}</span>
                     </div>
                   </div>
                 </div>
