@@ -873,6 +873,13 @@ export class DatabaseStorage implements IStorage {
   // Feedback operations
   async submitClassFeedback(feedbackData: InsertClassFeedback): Promise<ClassFeedback> {
     const [feedback] = await db.insert(classFeedback).values(feedbackData).returning();
+    
+    // Update the booking status to "completed" when feedback is submitted
+    await db
+      .update(bookings)
+      .set({ status: 'completed' })
+      .where(eq(bookings.id, (feedbackData as any).bookingId));
+    
     return feedback;
   }
 
