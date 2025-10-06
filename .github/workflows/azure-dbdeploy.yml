@@ -94,12 +94,12 @@ jobs:
               const keyTables = await client.query(\`
                 SELECT table_name FROM information_schema.tables 
                 WHERE table_schema = 'public' 
-                AND table_name IN ('users', 'mentors', 'students', 'bookings', 'reviews', 'achievements')
+                AND table_name IN ('users', 'mentors', 'students', 'bookings', 'reviews', 'achievements', 'payment_methods', 'transactions')
                 ORDER BY table_name
               \`);
               console.log('🔑 Key tables found:', keyTables.rows.map(r => r.table_name));
               
-              if (keyTables.rows.length < 6) {
+              if (keyTables.rows.length < 8) {
                 console.log('❌ Missing key tables');
                 process.exit(1);
               }
@@ -109,7 +109,10 @@ jobs:
                 { table: 'bookings', column: 'subject' },
                 { table: 'courses', column: 'max_classes' },
                 { table: 'transaction_fee_config', column: 'teacher_payout_wait_hours' },
-                { table: 'users', column: 'email' }
+                { table: 'users', column: 'email' },
+                { table: 'payment_methods', column: 'user_id' },
+                { table: 'payment_methods', column: 'type' },
+                { table: 'transactions', column: 'payment_intent_id' }
               ];
               
               console.log('\\n🔍 Checking critical columns...');
