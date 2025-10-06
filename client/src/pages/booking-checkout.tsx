@@ -16,7 +16,7 @@ import Footer from "@/components/footer";
 // Stripe will be loaded dynamically after fetching config from admin settings
 
 // Separate component for card payments that uses Stripe hooks
-const StripeCardPaymentForm = ({ bookingDetails, onSuccess }: { bookingDetails: any, onSuccess: () => void }) => {
+const StripeCardPaymentForm = ({ bookingDetails, onSuccess, paymentIntentId }: { bookingDetails: any, onSuccess: (paymentIntentId: string) => void, paymentIntentId: string }) => {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
@@ -35,7 +35,7 @@ const StripeCardPaymentForm = ({ bookingDetails, onSuccess }: { bookingDetails: 
     setProcessing(true);
 
     try {
-      const { error } = await stripe.confirmPayment({
+      const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/booking-success?mentorId=${bookingDetails.mentorId}`,
@@ -49,9 +49,11 @@ const StripeCardPaymentForm = ({ bookingDetails, onSuccess }: { bookingDetails: 
           description: error.message || "There was an error processing your payment.",
           variant: "destructive",
         });
-      } else {
-        // Payment successful - notify parent
-        await onSuccess();
+        setProcessing(false);
+      } else if (paymentIntent) {
+        // Payment confirmed - verify booking creation via webhook
+        console.log('💳 Payment confirmed, verifying booking creation...');
+        await onSuccess(paymentIntent.id);
       }
     } catch (err) {
       toast({
@@ -59,9 +61,8 @@ const StripeCardPaymentForm = ({ bookingDetails, onSuccess }: { bookingDetails: 
         description: "An unexpected error occurred during payment processing.",
         variant: "destructive",
       });
+      setProcessing(false);
     }
-
-    setProcessing(false);
   };
 
   return (
@@ -97,7 +98,7 @@ const StripeCardPaymentForm = ({ bookingDetails, onSuccess }: { bookingDetails: 
   );
 };
 
-const BookingCheckoutForm = ({ bookingDetails, hasStripe }: { bookingDetails: any, hasStripe: boolean }) => {
+const BookingCheckoutForm = ({ bookingDetails, hasStripe, paymentIntentId }: { bookingDetails: any, hasStripe: boolean, paymentIntentId: string }) => {
   const { toast } = useToast();
   const [processing, setProcessing] = useState(false);
   const [, navigate] = useLocation();
@@ -207,8 +208,9 @@ const BookingCheckoutForm = ({ bookingDetails, hasStripe }: { bookingDetails: an
     setProcessing(false);
   };
 
-  const handleCardPaymentSuccess = async () => {
-    await createBooking();
+  const handleCardPaymentSuccess = async (paymentIntentId: string) => {
+    // Poll for booking creation instead of creating it (webhook creates it)
+    await pollPaymentStatus(paymentIntentId);
   };
 
   const createBooking = async () => {
@@ -243,6 +245,65 @@ const BookingCheckoutForm = ({ bookingDetails, hasStripe }: { bookingDetails: an
         variant: "destructive",
       });
     }
+  };
+
+  // Poll payment status to verify booking creation by webhook
+  const pollPaymentStatus = async (paymentIntentId: string) => {
+    const maxAttempts = 10; // Poll for up to 10 seconds
+    let attempts = 0;
+    
+    const poll = async (): Promise<void> => {
+      attempts++;
+      
+      try {
+        const response = await fetch(`/api/payment-status/${paymentIntentId}`);
+        const data = await response.json();
+        
+        console.log(`🔍 Payment status check (${attempts}/${maxAttempts}):`, data);
+        
+        if (data.processed && data.bookingId) {
+          // Webhook has processed the payment and created the booking
+          sessionStorage.removeItem('pendingBooking');
+          
+          toast({
+            title: "Payment Received!",
+            description: `Your session with ${bookingDetails.mentorName} has been confirmed.`,
+          });
+          
+          navigate(`/booking-success?mentorId=${bookingDetails.mentorId}`);
+          return;
+        }
+        
+        // If not processed yet and we haven't exceeded max attempts, try again
+        if (attempts < maxAttempts) {
+          setTimeout(() => poll(), 1000); // Poll every second
+        } else {
+          // Timeout - show message to user
+          toast({
+            title: "Payment Processing",
+            description: "Your payment is being processed. You'll receive a confirmation email shortly.",
+          });
+          
+          // Still navigate to success page as payment was confirmed
+          navigate(`/booking-success?mentorId=${bookingDetails.mentorId}`);
+        }
+      } catch (error) {
+        console.error('Error polling payment status:', error);
+        
+        if (attempts < maxAttempts) {
+          setTimeout(() => poll(), 1000);
+        } else {
+          toast({
+            title: "Payment Confirmed",
+            description: "Your booking is being confirmed. Please check your email.",
+          });
+          navigate(`/booking-success?mentorId=${bookingDetails.mentorId}`);
+        }
+      }
+    };
+    
+    // Start polling
+    await poll();
   };
 
   return (
@@ -367,6 +428,7 @@ const BookingCheckoutForm = ({ bookingDetails, hasStripe }: { bookingDetails: an
                 <StripeCardPaymentForm 
                   bookingDetails={bookingDetails} 
                   onSuccess={handleCardPaymentSuccess}
+                  paymentIntentId={paymentIntentId}
                 />
               </CardContent>
             </Card>
@@ -403,6 +465,7 @@ const BookingCheckoutForm = ({ bookingDetails, hasStripe }: { bookingDetails: an
 export default function BookingCheckout() {
   const [location] = useLocation();
   const [clientSecret, setClientSecret] = useState("");
+  const [paymentIntentId, setPaymentIntentId] = useState("");
   const [bookingDetails, setBookingDetails] = useState<any>(null);
   const [stripePromise, setStripePromise] = useState<any>(null);
   const [paymentConfigLoaded, setPaymentConfigLoaded] = useState(false);
@@ -471,6 +534,9 @@ export default function BookingCheckout() {
         .then((data) => {
           if (data.clientSecret) {
             setClientSecret(data.clientSecret);
+          }
+          if (data.paymentIntentId) {
+            setPaymentIntentId(data.paymentIntentId);
           }
         })
         .catch((error) => {
@@ -593,10 +659,10 @@ export default function BookingCheckout() {
               <CardContent>
                 {stripePromise && clientSecret ? (
                   <Elements stripe={stripePromise} options={{ clientSecret }}>
-                    <BookingCheckoutForm bookingDetails={bookingDetails} hasStripe={true} />
+                    <BookingCheckoutForm bookingDetails={bookingDetails} hasStripe={true} paymentIntentId={paymentIntentId} />
                   </Elements>
                 ) : (
-                  <BookingCheckoutForm bookingDetails={bookingDetails} hasStripe={false} />
+                  <BookingCheckoutForm bookingDetails={bookingDetails} hasStripe={false} paymentIntentId={paymentIntentId} />
                 )}
               </CardContent>
             </Card>

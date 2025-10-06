@@ -2695,6 +2695,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check payment status and booking creation - for real-time payment verification
+  app.get("/api/payment-status/:paymentIntentId", async (req, res) => {
+    try {
+      const { paymentIntentId } = req.params;
+      
+      if (!stripe) {
+        return res.status(503).json({ 
+          message: "Payment system not configured" 
+        });
+      }
+
+      // Retrieve payment intent from Stripe
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      // Check if transaction exists in our database
+      const transaction = await storage.getPaymentTransactionByStripeId(paymentIntentId);
+      
+      // Check if booking was created
+      let booking = null;
+      if (transaction?.bookingId) {
+        booking = await storage.getBooking(transaction.bookingId);
+      }
+
+      res.json({
+        status: paymentIntent.status,
+        amount: paymentIntent.amount / 100,
+        currency: paymentIntent.currency,
+        transactionId: transaction?.id || null,
+        bookingId: booking?.id || null,
+        bookingStatus: booking?.status || null,
+        processed: !!transaction, // Whether webhook has processed this payment
+      });
+    } catch (error: any) {
+      console.error("❌ Payment status check failed:", error.message);
+      res.status(500).json({ 
+        message: "Failed to check payment status: " + error.message 
+      });
+    }
+  });
+
   // Comprehensive Stripe Webhook System for Automated Payment Processing
   app.post("/api/webhooks/stripe", express.raw({ type: 'application/json' }), async (req, res) => {
     try {
