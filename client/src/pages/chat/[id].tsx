@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Send, Users, Video, Loader2, RefreshCw, Home, ArrowLeft } from "lucide-react";
+import { Send, Users, Video, Loader2, RefreshCw, Home, X } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -135,12 +135,12 @@ export default function ChatClass() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.history.back()}
+              onClick={() => setLocation('/')}
               className="text-gray-600"
-              data-testid="button-back"
+              data-testid="button-close-chat"
             >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
+              <X className="h-4 w-4 mr-2" />
+              Close Chat
             </Button>
             <div className="ml-4">
               <h1 className="text-lg font-bold text-gray-900">{classInfo.subject} - Class Chat</h1>

@@ -468,14 +468,20 @@ export function useWebRTC({
     setConnectionQuality('disconnected');
   }, [sessionId, userId, localStream]);
 
-  // Auto-connect on mount
+  // Auto-connect on mount (only once)
   useEffect(() => {
-    connect();
+    let mounted = true;
+    
+    if (mounted) {
+      connect();
+    }
     
     return () => {
+      mounted = false;
       disconnect();
     };
-  }, [connect, disconnect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - only run once on mount
 
   return {
     isConnected,

@@ -133,7 +133,8 @@ export default function VideoClass() {
   const handleEndCall = () => {
     console.log(`📞 Ending video class ${classId}`);
     disconnect();
-    window.location.href = '/';
+    // Navigate to student home page
+    setLocation('/');
   };
 
   const handleOpenChat = () => {
@@ -224,9 +225,20 @@ export default function VideoClass() {
               <>
                 <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white mb-6 mx-auto"></div>
                 <h2 className="text-2xl font-bold text-white mb-2">Connecting to Class...</h2>
-                <p className="text-blue-200">
+                <p className="text-blue-200 mb-6">
                   Please wait while we connect you to {classInfo.subject}
                 </p>
+                <Button 
+                  onClick={() => {
+                    disconnect();
+                    setLocation('/');
+                  }} 
+                  variant="outline"
+                  className="text-white border-white hover:bg-white/10"
+                  data-testid="button-cancel-connect"
+                >
+                  Cancel
+                </Button>
               </>
             )}
           </div>
