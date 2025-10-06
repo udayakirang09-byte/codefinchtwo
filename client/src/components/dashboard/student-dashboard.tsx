@@ -155,10 +155,12 @@ export default function StudentDashboard() {
           const scheduledTime = new Date(booking.scheduledAt);
           const classEndTime = addMinutes(scheduledTime, booking.duration + 2);
           
-          // Include both completed bookings AND scheduled bookings past their end time
+          // ONLY include scheduled bookings that have ended (NOT completed status)
+          // Completed status means feedback was already submitted
           return (
-            (booking.status === 'completed' && scheduledTime >= twelveHoursAgo) ||
-            (booking.status === 'scheduled' && now >= classEndTime && scheduledTime >= twelveHoursAgo)
+            booking.status === 'scheduled' && 
+            now >= classEndTime && 
+            scheduledTime >= twelveHoursAgo
           );
         })
         .map((booking: any) => ({
@@ -167,7 +169,7 @@ export default function StudentDashboard() {
           subject: booking.notes || 'Programming Session',
           completedAt: new Date(booking.scheduledAt),
           feedbackDeadline: addHours(new Date(booking.scheduledAt), 12),
-          hasSubmittedFeedback: false, // TODO: Check if feedback exists
+          hasSubmittedFeedback: false,
         }));
       
       setCompletedClasses(completed);

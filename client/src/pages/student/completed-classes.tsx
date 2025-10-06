@@ -4,13 +4,14 @@ import Navigation from "@/components/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, CheckCircle, Calendar, Clock, User, Home } from "lucide-react";
+import { Star, CheckCircle, Calendar, Clock, User, Home, MessageCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
 import { addMinutes } from "date-fns";
 
 interface CompletedClass {
   id: string;
+  mentorId: string;
   mentorName: string;
   subject: string;
   scheduledAt: Date;
@@ -42,26 +43,17 @@ export default function CompletedClasses() {
       if (!response.ok) throw new Error('Failed to fetch bookings');
       const bookings = await response.json();
       
-      // Filter for completed classes
-      const now = new Date();
+      // Filter for completed classes ONLY (feedback was submitted)
       return bookings
-        .filter((booking: any) => {
-          const scheduledTime = new Date(booking.scheduledAt);
-          const classEndTime = addMinutes(scheduledTime, booking.duration + 2);
-          
-          // Include both completed bookings AND scheduled bookings past their end time
-          return (
-            booking.status === 'completed' ||
-            (booking.status === 'scheduled' && now >= classEndTime)
-          );
-        })
+        .filter((booking: any) => booking.status === 'completed')
         .map((booking: any) => ({
           id: booking.id,
+          mentorId: booking.mentorId,
           mentorName: `${booking.mentor.user.firstName} ${booking.mentor.user.lastName}`,
           subject: booking.subject || booking.notes || 'Programming Session',
           scheduledAt: new Date(booking.scheduledAt),
           duration: booking.duration,
-          hasSubmittedFeedback: false, // TODO: Check feedback table
+          hasSubmittedFeedback: true,
         }))
         .sort((a: any, b: any) => b.scheduledAt.getTime() - a.scheduledAt.getTime());
     },
@@ -199,23 +191,16 @@ export default function CompletedClasses() {
                         </div>
                         
                         <div className="flex flex-col gap-2 ml-4">
-                          {cls.hasSubmittedFeedback ? (
-                            <Badge className="bg-green-100 text-green-800 border-green-300">
-                              <Star className="h-3 w-3 mr-1" />
-                              Feedback Given
-                            </Badge>
-                          ) : (
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="border-yellow-300 text-yellow-700 hover:bg-yellow-50"
-                              onClick={() => window.location.href = `/feedback/${cls.id}`}
-                              data-testid={`button-give-feedback-${cls.id}`}
-                            >
-                              <Star className="h-4 w-4 mr-1" />
-                              Give Feedback
-                            </Button>
-                          )}
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                            onClick={() => window.location.href = `/chat/${cls.id}`}
+                            data-testid={`button-chat-${cls.id}`}
+                          >
+                            <MessageCircle className="h-4 w-4 mr-1" />
+                            Chat
+                          </Button>
                         </div>
                       </div>
                     </CardContent>
