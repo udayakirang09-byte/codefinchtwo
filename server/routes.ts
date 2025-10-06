@@ -1145,12 +1145,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get student's bookings to calculate stats
       const bookings = await storage.getStudentBookings(studentId);
+      const now = new Date();
       
-      // Calculate active classes (scheduled status)
-      const activeClasses = bookings.filter(booking => booking.status === 'scheduled').length;
+      // Calculate active classes (scheduled AND not yet ended)
+      const activeClasses = bookings.filter(booking => {
+        if (booking.status !== 'scheduled') return false;
+        const classEndTime = new Date(new Date(booking.scheduledAt).getTime() + booking.duration * 60000);
+        return now < classEndTime;
+      }).length;
       
-      // Calculate completed classes and total hours
-      const completedBookings = bookings.filter(booking => booking.status === 'completed');
+      // Calculate completed classes: explicitly completed OR scheduled but past end time
+      const completedBookings = bookings.filter(booking => {
+        if (booking.status === 'completed') return true;
+        if (booking.status === 'scheduled') {
+          const classEndTime = new Date(new Date(booking.scheduledAt).getTime() + booking.duration * 60000);
+          return now >= classEndTime;
+        }
+        return false;
+      });
       const totalHoursLearned = completedBookings.reduce((total, booking) => total + (booking.duration / 60), 0);
       
       // Calculate progress rate (percentage of completed vs total bookings)
@@ -1187,7 +1199,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(bookings)
         .where(eq(bookings.studentId, studentId));
       
-      const completedBookings = studentBookings.filter((b: any) => b.status === 'completed');
+      const now = new Date();
+      // Include both explicitly completed AND scheduled classes past their end time
+      const completedBookings = studentBookings.filter((b: any) => {
+        if (b.status === 'completed') return true;
+        if (b.status === 'scheduled') {
+          const classEndTime = new Date(new Date(b.scheduledAt).getTime() + b.duration * 60000);
+          return now >= classEndTime;
+        }
+        return false;
+      });
       const totalHours = completedBookings.reduce((sum: number, booking: any) => sum + (booking.duration || 0), 0) / 60;
       
       // Get actual achievements

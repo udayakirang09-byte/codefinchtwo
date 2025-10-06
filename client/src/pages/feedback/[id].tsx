@@ -25,15 +25,43 @@ export default function FeedbackForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [classInfo, setClassInfo] = useState({
-    subject: "HTML & CSS Intro",
-    mentor: "Alex Rivera",
-    completedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    expiresAt: new Date(Date.now() + 10 * 60 * 60 * 1000)
+    subject: "Loading...",
+    mentor: "Loading...",
+    completedAt: new Date(),
+    expiresAt: new Date()
   });
 
   useEffect(() => {
     console.log(`⭐ Loading feedback form for class ${classId}`);
-  }, [classId]);
+    
+    // Fetch actual booking data
+    const fetchBookingData = async () => {
+      try {
+        const response = await fetch(`/api/bookings/${classId}`);
+        if (!response.ok) throw new Error('Failed to fetch booking data');
+        
+        const booking = await response.json();
+        const completedAt = new Date(booking.scheduledAt);
+        const expiresAt = new Date(completedAt.getTime() + 12 * 60 * 60 * 1000); // 12 hours after class
+        
+        setClassInfo({
+          subject: booking.notes || booking.mentor?.title || 'Coding Session',
+          mentor: `${booking.mentor.user.firstName} ${booking.mentor.user.lastName}`,
+          completedAt,
+          expiresAt
+        });
+      } catch (error) {
+        console.error('Error fetching booking data:', error);
+        toast({
+          title: "Error Loading Class",
+          description: "Could not load class information. Please try again.",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    fetchBookingData();
+  }, [classId, toast]);
 
   const handleSubmitFeedback = async () => {
     if (rating === 0) {

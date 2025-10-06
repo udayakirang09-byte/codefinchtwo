@@ -327,6 +327,12 @@ export default function Booking() {
     return days[date.getDay()];
   };
 
+  // Fetch teacher's existing bookings to check for overlaps
+  const { data: teacherBookings } = useQuery<any[]>({
+    queryKey: ["/api/mentors", mentorId, "bookings"],
+    enabled: !!mentorId && !!formData.selectedDate,
+  });
+
   // Generate time slots based on selected date
   const getAvailableTimeSlotsForDate = (): string[] => {
     if (!formData.selectedDate || !availabilityData?.timeSlots) {
@@ -334,6 +340,12 @@ export default function Booking() {
     }
 
     const dayOfWeek = getDayOfWeek(formData.selectedDate);
+    const selectedDate = new Date(formData.selectedDate);
+    const today = new Date();
+    const isToday = selectedDate.toDateString() === today.toDateString();
+    const currentHour = today.getHours();
+    const currentMinute = today.getMinutes();
+    
     console.log(`📅 Selected date: ${formData.selectedDate}, Day: ${dayOfWeek}`);
     
     // Filter slots for the selected day
@@ -351,7 +363,34 @@ export default function Booking() {
     });
     
     // Remove duplicates and sort
-    const uniqueSlots = Array.from(new Set(allTimeSlots)).sort();
+    let uniqueSlots = Array.from(new Set(allTimeSlots)).sort();
+    
+    // Filter out past times if today
+    if (isToday) {
+      uniqueSlots = uniqueSlots.filter(time => {
+        const [hour, minute] = time.split(':').map(Number);
+        return hour > currentHour || (hour === currentHour && minute > currentMinute);
+      });
+    }
+    
+    // Filter out times that overlap with teacher's existing bookings
+    if (teacherBookings && teacherBookings.length > 0) {
+      const duration = parseInt(formData.duration) || 60;
+      uniqueSlots = uniqueSlots.filter(time => {
+        const slotDateTime = new Date(`${formData.selectedDate}T${time}:00`);
+        const slotEndTime = new Date(slotDateTime.getTime() + duration * 60000);
+        
+        // Check if this slot conflicts with any existing booking
+        return !teacherBookings.some(booking => {
+          const bookingStart = new Date(booking.scheduledAt);
+          const bookingEnd = new Date(bookingStart.getTime() + booking.duration * 60000);
+          
+          // Check for overlap: slot starts before booking ends AND slot ends after booking starts
+          return slotDateTime < bookingEnd && slotEndTime > bookingStart;
+        });
+      });
+    }
+    
     console.log(`📅 Available time slots for ${dayOfWeek}:`, uniqueSlots);
     
     return uniqueSlots;
