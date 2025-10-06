@@ -297,16 +297,25 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-100 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-1/2 -left-1/2 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl floating-animation"></div>
+        <div className="absolute -bottom-1/2 -right-1/2 w-96 h-96 bg-pink-400/20 rounded-full blur-3xl floating-animation" style={{animationDelay: '3s'}}></div>
+      </div>
+      
+      <Card className="w-full max-w-md glassmorphism shadow-2xl border-0 backdrop-blur-xl relative z-10 hover-lift">
+        <CardHeader className="text-center pb-4">
           <div className="flex items-center justify-center mb-4">
-            <Code className="text-primary mr-2" size={32} />
-            <span className="text-2xl font-bold">CodeConnect</span>
+            <div className="p-3 bg-gradient-to-br from-purple-600 via-pink-600 to-indigo-600 rounded-2xl shadow-lg">
+              <Code className="text-white mr-0" size={32} />
+            </div>
           </div>
-          <CardTitle className="text-xl" data-testid="title-signup">Create Your Account</CardTitle>
-          <p className="text-muted-foreground">
-            Join thousands of students and mentors in our coding community!
+          <CardTitle className="text-2xl font-bold mb-2" data-testid="title-signup">
+            <span className="text-gradient">Join CodeConnect</span>
+          </CardTitle>
+          <p className="text-gray-600">
+            Start your coding journey with expert mentors
           </p>
         </CardHeader>
         

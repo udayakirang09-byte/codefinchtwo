@@ -124,16 +124,25 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-1/2 -left-1/2 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl floating-animation"></div>
+        <div className="absolute -bottom-1/2 -right-1/2 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl floating-animation" style={{animationDelay: '3s'}}></div>
+      </div>
+      
+      <Card className="w-full max-w-md glassmorphism shadow-2xl border-0 backdrop-blur-xl relative z-10 hover-lift">
+        <CardHeader className="text-center pb-4">
           <div className="flex items-center justify-center mb-4">
-            <Code className="text-primary mr-2" size={32} />
-            <span className="text-2xl font-bold">CodeConnect</span>
+            <div className="p-3 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-2xl shadow-lg">
+              <Code className="text-white mr-0" size={32} />
+            </div>
           </div>
-          <CardTitle className="text-xl" data-testid="title-login">Sign In to Your Account</CardTitle>
-          <p className="text-muted-foreground">
-            Welcome back! Enter your details to access your account.
+          <CardTitle className="text-2xl font-bold mb-2" data-testid="title-login">
+            <span className="text-gradient">Welcome Back to CodeConnect</span>
+          </CardTitle>
+          <p className="text-gray-600">
+            Sign in to continue your coding journey
           </p>
           <div className="text-xs text-blue-600 bg-blue-50 p-3 rounded-lg mt-2 space-y-1">
             <strong>📚 Test Accounts:</strong><br />
