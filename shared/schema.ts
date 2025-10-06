@@ -269,7 +269,7 @@ export const chatSessions = pgTable("chat_sessions", {
 export const chatMessages = pgTable("chat_messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
-  senderId: varchar("sender_id").references(() => users.id).notNull(),
+  senderId: varchar("sender_id").notNull(), // Store user identifier (email or ID)
   senderName: varchar("sender_name").notNull(),
   message: text("message").notNull(),
   sentAt: timestamp("sent_at").defaultNow(),
