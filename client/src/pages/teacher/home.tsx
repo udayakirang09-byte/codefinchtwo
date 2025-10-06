@@ -76,9 +76,14 @@ export default function TeacherHome() {
     }
   });
 
-  // Process upcoming sessions from real data
+  // Process upcoming sessions from real data with proper null handling
   const upcomingSessions = Array.isArray(teacherClasses) ? teacherClasses
-    .filter((booking: any) => booking.status === 'scheduled' && new Date(booking.scheduledAt) > new Date())
+    .filter((booking: any) => {
+      // Only show scheduled bookings with valid future dates and student data
+      const hasValidStudent = booking.student?.user?.firstName || booking.studentFirstName;
+      const isFutureBooking = booking.status === 'scheduled' && new Date(booking.scheduledAt) > new Date();
+      return isFutureBooking && hasValidStudent;
+    })
     .slice(0, 3) // Show only first 3 upcoming sessions
     .map((booking: any) => {
       const scheduledDate = new Date(booking.scheduledAt);
@@ -89,10 +94,14 @@ export default function TeacherHome() {
       const isToday = scheduledDate.toDateString() === today.toDateString();
       const isTomorrow = scheduledDate.toDateString() === tomorrow.toDateString();
       
+      // Get student name from either nested object or flat structure
+      const firstName = booking.student?.user?.firstName || booking.studentFirstName || 'Unknown';
+      const lastName = booking.student?.user?.lastName || booking.studentLastName || 'Student';
+      
       return {
         id: booking.id,
-        studentName: booking.student?.user?.firstName + ' ' + (booking.student?.user?.lastName || ''),
-        subject: booking.subject || 'Programming Session',
+        studentName: `${firstName} ${lastName}`.trim(),
+        subject: booking.subject || booking.notes || 'Programming Session',
         time: scheduledDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
         date: isToday ? 'Today' : isTomorrow ? 'Tomorrow' : scheduledDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         type: "video", // Default to video for now

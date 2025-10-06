@@ -205,24 +205,23 @@ export default function VideoClass() {
     const timeUntilEnd = classEndTime.getTime() - now.getTime();
     const timeUntilDisconnect = disconnectTime.getTime() - now.getTime();
     
-    // If class has ended but not yet time to disconnect
-    if (timeUntilEnd <= 0 && timeUntilDisconnect > 0) {
-      // Show warning every minute for 5 seconds
-      const warningInterval = setInterval(() => {
-        setShowEndWarning(true);
-        setTimeout(() => setShowEndWarning(false), 5000);
-      }, 60000);
-      
-      // Show immediate warning
-      setShowEndWarning(true);
-      setTimeout(() => setShowEndWarning(false), 5000);
-      
-      return () => clearInterval(warningInterval);
-    }
+    console.log('⏰ Session timer check:', {
+      classEndTime: classEndTime.toISOString(),
+      disconnectTime: disconnectTime.toISOString(),
+      currentTime: now.toISOString(),
+      timeUntilEnd,
+      timeUntilDisconnect,
+      shouldShowWarning: timeUntilEnd <= 0 && timeUntilDisconnect > 0
+    });
     
-    // Auto-disconnect after 4 minutes
-    if (timeUntilDisconnect > 0) {
+    // If class has ended but not yet time to disconnect - show persistent warning
+    if (timeUntilEnd <= 0 && timeUntilDisconnect > 0) {
+      console.log('🚨 Class ended - showing persistent warning');
+      setShowEndWarning(true);
+      
+      // Auto-disconnect after remaining time
       const disconnectTimer = setTimeout(() => {
+        console.log('⏰ Auto-disconnecting after 4 minutes');
         toast({
           title: "Session Ended",
           description: "Class time has completed. Disconnecting...",
@@ -232,7 +231,20 @@ export default function VideoClass() {
         setLocation('/');
       }, timeUntilDisconnect);
       
-      return () => clearTimeout(disconnectTimer);
+      return () => {
+        clearTimeout(disconnectTimer);
+        setShowEndWarning(false);
+      };
+    }
+    
+    // If class hasn't ended yet, schedule the warning
+    if (timeUntilEnd > 0) {
+      const warningTimer = setTimeout(() => {
+        console.log('🚨 Class time reached - showing warning');
+        setShowEndWarning(true);
+      }, timeUntilEnd);
+      
+      return () => clearTimeout(warningTimer);
     }
   }, [bookingData, isConnected, disconnect, setLocation, toast]);
 
