@@ -1941,7 +1941,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get video sessions for these bookings
-      const bookingIds = mentorBookings.map(b => b.id);
+      const bookingIds = mentorBookings.map((b: any) => b.id);
       const mentorVideoSessions = await db.select()
         .from(videoSessions)
         .where(sql`${videoSessions.bookingId} = ANY(${bookingIds})`);
@@ -1952,7 +1952,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get analytics for these video sessions
-      const sessionIds = mentorVideoSessions.map(s => s.id);
+      const sessionIds = mentorVideoSessions.map((s: any) => s.id);
       const analytics = await db.select()
         .from(audioAnalytics)
         .where(sql`${audioAnalytics.videoSessionId} = ANY(${sessionIds})`)
