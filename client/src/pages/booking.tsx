@@ -113,6 +113,12 @@ export default function Booking() {
     },
   });
 
+  // Fetch teacher's existing bookings to check for overlaps - MUST be before conditional returns
+  const { data: teacherBookings } = useQuery<any[]>({
+    queryKey: ["/api/mentors", mentorId, "bookings"],
+    enabled: !!mentorId && !!formData.selectedDate,
+  });
+
   if (!match || !mentorId) {
     return <div>Booking page not found</div>;
   }
@@ -322,12 +328,6 @@ export default function Booking() {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     return days[date.getDay()];
   };
-
-  // Fetch teacher's existing bookings to check for overlaps
-  const { data: teacherBookings } = useQuery<any[]>({
-    queryKey: ["/api/mentors", mentorId, "bookings"],
-    enabled: !!mentorId && !!formData.selectedDate,
-  });
 
   // Generate time slots based on selected date
   const getAvailableTimeSlotsForDate = (): string[] => {
