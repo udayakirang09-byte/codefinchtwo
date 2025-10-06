@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Home, Plus, BookOpen } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Home, Plus, BookOpen, Edit2, Users } from 'lucide-react';
 import { Link } from 'wouter';
 import Navigation from '@/components/navigation';
 import { apiRequest } from '@/lib/queryClient';
@@ -16,6 +17,8 @@ export default function CreateCourse() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showCreateForm, setShowCreateForm] = useState(true);
+  const [editingCourse, setEditingCourse] = useState<any>(null);
+  const [viewingStudents, setViewingStudents] = useState<any>(null);
   
   // Get logged-in user email from localStorage
   const userEmail = localStorage.getItem('userEmail') || '';
@@ -89,6 +92,28 @@ export default function CreateCourse() {
       toast({
         title: "Error",
         description: "Failed to create course. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const updateCourseMutation = useMutation({
+    mutationFn: async ({ courseId, courseData }: { courseId: string; courseData: any }) => {
+      return apiRequest('PATCH', `/api/courses/${courseId}`, courseData);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Course updated successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/teacher/courses`, userEmail] });
+      setEditingCourse(null);
+    },
+    onError: (error) => {
+      console.error('❌ Course update failed:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update course. Please try again.",
         variant: "destructive",
       });
     }
@@ -303,17 +328,19 @@ export default function CreateCourse() {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => alert(`Edit Course: ${course.title || 'Untitled'}`)}
+                        onClick={() => setEditingCourse(course)}
                         data-testid={`button-edit-course-${index}`}
                       >
+                        <Edit2 className="w-4 h-4 mr-1" />
                         Edit
                       </Button>
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => alert(`View Students: ${course.title || 'Untitled'}`)}
+                        onClick={() => setViewingStudents(course)}
                         data-testid={`button-view-students-${index}`}
                       >
+                        <Users className="w-4 h-4 mr-1" />
                         Students
                       </Button>
                     </div>
@@ -489,6 +516,107 @@ export default function CreateCourse() {
           </CardContent>
         </Card>
         )}
+
+        {/* Edit Course Dialog */}
+        <Dialog open={!!editingCourse} onOpenChange={(open) => !open && setEditingCourse(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Course</DialogTitle>
+              <DialogDescription>Update course details</DialogDescription>
+            </DialogHeader>
+            {editingCourse && (
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                updateCourseMutation.mutate({
+                  courseId: editingCourse.id,
+                  courseData: {
+                    title: editingCourse.title,
+                    description: editingCourse.description,
+                    category: editingCourse.category,
+                    duration: editingCourse.duration,
+                    price: editingCourse.price,
+                    difficulty: editingCourse.difficulty,
+                    maxStudents: editingCourse.maxStudents,
+                    maxClasses: editingCourse.maxClasses,
+                    prerequisites: editingCourse.prerequisites
+                  }
+                });
+              }} className="space-y-4">
+                <div>
+                  <Label htmlFor="edit-title">Course Title</Label>
+                  <Input
+                    id="edit-title"
+                    value={editingCourse.title || ''}
+                    onChange={(e) => setEditingCourse({ ...editingCourse, title: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-description">Description</Label>
+                  <Textarea
+                    id="edit-description"
+                    value={editingCourse.description || ''}
+                    onChange={(e) => setEditingCourse({ ...editingCourse, description: e.target.value })}
+                    rows={4}
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-category">Category</Label>
+                    <Select value={editingCourse.category || ''} onValueChange={(value) => setEditingCourse({ ...editingCourse, category: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="programming">Programming</SelectItem>
+                        <SelectItem value="web-development">Web Development</SelectItem>
+                        <SelectItem value="mobile-development">Mobile Development</SelectItem>
+                        <SelectItem value="data-science">Data Science</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-price">Price (₹)</Label>
+                    <Input
+                      id="edit-price"
+                      type="number"
+                      value={editingCourse.price || ''}
+                      onChange={(e) => setEditingCourse({ ...editingCourse, price: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setEditingCourse(null)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={updateCourseMutation.isPending}>
+                    {updateCourseMutation.isPending ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* View Students Dialog */}
+        <Dialog open={!!viewingStudents} onOpenChange={(open) => !open && setViewingStudents(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Enrolled Students</DialogTitle>
+              <DialogDescription>
+                Students enrolled in {viewingStudents?.title}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="text-center py-8 text-gray-500">
+                <Users className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                <p>No students enrolled yet</p>
+                <p className="text-sm mt-2">Students will appear here after enrolling in your course</p>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
