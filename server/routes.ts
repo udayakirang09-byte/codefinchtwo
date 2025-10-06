@@ -1005,7 +1005,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get student bookings to calculate progress
       const bookings = await storage.getBookingsByStudent(id);
-      const completedBookings = bookings.filter(b => b.status === 'completed');
+      const completedBookings = bookings.filter((b: any) => b.status === 'completed');
       
       // Get student achievements
       const achievements = await storage.getAchievementsByStudent(id);
@@ -4891,7 +4891,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const analytics = await storage.getTeacherAudioMetricsAggregates(window);
       
       // Sort by overall score (highest first) for ranking display
-      const sortedAnalytics = analytics.sort((a, b) => b.overallScore - a.overallScore);
+      const sortedAnalytics = analytics.sort((a: any, b: any) => b.overallScore - a.overallScore);
       
       console.log(`📊 Admin analytics retrieved for ${analytics.length} teachers`);
       res.json(sortedAnalytics);
