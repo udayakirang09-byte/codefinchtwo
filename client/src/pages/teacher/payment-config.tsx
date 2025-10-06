@@ -13,19 +13,25 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { CreditCard, IndianRupee, Settings, Wallet, CheckCircle, Plus, Trash2, Star } from 'lucide-react';
 import Navigation from '@/components/navigation';
 
-// Types for payment methods
+// Types for payment methods (matching database schema)
 type PaymentMethod = {
   id: string;
   userId: string;
   type: 'upi' | 'card' | 'stripe';
+  isActive: boolean;
   upiId?: string;
   upiProvider?: string;
-  cardNumber?: string;
-  cardType?: string;
-  stripeAccountId?: string;
+  cardToken?: string;
+  cardLast4?: string;
+  cardBrand?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  bankName?: string;
+  accountHolderName?: string;
   displayName: string;
   isDefault: boolean;
   createdAt: string;
+  updatedAt: string;
 };
 
 // Get current teacher user ID (UUID) from localStorage (authenticated user)
@@ -46,8 +52,8 @@ export default function TeacherPaymentConfig() {
 
   // Card Form State
   const [cardForm, setCardForm] = useState({
-    cardNumber: '',
-    cardType: 'visa',
+    cardLast4: '',
+    cardBrand: 'visa',
     displayName: ''
   });
 
@@ -132,9 +138,9 @@ export default function TeacherPaymentConfig() {
         const response = await apiRequest('POST', '/api/payment-methods', {
           userId: getTeacherUserId(),
           type: 'card',
-          cardNumber: cardData.cardNumber,
-          cardType: cardData.cardType,
-          displayName: cardData.displayName || `${cardData.cardType.toUpperCase()} - ****${cardData.cardNumber.slice(-4)}`,
+          cardLast4: cardData.cardLast4,
+          cardBrand: cardData.cardBrand,
+          displayName: cardData.displayName || `${cardData.cardBrand.toUpperCase()} - ****${cardData.cardLast4}`,
           isDefault: !Array.isArray(paymentMethods) || paymentMethods.length === 0,
         });
         
@@ -156,7 +162,7 @@ export default function TeacherPaymentConfig() {
         description: "Your card payment method has been added successfully!",
       });
       refetchMethods();
-      setCardForm({ cardNumber: '', cardType: 'visa', displayName: '' });
+      setCardForm({ cardLast4: '', cardBrand: 'visa', displayName: '' });
     },
     onError: (error: Error) => {
       toast({
@@ -247,10 +253,10 @@ export default function TeacherPaymentConfig() {
 
   const handleCardSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!cardForm.cardNumber.trim() || cardForm.cardNumber.length < 16) {
+    if (!cardForm.cardLast4.trim() || cardForm.cardLast4.length < 4) {
       toast({
-        title: "Card Number Required",
-        description: "Please enter a valid 16-digit card number",
+        title: "Card Last 4 Digits Required",
+        description: "Please enter the last 4 digits of your card",
         variant: "destructive",
       });
       return;
@@ -364,7 +370,7 @@ export default function TeacherPaymentConfig() {
                           <div>
                             <div className="font-medium">{method.displayName}</div>
                             <div className="text-sm text-muted-foreground">
-                              {method.type === 'upi' ? method.upiId : method.type === 'stripe' ? method.stripeAccountId : `****${method.cardNumber?.slice(-4)}`}
+                              {method.type === 'upi' ? method.upiId : method.type === 'stripe' ? method.stripeAccountId : `****${method.cardLast4 || '****'}`}
                             </div>
                           </div>
                           {method.isDefault && (
@@ -484,26 +490,25 @@ export default function TeacherPaymentConfig() {
                 <form onSubmit={handleCardSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="card-number">Card Number *</Label>
+                      <Label htmlFor="card-last4">Card Last 4 Digits *</Label>
                       <Input
-                        id="card-number"
+                        id="card-last4"
                         type="text"
-                        placeholder="1234 5678 9012 3456"
-                        maxLength={19}
-                        value={cardForm.cardNumber}
+                        placeholder="1234"
+                        maxLength={4}
+                        value={cardForm.cardLast4}
                         onChange={(e) => {
-                          // Format card number with spaces
-                          const value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-                          const formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
-                          setCardForm({ ...cardForm, cardNumber: value });
+                          // Only allow numbers and limit to 4 digits
+                          const value = e.target.value.replace(/[^0-9]/gi, '').slice(0, 4);
+                          setCardForm({ ...cardForm, cardLast4: value });
                         }}
-                        data-testid="input-teacher-card-number"
+                        data-testid="input-teacher-card-last4"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="card-type">Card Type *</Label>
-                      <Select value={cardForm.cardType} onValueChange={(value) => setCardForm({ ...cardForm, cardType: value })}>
-                        <SelectTrigger data-testid="select-teacher-card-type">
+                      <Label htmlFor="card-brand">Card Brand *</Label>
+                      <Select value={cardForm.cardBrand} onValueChange={(value) => setCardForm({ ...cardForm, cardBrand: value })}>
+                        <SelectTrigger data-testid="select-teacher-card-brand">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
