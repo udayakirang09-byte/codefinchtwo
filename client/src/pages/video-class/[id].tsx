@@ -142,7 +142,14 @@ export default function VideoClass() {
   
   // Auto-recording timer: Start recording 1 minute after class scheduled time
   useEffect(() => {
-    if (!bookingData || !isConnected || participants.length === 0) return;
+    if (!bookingData || !isConnected || participants.length === 0) {
+      console.log('🎬 Recording timer - waiting for conditions:', {
+        hasBookingData: !!bookingData,
+        isConnected,
+        participantCount: participants.length
+      });
+      return;
+    }
     
     const booking = bookingData as any; // Type assertion for booking data
     const scheduledTime = new Date(booking.scheduledAt);
@@ -150,8 +157,19 @@ export default function VideoClass() {
     const now = new Date();
     const timeUntilRecording = recordingStartTime.getTime() - now.getTime();
     
+    console.log('🎬 Recording timer check:', {
+      scheduledTime: scheduledTime.toISOString(),
+      recordingStartTime: recordingStartTime.toISOString(),
+      currentTime: now.toISOString(),
+      timeUntilRecording,
+      isRecording,
+      willStartIn: timeUntilRecording > 0 ? `${Math.round(timeUntilRecording / 1000)}s` : 'now'
+    });
+    
     if (timeUntilRecording > 0) {
+      console.log(`⏱️ Recording will start in ${Math.round(timeUntilRecording / 1000)} seconds`);
       const recordingTimer = setTimeout(() => {
+        console.log('🔴 STARTING RECORDING NOW');
         setIsRecording(true);
         toast({
           title: "Recording Started",
@@ -163,7 +181,13 @@ export default function VideoClass() {
       return () => clearTimeout(recordingTimer);
     } else if (!isRecording) {
       // If we're past the recording time and not already recording, start immediately
+      console.log('🔴 Recording time passed - starting immediately');
       setIsRecording(true);
+      toast({
+        title: "Recording Started",
+        description: "This session is now being recorded",
+        variant: "default",
+      });
     }
   }, [bookingData, isConnected, participants.length, isRecording, toast]);
   
