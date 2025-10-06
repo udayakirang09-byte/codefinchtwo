@@ -112,7 +112,7 @@ jobs:
                 { table: 'users', column: 'email' },
                 { table: 'payment_methods', column: 'user_id' },
                 { table: 'payment_methods', column: 'type' },
-                { table: 'payment_transactions', column: 'payment_intent_id' }
+                { table: 'payment_transactions', column: 'stripe_payment_intent_id' }
               ];
               
               console.log('\\n🔍 Checking critical columns...');
