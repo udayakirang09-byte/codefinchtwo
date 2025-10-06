@@ -370,7 +370,7 @@ export default function TeacherPaymentConfig() {
                           <div>
                             <div className="font-medium">{method.displayName}</div>
                             <div className="text-sm text-muted-foreground">
-                              {method.type === 'upi' ? method.upiId : method.type === 'stripe' ? method.stripeAccountId : `****${method.cardLast4 || '****'}`}
+                              {method.type === 'upi' ? method.upiId : method.type === 'card' ? `****${method.cardLast4 || '****'}` : 'Stripe Account'}
                             </div>
                           </div>
                           {method.isDefault && (

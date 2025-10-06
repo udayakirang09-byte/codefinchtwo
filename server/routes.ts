@@ -2107,13 +2107,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       const validatedData: any = insertCourseSchema.parse(courseDataWithMentor);
 
-      // Validate that teacher has experience in the course category
+      // Validate that teacher has experience in the course category (relaxed validation)
       const { category, title } = validatedData;
       let hasExperience = false;
       let experienceMessage = "";
 
+      // Check programming languages first
       if (teacherProfile.programmingLanguages && teacherProfile.programmingLanguages.length > 0) {
-        // Check if the course category matches any programming language experience
         const languageExperience = teacherProfile.programmingLanguages.find((lang: any) => {
           const courseCategoryLower = category.toLowerCase();
           const languageLower = lang.language.toLowerCase();
@@ -2162,9 +2162,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Also check subjects field if no language match found
+      if (!hasExperience && teacherProfile.subjects && teacherProfile.subjects.length > 0) {
+        const subjectMatch = teacherProfile.subjects.find((sub: any) => {
+          const courseCategoryLower = category.toLowerCase();
+          const subjectLower = sub.subject.toLowerCase();
+          
+          // Check for matches in subject name
+          return courseCategoryLower.includes(subjectLower) || subjectLower.includes(courseCategoryLower);
+        });
+
+        if (subjectMatch) {
+          hasExperience = true;
+          experienceMessage = `Validated: ${subjectMatch.experience} of teaching ${subjectMatch.subject}`;
+        }
+      }
+
+      // If still no match, allow creation if teacher has ANY programming language or subject (relaxed validation)
+      if (!hasExperience) {
+        if ((teacherProfile.programmingLanguages && teacherProfile.programmingLanguages.length > 0) ||
+            (teacherProfile.subjects && teacherProfile.subjects.length > 0)) {
+          hasExperience = true;
+          experienceMessage = `Course creation allowed based on general teaching experience`;
+        }
+      }
+
       if (!hasExperience) {
         return res.status(400).json({ 
-          message: `Course creation rejected: No matching experience found for "${category}" category. Please update your teacher profile with relevant programming language experience before creating this course.`
+          message: `Course creation requires at least one programming language or subject in your profile. Please update your teacher profile before creating courses.`
         });
       }
 
