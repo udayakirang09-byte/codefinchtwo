@@ -253,7 +253,7 @@ export default function VideoClass() {
               variant="outline"
               size="sm"
               onClick={() => setLocation('/')}
-              className="text-white border-gray-600 hover:bg-gray-800"
+              className="!bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white/50"
               data-testid="button-home"
             >
               <Home className="h-4 w-4 mr-2" />
@@ -263,7 +263,7 @@ export default function VideoClass() {
               variant="outline"
               size="sm"
               onClick={() => window.history.back()}
-              className="text-white border-gray-600 hover:bg-gray-800"
+              className="!bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white/50"
               data-testid="button-back"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -410,59 +410,88 @@ export default function VideoClass() {
               )}
 
               {/* Participants List */}
-              <Card className="bg-gray-800 border-gray-700">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-white text-sm">Participants ({participants.length + 1})</CardTitle>
+              <Card className="bg-gradient-to-br from-slate-800 via-slate-800 to-slate-900 border-slate-700/50 shadow-xl backdrop-blur">
+                <CardHeader className="pb-3 border-b border-slate-700/50">
+                  <CardTitle className="text-white text-base font-semibold flex items-center">
+                    <Users className="h-4 w-4 mr-2 text-blue-400" />
+                    Participants ({participants.length + 1})
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="text-sm text-gray-300 flex items-center">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                    You ({isTeacher ? 'Teacher' : 'Student'})
+                <CardContent className="space-y-3 pt-4">
+                  <div className="text-sm text-gray-200 flex items-center p-2.5 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20">
+                    <div className="w-2.5 h-2.5 bg-green-500 rounded-full mr-3 animate-pulse shadow-lg shadow-green-500/50"></div>
+                    <span className="font-medium">You ({isTeacher ? 'Teacher' : 'Student'})</span>
                   </div>
                   {participants.map((participant) => (
-                    <div key={participant.userId} className="text-sm text-gray-300 flex items-center">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                      {participant.userId} ({participant.isTeacher ? 'Teacher' : 'Student'})
+                    <div key={participant.userId} className="text-sm text-gray-300 flex items-center p-2.5 rounded-lg bg-slate-700/30 hover:bg-slate-700/50 transition-all">
+                      <div className="w-2.5 h-2.5 bg-blue-500 rounded-full mr-3 shadow-md shadow-blue-500/50"></div>
+                      <span>{participant.userId} ({participant.isTeacher ? 'Teacher' : 'Student'})</span>
                     </div>
                   ))}
                 </CardContent>
               </Card>
 
               {/* Class Info */}
-              <Card className="bg-gray-800 border-gray-700">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-white text-sm">Class Information</CardTitle>
+              <Card className="bg-gradient-to-br from-slate-800 via-slate-800 to-slate-900 border-slate-700/50 shadow-xl backdrop-blur">
+                <CardHeader className="pb-3 border-b border-slate-700/50">
+                  <CardTitle className="text-white text-base font-semibold flex items-center">
+                    <Video className="h-4 w-4 mr-2 text-purple-400" />
+                    Class Information
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  <div className="text-gray-300">
-                    <strong>Subject:</strong> {classInfo.subject}
+                <CardContent className="space-y-3 text-sm pt-4">
+                  <div className="flex items-start space-x-3 p-2.5 rounded-lg bg-slate-700/30">
+                    <div className="text-purple-400 mt-0.5">📚</div>
+                    <div className="flex-1">
+                      <div className="text-gray-400 text-xs">Subject</div>
+                      <div className="text-gray-200 font-medium">{classInfo.subject}</div>
+                    </div>
                   </div>
-                  <div className="text-gray-300">
-                    <strong>Duration:</strong> {classInfo.duration} minutes
+                  <div className="flex items-start space-x-3 p-2.5 rounded-lg bg-slate-700/30">
+                    <div className="text-blue-400 mt-0.5">⏱️</div>
+                    <div className="flex-1">
+                      <div className="text-gray-400 text-xs">Duration</div>
+                      <div className="text-gray-200 font-medium">{classInfo.duration} minutes</div>
+                    </div>
                   </div>
-                  <div className="text-gray-300">
-                    <strong>Started:</strong> {classInfo.startTime.toLocaleTimeString()}
+                  <div className="flex items-start space-x-3 p-2.5 rounded-lg bg-slate-700/30">
+                    <div className="text-green-400 mt-0.5">🕐</div>
+                    <div className="flex-1">
+                      <div className="text-gray-400 text-xs">Started</div>
+                      <div className="text-gray-200 font-medium">{classInfo.startTime.toLocaleTimeString()}</div>
+                    </div>
                   </div>
-                  <div className="text-gray-300">
-                    <strong>Role:</strong> {isTeacher ? 'Teacher (Host)' : 'Student'}
+                  <div className="flex items-start space-x-3 p-2.5 rounded-lg bg-slate-700/30">
+                    <div className="text-yellow-400 mt-0.5">👤</div>
+                    <div className="flex-1">
+                      <div className="text-gray-400 text-xs">Role</div>
+                      <div className="text-gray-200 font-medium">{isTeacher ? 'Teacher (Host)' : 'Student'}</div>
+                    </div>
                   </div>
-                  <div className="text-gray-300">
-                    <strong>Max Participants:</strong> 6+ users supported
+                  <div className="flex items-start space-x-3 p-2.5 rounded-lg bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20">
+                    <div className="text-blue-400 mt-0.5">👥</div>
+                    <div className="flex-1">
+                      <div className="text-gray-400 text-xs">Max Participants</div>
+                      <div className="text-gray-200 font-medium">6+ users supported</div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Quick Actions */}
-              <Card className="bg-gray-800 border-gray-700">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-white text-sm">Quick Actions</CardTitle>
+              <Card className="bg-gradient-to-br from-slate-800 via-slate-800 to-slate-900 border-slate-700/50 shadow-xl backdrop-blur">
+                <CardHeader className="pb-3 border-b border-slate-700/50">
+                  <CardTitle className="text-white text-base font-semibold flex items-center">
+                    <Settings className="h-4 w-4 mr-2 text-cyan-400" />
+                    Quick Actions
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-2.5 pt-4">
                   <Button 
                     variant="outline" 
                     size="sm" 
                     onClick={handleOpenChat}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
+                    className="w-full !bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-blue-600 shadow-lg shadow-blue-600/20 transition-all"
                     data-testid={`button-open-chat-${classId}`}
                   >
                     <MessageCircle className="h-4 w-4 mr-2" />
@@ -473,7 +502,7 @@ export default function VideoClass() {
                     variant="outline" 
                     size="sm" 
                     onClick={startScreenShare}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white border-green-600"
+                    className="w-full !bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white border-green-600 shadow-lg shadow-green-600/20 transition-all"
                     data-testid="button-screen-share"
                   >
                     <Monitor className="h-4 w-4 mr-2" />
@@ -486,7 +515,7 @@ export default function VideoClass() {
                         variant="outline" 
                         size="sm" 
                         onClick={() => refetchMultipleLogins()}
-                        className="w-full bg-orange-600 hover:bg-orange-700 text-white border-orange-600"
+                        className="w-full !bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white border-orange-600 shadow-lg shadow-orange-600/20 transition-all"
                         data-testid="button-check-multiple-logins"
                       >
                         <Shield className="h-4 w-4 mr-2" />
@@ -496,7 +525,7 @@ export default function VideoClass() {
                         variant="outline" 
                         size="sm" 
                         onClick={() => addTeacherAlert('Test alert: All students are engaged!')}
-                        className="w-full bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
+                        className="w-full !bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white border-purple-600 shadow-lg shadow-purple-600/20 transition-all"
                         data-testid="button-test-alert"
                       >
                         <AlertTriangle className="h-4 w-4 mr-2" />
@@ -507,7 +536,7 @@ export default function VideoClass() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="w-full text-gray-300 border-gray-600 hover:bg-gray-700"
+                    className="w-full !bg-transparent text-gray-300 border-gray-600 hover:bg-gray-700/50 transition-all"
                   >
                     <Settings className="h-4 w-4 mr-2" />
                     Settings
