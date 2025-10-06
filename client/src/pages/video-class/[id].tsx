@@ -212,7 +212,7 @@ export default function VideoClass() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setLocation('/dashboard')}
+              onClick={() => setLocation('/')}
               className="text-white border-gray-600 hover:bg-gray-800"
               data-testid="button-home"
             >

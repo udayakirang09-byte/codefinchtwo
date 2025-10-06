@@ -125,7 +125,7 @@ export default function ChatClass() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setLocation('/dashboard')}
+              onClick={() => setLocation('/')}
               className="text-gray-600"
               data-testid="button-home"
             >
