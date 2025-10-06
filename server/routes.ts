@@ -664,6 +664,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/mentors/:id/hourly-rate", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { hourlyRate } = req.body;
+      
+      if (!hourlyRate || isNaN(parseFloat(hourlyRate)) || parseFloat(hourlyRate) <= 0) {
+        return res.status(400).json({ message: "Valid hourly rate is required" });
+      }
+      
+      await storage.updateMentorHourlyRate(id, hourlyRate);
+      console.log(`💰 Updated hourly rate for mentor ${id} to $${hourlyRate}`);
+      res.json({ success: true, hourlyRate });
+    } catch (error) {
+      console.error("Error updating mentor hourly rate:", error);
+      res.status(500).json({ message: "Failed to update hourly rate" });
+    }
+  });
+
   // Get mentor's available subjects (specialties + course titles)
   app.get("/api/mentors/:id/subjects", async (req, res) => {
     try {

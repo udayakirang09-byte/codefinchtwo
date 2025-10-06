@@ -498,6 +498,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(mentors.id, mentorId));
   }
 
+  async updateMentorHourlyRate(mentorId: string, hourlyRate: string): Promise<void> {
+    await db
+      .update(mentors)
+      .set({ hourlyRate: hourlyRate })
+      .where(eq(mentors.id, mentorId));
+  }
+
   async getMentorReviews(mentorId: string): Promise<ReviewWithDetails[]> {
     return this.getReviewsByMentor(mentorId);
   }

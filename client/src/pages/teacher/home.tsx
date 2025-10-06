@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { 
   Calendar,
   Users,
@@ -20,15 +22,23 @@ import {
   Bell,
   X,
   TestTube,
-  Wallet
+  Wallet,
+  Edit2
 } from 'lucide-react';
 import { Link } from 'wouter';
 import Navigation from '@/components/navigation';
 import { apiRequest } from '@/lib/queryClient';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
 
 export default function TeacherHome() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showProfile, setShowProfile] = useState(false);
+  const [editingHourlyRate, setEditingHourlyRate] = useState(false);
+  const [newHourlyRate, setNewHourlyRate] = useState('');
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -76,6 +86,57 @@ export default function TeacherHome() {
       return response.json();
     }
   });
+
+  // Fetch mentor data for the logged-in user
+  const { data: mentorData, isLoading: mentorLoading } = useQuery<{
+    mentor: {
+      id: string;
+      hourlyRate: string;
+    };
+  }>({
+    queryKey: ['/api/users', user?.email, 'mentor'],
+    enabled: !!user?.email,
+  });
+
+  // Mutation to update hourly rate
+  const updateHourlyRateMutation = useMutation({
+    mutationFn: async (hourlyRate: string) => {
+      if (!mentorData?.mentor?.id) {
+        throw new Error("Mentor ID not found");
+      }
+      const response = await apiRequest("PATCH", `/api/mentors/${mentorData.mentor.id}/hourly-rate`, { hourlyRate });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success!",
+        description: "Your hourly rate has been updated.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/users', user?.email, 'mentor'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/mentors'] });
+      setEditingHourlyRate(false);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update hourly rate. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSaveHourlyRate = () => {
+    const rate = parseFloat(newHourlyRate);
+    if (isNaN(rate) || rate <= 0) {
+      toast({
+        title: "Invalid Rate",
+        description: "Please enter a valid hourly rate greater than 0.",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateHourlyRateMutation.mutate(newHourlyRate);
+  };
 
   // Process upcoming sessions from real data with proper null handling
   const upcomingSessions = Array.isArray(teacherClasses) ? teacherClasses
@@ -229,6 +290,91 @@ export default function TeacherHome() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Hourly Rate Configuration */}
+        <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-l-blue-500">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Hourly Rate Configuration
+              </span>
+              {mentorData?.mentor && !editingHourlyRate && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setNewHourlyRate(mentorData.mentor.hourlyRate || '');
+                    setEditingHourlyRate(true);
+                  }}
+                  data-testid="button-edit-hourly-rate"
+                >
+                  <Edit2 className="h-4 w-4 mr-2" />
+                  Edit Rate
+                </Button>
+              )}
+            </CardTitle>
+            <CardDescription>
+              Set your hourly rate that will be displayed to students when they search for teachers
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {mentorLoading ? (
+              <div className="text-gray-500">Loading...</div>
+            ) : editingHourlyRate ? (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="hourlyRate">Hourly Rate (USD)</Label>
+                  <Input
+                    id="hourlyRate"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={newHourlyRate}
+                    onChange={(e) => setNewHourlyRate(e.target.value)}
+                    placeholder="Enter your hourly rate"
+                    className="mt-2"
+                    data-testid="input-hourly-rate"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSaveHourlyRate}
+                    disabled={updateHourlyRateMutation.isPending}
+                    data-testid="button-save-hourly-rate"
+                  >
+                    {updateHourlyRateMutation.isPending ? "Saving..." : "Save"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setEditingHourlyRate(false);
+                      setNewHourlyRate('');
+                    }}
+                    disabled={updateHourlyRateMutation.isPending}
+                    data-testid="button-cancel-edit-hourly-rate"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : mentorData?.mentor ? (
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Current Rate</p>
+                  <p className="text-3xl font-bold text-green-600" data-testid="text-current-hourly-rate">
+                    ${mentorData.mentor.hourlyRate || '0.00'}/hour
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    This rate is displayed on your teacher profile and the search page
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-500">No mentor profile found. Please contact support.</div>
+            )}
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Upcoming Sessions */}
