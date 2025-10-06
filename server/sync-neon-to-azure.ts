@@ -113,7 +113,9 @@ async function syncNeonToAzure() {
       'teacher_qualifications',
       'teacher_subjects',
       'payment_configs',
-      'teacher_payment_configs'
+      'teacher_payment_configs',
+      'payment_methods',
+      'payment_transactions'
     ];
 
     for (const table of tables) {

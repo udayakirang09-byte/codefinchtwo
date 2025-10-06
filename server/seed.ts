@@ -1,5 +1,5 @@
 import { db } from "./db.js";
-import { users, mentors, students, bookings, reviews, achievements, teacherQualifications, teacherSubjects, successStories, qualifications, specializations, subjects } from "../shared/schema.js";
+import { users, mentors, students, bookings, reviews, achievements, teacherQualifications, teacherSubjects, successStories, qualifications, specializations, subjects, paymentMethods } from "../shared/schema.js";
 import { inArray } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import bcrypt from "bcrypt";
@@ -1035,6 +1035,47 @@ async function seedDatabase() {
         isActive: true
       }
     ]).onConflictDoNothing();
+
+    console.log("💳 Seeding teacher payment methods...");
+    
+    // Get teacher user IDs
+    const teacherUser = await db.select().from(users).where(inArray(users.email, ['teacher@codeconnect.com', 'testteacher@apptest.com']));
+    
+    if (teacherUser.length > 0) {
+      // Add sample UPI payment method for first teacher
+      await db.insert(paymentMethods).values({
+        id: randomUUID(),
+        userId: teacherUser[0].id,
+        type: 'upi',
+        upiId: 'teacher@upi',
+        upiProvider: 'phonepe',
+        displayName: 'PhonePe - teacher@upi',
+        isDefault: true,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).onConflictDoNothing();
+      
+      console.log("   ✓ Added UPI payment method for teacher@codeconnect.com");
+      
+      // Add sample card payment method for second teacher if exists
+      if (teacherUser.length > 1) {
+        await db.insert(paymentMethods).values({
+          id: randomUUID(),
+          userId: teacherUser[1].id,
+          type: 'card',
+          cardLast4: '4242',
+          cardBrand: 'visa',
+          displayName: 'Visa ending in 4242',
+          isDefault: true,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }).onConflictDoNothing();
+        
+        console.log("   ✓ Added card payment method for testteacher@apptest.com");
+      }
+    }
 
     console.log("✅ Database seeding completed successfully!");
     console.log("📊 Production dataset created:");
