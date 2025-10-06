@@ -1758,13 +1758,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const monthlyEarnings = monthlyCompletedBookings.reduce((sum: number, b: any) => sum + b.amount, 0);
       
-      // Get feedback from classFeedback table
-      const teacherFeedback = await db.select()
+      // Get feedback from classFeedback table - last 6 months only for average rating
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      
+      const allFeedback = await db.select()
         .from(classFeedback)
         .where(eq(classFeedback.mentorId, mentorId));
       
-      const avgRating = teacherFeedback.length > 0 
-        ? Number((teacherFeedback.reduce((sum: number, r: any) => sum + r.rating, 0) / teacherFeedback.length).toFixed(1))
+      // Filter ratings from last 6 months for average calculation
+      const recentFeedback = allFeedback.filter((f: any) => {
+        const feedbackDate = new Date(f.createdAt || f.submittedAt || now);
+        return feedbackDate >= sixMonthsAgo;
+      });
+      
+      const avgRating = recentFeedback.length > 0 
+        ? Number((recentFeedback.reduce((sum: number, r: any) => sum + r.rating, 0) / recentFeedback.length).toFixed(1))
         : 0;
       
       const teacherStats = {
@@ -1775,8 +1784,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         upcomingSessions: scheduledBookings.length,
         completedSessions: completedBookings.length,
         averageRating: avgRating,
-        totalReviews: teacherFeedback.length,
-        feedbackResponseRate: completedBookings.length > 0 ? Math.round((teacherFeedback.length / completedBookings.length) * 100) : 0,
+        totalReviews: allFeedback.length,
+        feedbackResponseRate: completedBookings.length > 0 ? Math.round((allFeedback.length / completedBookings.length) * 100) : 0,
         totalHours: completedBookings.reduce((sum: number, b: any) => sum + (b.duration || 60), 0) / 60 // Convert minutes to hours
       };
       
