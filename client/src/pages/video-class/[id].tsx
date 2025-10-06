@@ -142,7 +142,7 @@ export default function VideoClass() {
   
   // Auto-recording timer: Start recording 1 minute after class scheduled time
   useEffect(() => {
-    if (!bookingData || !isConnected || participants.length === 0) {
+    if (!bookingData || !isConnected) {
       console.log('🎬 Recording timer - waiting for conditions:', {
         hasBookingData: !!bookingData,
         isConnected,
@@ -189,7 +189,7 @@ export default function VideoClass() {
         variant: "default",
       });
     }
-  }, [bookingData, isConnected, participants.length, isRecording, toast]);
+  }, [bookingData, isConnected, isRecording, toast]);
   
   // Session auto-close system: Warning and disconnect after class time
   useEffect(() => {
