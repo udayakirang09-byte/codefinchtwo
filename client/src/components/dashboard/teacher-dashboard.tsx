@@ -139,16 +139,9 @@ export default function TeacherDashboard() {
   })) : [];
   
   const completedClasses = Array.isArray(teacherClasses) ? teacherClasses.filter((booking: any) => {
-    const scheduledAt = new Date(booking.scheduledAt);
-    const classEndTime = addMinutes(scheduledAt, booking.duration + 2);
-    const now = new Date();
-    const twelveHoursAgo = addHours(now, -12);
-    
-    // Include both completed bookings AND scheduled bookings past their end time
-    return (
-      (booking.status === 'completed' && scheduledAt >= twelveHoursAgo) ||
-      (booking.status === 'scheduled' && now >= classEndTime && scheduledAt >= twelveHoursAgo)
-    );
+    // Only show classes where feedback has been submitted (status === 'completed')
+    // This matches the same condition as the student's Completed Classes page
+    return booking.status === 'completed';
   }).map((booking: any) => ({
     id: booking.id,
     studentName: booking.student?.user?.firstName + ' ' + (booking.student?.user?.lastName || ''),

@@ -1734,12 +1734,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const completedBookings = teacherBookings.filter((b: any) => b.status === 'completed');
       const scheduledBookings = teacherBookings.filter((b: any) => b.status === 'scheduled');
       
-      // Calculate unique students
-      const uniqueStudentIds = new Set(teacherBookings.map((b: any) => b.studentId));
+      // Calculate unique students from COMPLETED bookings only (those with submitted feedback)
+      const uniqueStudentIds = new Set(completedBookings.map((b: any) => b.studentId));
       const totalStudents = uniqueStudentIds.size;
       
-      // Calculate earnings
-      const totalEarnings = completedBookings.reduce((sum: number, b: any) => sum + 150, 0);
+      // Calculate earnings from booking amount field
+      const totalEarnings = completedBookings.reduce((sum: number, b: any) => sum + (b.amount || 0), 0);
       
       // Calculate actual monthly earnings from completed bookings in the current month
       const now = new Date();
@@ -1748,7 +1748,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const bookingDate = new Date(b.scheduledAt);
         return bookingDate >= firstDayOfMonth;
       });
-      const monthlyEarnings = monthlyCompletedBookings.reduce((sum: number, b: any) => sum + 150, 0);
+      const monthlyEarnings = monthlyCompletedBookings.reduce((sum: number, b: any) => sum + (b.amount || 0), 0);
       
       // Get feedback from classFeedback table
       const teacherFeedback = await db.select()

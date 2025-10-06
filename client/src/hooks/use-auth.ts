@@ -22,13 +22,14 @@ export function useAuth(): AuthState {
   useEffect(() => {
     // Get auth data from localStorage
     const authStatus = localStorage.getItem('isAuthenticated') === 'true';
+    const userId = localStorage.getItem('userId');
     const userEmail = localStorage.getItem('userEmail');
     const userRole = localStorage.getItem('userRole') as 'student' | 'teacher' | 'admin' | null;
 
-    if (authStatus && userEmail && userRole) {
+    if (authStatus && userId && userEmail && userRole) {
       setAuthState({
         user: {
-          id: userEmail, // Using email as ID for now
+          id: userId, // Use actual user ID from localStorage
           email: userEmail,
           role: userRole,
         },
