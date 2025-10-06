@@ -268,8 +268,9 @@ export const chatSessions = pgTable("chat_sessions", {
 
 export const chatMessages = pgTable("chat_messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  chatSessionId: varchar("chat_session_id").references(() => chatSessions.id).notNull(),
+  bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
   senderId: varchar("sender_id").references(() => users.id).notNull(),
+  senderName: varchar("sender_name").notNull(),
   message: text("message").notNull(),
   sentAt: timestamp("sent_at").defaultNow(),
 });
@@ -334,9 +335,9 @@ export const chatSessionsRelations = relations(chatSessions, ({ one, many }) => 
 }));
 
 export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
-  chatSession: one(chatSessions, {
-    fields: [chatMessages.chatSessionId],
-    references: [chatSessions.id],
+  booking: one(bookings, {
+    fields: [chatMessages.bookingId],
+    references: [bookings.id],
   }),
   sender: one(users, {
     fields: [chatMessages.senderId],

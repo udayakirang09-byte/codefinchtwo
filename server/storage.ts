@@ -809,11 +809,11 @@ export class DatabaseStorage implements IStorage {
     return message;
   }
 
-  async getChatMessages(sessionId: string): Promise<ChatMessage[]> {
+  async getChatMessages(bookingId: string): Promise<ChatMessage[]> {
     const messages = await db
       .select()
       .from(chatMessages)
-      .where(eq(chatMessages.chatSessionId, sessionId))
+      .where(eq(chatMessages.bookingId, bookingId))
       .orderBy(chatMessages.sentAt);
     return messages;
   }
