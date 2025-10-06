@@ -94,7 +94,7 @@ jobs:
               const keyTables = await client.query(\`
                 SELECT table_name FROM information_schema.tables 
                 WHERE table_schema = 'public' 
-                AND table_name IN ('users', 'mentors', 'students', 'bookings', 'reviews', 'achievements', 'payment_methods', 'transactions')
+                AND table_name IN ('users', 'mentors', 'students', 'bookings', 'reviews', 'achievements', 'payment_methods', 'payment_transactions')
                 ORDER BY table_name
               \`);
               console.log('🔑 Key tables found:', keyTables.rows.map(r => r.table_name));
@@ -112,7 +112,7 @@ jobs:
                 { table: 'users', column: 'email' },
                 { table: 'payment_methods', column: 'user_id' },
                 { table: 'payment_methods', column: 'type' },
-                { table: 'transactions', column: 'payment_intent_id' }
+                { table: 'payment_transactions', column: 'payment_intent_id' }
               ];
               
               console.log('\\n🔍 Checking critical columns...');
