@@ -1636,20 +1636,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Teacher routes
   app.get("/api/teacher/classes", async (req, res) => {
     try {
-      const teacherEmail = req.query.teacherId as string;
+      const teacherId = req.query.teacherId as string;
       
-      if (!teacherEmail) {
-        return res.status(400).json({ message: "Teacher ID (email) is required" });
+      if (!teacherId) {
+        return res.status(400).json({ message: "Teacher ID is required" });
       }
       
-      // Get teacher's mentor ID from their email
+      // Get teacher's mentor ID from their user ID
       const teacherUser = await db.select({
         userId: users.id,
         mentorId: mentors.id
       })
       .from(users)
       .leftJoin(mentors, eq(mentors.userId, users.id))
-      .where(eq(users.email, teacherEmail))
+      .where(eq(users.id, teacherId))
       .limit(1);
       
       if (!teacherUser.length || !teacherUser[0].mentorId) {
@@ -1703,20 +1703,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/teacher/stats", async (req, res) => {
     try {
-      const teacherEmail = req.query.teacherId as string;
+      const teacherId = req.query.teacherId as string;
       
-      if (!teacherEmail) {
-        return res.status(400).json({ message: "Teacher ID (email) is required" });
+      if (!teacherId) {
+        return res.status(400).json({ message: "Teacher ID is required" });
       }
       
-      // Get teacher's mentor ID from their email
+      // Get teacher's mentor ID from their user ID
       const teacherUser = await db.select({
         userId: users.id,
         mentorId: mentors.id
       })
       .from(users)
       .leftJoin(mentors, eq(mentors.userId, users.id))
-      .where(eq(users.email, teacherEmail))
+      .where(eq(users.id, teacherId))
       .limit(1);
       
       if (!teacherUser.length || !teacherUser[0].mentorId) {
@@ -1782,20 +1782,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Teacher notifications endpoint
   app.get("/api/teacher/notifications", async (req, res) => {
     try {
-      const teacherEmail = req.query.teacherId as string;
+      const teacherId = req.query.teacherId as string;
       
-      if (!teacherEmail) {
-        return res.status(400).json({ message: "Teacher ID (email) is required" });
+      if (!teacherId) {
+        return res.status(400).json({ message: "Teacher ID is required" });
       }
       
-      // Get teacher's mentor ID from their email
+      // Get teacher's mentor ID from their user ID
       const teacherUser = await db.select({
         userId: users.id,
         mentorId: mentors.id
       })
       .from(users)
       .leftJoin(mentors, eq(mentors.userId, users.id))
-      .where(eq(users.email, teacherEmail))
+      .where(eq(users.id, teacherId))
       .limit(1);
       
       if (!teacherUser.length || !teacherUser[0].mentorId) {
