@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,10 +7,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { useWebRTC } from "@/hooks/use-webrtc";
-import { Video, VideoOff, Mic, MicOff, Users, MessageCircle, Phone, Settings, AlertTriangle, Wifi, WifiOff, Shield, Monitor } from "lucide-react";
+import { Video, VideoOff, Mic, MicOff, Users, MessageCircle, Phone, Settings, AlertTriangle, Wifi, WifiOff, Shield, Monitor, Home, ArrowLeft } from "lucide-react";
 
 export default function VideoClass() {
   const [, params] = useRoute("/video-class/:id");
+  const [, setLocation] = useLocation();
   
   if (!params) {
     return <div>Invalid class ID</div>;
@@ -207,9 +208,31 @@ export default function VideoClass() {
       {/* Header */}
       <div className="bg-black/50 backdrop-blur-sm border-b border-gray-700 p-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div>
-            <h1 className="text-xl font-bold text-white">{classInfo.subject}</h1>
-            <p className="text-gray-300">with {classInfo.mentor}</p>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLocation('/dashboard')}
+              className="text-white border-gray-600 hover:bg-gray-800"
+              data-testid="button-home"
+            >
+              <Home className="h-4 w-4 mr-2" />
+              Home
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.history.back()}
+              className="text-white border-gray-600 hover:bg-gray-800"
+              data-testid="button-back"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+            <div className="ml-4">
+              <h1 className="text-xl font-bold text-white">{classInfo.subject}</h1>
+              <p className="text-gray-300">with {classInfo.mentor}</p>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <Badge className="bg-green-600">
