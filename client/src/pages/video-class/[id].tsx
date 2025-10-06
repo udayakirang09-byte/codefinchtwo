@@ -65,6 +65,12 @@ export default function VideoClass() {
     refetchInterval: 30000, // Check every 30 seconds during video session
   });
   
+  // Query to get booking/class schedule information
+  const { data: bookingData } = useQuery({
+    queryKey: ['/api/bookings', classId],
+    enabled: Boolean(classId),
+  });
+  
   const [classInfo] = useState({
     subject: "Python Basics",
     mentor: "Sarah Johnson", 
@@ -72,6 +78,10 @@ export default function VideoClass() {
     startTime: new Date(),
     isTeacher
   });
+  
+  // Recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [showEndWarning, setShowEndWarning] = useState(false);
 
   // Teacher alert system
   const addTeacherAlert = useCallback((message: string) => {
@@ -129,6 +139,77 @@ export default function VideoClass() {
       addTeacherAlert("Video session started successfully. You are the host.");
     }
   }, [isConnected, isTeacher, addTeacherAlert]);
+  
+  // Auto-recording timer: Start recording 1 minute after class scheduled time
+  useEffect(() => {
+    if (!bookingData || !isConnected || participants.length === 0) return;
+    
+    const booking = bookingData as any; // Type assertion for booking data
+    const scheduledTime = new Date(booking.scheduledAt);
+    const recordingStartTime = new Date(scheduledTime.getTime() + 60000); // +1 minute
+    const now = new Date();
+    const timeUntilRecording = recordingStartTime.getTime() - now.getTime();
+    
+    if (timeUntilRecording > 0) {
+      const recordingTimer = setTimeout(() => {
+        setIsRecording(true);
+        toast({
+          title: "Recording Started",
+          description: "This session is now being recorded",
+          variant: "default",
+        });
+      }, timeUntilRecording);
+      
+      return () => clearTimeout(recordingTimer);
+    } else if (!isRecording) {
+      // If we're past the recording time and not already recording, start immediately
+      setIsRecording(true);
+    }
+  }, [bookingData, isConnected, participants.length, isRecording, toast]);
+  
+  // Session auto-close system: Warning and disconnect after class time
+  useEffect(() => {
+    if (!bookingData || !isConnected) return;
+    
+    const booking = bookingData as any; // Type assertion for booking data
+    const scheduledTime = new Date(booking.scheduledAt);
+    const classEndTime = new Date(scheduledTime.getTime() + booking.duration * 60000);
+    const disconnectTime = new Date(classEndTime.getTime() + 4 * 60000); // +4 minutes
+    const now = new Date();
+    
+    const timeUntilEnd = classEndTime.getTime() - now.getTime();
+    const timeUntilDisconnect = disconnectTime.getTime() - now.getTime();
+    
+    // If class has ended but not yet time to disconnect
+    if (timeUntilEnd <= 0 && timeUntilDisconnect > 0) {
+      // Show warning every minute for 5 seconds
+      const warningInterval = setInterval(() => {
+        setShowEndWarning(true);
+        setTimeout(() => setShowEndWarning(false), 5000);
+      }, 60000);
+      
+      // Show immediate warning
+      setShowEndWarning(true);
+      setTimeout(() => setShowEndWarning(false), 5000);
+      
+      return () => clearInterval(warningInterval);
+    }
+    
+    // Auto-disconnect after 4 minutes
+    if (timeUntilDisconnect > 0) {
+      const disconnectTimer = setTimeout(() => {
+        toast({
+          title: "Session Ended",
+          description: "Class time has completed. Disconnecting...",
+          variant: "destructive",
+        });
+        disconnect();
+        setLocation('/');
+      }, timeUntilDisconnect);
+      
+      return () => clearTimeout(disconnectTimer);
+    }
+  }, [bookingData, isConnected, disconnect, setLocation, toast]);
 
   const handleEndCall = () => {
     console.log(`📞 Ending video class ${classId}`);
@@ -194,6 +275,33 @@ export default function VideoClass() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 relative">
+      {/* Recording Indicator */}
+      {isRecording && isConnected && (
+        <div className="fixed top-24 right-6 z-50 flex items-center gap-3 bg-black/80 backdrop-blur-sm px-4 py-3 rounded-lg border border-red-500/30 shadow-lg shadow-red-500/20">
+          <div className="relative">
+            <div className="w-4 h-4 bg-red-600 rounded-full animate-pulse shadow-lg shadow-red-500/50"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-2 h-2 bg-white rounded-full"></div>
+            </div>
+          </div>
+          <span className="text-white font-medium text-sm">Recording started</span>
+        </div>
+      )}
+      
+      {/* Class End Warning Modal */}
+      {showEndWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-pulse">
+          <div className="bg-gradient-to-br from-red-600 to-red-700 p-8 rounded-2xl shadow-2xl max-w-md mx-4 border-2 border-red-400">
+            <div className="text-center">
+              <AlertTriangle className="h-16 w-16 text-white mx-auto mb-4 animate-bounce" />
+              <h2 className="text-2xl font-bold text-white mb-3">Class Time Completed</h2>
+              <p className="text-red-100 text-lg mb-2">Session will close in 4 minutes</p>
+              <p className="text-red-200 text-sm">Please wrap up your discussion</p>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Connecting Overlay */}
       {!isConnected && (
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-purple-900 to-black z-50 flex items-center justify-center">
