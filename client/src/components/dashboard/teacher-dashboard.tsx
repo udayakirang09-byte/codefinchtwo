@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Video, MessageCircle, Users, BookOpen, DollarSign, Bell, TrendingUp, CreditCard } from "lucide-react";
+import { Calendar, Clock, Video, MessageCircle, Users, BookOpen, DollarSign, Bell, TrendingUp, CreditCard, CheckCircle } from "lucide-react";
 import { formatDistanceToNow, addHours, addMinutes } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -31,6 +31,7 @@ export default function TeacherDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showEarningsReport, setShowEarningsReport] = useState(false);
   const [showStudentFeedback, setShowStudentFeedback] = useState(false);
+  const [showCompletedClasses, setShowCompletedClasses] = useState(false);
   
   // Fetch teacher's classes from API
   const { data: teacherClasses = [], isLoading: classesLoading, error: classesError } = useQuery({
@@ -771,6 +772,16 @@ export default function TeacherDashboard() {
                 <span className="font-bold text-lg">Payment Setup</span>
                 <span className="text-xs text-gray-500 mt-1 text-center">Configure payment methods</span>
               </Button>
+              <Button 
+                variant="outline" 
+                className="h-32 p-6 flex-col hover:bg-indigo-50 hover:border-indigo-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                data-testid="button-completed-classes"
+                onClick={() => setShowCompletedClasses(!showCompletedClasses)}
+              >
+                <CheckCircle className="h-10 w-10 mb-3 text-indigo-600 group-hover:scale-110 transition-transform duration-200" />
+                <span className="font-bold text-lg">Completed Classes</span>
+                <span className="text-xs text-gray-500 mt-1 text-center">View past sessions</span>
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -870,6 +881,57 @@ export default function TeacherDashboard() {
                 
                 {teacherReviews.length === 0 && (
                   <p className="text-gray-500 text-center py-4">No reviews yet</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Completed Classes Section */}
+      {showCompletedClasses && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5" />
+              Completed Classes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <p className="text-sm text-green-600 font-medium">Total Completed</p>
+                  <p className="text-3xl font-bold text-green-700">{completedClasses.length}</p>
+                  <p className="text-xs text-green-600">Classes with feedback</p>
+                </div>
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <p className="text-sm text-blue-600 font-medium">Total Hours</p>
+                  <p className="text-3xl font-bold text-blue-700">{stats.totalHours || 0}</p>
+                  <p className="text-xs text-blue-600">Teaching time</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="font-semibold">Recent Completed Classes:</h4>
+                
+                {completedClasses.slice(0, 10).map((cls: CompletedClass) => (
+                  <div key={cls.id} className="border-l-4 border-green-400 bg-green-50 p-4 rounded-r-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <span className="font-medium text-sm">{cls.studentName}</span>
+                        <span className="text-xs text-gray-500 ml-2">
+                          {formatDistanceToNow(new Date(cls.completedAt), { addSuffix: true })}
+                        </span>
+                      </div>
+                      <span className="text-green-700 font-semibold">${cls.earnings}</span>
+                    </div>
+                    <p className="text-sm text-gray-700">Subject: {cls.subject}</p>
+                  </div>
+                ))}
+                
+                {completedClasses.length === 0 && (
+                  <p className="text-gray-500 text-center py-4">No completed classes yet</p>
                 )}
               </div>
             </div>
