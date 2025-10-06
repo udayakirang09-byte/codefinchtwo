@@ -70,9 +70,10 @@ export default function TeacherPaymentConfig() {
     queryFn: async () => {
       try {
         console.log('🔍 Fetching payment methods for userId:', userId);
-        const result = await apiRequest('GET', `/api/payment-methods/${userId}`);
+        const response = await apiRequest('GET', `/api/payment-methods/${userId}`);
+        const result = await response.json();
         console.log('✅ Payment methods fetched:', result);
-        return (result as unknown as PaymentMethod[]) || [];
+        return (result as PaymentMethod[]) || [];
       } catch (error) {
         console.error('Failed to fetch payment methods:', error);
         return [] as PaymentMethod[];
