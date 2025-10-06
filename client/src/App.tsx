@@ -32,6 +32,7 @@ import UserManagement from "./pages/admin/user-management";
 import MentorApproval from "./pages/admin/mentor-approval";
 import ActiveClasses from "./pages/student/active-classes";
 import LearningHours from "./pages/student/learning-hours";
+import CompletedClasses from "./pages/student/completed-classes";
 import CreateCourse from "./pages/teacher/create-course";
 import ManageSchedule from "./pages/teacher/manage-schedule";
 import Terms from "./pages/terms";
@@ -90,6 +91,7 @@ function Router() {
       <Route path="/admin/home" component={AdminHome} />
       <Route path="/student/active-classes" component={ActiveClasses} />
       <Route path="/student/learning-hours" component={LearningHours} />
+      <Route path="/student/completed-classes" component={CompletedClasses} />
       <Route path="/recordings" component={Recordings} />
       <Route path="/teacher/create-course" component={CreateCourse} />
       <Route path="/teacher/manage-schedule" component={ManageSchedule} />

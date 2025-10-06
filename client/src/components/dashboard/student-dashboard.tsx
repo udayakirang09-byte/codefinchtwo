@@ -289,6 +289,11 @@ export default function StudentDashboard() {
     window.location.href = '/recordings';
   };
 
+  const handleCompletedClasses = () => {
+    console.log(`✅ Opening completed classes`);
+    window.location.href = '/student/completed-classes';
+  };
+
   const handleNotificationClick = (notification: Notification) => {
     // Mark as read
     setNotifications(prev => 
@@ -694,6 +699,16 @@ export default function StudentDashboard() {
                 <Play className="h-10 w-10 mb-3 text-red-600 group-hover:scale-110 transition-transform duration-200" />
                 <span className="font-bold text-lg">View Recordings</span>
                 <span className="text-xs text-gray-500 mt-1 text-center">Watch past sessions</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-32 p-6 flex-col hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                data-testid="button-completed-classes"
+                onClick={handleCompletedClasses}
+              >
+                <Star className="h-10 w-10 mb-3 text-emerald-600 group-hover:scale-110 transition-transform duration-200" />
+                <span className="font-bold text-lg">Completed Classes</span>
+                <span className="text-xs text-gray-500 mt-1 text-center">View past classes</span>
               </Button>
             </div>
           </CardContent>
