@@ -299,19 +299,6 @@ export default function VideoClass() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 relative">
-      {/* Recording Indicator */}
-      {isRecording && isConnected && (
-        <div className="fixed top-24 right-6 z-50 flex items-center gap-3 bg-black/80 backdrop-blur-sm px-4 py-3 rounded-lg border border-red-500/30 shadow-lg shadow-red-500/20">
-          <div className="relative">
-            <div className="w-4 h-4 bg-red-600 rounded-full animate-pulse shadow-lg shadow-red-500/50"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-2 h-2 bg-white rounded-full"></div>
-            </div>
-          </div>
-          <span className="text-white font-medium text-sm">Recording started</span>
-        </div>
-      )}
-      
       {/* Class End Warning Modal */}
       {showEndWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-pulse">
@@ -445,6 +432,19 @@ export default function VideoClass() {
               <Card className="h-full bg-gray-900 border-gray-700">
                 <CardContent className="p-0 h-full relative">
                   <div className="w-full h-full bg-gradient-to-br from-blue-900 to-purple-900 rounded-lg flex items-center justify-center relative overflow-hidden">
+                    {/* Recording Indicator - Inside Blue Video Screen */}
+                    {isRecording && isConnected && (
+                      <div className="absolute top-4 right-4 z-20 flex items-center gap-3 bg-black/80 backdrop-blur-sm px-4 py-3 rounded-lg border border-red-500/30 shadow-lg shadow-red-500/20">
+                        <div className="relative">
+                          <div className="w-4 h-4 bg-red-600 rounded-full animate-pulse shadow-lg shadow-red-500/50"></div>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                          </div>
+                        </div>
+                        <span className="text-white font-medium text-sm">Recording started</span>
+                      </div>
+                    )}
+                    
                     {localStream && isVideoEnabled ? (
                       <>
                         {/* Local video feed */}
