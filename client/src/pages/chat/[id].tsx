@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Send, Users, Video, Loader2, RefreshCw } from "lucide-react";
+import { Send, Users, Video, Loader2, RefreshCw, Home, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -20,6 +20,7 @@ interface ChatMessage {
 
 export default function ChatClass() {
   const [, params] = useRoute("/chat/:id");
+  const [, setLocation] = useLocation();
   const { user } = useAuth();
   
   if (!params) {
@@ -120,9 +121,31 @@ export default function ChatClass() {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 p-4 shadow-sm">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold text-gray-900">{classInfo.subject} - Class Chat</h1>
-            <p className="text-sm text-gray-600">with {classInfo.mentor}</p>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLocation('/dashboard')}
+              className="text-gray-600"
+              data-testid="button-home"
+            >
+              <Home className="h-4 w-4 mr-2" />
+              Home
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.history.back()}
+              className="text-gray-600"
+              data-testid="button-back"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+            <div className="ml-4">
+              <h1 className="text-lg font-bold text-gray-900">{classInfo.subject} - Class Chat</h1>
+              <p className="text-sm text-gray-600">with {classInfo.mentor}</p>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <Button
