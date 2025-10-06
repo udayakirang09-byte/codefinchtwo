@@ -1661,14 +1661,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Teacher ID is required" });
       }
       
-      // Get teacher's mentor ID from their user ID
+      // Get teacher's mentor ID from their user email
       const teacherUser = await db.select({
         userId: users.id,
         mentorId: mentors.id
       })
       .from(users)
       .leftJoin(mentors, eq(mentors.userId, users.id))
-      .where(eq(users.id, teacherId))
+      .where(eq(users.email, teacherId))
       .limit(1);
       
       if (!teacherUser.length || !teacherUser[0].mentorId) {
@@ -1728,14 +1728,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Teacher ID is required" });
       }
       
-      // Get teacher's mentor ID from their user ID
+      // Get teacher's mentor ID from their user email
       const teacherUser = await db.select({
         userId: users.id,
         mentorId: mentors.id
       })
       .from(users)
       .leftJoin(mentors, eq(mentors.userId, users.id))
-      .where(eq(users.id, teacherId))
+      .where(eq(users.email, teacherId))
       .limit(1);
       
       if (!teacherUser.length || !teacherUser[0].mentorId) {
@@ -1824,14 +1824,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Teacher ID is required" });
       }
       
-      // Get teacher's mentor ID from their user ID
+      // Get teacher's mentor ID from their user email
       const teacherUser = await db.select({
         userId: users.id,
         mentorId: mentors.id
       })
       .from(users)
       .leftJoin(mentors, eq(mentors.userId, users.id))
-      .where(eq(users.id, teacherId))
+      .where(eq(users.email, teacherId))
       .limit(1);
       
       if (!teacherUser.length || !teacherUser[0].mentorId) {
@@ -1894,8 +1894,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json([]);
       }
       
-      // Get user by ID
-      const [user] = await db.select().from(users).where(eq(users.id, teacherId)).limit(1);
+      // Get user by email
+      const [user] = await db.select().from(users).where(eq(users.email, teacherId)).limit(1);
       if (!user) {
         return res.json([]);
       }
