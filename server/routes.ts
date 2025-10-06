@@ -29,6 +29,7 @@ import {
   reviews,
   achievements,
   classFeedback,
+  chatMessages,
   paymentTransactions,
   paymentWorkflows,
   type InsertAdminConfig, 
@@ -1354,6 +1355,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("❌ Error checking relationship status:", error);
       res.status(500).json({ message: "Failed to check relationship status" });
+    }
+  });
+
+  // Simplified chat routes using booking ID directly
+  app.get("/api/bookings/:bookingId/messages", async (req, res) => {
+    console.log(`💬 GET /api/bookings/${req.params.bookingId}/messages - Fetching chat messages`);
+    try {
+      const messages = await storage.getChatMessages(req.params.bookingId);
+      console.log(`✅ Found ${messages.length} messages for booking ${req.params.bookingId}`);
+      res.json(messages);
+    } catch (error) {
+      console.error("❌ Error fetching messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  app.post("/api/bookings/:bookingId/messages", async (req, res) => {
+    console.log(`💬 POST /api/bookings/${req.params.bookingId}/messages - Sending chat message`);
+    try {
+      const { bookingId } = req.params;
+      const { senderId, senderName, message } = req.body;
+
+      if (!senderId || !senderName || !message) {
+        return res.status(400).json({ message: "senderId, senderName, and message are required" });
+      }
+
+      const messageData = {
+        bookingId,
+        senderId,
+        senderName,
+        message
+      };
+      
+      const newMessage = await storage.sendChatMessage(messageData);
+      console.log(`✅ Message sent successfully: ${newMessage.id}`);
+      res.status(201).json(newMessage);
+    } catch (error) {
+      console.error("❌ Error sending message:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  // Delete messages older than 6 months for a specific booking
+  app.delete("/api/bookings/:bookingId/messages/cleanup", async (req, res) => {
+    console.log(`🗑️ DELETE /api/bookings/${req.params.bookingId}/messages/cleanup - Cleaning up old messages`);
+    try {
+      const { bookingId } = req.params;
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+      await db
+        .delete(chatMessages)
+        .where(
+          and(
+            eq(chatMessages.bookingId, bookingId),
+            sql`${chatMessages.sentAt} < ${sixMonthsAgo}`
+          )
+        );
+
+      console.log(`✅ Cleaned up messages older than 6 months for booking ${bookingId}`);
+      res.json({ message: "Old messages cleaned up successfully" });
+    } catch (error) {
+      console.error("❌ Error cleaning up messages:", error);
+      res.status(500).json({ message: "Failed to clean up messages" });
     }
   });
 
