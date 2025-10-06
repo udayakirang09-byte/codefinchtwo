@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { useWebRTC } from "@/hooks/use-webrtc";
-import { Video, VideoOff, Mic, MicOff, Users, MessageCircle, Phone, Settings, AlertTriangle, Wifi, WifiOff, Shield, Monitor, Home, ArrowLeft } from "lucide-react";
+import { Video, VideoOff, Mic, MicOff, Users, MessageCircle, Phone, Settings, AlertTriangle, Wifi, WifiOff, Shield, Monitor, Home, ArrowLeft, Maximize, Minimize } from "lucide-react";
 
 export default function VideoClass() {
   const [, params] = useRoute("/video-class/:id");
@@ -22,6 +22,7 @@ export default function VideoClass() {
   const [teacherAlerts, setTeacherAlerts] = useState<string[]>([]);
   const [multipleLoginUsers, setMultipleLoginUsers] = useState<Array<{userId: string, sessionCount: number, user: any}>>([]);
   const [lastAlertedUsers, setLastAlertedUsers] = useState<Set<string>>(new Set());
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
   
@@ -247,6 +248,36 @@ export default function VideoClass() {
     window.open(`/chat/${classId}`, '_blank', 'width=400,height=600');
   };
 
+  const toggleFullscreen = () => {
+    const videoContainer = document.querySelector('.video-container');
+    
+    if (!document.fullscreenElement) {
+      videoContainer?.requestFullscreen().then(() => {
+        setIsFullscreen(true);
+        toast({
+          title: "Fullscreen Mode",
+          description: "Press ESC to exit fullscreen",
+        });
+      }).catch(err => {
+        console.error('Error entering fullscreen:', err);
+      });
+    } else {
+      document.exitFullscreen().then(() => {
+        setIsFullscreen(false);
+      });
+    }
+  };
+
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
   // Participant grid component for multiple video streams
   const ParticipantGrid = () => {
     if (participants.length === 0) {
@@ -429,21 +460,35 @@ export default function VideoClass() {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
             {/* Main Video Area */}
             <div className="lg:col-span-3">
-              <Card className="h-full bg-gray-900 border-gray-700">
+              <Card className="h-full bg-gray-900 border-gray-700 video-container">
                 <CardContent className="p-0 h-full relative">
                   <div className="w-full h-full bg-gradient-to-br from-blue-900 to-purple-900 rounded-lg flex items-center justify-center relative overflow-hidden">
-                    {/* Recording Indicator - Inside Blue Video Screen */}
-                    {isRecording && isConnected && (
-                      <div className="absolute top-4 right-4 z-20 flex items-center gap-3 bg-black/80 backdrop-blur-sm px-4 py-3 rounded-lg border border-red-500/30 shadow-lg shadow-red-500/20">
-                        <div className="relative">
-                          <div className="w-4 h-4 bg-red-600 rounded-full animate-pulse shadow-lg shadow-red-500/50"></div>
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                    {/* Top Right Controls */}
+                    <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+                      {/* Recording Indicator */}
+                      {isRecording && isConnected && (
+                        <div className="flex items-center gap-3 bg-black/80 backdrop-blur-sm px-4 py-3 rounded-lg border border-red-500/30 shadow-lg shadow-red-500/20">
+                          <div className="relative">
+                            <div className="w-4 h-4 bg-red-600 rounded-full animate-pulse shadow-lg shadow-red-500/50"></div>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-2 h-2 bg-white rounded-full"></div>
+                            </div>
                           </div>
+                          <span className="text-white font-medium text-sm">Recording started</span>
                         </div>
-                        <span className="text-white font-medium text-sm">Recording started</span>
-                      </div>
-                    )}
+                      )}
+                      
+                      {/* Maximize Button */}
+                      <Button
+                        onClick={toggleFullscreen}
+                        variant="outline"
+                        size="icon"
+                        className="!bg-black/80 backdrop-blur-sm border-gray-600 hover:bg-gray-700 text-white"
+                        data-testid="button-maximize-video"
+                      >
+                        {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
+                      </Button>
+                    </div>
                     
                     {localStream && isVideoEnabled ? (
                       <>
