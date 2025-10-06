@@ -32,6 +32,7 @@ import {
   chatMessages,
   paymentTransactions,
   paymentWorkflows,
+  paymentMethods,
   videoSessions,
   type InsertAdminConfig, 
   type InsertFooterLink, 
@@ -2956,10 +2957,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       for (const transaction of eligibleTransactions) {
         try {
-          // Get teacher payment method (for now, we'll use a placeholder)
-          // In production, this would fetch the teacher's preferred payment method
+          // Get teacher's default payment method
+          const teacherPaymentMethods = await db.select()
+            .from(paymentMethods)
+            .where(
+              and(
+                eq(paymentMethods.userId, transaction.toUserId),
+                eq(paymentMethods.isActive, true),
+                eq(paymentMethods.isDefault, true)
+              )
+            )
+            .limit(1);
           
-          // Create teacher payout transaction
+          const defaultPaymentMethod = teacherPaymentMethods[0];
+          
+          if (!defaultPaymentMethod) {
+            console.log(`⚠️ No default payment method found for teacher ${transaction.toUserId}, skipping payout for transaction ${transaction.id}`);
+            continue;
+          }
+          
+          console.log(`💳 Using teacher's default ${defaultPaymentMethod.type} payment method: ${defaultPaymentMethod.displayName}`);
+          
+          // Create teacher payout transaction with teacher's payment method
           const teacherPayoutData = {
             bookingId: transaction.bookingId,
             transactionType: 'teacher_payout' as const,
@@ -2969,11 +2988,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             currency: transaction.currency || 'INR',
             fromUserId: null, // Admin user ID would go here
             toUserId: transaction.toUserId, // Teacher user ID
+            toPaymentMethod: defaultPaymentMethod.id, // Teacher's default payment method
             status: 'completed' as const,
             workflowStage: 'admin_to_teacher' as const,
             stripePaymentIntentId: transaction.stripePaymentIntentId,
             completedAt: new Date(),
-            notes: `Teacher payout for transaction ${transaction.id}`
+            notes: `Teacher payout for transaction ${transaction.id} via ${defaultPaymentMethod.type}: ${defaultPaymentMethod.displayName}`
           };
 
           const teacherPayout = await storage.createPaymentTransaction(teacherPayoutData);

@@ -19,7 +19,8 @@ import {
   Settings,
   Bell,
   X,
-  TestTube
+  TestTube,
+  Wallet
 } from 'lucide-react';
 import { Link } from 'wouter';
 import Navigation from '@/components/navigation';
@@ -312,6 +313,12 @@ export default function TeacherHome() {
                   <Button variant="outline" className="w-full" data-testid="button-set-availability">
                     <Calendar className="w-4 h-4 mr-2" />
                     Set Availability
+                  </Button>
+                </Link>
+                <Link href="/teacher/payment-config">
+                  <Button variant="outline" className="w-full bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 border-green-200" data-testid="button-payment-settings">
+                    <Wallet className="w-4 h-4 mr-2" />
+                    Payment Settings
                   </Button>
                 </Link>
                 <Button variant="outline" className="w-full" data-testid="button-view-analytics">
