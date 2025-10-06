@@ -219,13 +219,8 @@ export default function AdminDashboard() {
           if (usersResponse.ok) {
             data = await usersResponse.json();
           } else {
-            // Mock data as fallback
-            data = [
-              { id: '1', firstName: 'Alice', lastName: 'Johnson', email: 'alice@example.com', role: 'student', createdAt: '2024-01-15' },
-              { id: '2', firstName: 'Bob', lastName: 'Smith', email: 'bob@example.com', role: 'mentor', createdAt: '2024-01-14' },
-              { id: '3', firstName: 'Carol', lastName: 'Davis', email: 'carol@example.com', role: 'student', createdAt: '2024-01-13' },
-              { id: '4', firstName: 'David', lastName: 'Wilson', email: 'david@example.com', role: 'admin', createdAt: '2024-01-12' }
-            ];
+            console.error('Failed to fetch users');
+            data = [];
           }
           break;
           
@@ -234,34 +229,29 @@ export default function AdminDashboard() {
           if (classesResponse.ok) {
             data = await classesResponse.json();
           } else {
-            // Mock data as fallback
-            data = [
-              { id: '1', subject: 'JavaScript Basics', mentor: 'Sarah Johnson', student: 'Alice Johnson', scheduledAt: '2024-01-20 10:00', status: 'completed' },
-              { id: '2', subject: 'Python Fundamentals', mentor: 'Mike Chen', student: 'Bob Smith', scheduledAt: '2024-01-21 14:00', status: 'scheduled' },
-              { id: '3', subject: 'HTML & CSS', mentor: 'Alex Rivera', student: 'Carol Davis', scheduledAt: '2024-01-22 16:00', status: 'scheduled' },
-              { id: '4', subject: 'React Components', mentor: 'Emma Watson', student: 'David Wilson', scheduledAt: '2024-01-19 11:00', status: 'completed' }
-            ];
+            console.error('Failed to fetch bookings');
+            data = [];
           }
           break;
           
         case 'revenue':
-          // Mock revenue data
-          data = [
-            { period: 'January 2024', amount: 15680, transactions: 89, avgPerSession: 176 },
-            { period: 'December 2023', amount: 18420, transactions: 102, avgPerSession: 180 },
-            { period: 'November 2023', amount: 12340, transactions: 67, avgPerSession: 184 },
-            { period: 'October 2023', amount: 14560, transactions: 78, avgPerSession: 187 }
-          ];
+          const revenueResponse = await fetch('/api/admin/revenue-history');
+          if (revenueResponse.ok) {
+            data = await revenueResponse.json();
+          } else {
+            console.error('Failed to fetch revenue data');
+            data = [];
+          }
           break;
           
         case 'performance':
-          // Mock performance data
-          data = [
-            { metric: 'Average Rating', value: '4.7/5', trend: '+0.2 from last month' },
-            { metric: 'Session Completion Rate', value: '94.2%', trend: '+1.5% from last month' },
-            { metric: 'Student Satisfaction', value: '91%', trend: '+3% from last month' },
-            { metric: 'Mentor Response Time', value: '< 2 hours', trend: 'Improved by 30 minutes' }
-          ];
+          const performanceResponse = await fetch('/api/admin/performance-metrics');
+          if (performanceResponse.ok) {
+            data = await performanceResponse.json();
+          } else {
+            console.error('Failed to fetch performance metrics');
+            data = [];
+          }
           break;
           
         default:
@@ -1520,29 +1510,15 @@ export default function AdminDashboard() {
               </div>
               
               <div className="space-y-4">
-                <h4 className="font-medium text-lg">🔒 Security & Monitoring</h4>
-                
-                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span className="font-medium">System Status: Online</span>
-                  </div>
-                  <p className="text-sm text-gray-600">All services running normally</p>
-                </div>
-                
-                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <h5 className="font-medium mb-2">🔒 Security Level: High</h5>
-                  <div className="space-y-1">
-                    <p className="text-sm text-gray-600">✅ SSL Certificate: Valid</p>
-                    <p className="text-sm text-gray-600">✅ Two-Factor Auth: Enabled</p>
-                    <p className="text-sm text-gray-600">✅ Rate Limiting: Active</p>
-                    <p className="text-sm text-gray-600">✅ CSRF Protection: On</p>
-                  </div>
-                </div>
+                <h4 className="font-medium text-lg">📊 Platform Statistics</h4>
                 
                 <div className="p-4 border rounded-lg">
-                  <h5 className="font-medium mb-2">📊 Platform Statistics</h5>
+                  <h5 className="font-medium mb-2">User Statistics</h5>
                   <div className="space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Total Users</span>
+                      <span className="font-medium">{stats.totalUsers || 0}</span>
+                    </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Total Mentors</span>
                       <span className="font-medium">{stats.totalMentors || 0}</span>
@@ -1551,9 +1527,37 @@ export default function AdminDashboard() {
                       <span className="text-sm text-gray-600">Total Students</span>
                       <span className="font-medium">{stats.totalStudents || 0}</span>
                     </div>
+                  </div>
+                </div>
+                
+                <div className="p-4 border rounded-lg">
+                  <h5 className="font-medium mb-2">Booking Statistics</h5>
+                  <div className="space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Total Bookings</span>
+                      <span className="font-medium">{stats.totalBookings || 0}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Completed Bookings</span>
+                      <span className="font-medium">{stats.completedBookings || 0}</span>
+                    </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Active Classes</span>
                       <span className="font-medium">{stats.activeClasses || 0}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Completion Rate</span>
+                      <span className="font-medium">{stats.completionRate?.toFixed(1) || '0'}%</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="p-4 border rounded-lg">
+                  <h5 className="font-medium mb-2">Revenue Statistics</h5>
+                  <div className="space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Monthly Revenue</span>
+                      <span className="font-medium">${stats.monthlyRevenue?.toFixed(2) || '0.00'}</span>
                     </div>
                   </div>
                 </div>
