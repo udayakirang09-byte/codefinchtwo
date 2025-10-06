@@ -1275,7 +1275,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const progressData = {
         totalClasses: studentBookings.length,
         completedClasses: completedBookings.length,
-        hoursLearned: Math.round(totalHours),
+        hoursLearned: Math.max(1, Math.round(totalHours)), // Show at least 1 hour if any classes completed
         overallProgress, // Add overall progress percentage
         achievementsCount: completedBookings.length, // Achievements = number of completed classes
         achievements: studentAchievements.map((ach: any) => ({
@@ -1750,13 +1750,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const monthlyEarnings = monthlyCompletedBookings.reduce((sum: number, b: any) => sum + 150, 0);
       
-      // Get real reviews for average rating
-      const teacherReviews = await db.select()
-        .from(reviews)
-        .where(eq(reviews.mentorId, mentorId));
+      // Get feedback from classFeedback table
+      const teacherFeedback = await db.select()
+        .from(classFeedback)
+        .where(eq(classFeedback.mentorId, mentorId));
       
-      const avgRating = teacherReviews.length > 0 
-        ? Number((teacherReviews.reduce((sum: number, r: any) => sum + r.rating, 0) / teacherReviews.length).toFixed(1))
+      const avgRating = teacherFeedback.length > 0 
+        ? Number((teacherFeedback.reduce((sum: number, r: any) => sum + r.rating, 0) / teacherFeedback.length).toFixed(1))
         : 0;
       
       const teacherStats = {
@@ -1767,8 +1767,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         upcomingSessions: scheduledBookings.length,
         completedSessions: completedBookings.length,
         averageRating: avgRating,
-        totalReviews: teacherReviews.length,
-        feedbackResponseRate: completedBookings.length > 0 ? Math.round((teacherReviews.length / completedBookings.length) * 100) : 0,
+        totalReviews: teacherFeedback.length,
+        feedbackResponseRate: completedBookings.length > 0 ? Math.round((teacherFeedback.length / completedBookings.length) * 100) : 0,
         totalHours: completedBookings.reduce((sum: number, b: any) => sum + (b.duration || 60), 0) / 60 // Convert minutes to hours
       };
       
@@ -1870,31 +1870,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json([]);
       }
       
-      // Get actual reviews from database
-      const mentorReviews = await db.select({
-        id: reviews.id,
-        rating: reviews.rating,
-        comment: reviews.comment,
-        createdAt: reviews.createdAt,
-        studentId: reviews.studentId
+      // Get feedback from classFeedback table
+      const mentorFeedback = await db.select({
+        id: classFeedback.id,
+        rating: classFeedback.rating,
+        feedback: classFeedback.feedback,
+        createdAt: classFeedback.createdAt,
+        studentId: classFeedback.studentId,
+        bookingId: classFeedback.bookingId
       })
-      .from(reviews)
-      .where(eq(reviews.mentorId, mentor.id))
-      .orderBy(reviews.createdAt);
+      .from(classFeedback)
+      .where(eq(classFeedback.mentorId, mentor.id))
+      .orderBy(classFeedback.createdAt);
       
-      // Enrich with student names
+      // Enrich with student names and booking info
       const enrichedReviews = await Promise.all(
-        mentorReviews.map(async (review: any) => {
-          const [student] = await db.select().from(students).where(eq(students.id, review.studentId)).limit(1);
+        mentorFeedback.map(async (feedback: any) => {
+          const [student] = await db.select().from(students).where(eq(students.id, feedback.studentId)).limit(1);
           const [studentUser] = student ? await db.select().from(users).where(eq(users.id, student.userId)).limit(1) : [];
+          const [booking] = await db.select().from(bookings).where(eq(bookings.id, feedback.bookingId)).limit(1);
           
           return {
-            id: review.id,
-            rating: review.rating,
-            comment: review.comment || '',
-            createdAt: review.createdAt,
+            id: feedback.id,
+            rating: feedback.rating,
+            comment: feedback.feedback || '',
+            createdAt: feedback.createdAt,
             studentName: studentUser ? `${studentUser.firstName} ${studentUser.lastName}` : 'Anonymous',
-            subject: 'General'
+            subject: booking?.subject || booking?.notes || 'General'
           };
         })
       );
