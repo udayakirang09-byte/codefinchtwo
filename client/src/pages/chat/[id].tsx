@@ -57,13 +57,10 @@ export default function ChatClass() {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (messageText: string) => {
-      return apiRequest(`/api/bookings/${classId}/messages`, {
-        method: 'POST',
-        body: JSON.stringify({
-          senderId: user?.id,
-          senderName: user?.email?.split('@')[0] || 'User',
-          message: messageText
-        })
+      return apiRequest('POST', `/api/bookings/${classId}/messages`, {
+        senderId: user?.id,
+        senderName: user?.email?.split('@')[0] || 'User',
+        message: messageText
       });
     },
     onSuccess: () => {
