@@ -51,6 +51,7 @@ import TestManagement from "./pages/admin/test-management";
 import LoadTestingGuide from "./pages/admin/load-testing-guide";
 import PaymentConfig from "./pages/admin/payment-config";
 import FinanceDashboard from "./pages/admin/finance-dashboard";
+import StorageConfig from "./pages/admin/storage-config";
 import TeacherPaymentConfig from "./pages/teacher/payment-config";
 import Forums from "./pages/forums";
 import Projects from "./pages/projects";
@@ -84,6 +85,7 @@ function Router() {
       <Route path="/admin/analytics" component={AdminAnalytics} />
       <Route path="/admin/payment-config" component={PaymentConfig} />
       <Route path="/admin/finance-dashboard" component={FinanceDashboard} />
+      <Route path="/admin/storage-config" component={StorageConfig} />
       <Route path="/admin/cloud-deployments" component={CloudDeployments} />
       <Route path="/admin/code-mapping" component={CodeMapping} />
       <Route path="/admin/test-management" component={TestManagement} />

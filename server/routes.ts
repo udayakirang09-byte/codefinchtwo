@@ -4448,6 +4448,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Azure Storage Configuration API Routes
+  app.get('/api/admin/azure-storage-config', async (req, res) => {
+    try {
+      console.log('🔧 Fetching Azure Storage configuration...');
+      const config = await storage.getAzureStorageConfig();
+      res.json(config);
+    } catch (error: any) {
+      console.error('❌ Error fetching Azure Storage config:', error);
+      res.status(500).json({ message: 'Failed to fetch Azure Storage configuration' });
+    }
+  });
+
+  app.post('/api/admin/azure-storage-config', async (req, res) => {
+    try {
+      const { storageAccountName, containerName, retentionMonths } = req.body;
+      console.log(`🔧 Updating Azure Storage config: ${storageAccountName}/${containerName}, retention: ${retentionMonths} months`);
+      
+      const config = await storage.updateAzureStorageConfig({
+        storageAccountName,
+        containerName,
+        retentionMonths,
+      });
+      
+      res.json(config);
+    } catch (error: any) {
+      console.error('❌ Error updating Azure Storage config:', error);
+      res.status(500).json({ message: 'Failed to update Azure Storage configuration' });
+    }
+  });
+
   // Payment Transaction API Routes
   app.post('/api/payment-transactions', async (req, res) => {
     try {

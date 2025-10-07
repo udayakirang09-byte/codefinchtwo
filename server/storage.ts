@@ -315,6 +315,9 @@ export interface IStorage {
   deleteMergedRecording(id: string): Promise<void>;
   deleteRecordingPartsByBooking(bookingId: string): Promise<void>;
   
+  // Azure Storage Config operations
+  updateAzureStorageConfig(config: { storageAccountName: string; containerName: string; retentionMonths: number }): Promise<any>;
+  
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1971,6 +1974,36 @@ export class DatabaseStorage implements IStorage {
     await db.update(recordingParts)
       .set({ status: 'deleted' })
       .where(eq(recordingParts.bookingId, bookingId));
+  }
+
+  // Azure Storage Config operations
+  async updateAzureStorageConfig(config: { storageAccountName: string; containerName: string; retentionMonths: number }): Promise<AzureStorageConfig> {
+    const existing = await this.getAzureStorageConfig();
+    
+    if (existing) {
+      const [updated] = await db.update(azureStorageConfig)
+        .set({
+          storageAccountName: config.storageAccountName,
+          containerName: config.containerName,
+          retentionMonths: config.retentionMonths,
+          updatedAt: new Date(),
+        })
+        .where(eq(azureStorageConfig.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const { randomUUID } = await import('crypto');
+      const [created] = await db.insert(azureStorageConfig)
+        .values({
+          id: randomUUID(),
+          storageAccountName: config.storageAccountName,
+          containerName: config.containerName,
+          retentionMonths: config.retentionMonths,
+          isActive: true,
+        })
+        .returning();
+      return created;
+    }
   }
 
 }
