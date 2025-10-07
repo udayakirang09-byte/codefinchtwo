@@ -77,6 +77,11 @@ export default function AdminDashboard() {
     transactionFeePercentage: 2
   });
 
+  const [discoverSectionConfig, setDiscoverSectionConfig] = useState({
+    isVisible: false,
+    specialCode: ''
+  });
+
   // Admin Payment Methods State
   const [adminPaymentMethods, setAdminPaymentMethods] = useState<any[]>([]);
   const [preferredPaymentMethod, setPreferredPaymentMethod] = useState('upi');
@@ -195,6 +200,12 @@ export default function AdminDashboard() {
       .then((res) => res.json())
       .then((config) => setCourseConfig(config))
       .catch(() => console.error("Failed to load course config"));
+    
+    // Load discover section configuration
+    fetch("/api/admin/discover-section-config")
+      .then((res) => res.json())
+      .then((config) => setDiscoverSectionConfig({ isVisible: config.isVisible || false, specialCode: '' }))
+      .catch(() => console.error("Failed to load discover section config"));
     
     // Load admin payment methods
     const adminUserId = localStorage.getItem('userId');
@@ -431,6 +442,37 @@ export default function AdminDashboard() {
       toast({
         title: "Error",
         description: "Error saving course configuration. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const saveDiscoverSectionConfig = async () => {
+    try {
+      const response = await fetch("/api/admin/discover-section-config", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(discoverSectionConfig)
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Discover section visibility updated successfully!",
+        });
+      } else {
+        const error = await response.json();
+        toast({
+          title: "Error",
+          description: error.error || 'Failed to save discover section configuration',
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error saving discover section config:", error);
+      toast({
+        title: "Error",
+        description: "Error saving discover section configuration. Please try again.",
         variant: "destructive",
       });
     }
@@ -1506,6 +1548,50 @@ export default function AdminDashboard() {
                     className="mt-1"
                     data-testid="input-max-session-duration"
                   />
+                </div>
+
+                <div className="p-4 border rounded-lg bg-blue-50">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium">Show "Discover Mentors" Section</span>
+                    <Switch 
+                      checked={discoverSectionConfig.isVisible}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setDiscoverSectionConfig({ ...discoverSectionConfig, isVisible: checked });
+                        } else {
+                          setDiscoverSectionConfig({ isVisible: false, specialCode: '' });
+                          saveDiscoverSectionConfig();
+                        }
+                      }}
+                      data-testid="switch-discover-section" 
+                    />
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">Controls visibility of the "Discover Amazing Mentors" section on the landing page</p>
+                  
+                  {discoverSectionConfig.isVisible && (
+                    <div className="mt-3 pt-3 border-t border-blue-200">
+                      <Label htmlFor="special-code" className="text-sm font-medium">Special Code (Required)</Label>
+                      <div className="flex gap-2 mt-2">
+                        <Input 
+                          id="special-code"
+                          type="text"
+                          placeholder="Enter CODE2025"
+                          value={discoverSectionConfig.specialCode}
+                          onChange={(e) => setDiscoverSectionConfig({ ...discoverSectionConfig, specialCode: e.target.value })}
+                          className="flex-1"
+                          data-testid="input-special-code"
+                        />
+                        <Button 
+                          onClick={saveDiscoverSectionConfig}
+                          size="sm"
+                          data-testid="button-save-discover-config"
+                        >
+                          Apply
+                        </Button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Enter the special code to enable this section</p>
+                    </div>
+                  )}
                 </div>
               </div>
               

@@ -12,6 +12,14 @@ export default function DiscoverySection() {
     queryKey: ["/api/mentors"],
   });
 
+  const { data: visibilityConfig } = useQuery<{ isVisible: boolean }>({
+    queryKey: ["/api/discover-section-visible"],
+  });
+
+  if (visibilityConfig && !visibilityConfig.isVisible) {
+    return null;
+  }
+
 
   const filters = [
     { id: "all", label: "All Mentors" },

@@ -3844,6 +3844,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Discover Mentors Section Visibility Control
+  app.get("/api/admin/discover-section-config", async (req, res) => {
+    try {
+      const config = await db.select().from(adminConfig).where(
+        eq(adminConfig.configKey, 'discover_section_visible')
+      ).limit(1);
+      
+      res.json({
+        isVisible: config[0]?.configValue === 'true',
+        specialCode: 'CODE2025'
+      });
+    } catch (error) {
+      console.error("Error loading discover section config:", error);
+      res.status(500).json({ error: "Failed to load discover section configuration" });
+    }
+  });
+
+  app.patch("/api/admin/discover-section-config", async (req, res) => {
+    try {
+      const { isVisible, specialCode } = req.body;
+      
+      if (isVisible && specialCode !== 'CODE2025') {
+        return res.status(400).json({ error: "Invalid special code. Please check with admin." });
+      }
+      
+      await db.insert(adminConfig).values({
+        configKey: 'discover_section_visible',
+        configValue: isVisible ? 'true' : 'false',
+        description: 'Controls visibility of Discover Mentors section on landing page'
+      }).onConflictDoUpdate({
+        target: adminConfig.configKey,
+        set: { configValue: isVisible ? 'true' : 'false', updatedAt: new Date() }
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error saving discover section config:", error);
+      res.status(500).json({ error: "Failed to save discover section configuration" });
+    }
+  });
+
+  // Public endpoint for checking discover section visibility
+  app.get("/api/discover-section-visible", async (req, res) => {
+    try {
+      const config = await db.select().from(adminConfig).where(
+        eq(adminConfig.configKey, 'discover_section_visible')
+      ).limit(1);
+      
+      res.json({
+        isVisible: config[0]?.configValue === 'true' || false
+      });
+    } catch (error) {
+      console.error("Error checking discover section visibility:", error);
+      res.json({ isVisible: false });
+    }
+  });
+
   // AI Analytics & Business Intelligence Routes
   app.get("/api/admin/ai-insights", async (req, res) => {
     try {
