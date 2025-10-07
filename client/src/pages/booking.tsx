@@ -78,6 +78,21 @@ export default function Booking() {
     enabled: !!mentorId,
   });
 
+  // Fetch global payment mode configuration
+  const { data: paymentModeConfig } = useQuery<{ paymentMode: 'dummy' | 'realtime' }>({
+    queryKey: ['admin-payment-mode-config'],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest('GET', '/api/admin/payment-config');
+        const result = await response.json();
+        return result as { paymentMode: 'dummy' | 'realtime' };
+      } catch (error) {
+        console.error('Failed to fetch payment mode:', error);
+        return { paymentMode: 'dummy' as const };
+      }
+    },
+  });
+
   // Fetch teacher's subject-specific fee when subject is selected
   const { data: subjectFeeData, isLoading: subjectFeeLoading, isFetching: subjectFeeFetching } = useQuery<{ fee: number | null }>({
     queryKey: ["/api/teacher-subjects", mentorId, "fee", formData.subject],
@@ -336,11 +351,19 @@ export default function Booking() {
       sessionCost: sessionCost
     };
     
-    // Store booking details in sessionStorage for checkout page
-    sessionStorage.setItem('pendingBooking', JSON.stringify(bookingDetails));
+    // Check payment mode to determine flow
+    const paymentMode = paymentModeConfig?.paymentMode || 'dummy';
     
-    // Redirect to checkout page for payment
-    navigate(`/booking-checkout?mentorId=${mentorId}&amount=${sessionCost}`);
+    if (paymentMode === 'dummy') {
+      // Dummy mode: Create booking directly without payment
+      console.log('💳 Dummy payment mode: Creating booking directly without payment');
+      bookingMutation.mutate(bookingDetails);
+    } else {
+      // Realtime mode: Store booking details and redirect to payment checkout
+      console.log('💳 Realtime payment mode: Redirecting to Stripe checkout');
+      sessionStorage.setItem('pendingBooking', JSON.stringify(bookingDetails));
+      navigate(`/booking-checkout?mentorId=${mentorId}&amount=${sessionCost}`);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
