@@ -307,6 +307,7 @@ export interface IStorage {
   updateRecordingPartsMergeStatus(bookingId: string, status: string): Promise<void>;
   createMergedRecording(recording: any): Promise<any>;
   getMergedRecordingByBooking(bookingId: string): Promise<any | undefined>;
+  getMergedRecordingsForStudent(studentId: string): Promise<any[]>;
   getAzureStorageConfig(): Promise<any | undefined>;
   getBookingsForMerge(twentyMinutesAgo: Date): Promise<Booking[]>;
   
@@ -1912,6 +1913,32 @@ export class DatabaseStorage implements IStorage {
     const [recording] = await db.select().from(mergedRecordings)
       .where(eq(mergedRecordings.bookingId, bookingId));
     return recording;
+  }
+
+  async getMergedRecordingsForStudent(studentId: string): Promise<Array<MergedRecording & { booking: BookingWithDetails }>> {
+    const recordings = await db.select()
+      .from(mergedRecordings)
+      .innerJoin(bookings, eq(mergedRecordings.bookingId, bookings.id))
+      .where(
+        and(
+          eq(bookings.studentId, studentId),
+          eq(mergedRecordings.status, 'active')
+        )
+      )
+      .orderBy(desc(bookings.scheduledAt));
+
+    const results = [];
+    for (const row of recordings) {
+      const booking = await this.getBooking(row.bookings.id);
+      if (booking) {
+        results.push({
+          ...row.merged_recordings,
+          booking
+        });
+      }
+    }
+    
+    return results;
   }
 
   async getAzureStorageConfig(): Promise<AzureStorageConfig | undefined> {

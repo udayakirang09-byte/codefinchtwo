@@ -720,6 +720,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Student routes
+  app.get("/api/students/user/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const student = await storage.getStudentByUserId(userId);
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+      res.json(student);
+    } catch (error) {
+      console.error("Error fetching student by user ID:", error);
+      res.status(500).json({ message: "Failed to fetch student" });
+    }
+  });
+
   app.get("/api/students/:id", async (req, res) => {
     try {
       const { id } = req.params;
@@ -5470,6 +5484,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching recording parts:', error);
       res.status(500).json({ message: 'Failed to fetch recording parts' });
+    }
+  });
+
+  // Get merged recordings for student - SECURED
+  app.get('/api/recordings/merged/:studentId', authenticateSession, async (req: any, res) => {
+    try {
+      const { studentId } = req.params;
+
+      // Authorization: Must be the student themselves or admin
+      const isOwnStudent = req.user.role === 'student' && req.user.id === studentId;
+      const isAdmin = req.user.role === 'admin';
+
+      if (!isOwnStudent && !isAdmin) {
+        return res.status(403).json({ message: 'Not authorized to view recordings for this student' });
+      }
+
+      const recordings = await storage.getMergedRecordingsForStudent(studentId);
+      res.json(recordings);
+    } catch (error) {
+      console.error('Error fetching merged recordings:', error);
+      res.status(500).json({ message: 'Failed to fetch merged recordings' });
     }
   });
 

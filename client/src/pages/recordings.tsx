@@ -12,16 +12,18 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 
-interface StudentRecording {
+interface MergedRecording {
   id: string;
   bookingId: string;
-  recordingUrl: string;
+  blobPath: string;
+  fileSizeBytes: number;
+  durationSeconds: number;
   status: string;
-  startedAt: Date;
-  endedAt: Date;
-  createdAt: Date;
+  mergedAt: Date;
+  expiresAt: Date;
   booking: {
     id: string;
+    studentId: string;
     mentorId: string;
     scheduledAt: Date;
     duration: number;
@@ -50,21 +52,34 @@ interface StudentRecording {
 
 export default function StudentRecordings() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedRecording, setSelectedRecording] = useState<StudentRecording | null>(null);
+  const [selectedRecording, setSelectedRecording] = useState<MergedRecording | null>(null);
+  const [selectedRecordingSasUrl, setSelectedRecordingSasUrl] = useState<string>("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
 
-  // Fetch student recordings
-  const { data: recordings, isLoading, error } = useQuery({
-    queryKey: ['/api/students', user?.id, 'recordings'],
+  // First, fetch student record for the logged-in user
+  const { data: student } = useQuery({
+    queryKey: ['/api/students/user', user?.id],
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
-      const response = await fetch(`/api/students/${user.id}/recordings`);
-      if (!response.ok) throw new Error('Failed to fetch recordings');
-      return response.json() as Promise<StudentRecording[]>;
+      const response = await fetch(`/api/students/user/${user.id}`);
+      if (!response.ok) throw new Error('Failed to fetch student record');
+      return response.json();
     },
     enabled: !!user?.id && isAuthenticated,
+  });
+
+  // Fetch merged recordings for student
+  const { data: recordings, isLoading, error } = useQuery({
+    queryKey: ['/api/recordings/merged', student?.id],
+    queryFn: async () => {
+      if (!student?.id) throw new Error('Student record not found');
+      const response = await fetch(`/api/recordings/merged/${student.id}`);
+      if (!response.ok) throw new Error('Failed to fetch recordings');
+      return response.json() as Promise<MergedRecording[]>;
+    },
+    enabled: !!student?.id && isAuthenticated,
   });
 
   const filteredRecordings = recordings?.filter(recording =>
@@ -72,10 +87,10 @@ export default function StudentRecordings() {
     `${recording.booking.mentor.user.firstName} ${recording.booking.mentor.user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  const handleWatchRecording = async (recording: StudentRecording) => {
+  const handleWatchRecording = async (recording: MergedRecording) => {
     try {
-      // Validate access before playing
-      const response = await fetch(`/api/recordings/${recording.id}?studentUserId=${user?.id}&userRole=student`);
+      // Generate SAS URL for playback
+      const response = await fetch(`/api/recordings/sas-url?blobPath=${encodeURIComponent(recording.blobPath)}&bookingId=${recording.bookingId}`);
       
       if (!response.ok) {
         if (response.status === 403) {
@@ -90,8 +105,9 @@ export default function StudentRecordings() {
         return;
       }
 
-      const recordingData = await response.json();
-      setSelectedRecording(recordingData);
+      const { sasUrl } = await response.json();
+      setSelectedRecording(recording);
+      setSelectedRecordingSasUrl(sasUrl);
       setIsDialogOpen(true);
     } catch (error) {
       console.error('Error accessing recording:', error);
@@ -103,10 +119,8 @@ export default function StudentRecordings() {
     }
   };
 
-  const formatDuration = (startedAt: Date, endedAt: Date | null) => {
-    if (!endedAt) return "Unknown duration";
-    const diffMs = new Date(endedAt).getTime() - new Date(startedAt).getTime();
-    const minutes = Math.floor(diffMs / (1000 * 60));
+  const formatDuration = (durationSeconds: number) => {
+    const minutes = Math.floor(durationSeconds / 60);
     const hours = Math.floor(minutes / 60);
     if (hours > 0) {
       return `${hours}h ${minutes % 60}m`;
@@ -265,11 +279,11 @@ export default function StudentRecordings() {
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Clock className="h-4 w-4" />
                       <span data-testid={`text-recording-duration-${recording.id}`}>
-                        {formatDuration(recording.startedAt, recording.endedAt)}
+                        {formatDuration(recording.durationSeconds)}
                       </span>
                     </div>
                     <div className="text-xs text-gray-500">
-                      Recorded {formatDistanceToNow(new Date(recording.createdAt), { addSuffix: true })}
+                      Recorded {formatDistanceToNow(new Date(recording.mergedAt), { addSuffix: true })}
                     </div>
                   </div>
                   
@@ -301,24 +315,23 @@ export default function StudentRecordings() {
               </DialogDescription>
             </DialogHeader>
             
-            {selectedRecording?.recordingUrl && (
+            {selectedRecordingSasUrl && selectedRecording && (
               <div className="mt-4">
                 <video
                   controls
                   className="w-full h-auto rounded-lg bg-black"
                   data-testid="video-recording-player"
+                  src={selectedRecordingSasUrl}
                 >
-                  <source src={selectedRecording.recordingUrl} type="video/mp4" />
-                  <source src={selectedRecording.recordingUrl} type="video/webm" />
                   Your browser does not support the video tag.
                 </video>
                 
                 <div className="mt-4 flex justify-between items-center text-sm text-gray-600">
-                  <span>Duration: {formatDuration(selectedRecording.startedAt, selectedRecording.endedAt)}</span>
+                  <span>Duration: {formatDuration(selectedRecording.durationSeconds)}</span>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => window.open(selectedRecording.recordingUrl, '_blank')}
+                    onClick={() => window.open(selectedRecordingSasUrl, '_blank')}
                     data-testid="button-download-recording"
                   >
                     <Download className="h-4 w-4 mr-2" />
