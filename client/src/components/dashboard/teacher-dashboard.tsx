@@ -2,10 +2,13 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Video, MessageCircle, Users, BookOpen, DollarSign, Bell, TrendingUp, CreditCard, CheckCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Calendar, Clock, Video, MessageCircle, Users, BookOpen, DollarSign, Bell, TrendingUp, CreditCard, CheckCircle, Save, Edit2 } from "lucide-react";
 import { formatDistanceToNow, addHours, addMinutes } from "date-fns";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface UpcomingClass {
   id: string;
@@ -28,10 +31,13 @@ interface CompletedClass {
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showEarningsReport, setShowEarningsReport] = useState(false);
   const [showStudentFeedback, setShowStudentFeedback] = useState(false);
   const [showCompletedClasses, setShowCompletedClasses] = useState(false);
+  const [editingSubjectId, setEditingSubjectId] = useState<string | null>(null);
+  const [editingFee, setEditingFee] = useState<string>("");
   
   // Fetch teacher's classes from API
   const { data: teacherClasses = [], isLoading: classesLoading, error: classesError } = useQuery({
@@ -122,6 +128,54 @@ export default function TeacherDashboard() {
       return analyticsResponse.json();
     },
     enabled: !!user?.id
+  });
+
+  // Fetch teacher subjects with fees
+  const { data: mentorData } = useQuery({
+    queryKey: ['mentor-by-user', user?.id],
+    queryFn: async () => {
+      const mentorResponse = await fetch(`/api/mentors/by-user/${user?.id}`);
+      if (!mentorResponse.ok) {
+        return null;
+      }
+      return mentorResponse.json();
+    },
+    enabled: !!user?.id
+  });
+
+  const { data: teacherSubjects = [], isLoading: subjectsLoading } = useQuery({
+    queryKey: ['teacher-subjects-fees', mentorData?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/teacher-subjects/${mentorData?.id}/fees`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch teacher subjects');
+      }
+      return response.json();
+    },
+    enabled: !!mentorData?.id
+  });
+
+  // Mutation for updating subject fee
+  const updateSubjectFeeMutation = useMutation({
+    mutationFn: async ({ subjectId, classFee }: { subjectId: string; classFee: number }) => {
+      return apiRequest('PATCH', `/api/teacher-subjects/${subjectId}/fee`, { classFee });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Class fee updated successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ['teacher-subjects-fees', mentorData?.id] });
+      setEditingSubjectId(null);
+      setEditingFee("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update class fee",
+        variant: "destructive",
+      });
+    }
   });
   
   const upcomingClasses = Array.isArray(teacherClasses) ? teacherClasses.filter((booking: any) => {
@@ -432,6 +486,131 @@ export default function TeacherDashboard() {
                 </div>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Subject Fee Configuration Section */}
+        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-amber-500 to-orange-600 text-white">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <DollarSign className="h-6 w-6" />
+              Class Fee Configuration
+              <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30">
+                {teacherSubjects.length} subjects
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {subjectsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-gray-500">Loading subjects...</div>
+              </div>
+            ) : teacherSubjects.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="bg-amber-50 rounded-2xl p-8 border border-amber-200">
+                  <DollarSign className="h-16 w-16 text-amber-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">No Subjects Configured</h3>
+                  <p className="text-gray-600">
+                    Add subjects to your profile to configure class fees.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {teacherSubjects.map((subject: any) => (
+                  <div 
+                    key={subject.id} 
+                    className="bg-gradient-to-r from-gray-50 to-amber-50 border border-amber-200 rounded-xl p-5 hover:shadow-md transition-all duration-200"
+                    data-testid={`subject-fee-${subject.id}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-800 text-lg mb-1">{subject.subject}</h4>
+                        <p className="text-sm text-gray-600">
+                          Experience: {subject.experience}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {editingSubjectId === subject.id ? (
+                          <>
+                            <Input
+                              type="number"
+                              value={editingFee}
+                              onChange={(e) => setEditingFee(e.target.value)}
+                              placeholder="Enter fee"
+                              className="w-32"
+                              data-testid={`input-fee-${subject.id}`}
+                            />
+                            <Button
+                              onClick={() => {
+                                const fee = parseFloat(editingFee);
+                                if (isNaN(fee) || fee < 0) {
+                                  toast({
+                                    title: "Invalid Fee",
+                                    description: "Please enter a valid positive number",
+                                    variant: "destructive",
+                                  });
+                                  return;
+                                }
+                                updateSubjectFeeMutation.mutate({ 
+                                  subjectId: subject.id, 
+                                  classFee: fee 
+                                });
+                              }}
+                              disabled={updateSubjectFeeMutation.isPending}
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700"
+                              data-testid={`button-save-fee-${subject.id}`}
+                            >
+                              <Save className="h-4 w-4 mr-1" />
+                              {updateSubjectFeeMutation.isPending ? "Saving..." : "Save"}
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                setEditingSubjectId(null);
+                                setEditingFee("");
+                              }}
+                              variant="outline"
+                              size="sm"
+                              data-testid={`button-cancel-fee-${subject.id}`}
+                            >
+                              Cancel
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <div className="text-right">
+                              <div className="text-2xl font-bold text-green-600">
+                                ₹{subject.classFee || "500.00"}
+                              </div>
+                              <div className="text-xs text-gray-500">per class</div>
+                            </div>
+                            <Button
+                              onClick={() => {
+                                setEditingSubjectId(subject.id);
+                                setEditingFee(subject.classFee || "500.00");
+                              }}
+                              variant="outline"
+                              size="sm"
+                              data-testid={`button-edit-fee-${subject.id}`}
+                            >
+                              <Edit2 className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Note:</strong> These fees will be used when students book classes for specific subjects. 
+                Course fees can still be set separately when creating courses.
+              </p>
+            </div>
           </CardContent>
         </Card>
 

@@ -5542,6 +5542,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   console.log('✅ Recording Parts API routes registered successfully!');
 
+  // Teacher Subject Fee Routes
+  // Get teacher subjects with fees - SECURED (mentors only)
+  app.get('/api/teacher-subjects/:mentorId/fees', authenticateSession, async (req: any, res) => {
+    try {
+      const { mentorId } = req.params;
+
+      // Authorization: Must be the mentor themselves or admin
+      const isOwnMentor = req.user.role === 'mentor' && req.user.id === mentorId;
+      const isAdmin = req.user.role === 'admin';
+
+      if (!isOwnMentor && !isAdmin) {
+        return res.status(403).json({ message: 'Not authorized to view subject fees for this mentor' });
+      }
+
+      const subjects = await storage.getTeacherSubjectsByMentor(mentorId);
+      res.json(subjects);
+    } catch (error) {
+      console.error('Error fetching teacher subject fees:', error);
+      res.status(500).json({ message: 'Failed to fetch teacher subject fees' });
+    }
+  });
+
+  // Update teacher subject fee - SECURED (mentors only)
+  app.patch('/api/teacher-subjects/:subjectId/fee', authenticateSession, async (req: any, res) => {
+    try {
+      const { subjectId } = req.params;
+      const { classFee } = req.body;
+
+      if (classFee === undefined || classFee === null) {
+        return res.status(400).json({ message: 'classFee is required' });
+      }
+
+      const fee = parseFloat(classFee);
+      if (isNaN(fee) || fee < 0) {
+        return res.status(400).json({ message: 'classFee must be a valid positive number' });
+      }
+
+      // Get the subject to verify ownership
+      const subjects = await storage.getTeacherSubjectsByMentor(req.user.id);
+      const subject = subjects.find(s => s.id === subjectId);
+
+      if (!subject) {
+        return res.status(404).json({ message: 'Subject not found or not authorized' });
+      }
+
+      // Authorization check
+      if (req.user.role !== 'mentor' || subject.mentorId !== req.user.id) {
+        return res.status(403).json({ message: 'Not authorized to update fees for this subject' });
+      }
+
+      await storage.updateTeacherSubjectFee(subjectId, fee);
+      res.json({ success: true, message: 'Subject fee updated successfully' });
+    } catch (error) {
+      console.error('Error updating teacher subject fee:', error);
+      res.status(500).json({ message: 'Failed to update teacher subject fee' });
+    }
+  });
+
+  // Get teacher subject fee by mentor and subject name - PUBLIC (needed for booking)
+  app.get('/api/teacher-subjects/:mentorId/fee/:subject', async (req: any, res) => {
+    try {
+      const { mentorId, subject } = req.params;
+      const fee = await storage.getTeacherSubjectFee(mentorId, subject);
+      res.json({ fee });
+    } catch (error) {
+      console.error('Error fetching teacher subject fee:', error);
+      res.status(500).json({ message: 'Failed to fetch teacher subject fee' });
+    }
+  });
+
+  console.log('✅ Teacher Subject Fee API routes registered successfully!');
+
+  // Admin Payment Configuration Routes
+  // Get admin payment configuration - PUBLIC (needed for booking)
+  app.get('/api/admin/payment-config', async (req: any, res) => {
+    try {
+      const config = await storage.getAdminPaymentConfig();
+      if (!config) {
+        // Default to dummy mode if not configured
+        return res.json({ paymentMode: 'dummy' });
+      }
+      res.json({ paymentMode: config.paymentMode });
+    } catch (error) {
+      console.error('Error fetching admin payment config:', error);
+      res.status(500).json({ message: 'Failed to fetch admin payment config' });
+    }
+  });
+
+  // Update admin payment configuration - SECURED (admin only)
+  app.put('/api/admin/payment-config', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      const { paymentMode } = req.body;
+      if (!paymentMode || !['dummy', 'realtime'].includes(paymentMode)) {
+        return res.status(400).json({ message: 'paymentMode must be either "dummy" or "realtime"' });
+      }
+
+      await storage.updateAdminPaymentConfig(paymentMode);
+      res.json({ success: true, message: 'Payment mode updated successfully', paymentMode });
+    } catch (error) {
+      console.error('Error updating admin payment config:', error);
+      res.status(500).json({ message: 'Failed to update admin payment config' });
+    }
+  });
+
+  console.log('✅ Admin Payment Configuration API routes registered successfully!');
+
   const httpServer = createServer(app);
   return httpServer;
 }
