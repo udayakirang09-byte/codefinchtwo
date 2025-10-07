@@ -70,10 +70,18 @@ import {
   type Subject,
   teacherAudioMetrics,
   homeSectionControls,
+  azureStorageConfig,
+  recordingParts,
+  mergedRecordings,
   type TeacherAudioMetrics,
   type InsertTeacherAudioMetrics,
   type HomeSectionControls,
   type InsertHomeSectionControls,
+  type AzureStorageConfig,
+  type RecordingPart,
+  type InsertRecordingPart,
+  type MergedRecording,
+  type InsertMergedRecording,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -291,6 +299,14 @@ export interface IStorage {
   getHomeSectionControls(): Promise<HomeSectionControls[]>;
   updateHomeSectionControl(sectionType: string, sectionName: string, isEnabled: boolean): Promise<void>;
   getHomeSectionControlsForType(sectionType: 'teacher' | 'student'): Promise<HomeSectionControls[]>;
+  
+  // Recording Parts operations (Azure Storage)
+  createRecordingPart(part: any): Promise<any>;
+  getRecordingPartsByBooking(bookingId: string): Promise<any[]>;
+  updateRecordingPartStatus(id: string, status: string): Promise<void>;
+  createMergedRecording(recording: any): Promise<any>;
+  getMergedRecordingByBooking(bookingId: string): Promise<any | undefined>;
+  getAzureStorageConfig(): Promise<any | undefined>;
   
 }
 
@@ -1847,6 +1863,52 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(homeSectionControls)
       .where(eq(homeSectionControls.sectionType, sectionType))
       .orderBy(homeSectionControls.displayOrder);
+  }
+
+  // Recording Parts operations (Azure Storage)
+  async createRecordingPart(part: any): Promise<any> {
+    const { randomUUID } = await import('crypto');
+    const partWithId = {
+      ...part,
+      id: part.id || randomUUID()
+    };
+    const [created] = await db.insert(recordingParts).values(partWithId).returning();
+    return created;
+  }
+
+  async getRecordingPartsByBooking(bookingId: string): Promise<RecordingPart[]> {
+    return await db.select().from(recordingParts)
+      .where(eq(recordingParts.bookingId, bookingId))
+      .orderBy(recordingParts.partNumber);
+  }
+
+  async updateRecordingPartStatus(id: string, status: string): Promise<void> {
+    await db.update(recordingParts)
+      .set({ status })
+      .where(eq(recordingParts.id, id));
+  }
+
+  async createMergedRecording(recording: any): Promise<any> {
+    const { randomUUID } = await import('crypto');
+    const recordingWithId = {
+      ...recording,
+      id: recording.id || randomUUID()
+    };
+    const [created] = await db.insert(mergedRecordings).values(recordingWithId).returning();
+    return created;
+  }
+
+  async getMergedRecordingByBooking(bookingId: string): Promise<MergedRecording | undefined> {
+    const [recording] = await db.select().from(mergedRecordings)
+      .where(eq(mergedRecordings.bookingId, bookingId));
+    return recording;
+  }
+
+  async getAzureStorageConfig(): Promise<AzureStorageConfig | undefined> {
+    const [config] = await db.select().from(azureStorageConfig)
+      .where(eq(azureStorageConfig.isActive, true))
+      .limit(1);
+    return config;
   }
 
 }

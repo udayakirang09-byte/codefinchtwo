@@ -2,6 +2,7 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { azureStorage } from "./azureStorage";
 import { z } from "zod";
 import { eq, desc, and, gte, lte, or, sql } from "drizzle-orm";
 import { db } from "./db";
@@ -5350,6 +5351,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   console.log('✅ Teacher Audio Analytics API routes registered successfully!');
+
+  // Validation schema for recording upload
+  const uploadRecordingSchema = z.object({
+    bookingId: z.string().uuid(),
+    partNumber: z.string().transform(val => parseInt(val)).refine(val => val > 0 && val < 1000, {
+      message: 'Part number must be between 1 and 999'
+    })
+  });
+
+  // Recording Parts Upload API (Azure Storage) - SECURED
+  app.post('/api/recordings/upload-part', authenticateSession, express.raw({ type: 'video/webm', limit: '100mb' }), async (req: any, res) => {
+    try {
+      // Validate query parameters
+      const validation = uploadRecordingSchema.safeParse(req.query);
+      if (!validation.success) {
+        return res.status(400).json({ message: 'Invalid parameters', errors: validation.error.errors });
+      }
+
+      const { bookingId, partNumber } = validation.data;
+
+      // Fetch booking to verify ownership
+      const booking = await storage.getBooking(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: 'Booking not found' });
+      }
+
+      // Authorization: Must be student of booking, mentor of booking, or admin
+      const isStudent = req.user.role === 'student' && booking.studentId === req.user.id;
+      const isMentor = req.user.role === 'mentor' && booking.mentorId === req.user.id;
+      const isAdmin = req.user.role === 'admin';
+
+      if (!isStudent && !isMentor && !isAdmin) {
+        return res.status(403).json({ message: 'Not authorized to upload recordings for this booking' });
+      }
+
+      // Use studentId from booking (server-side source of truth) instead of request params
+      const studentId = booking.studentId;
+
+      const uploadResult = await azureStorage.uploadRecordingPart({
+        studentId,
+        classId: bookingId,
+        partNumber,
+        buffer: req.body,
+        contentType: 'video/webm',
+      });
+
+      const recordingPart = await storage.createRecordingPart({
+        bookingId,
+        studentId,
+        partNumber,
+        blobPath: uploadResult.blobPath,
+        blobUrl: uploadResult.url,
+        fileSizeBytes: uploadResult.size,
+        status: 'uploaded',
+      });
+
+      console.log(`📹 Uploaded recording part: ${uploadResult.blobPath} (${uploadResult.size} bytes) by user ${req.user.id}`);
+      res.json({ success: true, recordingPart, uploadResult });
+    } catch (error) {
+      console.error('Error uploading recording part:', error);
+      res.status(500).json({ message: 'Failed to upload recording part', error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
+  // Get recording parts for a booking - SECURED
+  app.get('/api/recordings/parts/:bookingId', authenticateSession, async (req: any, res) => {
+    try {
+      const { bookingId } = req.params;
+
+      // Fetch booking to verify ownership
+      const booking = await storage.getBooking(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: 'Booking not found' });
+      }
+
+      // Authorization: Must be student of booking, mentor of booking, or admin
+      const isStudent = req.user.role === 'student' && booking.studentId === req.user.id;
+      const isMentor = req.user.role === 'mentor' && booking.mentorId === req.user.id;
+      const isAdmin = req.user.role === 'admin';
+
+      if (!isStudent && !isMentor && !isAdmin) {
+        return res.status(403).json({ message: 'Not authorized to view recordings for this booking' });
+      }
+
+      const parts = await storage.getRecordingPartsByBooking(bookingId);
+      res.json(parts);
+    } catch (error) {
+      console.error('Error fetching recording parts:', error);
+      res.status(500).json({ message: 'Failed to fetch recording parts' });
+    }
+  });
+
+  // Generate SAS URL for playback - SECURED
+  app.get('/api/recordings/sas-url', authenticateSession, async (req: any, res) => {
+    try {
+      const { blobPath, bookingId } = req.query;
+      
+      if (!blobPath || !bookingId) {
+        return res.status(400).json({ message: 'blobPath and bookingId parameters required' });
+      }
+
+      // Fetch booking to verify ownership
+      const booking = await storage.getBooking(bookingId as string);
+      if (!booking) {
+        return res.status(404).json({ message: 'Booking not found' });
+      }
+
+      // Authorization: Must be student of booking, mentor of booking, or admin
+      const isStudent = req.user.role === 'student' && booking.studentId === req.user.id;
+      const isMentor = req.user.role === 'mentor' && booking.mentorId === req.user.id;
+      const isAdmin = req.user.role === 'admin';
+
+      if (!isStudent && !isMentor && !isAdmin) {
+        return res.status(403).json({ message: 'Not authorized to access recordings for this booking' });
+      }
+
+      const sasUrl = await azureStorage.generateSasUrl(blobPath as string, 60);
+      res.json({ sasUrl });
+    } catch (error) {
+      console.error('Error generating SAS URL:', error);
+      res.status(500).json({ message: 'Failed to generate SAS URL' });
+    }
+  });
+
+  console.log('✅ Recording Parts API routes registered successfully!');
 
   const httpServer = createServer(app);
   return httpServer;
