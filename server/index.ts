@@ -5,6 +5,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import cors from "cors";
 import { RecordingScheduler } from "./recordingScheduler";
+import { RetentionScheduler } from "./retentionScheduler";
 import { storage } from "./storage";
 
 const app = express();
@@ -91,6 +92,10 @@ app.use((req, res, next) => {
   // Start recording merge scheduler
   const recordingScheduler = new RecordingScheduler(storage);
   recordingScheduler.start();
+  
+  // Start retention scheduler
+  const retentionScheduler = new RetentionScheduler(storage);
+  retentionScheduler.start();
   
   // Setup WebSocket server for video chat signaling on specific path
   const wss = new WebSocketServer({ 

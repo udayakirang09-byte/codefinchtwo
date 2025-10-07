@@ -52,15 +52,16 @@ export class RecordingScheduler {
 
     for (const booking of pendingBookings) {
       try {
-        await this.mergeBookingRecording(booking.id, booking.studentId);
+        await this.mergeBookingRecording(booking);
       } catch (error) {
         console.error(`❌ Failed to merge booking ${booking.id}:`, error);
       }
     }
   }
 
-  private async mergeBookingRecording(bookingId: string, studentId: string) {
+  private async mergeBookingRecording(booking: any) {
     const startTime = Date.now();
+    const { id: bookingId, studentId, mentorId, scheduledAt } = booking;
     
     const parts = await this.storage.getRecordingPartsByBooking(bookingId);
 
@@ -104,13 +105,24 @@ export class RecordingScheduler {
 
       const totalSize = parts.reduce((sum, part) => sum + (part.fileSizeBytes || 0), 0);
 
+      // Get retention period from config
+      const config = await this.storage.getAzureStorageConfig();
+      const retentionMonths = config?.retentionMonths || 6; // Default to 6 months
+      
+      // Calculate expiration date (classDate + retention months)
+      const classDate = new Date(scheduledAt);
+      const expiresAt = new Date(classDate);
+      expiresAt.setMonth(expiresAt.getMonth() + retentionMonths);
+
       await this.storage.createMergedRecording({
         bookingId,
         studentId,
+        mentorId,
         blobPath: mergeResult.blobPath,
         blobUrl: mergeResult.url,
         fileSizeBytes: totalSize,
         partCount: parts.length,
+        expiresAt,
         status: 'completed',
       });
       

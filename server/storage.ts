@@ -310,6 +310,11 @@ export interface IStorage {
   getAzureStorageConfig(): Promise<any | undefined>;
   getBookingsForMerge(twentyMinutesAgo: Date): Promise<Booking[]>;
   
+  // Recording Retention operations
+  getExpiredRecordings(): Promise<any[]>;
+  deleteMergedRecording(id: string): Promise<void>;
+  deleteRecordingPartsByBooking(bookingId: string): Promise<void>;
+  
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1942,6 +1947,30 @@ export class DatabaseStorage implements IStorage {
     }
     
     return bookingsWithParts;
+  }
+
+  // Recording Retention operations
+  async getExpiredRecordings(): Promise<MergedRecording[]> {
+    const now = new Date();
+    return await db.select().from(mergedRecordings)
+      .where(
+        and(
+          sql`${mergedRecordings.expiresAt} <= ${now}`,
+          eq(mergedRecordings.status, 'active')
+        )
+      );
+  }
+
+  async deleteMergedRecording(id: string): Promise<void> {
+    await db.update(mergedRecordings)
+      .set({ status: 'deleted' })
+      .where(eq(mergedRecordings.id, id));
+  }
+
+  async deleteRecordingPartsByBooking(bookingId: string): Promise<void> {
+    await db.update(recordingParts)
+      .set({ status: 'deleted' })
+      .where(eq(recordingParts.bookingId, bookingId));
   }
 
 }
