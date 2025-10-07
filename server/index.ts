@@ -4,6 +4,8 @@ import { WebSocketServer } from "ws";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import cors from "cors";
+import { RecordingScheduler } from "./recordingScheduler";
+import { storage } from "./storage";
 
 const app = express();
 
@@ -85,6 +87,10 @@ app.use((req, res, next) => {
 (async () => {
   const httpServer = createServer(app);
   const server = await registerRoutes(app);
+  
+  // Start recording merge scheduler
+  const recordingScheduler = new RecordingScheduler(storage);
+  recordingScheduler.start();
   
   // Setup WebSocket server for video chat signaling on specific path
   const wss = new WebSocketServer({ 

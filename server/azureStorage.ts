@@ -59,15 +59,18 @@ export interface MergedRecordingInfo {
 }
 
 export class AzureStorageService {
-  private container: ContainerClient;
+  private container: ContainerClient | null = null;
 
-  constructor() {
-    this.container = getContainerClient();
+  private getContainer(): ContainerClient {
+    if (!this.container) {
+      this.container = getContainerClient();
+    }
+    return this.container;
   }
 
   async uploadRecordingPart(upload: RecordingPartUpload): Promise<RecordingPartInfo> {
     const blobPath = `${upload.studentId}_${upload.classId}_${upload.partNumber}.webm`;
-    const blockBlobClient = this.container.getBlockBlobClient(blobPath);
+    const blockBlobClient = this.getContainer().getBlockBlobClient(blobPath);
 
     await blockBlobClient.uploadData(upload.buffer, {
       blobHTTPHeaders: {
@@ -89,12 +92,12 @@ export class AzureStorageService {
     const prefix = `${studentId}_${classId}_`;
     const parts: RecordingPartInfo[] = [];
 
-    for await (const blob of this.container.listBlobsFlat({ prefix })) {
+    for await (const blob of this.getContainer().listBlobsFlat({ prefix })) {
       if (!blob.name.endsWith('.webm') || blob.name.includes('_merged')) {
         continue;
       }
 
-      const blockBlobClient = this.container.getBlockBlobClient(blob.name);
+      const blockBlobClient = this.getContainer().getBlockBlobClient(blob.name);
       parts.push({
         blobPath: blob.name,
         url: blockBlobClient.url,
@@ -118,11 +121,11 @@ export class AzureStorageService {
     }
 
     const mergedBlobPath = `${studentId}_${classId}_merged.webm`;
-    const mergedBlobClient = this.container.getBlockBlobClient(mergedBlobPath);
+    const mergedBlobClient = this.getContainer().getBlockBlobClient(mergedBlobPath);
 
     const buffers: Buffer[] = [];
     for (const part of parts) {
-      const partBlobClient = this.container.getBlockBlobClient(part.blobPath);
+      const partBlobClient = this.getContainer().getBlockBlobClient(part.blobPath);
       const downloadResponse = await partBlobClient.download(0);
       
       if (!downloadResponse.readableStreamBody) {
@@ -160,9 +163,9 @@ export class AzureStorageService {
 
     let deletedCount = 0;
 
-    for await (const blob of this.container.listBlobsFlat()) {
+    for await (const blob of this.getContainer().listBlobsFlat()) {
       if (blob.properties.lastModified && blob.properties.lastModified < cutoffDate) {
-        const blobClient = this.container.getBlockBlobClient(blob.name);
+        const blobClient = this.getContainer().getBlockBlobClient(blob.name);
         await blobClient.delete();
         deletedCount++;
         console.log(`🗑️  Deleted old recording: ${blob.name}`);
@@ -173,7 +176,7 @@ export class AzureStorageService {
   }
 
   async generateSasUrl(blobPath: string, expiresInMinutes: number = 60): Promise<string> {
-    const blobClient = this.container.getBlockBlobClient(blobPath);
+    const blobClient = this.getContainer().getBlockBlobClient(blobPath);
     
     const startsOn = new Date();
     const expiresOn = new Date(Date.now() + expiresInMinutes * 60 * 1000);
@@ -191,7 +194,7 @@ export class AzureStorageService {
     const parts = await this.listRecordingParts(studentId, classId);
     
     for (const part of parts) {
-      const blobClient = this.container.getBlockBlobClient(part.blobPath);
+      const blobClient = this.getContainer().getBlockBlobClient(part.blobPath);
       await blobClient.delete();
       console.log(`🗑️  Deleted recording part: ${part.blobPath}`);
     }
@@ -199,7 +202,7 @@ export class AzureStorageService {
 
   async getMergedRecording(studentId: string, classId: string): Promise<MergedRecordingInfo | null> {
     const mergedBlobPath = `${studentId}_${classId}_merged.webm`;
-    const blobClient = this.container.getBlockBlobClient(mergedBlobPath);
+    const blobClient = this.getContainer().getBlockBlobClient(mergedBlobPath);
 
     try {
       const properties = await blobClient.getProperties();
@@ -216,6 +219,31 @@ export class AzureStorageService {
       throw error;
     }
   }
+
+  async deleteMergedRecording(studentId: string, classId: string): Promise<void> {
+    const mergedBlobPath = `${studentId}_${classId}_merged.webm`;
+    const blobClient = this.getContainer().getBlockBlobClient(mergedBlobPath);
+    
+    try {
+      await blobClient.delete();
+      console.log(`🗑️  Deleted merged recording: ${mergedBlobPath}`);
+    } catch (error: any) {
+      if (error.statusCode === 404) {
+        return;
+      }
+      throw error;
+    }
+  }
 }
 
 export const azureStorage = new AzureStorageService();
+
+export interface MergeRecordingPartsInput {
+  studentId: string;
+  classId: string;
+  parts: string[];
+}
+
+export async function mergeRecordingParts(input: MergeRecordingPartsInput): Promise<MergedRecordingInfo> {
+  return await azureStorage.mergeRecordingParts(input.studentId, input.classId);
+}

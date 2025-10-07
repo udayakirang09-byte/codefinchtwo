@@ -304,9 +304,11 @@ export interface IStorage {
   createRecordingPart(part: any): Promise<any>;
   getRecordingPartsByBooking(bookingId: string): Promise<any[]>;
   updateRecordingPartStatus(id: string, status: string): Promise<void>;
+  updateRecordingPartsMergeStatus(bookingId: string, status: string): Promise<void>;
   createMergedRecording(recording: any): Promise<any>;
   getMergedRecordingByBooking(bookingId: string): Promise<any | undefined>;
   getAzureStorageConfig(): Promise<any | undefined>;
+  getBookingsForMerge(twentyMinutesAgo: Date): Promise<Booking[]>;
   
 }
 
@@ -1909,6 +1911,37 @@ export class DatabaseStorage implements IStorage {
       .where(eq(azureStorageConfig.isActive, true))
       .limit(1);
     return config;
+  }
+
+  async updateRecordingPartsMergeStatus(bookingId: string, status: string): Promise<void> {
+    await db.update(recordingParts)
+      .set({ status })
+      .where(eq(recordingParts.bookingId, bookingId));
+  }
+
+  async getBookingsForMerge(twentyMinutesAgo: Date): Promise<Booking[]> {
+    const result = await db.select().from(bookings)
+      .where(
+        and(
+          eq(bookings.status, 'completed'),
+          sql`${bookings.scheduledAt} <= ${twentyMinutesAgo}`
+        )
+      );
+    
+    const bookingsWithParts = [];
+    for (const booking of result) {
+      const parts = await this.getRecordingPartsByBooking(booking.id);
+      const merged = await this.getMergedRecordingByBooking(booking.id);
+      
+      if (parts.length > 0 && !merged) {
+        const firstPartStatus = parts[0]?.status;
+        if (firstPartStatus !== 'merging' && firstPartStatus !== 'merge_failed') {
+          bookingsWithParts.push(booking);
+        }
+      }
+    }
+    
+    return bookingsWithParts;
   }
 
 }
