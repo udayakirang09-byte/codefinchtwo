@@ -5153,6 +5153,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Demo: Generate sample analytics for a teacher based on completed classes
+  app.post('/api/teacher/generate-demo-analytics/:mentorId', async (req, res) => {
+    try {
+      const { mentorId } = req.params;
+      
+      // Get all bookings for this mentor and filter for completed
+      const allBookings = await storage.getBookingsByMentor(mentorId);
+      const completedBookings = allBookings.filter((b: any) => b.status === 'completed');
+      
+      if (completedBookings.length === 0) {
+        return res.status(404).json({ message: 'No completed classes found for this teacher' });
+      }
+      
+      // Generate realistic demo metrics for each completed class
+      const createdMetrics = [];
+      for (const booking of completedBookings.slice(0, 5)) { // Limit to 5 most recent
+        const metrics = await storage.createTeacherAudioMetrics({
+          mentorId,
+          bookingId: booking.id,
+          encourageInvolvement: Math.floor(Math.random() * 3) + 8, // 8-10
+          pleasantCommunication: Math.floor(Math.random() * 3) + 8, // 8-10
+          avoidPersonalDetails: Math.floor(Math.random() * 2) + 9, // 9-10
+          studentTalkRatio: Math.floor(Math.random() * 3) + 7, // 7-9
+          questionRate: Math.floor(Math.random() * 3) + 7, // 7-9
+          clarity: Math.floor(Math.random() * 3) + 8, // 8-10
+          adherenceToTopic: Math.floor(Math.random() * 3) + 8, // 8-10
+          politeness: Math.floor(Math.random() * 2) + 9, // 9-10
+        });
+        createdMetrics.push(metrics);
+      }
+      
+      console.log(`📊 Generated ${createdMetrics.length} demo analytics for mentor ${mentorId}`);
+      res.json({ 
+        success: true, 
+        count: createdMetrics.length, 
+        message: `Generated ${createdMetrics.length} demo analytics records` 
+      });
+    } catch (error) {
+      console.error('Error generating demo analytics:', error);
+      res.status(500).json({ message: 'Failed to generate demo analytics' });
+    }
+  });
+
   // Admin Analytics - Get all teacher rankings
   app.get('/api/admin/teacher-analytics', async (req, res) => {
     try {
