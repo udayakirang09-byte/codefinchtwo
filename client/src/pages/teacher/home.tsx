@@ -724,49 +724,6 @@ export default function TeacherHome() {
               </CardContent>
             </Card>
 
-            {/* System Testing */}
-            <Card className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white shadow-2xl border-0 rounded-2xl overflow-hidden">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TestTube className="h-5 w-5" />
-                  System Testing
-                </CardTitle>
-                <CardDescription className="text-orange-100">
-                  Run comprehensive tests with teacher credentials
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center">
-                  <Button 
-                    onClick={async () => {
-                      console.log('🧪 Running tests for teacher...');
-                      try {
-                        const response = await fetch('/api/test/run-all', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ userRole: 'teacher', testType: 'comprehensive' })
-                        });
-                        if (response.ok) {
-                          const results = await response.json();
-                          console.log('✅ Teacher test results:', results);
-                          alert(`Tests completed! ${results.summary.passed}/${results.summary.total} passed`);
-                        }
-                      } catch (error) {
-                        console.error('Failed to run tests:', error);
-                        alert('❌ Failed to run tests. Check console for details.');
-                      }
-                    }}
-                    variant="secondary" 
-                    className="bg-white/20 hover:bg-white/30 text-white border-white/30"
-                    data-testid="button-run-all-tests-teacher"
-                  >
-                    <TestTube className="w-4 h-4 mr-2" />
-                    Run All Tests (Teacher)
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Performance Overview */}
             <Card className="bg-gradient-to-br from-white via-gray-50 to-blue-50 shadow-2xl border-0 rounded-2xl overflow-hidden">
               <CardHeader>
