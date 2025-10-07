@@ -78,6 +78,19 @@ export default function Booking() {
     enabled: !!mentorId,
   });
 
+  // Fetch teacher's subject-specific fee when subject is selected
+  const { data: subjectFeeData, isLoading: subjectFeeLoading, isFetching: subjectFeeFetching } = useQuery<{ fee: number | null }>({
+    queryKey: ["/api/teacher-subjects", mentorId, "fee", formData.subject],
+    queryFn: async () => {
+      const response = await fetch(`/api/teacher-subjects/${mentorId}/fee/${encodeURIComponent(formData.subject)}`);
+      if (!response.ok) {
+        return { fee: null };
+      }
+      return response.json();
+    },
+    enabled: !!mentorId && !!formData.subject,
+  });
+
   // Auto-populate form fields when student data loads
   useEffect(() => {
     if (studentData && user) {
@@ -89,6 +102,23 @@ export default function Booking() {
       }));
     }
   }, [studentData, user]);
+
+  // Calculate displayed session cost (same logic as submit handler)
+  const calculateSessionCost = (): number => {
+    const duration = parseInt(formData.duration) || 60;
+    
+    // Check if there's a subject-specific fee
+    if (subjectFeeData && subjectFeeData.fee !== null && subjectFeeData.fee !== undefined) {
+      // Subject fees are flat per-class, regardless of duration
+      return subjectFeeData.fee;
+    } else {
+      // Fall back to hourly rate (multiplied by duration)
+      const hourlyRate = (typeof mentor?.hourlyRate === 'number' ? mentor.hourlyRate : parseFloat(String(mentor?.hourlyRate))) || 500;
+      return Math.round((duration / 60) * hourlyRate);
+    }
+  };
+
+  const displayedCost = calculateSessionCost();
 
   const bookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
@@ -156,6 +186,16 @@ export default function Booking() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // CRITICAL: Block submission if subject fee is still loading
+    if (formData.subject && (subjectFeeLoading || subjectFeeFetching)) {
+      toast({
+        title: "Please Wait",
+        description: "Calculating class fee for the selected subject...",
+        variant: "default",
+      });
+      return;
+    }
     
     // Comprehensive validation
     // Student name validation
@@ -264,10 +304,22 @@ export default function Booking() {
       return;
     }
     
-    // Calculate session cost based on duration and mentor's hourly rate
+    // Calculate session cost based on duration and mentor's rate
+    // Priority: 1. Subject-specific fee (flat per-class), 2. Hourly rate, 3. Default (500)
     const duration = parseInt(formData.duration);
-    const hourlyRate = (typeof mentor.hourlyRate === 'number' ? mentor.hourlyRate : parseInt(String(mentor.hourlyRate))) || 500; // Default rate if not set
-    const sessionCost = Math.round((duration / 60) * hourlyRate);
+    let sessionCost: number;
+    
+    // Check if there's a subject-specific fee
+    if (subjectFeeData && subjectFeeData.fee !== null && subjectFeeData.fee !== undefined) {
+      // Subject fees are flat per-class, regardless of duration
+      sessionCost = subjectFeeData.fee;
+      console.log(`💰 Using subject-specific fee: ₹${sessionCost} for ${formData.subject} (flat per-class)`);
+    } else {
+      // Fall back to hourly rate (multiplied by duration)
+      const hourlyRate = (typeof mentor.hourlyRate === 'number' ? mentor.hourlyRate : parseInt(String(mentor.hourlyRate))) || 500;
+      sessionCost = Math.round((duration / 60) * hourlyRate);
+      console.log(`💰 Using hourly rate: ₹${hourlyRate}/hour × ${duration}min = ₹${sessionCost}`);
+    }
     
     // Prepare booking details for payment
     const bookingDetails = {
@@ -627,19 +679,32 @@ export default function Booking() {
                 <div className="pt-4 border-t">
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-lg font-medium">Total Cost:</span>
-                    <span className="text-2xl font-bold text-primary" data-testid="text-total-cost">
-                      ${((parseInt(formData.duration) / 60) * parseFloat(mentor.hourlyRate || "50")).toFixed(2)}
-                    </span>
+                    {formData.subject && (subjectFeeLoading || subjectFeeFetching) ? (
+                      <span className="text-lg text-muted-foreground" data-testid="text-total-cost">
+                        Calculating fee...
+                      </span>
+                    ) : (
+                      <span className="text-2xl font-bold text-primary" data-testid="text-total-cost">
+                        ₹{displayedCost.toFixed(2)}
+                      </span>
+                    )}
                   </div>
+                  {formData.subject && subjectFeeData && subjectFeeData.fee !== null && (
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Using subject-specific flat fee for {formData.subject}
+                    </p>
+                  )}
                   
                   <Button 
                     type="submit" 
                     className="w-full" 
                     size="lg"
-                    disabled={bookingMutation.isPending}
+                    disabled={bookingMutation.isPending || (!!formData.subject && (subjectFeeLoading || subjectFeeFetching))}
                     data-testid="button-confirm-booking"
                   >
-                    {bookingMutation.isPending ? "Booking..." : "Confirm Booking"}
+                    {bookingMutation.isPending ? "Booking..." : 
+                     (formData.subject && (subjectFeeLoading || subjectFeeFetching)) ? "Loading fee..." : 
+                     "Confirm Booking"}
                   </Button>
                 </div>
               </form>
