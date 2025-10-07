@@ -181,28 +181,49 @@ export default function StudentProgress() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Skill Progress */}
+          {/* Subject Progress - Classes Attended vs Pending */}
           <Card className="shadow-lg border-0">
             <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-lg">
               <CardTitle className="flex items-center gap-2">
                 <Target className="h-5 w-5" />
-                Skill Progress
+                Learning Progress by Subject
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-6">
-                {safeProgressData.skillLevels.map((skill) => (
-                  <div key={skill.skill} className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-800">{skill.skill}</span>
-                      <span className="text-sm text-gray-600">{skill.level}%</span>
-                    </div>
-                    <Progress value={skill.level} className="h-3" />
-                    <div className="text-xs text-gray-500">
-                      {skill.classesCompleted} classes completed
-                    </div>
+                {safeProgressData.skillLevels.length === 0 ? (
+                  <div className="text-center text-gray-500 py-8">
+                    <BookOpen className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                    <p>No classes enrolled yet</p>
+                    <p className="text-sm mt-1">Start your learning journey by booking a class!</p>
                   </div>
-                ))}
+                ) : (
+                  safeProgressData.skillLevels.map((skill) => {
+                    const pendingClasses = skill.totalClasses - skill.classesCompleted;
+                    return (
+                      <div key={skill.skill} className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium text-gray-800">{skill.skill}</span>
+                          <span className="text-sm text-gray-600">{skill.level}%</span>
+                        </div>
+                        <Progress value={skill.level} className="h-3" />
+                        <div className="flex justify-between items-center text-xs">
+                          <div className="flex gap-4">
+                            <span className="text-green-600 font-medium">
+                              ✓ {skill.classesCompleted} Attended
+                            </span>
+                            <span className="text-orange-600 font-medium">
+                              ⏳ {pendingClasses} Pending
+                            </span>
+                          </div>
+                          <span className="text-gray-500">
+                            Total: {skill.totalClasses}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </CardContent>
           </Card>
