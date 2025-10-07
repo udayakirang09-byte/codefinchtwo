@@ -66,6 +66,8 @@ export default function AdminPaymentConfig() {
   const [lastRefresh, setLastRefresh] = useState(new Date());
 
   // Form states
+  const [selectedPaymentMode, setSelectedPaymentMode] = useState<'dummy' | 'realtime'>('dummy');
+
   const [upiForm, setUpiForm] = useState({
     upiId: '',
     upiProvider: 'phonepe',
@@ -86,6 +88,20 @@ export default function AdminPaymentConfig() {
     // For now, we'll use a placeholder admin user
     return 'admin-user-001';
   };
+
+  // Fetch current payment mode configuration
+  const { data: paymentModeConfig, isLoading: paymentModeLoading } = useQuery({
+    queryKey: ['admin-payment-mode-config'],
+    queryFn: async () => {
+      try {
+        const result = await apiRequest('GET', '/api/admin/payment-config');
+        return result as unknown as { paymentMode: 'dummy' | 'realtime' };
+      } catch (error) {
+        console.error('Failed to fetch payment mode:', error);
+        return { paymentMode: 'dummy' as const };
+      }
+    },
+  });
 
   // Fetch admin payment methods
   const { data: paymentMethods = [], isLoading: methodsLoading, refetch: refetchMethods } = useQuery({
@@ -155,6 +171,13 @@ export default function AdminPaymentConfig() {
 
     return () => clearInterval(interval);
   }, [refetchAnalytics]);
+
+  // Sync payment mode state when config loads
+  useEffect(() => {
+    if (paymentModeConfig) {
+      setSelectedPaymentMode(paymentModeConfig.paymentMode);
+    }
+  }, [paymentModeConfig]);
 
   // Populate fee form when config loads
   useEffect(() => {
@@ -236,6 +259,27 @@ export default function AdminPaymentConfig() {
     onError: (error: any) => {
       toast({
         title: "Failed to Update Fee Config",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update payment mode mutation
+  const updatePaymentModeMutation = useMutation({
+    mutationFn: async (paymentMode: 'dummy' | 'realtime') => {
+      return apiRequest('PUT', '/api/admin/payment-config', { paymentMode });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Payment Mode Updated",
+        description: "Payment mode has been updated successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-payment-mode-config'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Update Payment Mode",
         description: error.message || "Something went wrong",
         variant: "destructive",
       });
@@ -535,12 +579,148 @@ export default function AdminPaymentConfig() {
           </div>
         </div>
 
-        <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs defaultValue="payment-mode" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="payment-mode" data-testid="tab-payment-mode">Payment Mode</TabsTrigger>
             <TabsTrigger value="analytics" data-testid="tab-analytics">Finance Analytics</TabsTrigger>
             <TabsTrigger value="payment-methods" data-testid="tab-payment-methods">Admin UPI Setup</TabsTrigger>
             <TabsTrigger value="transaction-fees" data-testid="tab-transaction-fees">Transaction Fees</TabsTrigger>
           </TabsList>
+
+          {/* Payment Mode Tab */}
+          <TabsContent value="payment-mode" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Global Payment Mode Configuration
+                </CardTitle>
+                <CardDescription>
+                  Choose between dummy (test mode) and realtime (production) payment processing for the entire platform
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {paymentModeLoading ? (
+                  <div className="flex items-center justify-center p-8">
+                    <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-4">
+                      <Label className="text-base font-semibold">Select Payment Mode</Label>
+                      <div className="space-y-3">
+                        <div 
+                          className={`flex items-start p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                            selectedPaymentMode === 'dummy' 
+                              ? 'border-primary bg-primary/5' 
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                          onClick={() => setSelectedPaymentMode('dummy')}
+                          data-testid="radio-payment-mode-dummy"
+                        >
+                          <div className="flex items-center h-5">
+                            <input
+                              type="radio"
+                              name="paymentMode"
+                              value="dummy"
+                              checked={selectedPaymentMode === 'dummy'}
+                              onChange={() => setSelectedPaymentMode('dummy')}
+                              className="w-4 h-4 text-primary focus:ring-primary cursor-pointer"
+                              data-testid="input-payment-mode-dummy"
+                            />
+                          </div>
+                          <div className="ml-3 flex-1">
+                            <div className="flex items-center gap-2">
+                              <Label className="text-base font-medium cursor-pointer">Dummy Mode (Test)</Label>
+                              <Badge variant="secondary">Recommended for Development</Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Payments are simulated without real transactions. Perfect for testing and development.
+                              No actual money is charged.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div 
+                          className={`flex items-start p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                            selectedPaymentMode === 'realtime' 
+                              ? 'border-primary bg-primary/5' 
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                          onClick={() => setSelectedPaymentMode('realtime')}
+                          data-testid="radio-payment-mode-realtime"
+                        >
+                          <div className="flex items-center h-5">
+                            <input
+                              type="radio"
+                              name="paymentMode"
+                              value="realtime"
+                              checked={selectedPaymentMode === 'realtime'}
+                              onChange={() => setSelectedPaymentMode('realtime')}
+                              className="w-4 h-4 text-primary focus:ring-primary cursor-pointer"
+                              data-testid="input-payment-mode-realtime"
+                            />
+                          </div>
+                          <div className="ml-3 flex-1">
+                            <div className="flex items-center gap-2">
+                              <Label className="text-base font-medium cursor-pointer">Realtime Mode (Production)</Label>
+                              <Badge variant="destructive">⚠️ Live Payments</Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Real payment processing with actual transactions. Use only in production with proper
+                              payment gateway configuration. Money will be charged.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">
+                          Current Mode: <span className="font-semibold text-foreground">
+                            {paymentModeConfig?.paymentMode === 'realtime' ? 'Realtime (Production)' : 'Dummy (Test)'}
+                          </span>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          This setting applies to all payment sections across the application
+                        </p>
+                      </div>
+                      <Button
+                        onClick={() => updatePaymentModeMutation.mutate(selectedPaymentMode)}
+                        disabled={updatePaymentModeMutation.isPending || selectedPaymentMode === paymentModeConfig?.paymentMode}
+                        data-testid="button-save-payment-mode"
+                      >
+                        {updatePaymentModeMutation.isPending ? (
+                          <>
+                            <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="h-4 w-4 mr-2" />
+                            Save Payment Mode
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    {selectedPaymentMode === 'realtime' && (
+                      <Alert>
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          <strong>Warning:</strong> Enabling realtime mode will process actual payments. Ensure your
+                          payment gateway credentials are properly configured and you have tested thoroughly in dummy mode first.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Finance Analytics Tab */}
           <TabsContent value="analytics" className="space-y-6">
