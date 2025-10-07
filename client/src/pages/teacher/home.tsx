@@ -36,6 +36,8 @@ export default function TeacherHome() {
   const [showProfile, setShowProfile] = useState(false);
   const [editingHourlyRate, setEditingHourlyRate] = useState(false);
   const [newHourlyRate, setNewHourlyRate] = useState('');
+  const [editingCourse, setEditingCourse] = useState<any>(null);
+  const [viewingStudents, setViewingStudents] = useState<any>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -98,6 +100,31 @@ export default function TeacherHome() {
     enabled: !!user?.email,
   });
 
+  // Fetch teacher courses
+  const { data: teacherCourses = [], isLoading: coursesLoading } = useQuery<any[]>({
+    queryKey: ['/api/teacher/courses', 'teacher@codeconnect.com'],
+    queryFn: async () => {
+      const response = await fetch('/api/teacher/courses?teacherId=teacher@codeconnect.com');
+      if (!response.ok) {
+        throw new Error('Failed to fetch courses');
+      }
+      return response.json();
+    }
+  });
+
+  // Fetch students for a course
+  const { data: courseStudents = [], refetch: refetchStudents } = useQuery<any[]>({
+    queryKey: ['/api/courses', viewingStudents?.id, 'students'],
+    enabled: !!viewingStudents?.id,
+    queryFn: async () => {
+      const response = await fetch(`/api/courses/${viewingStudents.id}/students`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch students');
+      }
+      return response.json();
+    }
+  });
+
   // Mutation to update hourly rate
   const updateHourlyRateMutation = useMutation({
     mutationFn: async (hourlyRate: string) => {
@@ -123,6 +150,28 @@ export default function TeacherHome() {
         variant: "destructive",
       });
     },
+  });
+
+  // Mutation to update course
+  const updateCourseMutation = useMutation({
+    mutationFn: async ({ courseId, courseData }: { courseId: string; courseData: any }) => {
+      return apiRequest('PATCH', `/api/teacher/courses/${courseId}?teacherId=teacher@codeconnect.com`, courseData);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Course updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/teacher/courses'] });
+      setEditingCourse(null);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update course",
+        variant: "destructive",
+      });
+    }
   });
 
   const handleSaveHourlyRate = () => {
@@ -372,6 +421,84 @@ export default function TeacherHome() {
               </div>
             ) : (
               <div className="text-gray-500">No mentor profile found. Please contact support.</div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* My Courses Section */}
+        <Card className="bg-gradient-to-br from-white via-orange-50 to-red-50 shadow-2xl border-0 rounded-2xl overflow-hidden">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5" />
+                My Courses
+              </CardTitle>
+              <Link href="/teacher/create-course">
+                <Button size="sm" data-testid="button-create-new-course">
+                  {teacherCourses.length} courses
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {coursesLoading ? (
+              <div className="text-gray-500">Loading courses...</div>
+            ) : teacherCourses.length === 0 ? (
+              <div className="text-center py-8">
+                <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 mb-4">No courses created yet</p>
+                <Link href="/teacher/create-course">
+                  <Button data-testid="button-create-first-course">
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    Create Your First Course
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {teacherCourses.map((course: any) => (
+                  <div key={course.id} className="border rounded-lg p-4 bg-white" data-testid={`course-card-${course.id}`}>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg" data-testid={`course-title-${course.id}`}>{course.title}</h3>
+                        <p className="text-sm text-gray-600 line-clamp-2 mt-1" data-testid={`course-description-${course.id}`}>{course.description}</p>
+                        <div className="flex items-center gap-4 mt-3">
+                          <Badge variant="outline" data-testid={`course-category-${course.id}`}>{course.category}</Badge>
+                          <Badge variant="outline" data-testid={`course-level-${course.id}`}>{course.difficulty}</Badge>
+                          <span className="text-sm text-gray-600" data-testid={`course-maxClasses-${course.id}`}>{course.maxClasses} classes</span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge className={course.status === 'active' ? 'bg-green-500' : 'bg-gray-500'} data-testid={`course-status-${course.id}`}>
+                            {course.status === 'active' ? '● Active' : '● Inactive'}
+                          </Badge>
+                          <span className="text-lg font-semibold text-green-600" data-testid={`course-price-${course.id}`}>${course.price}</span>
+                          <span className="text-sm text-gray-500">Max: {course.maxStudents} students</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 ml-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingCourse(course)}
+                          data-testid={`button-edit-course-${course.id}`}
+                        >
+                          <Edit2 className="w-4 h-4 mr-1" />
+                          Edit Course
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => setViewingStudents(course)}
+                          data-testid={`button-view-students-${course.id}`}
+                        >
+                          <Users className="w-4 h-4 mr-1" />
+                          View Details
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
@@ -673,6 +800,151 @@ export default function TeacherHome() {
             </Card>
           </div>
         </div>
+
+        {/* Edit Course Dialog */}
+        <Dialog open={!!editingCourse} onOpenChange={(open) => !open && setEditingCourse(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Course</DialogTitle>
+            </DialogHeader>
+            {editingCourse && (
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                updateCourseMutation.mutate({
+                  courseId: editingCourse.id,
+                  courseData: {
+                    title: editingCourse.title,
+                    description: editingCourse.description,
+                    category: editingCourse.category,
+                    difficulty: editingCourse.difficulty,
+                    price: editingCourse.price,
+                    maxStudents: editingCourse.maxStudents,
+                    maxClasses: editingCourse.maxClasses,
+                    status: editingCourse.status
+                  }
+                });
+              }} className="space-y-4">
+                <div>
+                  <Label htmlFor="edit-title">Course Title</Label>
+                  <Input
+                    id="edit-title"
+                    value={editingCourse.title}
+                    onChange={(e) => setEditingCourse({ ...editingCourse, title: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-description">Description</Label>
+                  <Input
+                    id="edit-description"
+                    value={editingCourse.description}
+                    onChange={(e) => setEditingCourse({ ...editingCourse, description: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-category">Category</Label>
+                    <Input
+                      id="edit-category"
+                      value={editingCourse.category}
+                      onChange={(e) => setEditingCourse({ ...editingCourse, category: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-difficulty">Difficulty</Label>
+                    <Input
+                      id="edit-difficulty"
+                      value={editingCourse.difficulty}
+                      onChange={(e) => setEditingCourse({ ...editingCourse, difficulty: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="edit-price">Price ($)</Label>
+                    <Input
+                      id="edit-price"
+                      type="number"
+                      step="0.01"
+                      value={editingCourse.price}
+                      onChange={(e) => setEditingCourse({ ...editingCourse, price: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-maxStudents">Max Students</Label>
+                    <Input
+                      id="edit-maxStudents"
+                      type="number"
+                      value={editingCourse.maxStudents}
+                      onChange={(e) => setEditingCourse({ ...editingCourse, maxStudents: parseInt(e.target.value) })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-maxClasses">Max Classes</Label>
+                    <Input
+                      id="edit-maxClasses"
+                      type="number"
+                      value={editingCourse.maxClasses}
+                      onChange={(e) => setEditingCourse({ ...editingCourse, maxClasses: parseInt(e.target.value) })}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={updateCourseMutation.isPending}>
+                    {updateCourseMutation.isPending ? "Updating..." : "Update Course"}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setEditingCourse(null)}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* View Students Dialog */}
+        <Dialog open={!!viewingStudents} onOpenChange={(open) => !open && setViewingStudents(null)}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{viewingStudents?.title} - Enrolled Students</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {courseStudents.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No students enrolled in this course yet
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {courseStudents.map((student: any, index: number) => (
+                    <div key={student.id || index} className="border rounded-lg p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
+                          {student.firstName?.charAt(0)}{student.lastName?.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-medium">{student.firstName} {student.lastName}</p>
+                          <p className="text-sm text-gray-500">{student.email}</p>
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {student.enrolledAt ? new Date(student.enrolledAt).toLocaleDateString() : 'N/A'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Button variant="outline" className="w-full" onClick={() => setViewingStudents(null)}>
+                Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
