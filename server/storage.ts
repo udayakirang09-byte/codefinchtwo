@@ -73,6 +73,8 @@ import {
   azureStorageConfig,
   recordingParts,
   mergedRecordings,
+  teacherSubjects,
+  adminPaymentConfig,
   type TeacherAudioMetrics,
   type InsertTeacherAudioMetrics,
   type HomeSectionControls,
@@ -82,6 +84,10 @@ import {
   type InsertRecordingPart,
   type MergedRecording,
   type InsertMergedRecording,
+  type TeacherSubject,
+  type InsertTeacherSubject,
+  type AdminPaymentConfig,
+  type InsertAdminPaymentConfig,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -315,6 +321,15 @@ export interface IStorage {
   getExpiredRecordings(): Promise<any[]>;
   deleteMergedRecording(id: string): Promise<void>;
   deleteRecordingPartsByBooking(bookingId: string): Promise<void>;
+  
+  // Teacher Subject Fee operations
+  getTeacherSubjectsByMentor(mentorId: string): Promise<TeacherSubject[]>;
+  updateTeacherSubjectFee(subjectId: string, classFee: number): Promise<void>;
+  getTeacherSubjectFee(mentorId: string, subject: string): Promise<number | null>;
+  
+  // Admin Payment Configuration operations
+  getAdminPaymentConfig(): Promise<AdminPaymentConfig | undefined>;
+  updateAdminPaymentConfig(paymentMode: 'dummy' | 'realtime'): Promise<void>;
   
   // Azure Storage Config operations
   updateAzureStorageConfig(config: { storageAccountName: string; containerName: string; retentionMonths: number }): Promise<any>;
@@ -2001,6 +2016,58 @@ export class DatabaseStorage implements IStorage {
     await db.update(recordingParts)
       .set({ status: 'deleted' })
       .where(eq(recordingParts.bookingId, bookingId));
+  }
+
+  // Teacher Subject Fee operations
+  async getTeacherSubjectsByMentor(mentorId: string): Promise<TeacherSubject[]> {
+    return await db
+      .select()
+      .from(teacherSubjects)
+      .where(eq(teacherSubjects.mentorId, mentorId))
+      .orderBy(teacherSubjects.priority);
+  }
+
+  async updateTeacherSubjectFee(subjectId: string, classFee: number): Promise<void> {
+    await db
+      .update(teacherSubjects)
+      .set({ classFee: classFee.toString() })
+      .where(eq(teacherSubjects.id, subjectId));
+  }
+
+  async getTeacherSubjectFee(mentorId: string, subject: string): Promise<number | null> {
+    const results = await db
+      .select()
+      .from(teacherSubjects)
+      .where(
+        and(
+          eq(teacherSubjects.mentorId, mentorId),
+          eq(teacherSubjects.subject, subject)
+        )
+      );
+    
+    if (results.length > 0 && results[0].classFee) {
+      return parseFloat(results[0].classFee.toString());
+    }
+    return null;
+  }
+
+  // Admin Payment Configuration operations
+  async getAdminPaymentConfig(): Promise<AdminPaymentConfig | undefined> {
+    const results = await db.select().from(adminPaymentConfig).limit(1);
+    return results.length > 0 ? results[0] : undefined;
+  }
+
+  async updateAdminPaymentConfig(paymentMode: 'dummy' | 'realtime'): Promise<void> {
+    const existing = await this.getAdminPaymentConfig();
+    
+    if (existing) {
+      await db
+        .update(adminPaymentConfig)
+        .set({ paymentMode, updatedAt: new Date() })
+        .where(eq(adminPaymentConfig.id, existing.id));
+    } else {
+      await db.insert(adminPaymentConfig).values({ paymentMode });
+    }
   }
 
   // Azure Storage Config operations

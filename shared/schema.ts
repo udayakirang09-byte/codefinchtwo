@@ -102,6 +102,7 @@ export const teacherSubjects = pgTable("teacher_subjects", {
   mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
   subject: varchar("subject").notNull(), // e.g., "Python Programming"
   experience: varchar("experience").notNull(), // e.g., "5 years", "Advanced"
+  classFee: decimal("class_fee", { precision: 10, scale: 2 }).default("500.00"), // Fee per class in INR
   priority: integer("priority").notNull().default(1), // 1-5 for ordering
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -423,6 +424,13 @@ export const adminConfig = pgTable("admin_config", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Admin Payment Mode Configuration
+export const adminPaymentConfig = pgTable("admin_payment_config", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  paymentMode: varchar("payment_mode").notNull().default("dummy"), // "dummy" or "realtime"
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Time Slots Management Table
 export const timeSlots = pgTable("time_slots", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -453,6 +461,8 @@ export const footerLinks = pgTable("footer_links", {
 // Additional Relations
 export const adminConfigRelations = relations(adminConfig, ({ }) => ({}));
 
+export const adminPaymentConfigRelations = relations(adminPaymentConfig, ({ }) => ({}));
+
 export const timeSlotsRelations = relations(timeSlots, ({ one }) => ({
   mentor: one(mentors, {
     fields: [timeSlots.mentorId],
@@ -464,6 +474,8 @@ export const footerLinksRelations = relations(footerLinks, ({ }) => ({}));
 
 // Additional Insert Schemas
 export const insertAdminConfigSchema = createInsertSchema(adminConfig);
+
+export const insertAdminPaymentConfigSchema = createInsertSchema(adminPaymentConfig);
 
 export const insertTimeSlotSchema = createInsertSchema(timeSlots);
 
@@ -603,6 +615,9 @@ export type InsertTeacherProfile = z.infer<typeof insertTeacherProfileSchema>;
 
 export type AdminConfig = typeof adminConfig.$inferSelect;
 export type InsertAdminConfig = z.infer<typeof insertAdminConfigSchema>;
+
+export type AdminPaymentConfig = typeof adminPaymentConfig.$inferSelect;
+export type InsertAdminPaymentConfig = z.infer<typeof insertAdminPaymentConfigSchema>;
 
 export type TimeSlot = typeof timeSlots.$inferSelect;
 export type InsertTimeSlot = z.infer<typeof insertTimeSlotSchema>;
