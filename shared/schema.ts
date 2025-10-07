@@ -1492,10 +1492,62 @@ export const homeSectionControls = pgTable("home_section_controls", {
   uniqueSectionType: unique().on(table.sectionType, table.sectionName)
 }));
 
+// Azure Storage Configuration (admin-managed)
+export const azureStorageConfig = pgTable("azure_storage_config", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  storageAccountName: varchar("storage_account_name").notNull().default("kidzaimathstore31320"),
+  containerName: varchar("container_name").notNull().default("replayknowledge"),
+  connectionString: text("connection_string"), // Encrypted storage connection string
+  retentionMonths: integer("retention_months").notNull().default(6), // Auto-delete after 6 months
+  isActive: boolean("is_active").default(true),
+  updatedBy: varchar("updated_by").references(() => users.id),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Recording Parts (individual video segments)
+export const recordingParts = pgTable("recording_parts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
+  studentId: varchar("student_id").references(() => students.id).notNull(),
+  partNumber: integer("part_number").notNull(), // 1, 2, 3... for multiple stops/starts
+  blobPath: text("blob_path").notNull(), // Azure blob path: studentid_classid_partnumber/file.mp4
+  blobUrl: text("blob_url"), // Temporary SAS URL for access
+  fileSizeBytes: integer("file_size_bytes"),
+  durationSeconds: integer("duration_seconds"),
+  recordedAt: timestamp("recorded_at").defaultNow(),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  status: varchar("status").default("uploaded"), // uploaded, merged, deleted
+});
+
+// Merged Recordings (final combined videos)
+export const mergedRecordings = pgTable("merged_recordings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
+  studentId: varchar("student_id").references(() => students.id).notNull(),
+  mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
+  blobPath: text("blob_path").notNull(), // Final merged file path
+  blobUrl: text("blob_url"), // Temporary SAS URL
+  totalParts: integer("total_parts").notNull(), // How many parts were merged
+  fileSizeBytes: integer("file_size_bytes"),
+  durationSeconds: integer("duration_seconds"),
+  mergedAt: timestamp("merged_at").defaultNow(),
+  expiresAt: timestamp("expires_at").notNull(), // Auto-delete date (classDate + retentionMonths)
+  aiAnalyzed: boolean("ai_analyzed").default(false), // Whether AI analytics have been run
+  status: varchar("status").default("active"), // active, expired, deleted
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Schema definitions for teacher audio metrics
 export const insertTeacherAudioMetricsSchema = createInsertSchema(teacherAudioMetrics);
 
 export const insertHomeSectionControlsSchema = createInsertSchema(homeSectionControls);
+
+export const insertAzureStorageConfigSchema = createInsertSchema(azureStorageConfig);
+
+export const insertRecordingPartSchema = createInsertSchema(recordingParts);
+
+export const insertMergedRecordingSchema = createInsertSchema(mergedRecordings);
 
 // Types for teacher audio metrics
 export type TeacherAudioMetrics = typeof teacherAudioMetrics.$inferSelect;
@@ -1503,3 +1555,12 @@ export type InsertTeacherAudioMetrics = z.infer<typeof insertTeacherAudioMetrics
 
 export type HomeSectionControls = typeof homeSectionControls.$inferSelect;
 export type InsertHomeSectionControls = z.infer<typeof insertHomeSectionControlsSchema>;
+
+export type AzureStorageConfig = typeof azureStorageConfig.$inferSelect;
+export type InsertAzureStorageConfig = z.infer<typeof insertAzureStorageConfigSchema>;
+
+export type RecordingPart = typeof recordingParts.$inferSelect;
+export type InsertRecordingPart = z.infer<typeof insertRecordingPartSchema>;
+
+export type MergedRecording = typeof mergedRecordings.$inferSelect;
+export type InsertMergedRecording = z.infer<typeof insertMergedRecordingSchema>;
