@@ -2808,8 +2808,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Convert to cents
-        currency: "usd", // USD for international market
+        amount: Math.round(amount * 100), // Convert to paise (INR smallest unit)
+        currency: "inr", // INR for Indian market (required for UPI)
+        payment_method_types: ['card', 'upi'], // Enable both card and UPI payments
         metadata: {
           ...(courseId && { courseId }),
           ...(courseName && { courseName }),
@@ -2818,7 +2819,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
-      console.log(`💳 Payment intent created for $${amount} - ID: ${paymentIntent.id}`);
+      console.log(`💳 Payment intent created for ₹${amount} - ID: ${paymentIntent.id} (supports card & UPI)`);
       
       res.json({ 
         clientSecret: paymentIntent.client_secret,
