@@ -1014,6 +1014,162 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk reschedule bookings with 6-hour restriction
+  app.post("/api/bookings/bulk-reschedule", async (req, res) => {
+    try {
+      const { bookingIds, scheduledAt } = req.body;
+
+      if (!bookingIds || !Array.isArray(bookingIds) || bookingIds.length === 0) {
+        return res.status(400).json({ message: "Booking IDs array is required" });
+      }
+
+      if (!scheduledAt) {
+        return res.status(400).json({ message: "New scheduled time is required" });
+      }
+
+      const now = new Date();
+      const newScheduledAt = new Date(scheduledAt);
+      const results = {
+        successful: [] as string[],
+        failed: [] as { id: string; reason: string }[]
+      };
+
+      // Process each booking
+      for (const id of bookingIds) {
+        try {
+          const booking = await storage.getBooking(id);
+          
+          if (!booking) {
+            results.failed.push({ id, reason: "Booking not found" });
+            continue;
+          }
+
+          if (booking.status === 'cancelled') {
+            results.failed.push({ id, reason: "Booking is already cancelled" });
+            continue;
+          }
+
+          // Check 6-hour restriction
+          const currentScheduledTime = new Date(booking.scheduledAt);
+          const sixHoursBeforeClass = new Date(currentScheduledTime.getTime() - 6 * 60 * 60 * 1000);
+
+          if (now >= sixHoursBeforeClass) {
+            results.failed.push({ 
+              id, 
+              reason: "Cannot reschedule within 6 hours of the scheduled class time" 
+            });
+            continue;
+          }
+
+          await storage.rescheduleBooking(id, newScheduledAt);
+          results.successful.push(id);
+        } catch (error) {
+          results.failed.push({ 
+            id, 
+            reason: error instanceof Error ? error.message : "Unknown error" 
+          });
+        }
+      }
+
+      res.json({
+        message: `Rescheduled ${results.successful.length} of ${bookingIds.length} bookings`,
+        successful: results.successful,
+        failed: results.failed,
+        newScheduledAt
+      });
+    } catch (error) {
+      console.error("Error bulk rescheduling bookings:", error);
+      res.status(500).json({ message: "Failed to bulk reschedule bookings" });
+    }
+  });
+
+  // Bulk cancel bookings with 6-hour restriction and refund
+  app.post("/api/bookings/bulk-cancel", async (req, res) => {
+    try {
+      const { bookingIds, userId } = req.body;
+
+      if (!bookingIds || !Array.isArray(bookingIds) || bookingIds.length === 0) {
+        return res.status(400).json({ message: "Booking IDs array is required" });
+      }
+
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required" });
+      }
+
+      const now = new Date();
+      const results = {
+        successful: [] as { id: string; refundAmount?: string }[],
+        failed: [] as { id: string; reason: string }[]
+      };
+
+      // Process each booking
+      for (const id of bookingIds) {
+        try {
+          const booking = await storage.getBooking(id);
+          
+          if (!booking) {
+            results.failed.push({ id, reason: "Booking not found" });
+            continue;
+          }
+
+          if (booking.status === 'cancelled') {
+            results.failed.push({ id, reason: "Booking is already cancelled" });
+            continue;
+          }
+
+          // Check 6-hour restriction
+          const scheduledTime = new Date(booking.scheduledAt);
+          const sixHoursBeforeClass = new Date(scheduledTime.getTime() - 6 * 60 * 60 * 1000);
+
+          if (now >= sixHoursBeforeClass) {
+            results.failed.push({ 
+              id, 
+              reason: "Cannot cancel within 6 hours of the scheduled class time" 
+            });
+            continue;
+          }
+
+          // Check if there's a payment transaction for this booking
+          const transactions = await storage.getTransactionsByUser(userId);
+          const transaction = transactions.find(t => t.bookingId === id && t.status === 'completed');
+
+          await storage.cancelBooking(id);
+
+          // If there was a payment, mark it for refund
+          if (transaction) {
+            await storage.updatePaymentTransactionStatus(transaction.id, 'cancelled', 'refund_to_student');
+            results.successful.push({ 
+              id, 
+              refundAmount: transaction.amount 
+            });
+          } else {
+            results.successful.push({ id });
+          }
+        } catch (error) {
+          results.failed.push({ 
+            id, 
+            reason: error instanceof Error ? error.message : "Unknown error" 
+          });
+        }
+      }
+
+      const totalRefund = results.successful.reduce((sum, r) => {
+        return sum + (r.refundAmount ? parseFloat(r.refundAmount) : 0);
+      }, 0);
+
+      res.json({
+        message: `Cancelled ${results.successful.length} of ${bookingIds.length} bookings`,
+        successful: results.successful,
+        failed: results.failed,
+        totalRefundAmount: totalRefund.toFixed(2),
+        refundTime: totalRefund > 0 ? "3-5 business days" : undefined
+      });
+    } catch (error) {
+      console.error("Error bulk cancelling bookings:", error);
+      res.status(500).json({ message: "Failed to bulk cancel bookings" });
+    }
+  });
+
   // Review routes
   app.get("/api/mentors/:id/reviews", async (req, res) => {
     try {

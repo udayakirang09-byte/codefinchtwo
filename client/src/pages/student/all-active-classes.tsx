@@ -3,6 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -56,6 +57,10 @@ export default function AllActiveClasses() {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [newDateTime, setNewDateTime] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [selectedBookingIds, setSelectedBookingIds] = useState<string[]>([]);
+  const [bulkRescheduleDialogOpen, setBulkRescheduleDialogOpen] = useState(false);
+  const [bulkNewDateTime, setBulkNewDateTime] = useState('');
+  const [bulkErrorMessage, setBulkErrorMessage] = useState('');
 
   // Get student ID from user email
   const { data: studentData } = useQuery({
@@ -141,6 +146,71 @@ export default function AllActiveClasses() {
     },
   });
 
+  // Bulk reschedule mutation
+  const bulkRescheduleMutation = useMutation({
+    mutationFn: async ({ bookingIds, scheduledAt }: { bookingIds: string[]; scheduledAt: string }) => {
+      const response = await apiRequest('POST', '/api/bookings/bulk-reschedule', { bookingIds, scheduledAt });
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/students', studentId, 'bookings'] });
+      setBulkRescheduleDialogOpen(false);
+      setBulkNewDateTime('');
+      setBulkErrorMessage('');
+      setSelectedBookingIds([]);
+      toast({
+        title: 'Bulk Reschedule Complete',
+        description: data.message || `Rescheduled ${data.successful?.length || 0} bookings successfully.`,
+      });
+      if (data.failed && data.failed.length > 0) {
+        toast({
+          title: 'Some Bookings Failed',
+          description: `${data.failed.length} bookings could not be rescheduled. Check the 6-hour restriction.`,
+          variant: 'destructive',
+        });
+      }
+    },
+    onError: (error: any) => {
+      setBulkErrorMessage(error.message || 'Unable to bulk reschedule. Please try again.');
+    },
+  });
+
+  // Bulk cancel mutation
+  const bulkCancelMutation = useMutation({
+    mutationFn: async (bookingIds: string[]) => {
+      const response = await apiRequest('POST', '/api/bookings/bulk-cancel', { 
+        bookingIds, 
+        userId: user?.id 
+      });
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/students', studentId, 'bookings'] });
+      setSelectedBookingIds([]);
+      const refundInfo = data.totalRefundAmount && parseFloat(data.totalRefundAmount) > 0
+        ? ` Refund of ₹${data.totalRefundAmount} will be processed in ${data.refundTime}.`
+        : '';
+      toast({
+        title: 'Bulk Cancellation Complete',
+        description: (data.message || `Cancelled ${data.successful?.length || 0} bookings successfully.`) + refundInfo,
+      });
+      if (data.failed && data.failed.length > 0) {
+        toast({
+          title: 'Some Bookings Failed',
+          description: `${data.failed.length} bookings could not be cancelled. Check the 6-hour restriction.`,
+          variant: 'destructive',
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Bulk Cancellation Failed',
+        description: error.message || 'Unable to bulk cancel. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleReschedule = (booking: Booking) => {
     setSelectedBooking(booking);
     setRescheduleDialogOpen(true);
@@ -160,6 +230,36 @@ export default function AllActiveClasses() {
   const handleCancel = (bookingId: string) => {
     if (confirm('Are you sure you want to cancel this booking?')) {
       cancelMutation.mutate(bookingId);
+    }
+  };
+
+  const toggleBookingSelection = (bookingId: string) => {
+    setSelectedBookingIds(prev => 
+      prev.includes(bookingId) 
+        ? prev.filter(id => id !== bookingId)
+        : [...prev, bookingId]
+    );
+  };
+
+  const handleBulkReschedule = () => {
+    if (selectedBookingIds.length === 0) return;
+    setBulkRescheduleDialogOpen(true);
+    setBulkErrorMessage('');
+    setBulkNewDateTime('');
+  };
+
+  const handleBulkRescheduleSubmit = () => {
+    if (selectedBookingIds.length === 0 || !bulkNewDateTime) return;
+    bulkRescheduleMutation.mutate({
+      bookingIds: selectedBookingIds,
+      scheduledAt: bulkNewDateTime,
+    });
+  };
+
+  const handleBulkCancel = () => {
+    if (selectedBookingIds.length === 0) return;
+    if (confirm(`Are you sure you want to cancel ${selectedBookingIds.length} selected booking(s)? Any applicable payments will be refunded.`)) {
+      bulkCancelMutation.mutate(selectedBookingIds);
     }
   };
 
@@ -199,6 +299,40 @@ export default function AllActiveClasses() {
           </Card>
         ) : (
           <div className="space-y-8">
+            {/* Bulk Actions Bar */}
+            {activeBookings.length > 0 && (
+              <div className="bg-white rounded-lg shadow p-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-gray-600">
+                    {selectedBookingIds.length > 0 
+                      ? `${selectedBookingIds.length} booking(s) selected` 
+                      : 'Select bookings for bulk actions'}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={handleBulkReschedule}
+                    disabled={selectedBookingIds.length === 0 || bulkRescheduleMutation.isPending || bulkCancelMutation.isPending}
+                    data-testid="button-bulk-reschedule"
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Bulk Reschedule
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="destructive"
+                    onClick={handleBulkCancel}
+                    disabled={selectedBookingIds.length === 0 || bulkRescheduleMutation.isPending || bulkCancelMutation.isPending}
+                    data-testid="button-bulk-cancel"
+                  >
+                    {bulkCancelMutation.isPending ? 'Cancelling...' : 'Bulk Cancel'}
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Single Classes Section */}
             {activeBookings.length > 0 && (
               <div>
@@ -208,11 +342,19 @@ export default function AllActiveClasses() {
                     <Card key={booking.id} className="hover:shadow-lg transition-shadow duration-200" data-testid={`card-booking-${booking.id}`}>
                       <CardHeader>
                         <div className="flex items-start justify-between">
-                          <div>
-                            <CardTitle className="text-xl font-semibold">{booking.subject}</CardTitle>
-                            <CardDescription className="text-base mt-1">
-                              with {booking.mentor?.user?.name || 'Mentor'}
-                            </CardDescription>
+                          <div className="flex items-start gap-3">
+                            <Checkbox 
+                              checked={selectedBookingIds.includes(booking.id)}
+                              onCheckedChange={() => toggleBookingSelection(booking.id)}
+                              data-testid={`checkbox-select-${booking.id}`}
+                              className="mt-1"
+                            />
+                            <div>
+                              <CardTitle className="text-xl font-semibold">{booking.subject}</CardTitle>
+                              <CardDescription className="text-base mt-1">
+                                with {booking.mentor?.user?.name || 'Mentor'}
+                              </CardDescription>
+                            </div>
                           </div>
                           <Badge variant="default" data-testid={`badge-status-${booking.id}`}>Scheduled</Badge>
                         </div>
@@ -238,7 +380,7 @@ export default function AllActiveClasses() {
                             size="sm" 
                             variant="outline" 
                             onClick={() => handleReschedule(booking)}
-                            disabled={cancelMutation.isPending || rescheduleMutation.isPending}
+                            disabled={cancelMutation.isPending || rescheduleMutation.isPending || bulkRescheduleMutation.isPending || bulkCancelMutation.isPending}
                             data-testid={`button-reschedule-${booking.id}`}
                           >
                             <Calendar className="w-4 h-4 mr-2" />
@@ -248,7 +390,7 @@ export default function AllActiveClasses() {
                             size="sm" 
                             variant="destructive" 
                             onClick={() => handleCancel(booking.id)}
-                            disabled={cancelMutation.isPending || rescheduleMutation.isPending}
+                            disabled={cancelMutation.isPending || rescheduleMutation.isPending || bulkRescheduleMutation.isPending || bulkCancelMutation.isPending}
                             data-testid={`button-cancel-${booking.id}`}
                           >
                             {cancelMutation.isPending ? 'Cancelling...' : 'Cancel'}
@@ -362,6 +504,62 @@ export default function AllActiveClasses() {
               data-testid="button-confirm-reschedule"
             >
               {rescheduleMutation.isPending ? 'Rescheduling...' : 'Reschedule'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Reschedule Dialog */}
+      <Dialog open={bulkRescheduleDialogOpen} onOpenChange={setBulkRescheduleDialogOpen}>
+        <DialogContent data-testid="dialog-bulk-reschedule">
+          <DialogHeader>
+            <DialogTitle>Bulk Reschedule Classes</DialogTitle>
+            <DialogDescription>
+              Choose a new date and time for {selectedBookingIds.length} selected booking(s)
+            </DialogDescription>
+          </DialogHeader>
+          
+          {bulkErrorMessage && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{bulkErrorMessage}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="bulk-datetime">New Date & Time</Label>
+              <Input
+                id="bulk-datetime"
+                type="datetime-local"
+                value={bulkNewDateTime}
+                onChange={(e) => setBulkNewDateTime(e.target.value)}
+                min={new Date().toISOString().slice(0, 16)}
+                data-testid="input-bulk-new-datetime"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Note: The 6-hour restriction applies to each booking individually. Some bookings may fail if they're too close to their scheduled time.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setBulkRescheduleDialogOpen(false);
+                setBulkErrorMessage('');
+              }}
+              data-testid="button-cancel-bulk-reschedule"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleBulkRescheduleSubmit}
+              disabled={!bulkNewDateTime || bulkRescheduleMutation.isPending}
+              data-testid="button-confirm-bulk-reschedule"
+            >
+              {bulkRescheduleMutation.isPending ? 'Rescheduling...' : `Reschedule ${selectedBookingIds.length} Booking(s)`}
             </Button>
           </DialogFooter>
         </DialogContent>
