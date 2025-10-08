@@ -4359,7 +4359,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/payment-config", async (req, res) => {
     try {
-      // Load payment configuration from adminConfig table
+      // Load payment configuration from adminConfig table (Stripe/Razorpay keys)
       const configs = await db.select().from(adminConfig).where(
         or(
           eq(adminConfig.configKey, 'stripe_enabled'),
@@ -4376,13 +4376,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return acc;
       }, {} as Record<string, string | null>);
       
+      // Get payment mode configuration from admin_payment_config table
+      const adminPaymentConfig = await storage.getAdminPaymentConfig();
+      
       const paymentConfig = {
         stripeEnabled: configMap['stripe_enabled'] === 'true',
         stripePublishableKey: configMap['stripe_publishable_key'] || '',
         stripeSecretKey: configMap['stripe_secret_key'] || '',
         razorpayEnabled: configMap['razorpay_enabled'] === 'true',
         razorpayKeyId: configMap['razorpay_key_id'] || '',
-        razorpayKeySecret: configMap['razorpay_key_secret'] || ''
+        razorpayKeySecret: configMap['razorpay_key_secret'] || '',
+        // Add payment mode configuration
+        paymentMode: adminPaymentConfig?.paymentMode || 'dummy',
+        razorpayMode: adminPaymentConfig?.razorpayMode || 'upi',
+        enableRazorpay: adminPaymentConfig?.enableRazorpay || false,
+        adminUpiId: adminPaymentConfig?.adminUpiId || undefined
       };
       
       res.json(paymentConfig);
@@ -6501,30 +6509,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin Payment Configuration Routes
-  // Get admin payment configuration - PUBLIC (needed for booking)
-  app.get('/api/admin/payment-config', async (req: any, res) => {
-    try {
-      const config = await storage.getAdminPaymentConfig();
-      if (!config) {
-        // Default to dummy mode if not configured
-        return res.json({ 
-          paymentMode: 'dummy',
-          razorpayMode: 'upi',
-          enableRazorpay: false
-        });
-      }
-      res.json({ 
-        paymentMode: config.paymentMode,
-        razorpayMode: config.razorpayMode || 'upi',
-        enableRazorpay: config.enableRazorpay || false,
-        adminUpiId: config.adminUpiId || undefined
-      });
-    } catch (error) {
-      console.error('Error fetching admin payment config:', error);
-      res.status(500).json({ message: 'Failed to fetch admin payment config' });
-    }
-  });
-
   // Update admin payment configuration - SECURED (admin only)
   app.put('/api/admin/payment-config', authenticateSession, async (req: any, res) => {
     try {
