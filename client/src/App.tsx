@@ -31,9 +31,11 @@ import AchievementBadges from "@/pages/achievement-badges";
 import UserManagement from "./pages/admin/user-management";
 import MentorApproval from "./pages/admin/mentor-approval";
 import ActiveClasses from "./pages/student/active-classes";
+import AllActiveClasses from "./pages/student/all-active-classes";
 import LearningHours from "./pages/student/learning-hours";
 import CompletedClasses from "./pages/student/completed-classes";
 import CreateCourse from "./pages/teacher/create-course";
+import TeacherAllActiveClasses from "./pages/teacher/all-active-classes";
 import ManageSchedule from "./pages/teacher/manage-schedule";
 import Terms from "./pages/terms";
 import Privacy from "./pages/privacy";
@@ -96,10 +98,12 @@ function Router() {
       <Route path="/teacher/payment-config" component={TeacherPaymentConfig} />
       <Route path="/admin/home" component={AdminHome} />
       <Route path="/student/active-classes" component={ActiveClasses} />
+      <Route path="/student/all-active-classes" component={AllActiveClasses} />
       <Route path="/student/learning-hours" component={LearningHours} />
       <Route path="/student/completed-classes" component={CompletedClasses} />
       <Route path="/recordings" component={Recordings} />
       <Route path="/teacher/create-course" component={CreateCourse} />
+      <Route path="/teacher/all-active-classes" component={TeacherAllActiveClasses} />
       <Route path="/teacher/manage-schedule" component={ManageSchedule} />
       <Route path="/student/progress" component={StudentProgress} />
       <Route path="/terms" component={Terms} />

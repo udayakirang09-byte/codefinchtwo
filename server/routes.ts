@@ -1276,6 +1276,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get course enrollments for a student
+  app.get("/api/students/:id/enrollments", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const enrollments = await storage.getCourseEnrollmentsByStudent(id);
+      res.json(enrollments);
+    } catch (error) {
+      console.error("Error fetching student enrollments:", error);
+      res.status(500).json({ message: "Failed to fetch enrollments" });
+    }
+  });
+
+  // Get course enrollments for a mentor
+  app.get("/api/mentors/:id/enrollments", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const enrollments = await storage.getCourseEnrollmentsByMentor(id);
+      res.json(enrollments);
+    } catch (error) {
+      console.error("Error fetching mentor enrollments:", error);
+      res.status(500).json({ message: "Failed to fetch enrollments" });
+    }
+  });
+
   // Success Stories routes
   app.get("/api/success-stories", async (req, res) => {
     try {

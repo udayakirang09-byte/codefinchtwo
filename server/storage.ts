@@ -128,6 +128,8 @@ export interface IStorage {
   
   // Course Enrollment operations
   createCourseEnrollment(enrollment: any): Promise<any>;
+  getCourseEnrollmentsByStudent(studentId: string): Promise<any[]>;
+  getCourseEnrollmentsByMentor(mentorId: string): Promise<any[]>;
   
   // Booking operations
   getBookings(): Promise<BookingWithDetails[]>;
@@ -783,6 +785,40 @@ export class DatabaseStorage implements IStorage {
     
     const [enrollment] = await db.insert(courseEnrollments).values([processedData]).returning();
     return enrollment;
+  }
+
+  async getCourseEnrollmentsByStudent(studentId: string): Promise<any[]> {
+    const result = await db
+      .select()
+      .from(courseEnrollments)
+      .leftJoin(courses, eq(courseEnrollments.courseId, courses.id))
+      .leftJoin(mentors, eq(courseEnrollments.mentorId, mentors.id))
+      .leftJoin(users, eq(mentors.userId, users.id))
+      .where(eq(courseEnrollments.studentId, studentId))
+      .orderBy(desc(courseEnrollments.enrolledAt));
+
+    return result.map(({ course_enrollments: enrollment, courses: course, mentors: mentor, users: user }) => ({
+      ...enrollment,
+      course,
+      mentor: mentor ? { ...mentor, user } : null,
+    }));
+  }
+
+  async getCourseEnrollmentsByMentor(mentorId: string): Promise<any[]> {
+    const result = await db
+      .select()
+      .from(courseEnrollments)
+      .leftJoin(courses, eq(courseEnrollments.courseId, courses.id))
+      .leftJoin(students, eq(courseEnrollments.studentId, students.id))
+      .leftJoin(users, eq(students.userId, users.id))
+      .where(eq(courseEnrollments.mentorId, mentorId))
+      .orderBy(desc(courseEnrollments.enrolledAt));
+
+    return result.map(({ course_enrollments: enrollment, courses: course, students: student, users: user }) => ({
+      ...enrollment,
+      course,
+      student: student ? { ...student, user } : null,
+    }));
   }
 
   // Review operations
