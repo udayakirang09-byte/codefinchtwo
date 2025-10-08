@@ -340,7 +340,11 @@ export interface IStorage {
   
   // Admin Payment Configuration operations
   getAdminPaymentConfig(): Promise<AdminPaymentConfig | undefined>;
-  updateAdminPaymentConfig(paymentMode: 'dummy' | 'realtime'): Promise<void>;
+  updateAdminPaymentConfig(
+    paymentMode?: 'dummy' | 'realtime',
+    razorpayMode?: 'upi' | 'api_keys',
+    enableRazorpay?: boolean
+  ): Promise<void>;
   
   // Admin UI Configuration operations
   getAdminUiConfig(): Promise<AdminUiConfig | undefined>;
@@ -564,6 +568,13 @@ export class DatabaseStorage implements IStorage {
     await db
       .update(mentors)
       .set({ hourlyRate: hourlyRate })
+      .where(eq(mentors.id, mentorId));
+  }
+
+  async updateMentorUpiId(mentorId: string, upiId: string): Promise<void> {
+    await db
+      .update(mentors)
+      .set({ upiId: upiId })
       .where(eq(mentors.id, mentorId));
   }
 
@@ -2184,16 +2195,29 @@ export class DatabaseStorage implements IStorage {
     return results.length > 0 ? results[0] : undefined;
   }
 
-  async updateAdminPaymentConfig(paymentMode: 'dummy' | 'realtime'): Promise<void> {
+  async updateAdminPaymentConfig(
+    paymentMode?: 'dummy' | 'realtime',
+    razorpayMode?: 'upi' | 'api_keys',
+    enableRazorpay?: boolean
+  ): Promise<void> {
     const existing = await this.getAdminPaymentConfig();
+    
+    const updates: any = { updatedAt: new Date() };
+    if (paymentMode !== undefined) updates.paymentMode = paymentMode;
+    if (razorpayMode !== undefined) updates.razorpayMode = razorpayMode;
+    if (enableRazorpay !== undefined) updates.enableRazorpay = enableRazorpay;
     
     if (existing) {
       await db
         .update(adminPaymentConfig)
-        .set({ paymentMode, updatedAt: new Date() })
+        .set(updates)
         .where(eq(adminPaymentConfig.id, existing.id));
     } else {
-      await db.insert(adminPaymentConfig).values({ paymentMode });
+      await db.insert(adminPaymentConfig).values({ 
+        paymentMode: paymentMode || 'dummy',
+        razorpayMode: razorpayMode || 'upi',
+        enableRazorpay: enableRazorpay || false
+      });
     }
   }
 

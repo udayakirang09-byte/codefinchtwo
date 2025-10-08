@@ -37,6 +37,7 @@ export const mentors = pgTable("mentors", {
   totalStudents: integer("total_students").default(0),
   hourlyRate: decimal("hourly_rate", { precision: 10, scale: 2 }),
   country: varchar("country").notNull().default("NA-Country"), // Country field with default
+  upiId: varchar("upi_id"), // UPI ID for payouts
   isActive: boolean("is_active").default(true),
   availableSlots: jsonb("available_slots").$type<{ day: string; times: string[] }[]>().default([]),
   createdAt: timestamp("created_at").defaultNow(),
@@ -429,6 +430,8 @@ export const adminConfig = pgTable("admin_config", {
 export const adminPaymentConfig = pgTable("admin_payment_config", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   paymentMode: varchar("payment_mode").notNull().default("dummy"), // "dummy" or "realtime"
+  razorpayMode: varchar("razorpay_mode").notNull().default("upi"), // "upi" or "api_keys"
+  enableRazorpay: boolean("enable_razorpay").default(false), // Toggle for Razorpay integration
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 

@@ -6218,6 +6218,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   console.log('✅ Teacher Subject Fee API routes registered successfully!');
 
+  // Update mentor UPI ID - SECURED (mentor or admin only)
+  app.put('/api/mentors/:mentorId/upi', authenticateSession, async (req: any, res) => {
+    try {
+      const { mentorId } = req.params;
+      const { upiId } = req.body;
+
+      // Get mentor to check authorization
+      const mentor = await storage.getMentor(mentorId);
+      if (!mentor) {
+        return res.status(404).json({ message: 'Mentor not found' });
+      }
+
+      // Authorization check: must be the mentor themselves or an admin
+      if (req.user.role !== 'admin' && mentor.userId !== req.user.id) {
+        return res.status(403).json({ message: 'Not authorized to update this mentor UPI ID' });
+      }
+
+      if (!upiId) {
+        return res.status(400).json({ message: 'UPI ID is required' });
+      }
+
+      await storage.updateMentorUpiId(mentorId, upiId);
+      res.json({ success: true, message: 'UPI ID updated successfully' });
+    } catch (error) {
+      console.error('Error updating mentor UPI ID:', error);
+      res.status(500).json({ message: 'Failed to update UPI ID' });
+    }
+  });
+
   // Admin Payment Configuration Routes
   // Get admin payment configuration - PUBLIC (needed for booking)
   app.get('/api/admin/payment-config', async (req: any, res) => {
@@ -6225,9 +6254,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const config = await storage.getAdminPaymentConfig();
       if (!config) {
         // Default to dummy mode if not configured
-        return res.json({ paymentMode: 'dummy' });
+        return res.json({ 
+          paymentMode: 'dummy',
+          razorpayMode: 'upi',
+          enableRazorpay: false
+        });
       }
-      res.json({ paymentMode: config.paymentMode });
+      res.json({ 
+        paymentMode: config.paymentMode,
+        razorpayMode: config.razorpayMode || 'upi',
+        enableRazorpay: config.enableRazorpay || false
+      });
     } catch (error) {
       console.error('Error fetching admin payment config:', error);
       res.status(500).json({ message: 'Failed to fetch admin payment config' });
@@ -6241,13 +6278,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Admin access required' });
       }
 
-      const { paymentMode } = req.body;
-      if (!paymentMode || !['dummy', 'realtime'].includes(paymentMode)) {
+      const { paymentMode, razorpayMode, enableRazorpay } = req.body;
+      if (paymentMode && !['dummy', 'realtime'].includes(paymentMode)) {
         return res.status(400).json({ message: 'paymentMode must be either "dummy" or "realtime"' });
       }
+      if (razorpayMode && !['upi', 'api_keys'].includes(razorpayMode)) {
+        return res.status(400).json({ message: 'razorpayMode must be either "upi" or "api_keys"' });
+      }
 
-      await storage.updateAdminPaymentConfig(paymentMode);
-      res.json({ success: true, message: 'Payment mode updated successfully', paymentMode });
+      await storage.updateAdminPaymentConfig(paymentMode, razorpayMode, enableRazorpay);
+      res.json({ success: true, message: 'Payment configuration updated successfully' });
     } catch (error) {
       console.error('Error updating admin payment config:', error);
       res.status(500).json({ message: 'Failed to update admin payment config' });
