@@ -6195,8 +6195,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { mentorId } = req.params;
 
       // Authorization: Must be the mentor themselves or admin
-      const isOwnMentor = req.user.role === 'mentor' && req.user.id === mentorId;
       const isAdmin = req.user.role === 'admin';
+      
+      let isOwnMentor = false;
+      if (req.user.role === 'mentor') {
+        const mentor = await storage.getMentor(mentorId);
+        isOwnMentor = mentor && mentor.userId === req.user.id;
+      }
 
       if (!isOwnMentor && !isAdmin) {
         return res.status(403).json({ message: 'Not authorized to view subject fees for this mentor' });
