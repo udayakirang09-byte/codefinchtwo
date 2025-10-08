@@ -6430,17 +6430,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'classFee must be a valid positive number' });
       }
 
+      // Authorization: Must be a mentor
+      if (req.user.role !== 'mentor') {
+        return res.status(403).json({ message: 'Only mentors can update subject fees' });
+      }
+
+      // Get the mentor record for this user
+      const mentor = await storage.getMentorByUserId(req.user.id);
+      if (!mentor) {
+        return res.status(404).json({ message: 'Mentor profile not found' });
+      }
+
       // Get the subject to verify ownership
-      const subjects = await storage.getTeacherSubjectsByMentor(req.user.id);
+      const subjects = await storage.getTeacherSubjectsByMentor(mentor.id);
       const subject = subjects.find(s => s.id === subjectId);
 
       if (!subject) {
         return res.status(404).json({ message: 'Subject not found or not authorized' });
-      }
-
-      // Authorization check
-      if (req.user.role !== 'mentor' || subject.mentorId !== req.user.id) {
-        return res.status(403).json({ message: 'Not authorized to update fees for this subject' });
       }
 
       await storage.updateTeacherSubjectFee(subjectId, fee);
