@@ -937,6 +937,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reschedule booking with 6-hour restriction
+  app.patch("/api/bookings/:id/reschedule", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { scheduledAt } = req.body;
+
+      if (!scheduledAt) {
+        return res.status(400).json({ message: "New scheduled time is required" });
+      }
+
+      // Get current booking
+      const booking = await storage.getBooking(id);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Check 6-hour restriction
+      const now = new Date();
+      const currentScheduledTime = new Date(booking.scheduledAt);
+      const sixHoursBeforeClass = new Date(currentScheduledTime.getTime() - 6 * 60 * 60 * 1000);
+
+      if (now >= sixHoursBeforeClass) {
+        return res.status(400).json({ 
+          message: "Cannot reschedule within 6 hours of the scheduled class time" 
+        });
+      }
+
+      const newScheduledAt = new Date(scheduledAt);
+      await storage.rescheduleBooking(id, newScheduledAt);
+      
+      res.json({ 
+        message: "Booking rescheduled successfully",
+        newScheduledAt 
+      });
+    } catch (error) {
+      console.error("Error rescheduling booking:", error);
+      res.status(500).json({ message: "Failed to reschedule booking" });
+    }
+  });
+
+  // Cancel booking with 6-hour restriction
+  app.patch("/api/bookings/:id/cancel", async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // Get current booking
+      const booking = await storage.getBooking(id);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      if (booking.status === 'cancelled') {
+        return res.status(400).json({ message: "Booking is already cancelled" });
+      }
+
+      // Check 6-hour restriction
+      const now = new Date();
+      const scheduledTime = new Date(booking.scheduledAt);
+      const sixHoursBeforeClass = new Date(scheduledTime.getTime() - 6 * 60 * 60 * 1000);
+
+      if (now >= sixHoursBeforeClass) {
+        return res.status(400).json({ 
+          message: "Cannot cancel within 6 hours of the scheduled class time" 
+        });
+      }
+
+      await storage.cancelBooking(id);
+      
+      res.json({ 
+        message: "Booking cancelled successfully"
+      });
+    } catch (error) {
+      console.error("Error cancelling booking:", error);
+      res.status(500).json({ message: "Failed to cancel booking" });
+    }
+  });
+
   // Review routes
   app.get("/api/mentors/:id/reviews", async (req, res) => {
     try {

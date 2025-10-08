@@ -1,13 +1,19 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, Video, Home, BookOpen } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Calendar, Clock, Video, Home, BookOpen, AlertCircle } from 'lucide-react';
 import { Link } from 'wouter';
 import Navigation from '@/components/navigation';
 import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
 import { format, isPast } from 'date-fns';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 
 interface Booking {
   id: string;
@@ -45,6 +51,11 @@ interface Enrollment {
 
 export default function AllActiveClasses() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [newDateTime, setNewDateTime] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Get student ID from user email
   const { data: studentData } = useQuery({
@@ -85,6 +96,72 @@ export default function AllActiveClasses() {
   const activeEnrollments = enrollments.filter(enrollment => enrollment.status === 'active');
 
   const hasActiveClasses = activeBookings.length > 0 || activeEnrollments.length > 0;
+
+  // Cancel booking mutation
+  const cancelMutation = useMutation({
+    mutationFn: async (bookingId: string) => {
+      const response = await apiRequest('PATCH', `/api/bookings/${bookingId}/cancel`);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/students', studentId, 'bookings'] });
+      toast({
+        title: 'Booking Cancelled',
+        description: 'Your class has been cancelled successfully.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Cancellation Failed',
+        description: error.message || 'Unable to cancel the booking. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Reschedule booking mutation
+  const rescheduleMutation = useMutation({
+    mutationFn: async ({ bookingId, scheduledAt }: { bookingId: string; scheduledAt: string }) => {
+      const response = await apiRequest('PATCH', `/api/bookings/${bookingId}/reschedule`, { scheduledAt });
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/students', studentId, 'bookings'] });
+      setRescheduleDialogOpen(false);
+      setSelectedBooking(null);
+      setNewDateTime('');
+      setErrorMessage('');
+      toast({
+        title: 'Booking Rescheduled',
+        description: 'Your class has been rescheduled successfully.',
+      });
+    },
+    onError: (error: any) => {
+      setErrorMessage(error.message || 'Unable to reschedule the booking. Please try again.');
+    },
+  });
+
+  const handleReschedule = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setRescheduleDialogOpen(true);
+    setErrorMessage('');
+    setNewDateTime('');
+  };
+
+  const handleRescheduleSubmit = () => {
+    if (!selectedBooking || !newDateTime) return;
+
+    rescheduleMutation.mutate({
+      bookingId: selectedBooking.id,
+      scheduledAt: newDateTime,
+    });
+  };
+
+  const handleCancel = (bookingId: string) => {
+    if (confirm('Are you sure you want to cancel this booking?')) {
+      cancelMutation.mutate(bookingId);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -157,12 +234,24 @@ export default function AllActiveClasses() {
                             <Video className="w-4 h-4 mr-2" />
                             Join Session
                           </Button>
-                          <Button size="sm" variant="outline" data-testid={`button-reschedule-${booking.id}`}>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => handleReschedule(booking)}
+                            disabled={cancelMutation.isPending || rescheduleMutation.isPending}
+                            data-testid={`button-reschedule-${booking.id}`}
+                          >
                             <Calendar className="w-4 h-4 mr-2" />
                             Reschedule
                           </Button>
-                          <Button size="sm" variant="destructive" data-testid={`button-cancel-${booking.id}`}>
-                            Cancel
+                          <Button 
+                            size="sm" 
+                            variant="destructive" 
+                            onClick={() => handleCancel(booking.id)}
+                            disabled={cancelMutation.isPending || rescheduleMutation.isPending}
+                            data-testid={`button-cancel-${booking.id}`}
+                          >
+                            {cancelMutation.isPending ? 'Cancelling...' : 'Cancel'}
                           </Button>
                         </div>
                       </CardContent>
@@ -221,6 +310,62 @@ export default function AllActiveClasses() {
           </div>
         )}
       </div>
+
+      {/* Reschedule Dialog */}
+      <Dialog open={rescheduleDialogOpen} onOpenChange={setRescheduleDialogOpen}>
+        <DialogContent data-testid="dialog-reschedule">
+          <DialogHeader>
+            <DialogTitle>Reschedule Class</DialogTitle>
+            <DialogDescription>
+              Choose a new date and time for your class with {selectedBooking?.mentor?.user?.name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {errorMessage && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="datetime">New Date & Time</Label>
+              <Input
+                id="datetime"
+                type="datetime-local"
+                value={newDateTime}
+                onChange={(e) => setNewDateTime(e.target.value)}
+                min={new Date().toISOString().slice(0, 16)}
+                data-testid="input-new-datetime"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Note: Rescheduling is not allowed within 6 hours of the scheduled class time.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setRescheduleDialogOpen(false);
+                setErrorMessage('');
+              }}
+              data-testid="button-cancel-reschedule"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleRescheduleSubmit}
+              disabled={!newDateTime || rescheduleMutation.isPending}
+              data-testid="button-confirm-reschedule"
+            >
+              {rescheduleMutation.isPending ? 'Rescheduling...' : 'Reschedule'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

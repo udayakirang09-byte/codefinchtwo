@@ -138,6 +138,8 @@ export interface IStorage {
   getBookingsByMentor(mentorId: string): Promise<BookingWithDetails[]>;
   createBooking(booking: InsertBooking): Promise<Booking>;
   updateBookingStatus(id: string, status: string): Promise<void>;
+  rescheduleBooking(id: string, newScheduledAt: Date): Promise<void>;
+  cancelBooking(id: string): Promise<void>;
   
   // Review operations
   getReviewsByMentor(mentorId: string): Promise<ReviewWithDetails[]>;
@@ -704,6 +706,20 @@ export class DatabaseStorage implements IStorage {
     await db
       .update(bookings)
       .set({ status, updatedAt: new Date() })
+      .where(eq(bookings.id, id));
+  }
+
+  async rescheduleBooking(id: string, newScheduledAt: Date): Promise<void> {
+    await db
+      .update(bookings)
+      .set({ scheduledAt: newScheduledAt, updatedAt: new Date() })
+      .where(eq(bookings.id, id));
+  }
+
+  async cancelBooking(id: string): Promise<void> {
+    await db
+      .update(bookings)
+      .set({ status: 'cancelled', updatedAt: new Date() })
       .where(eq(bookings.id, id));
   }
 
