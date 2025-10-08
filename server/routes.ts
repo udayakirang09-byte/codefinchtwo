@@ -4252,6 +4252,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get payment account details for checkout display (admin + teacher)
+  app.get("/api/payment-accounts/:mentorId", async (req, res) => {
+    try {
+      const { mentorId } = req.params;
+
+      // Get admin's preferred payment method
+      const adminPreferredMethodConfig = await db.select().from(adminConfig)
+        .where(eq(adminConfig.configKey, 'admin_preferred_payment_method'))
+        .limit(1);
+      
+      const adminPreferredMethodType = adminPreferredMethodConfig[0]?.configValue || 'upi';
+      
+      // Get admin's actual payment method account details
+      const adminUsers = await db.select().from(users)
+        .where(eq(users.role, 'admin'))
+        .limit(1);
+      
+      let adminPaymentAccount = null;
+      if (adminUsers.length > 0) {
+        const adminPaymentMethods = await db.select().from(paymentMethods)
+          .where(
+            and(
+              eq(paymentMethods.userId, adminUsers[0].id),
+              eq(paymentMethods.type, adminPreferredMethodType),
+              eq(paymentMethods.isActive, true)
+            )
+          )
+          .limit(1);
+        
+        if (adminPaymentMethods.length > 0) {
+          const method = adminPaymentMethods[0];
+          adminPaymentAccount = {
+            type: method.type,
+            displayName: method.displayName,
+            details: method.type === 'upi' 
+              ? method.upiId 
+              : method.type === 'card' 
+                ? `****${method.cardLast4}` 
+                : method.type === 'stripe'
+                  ? 'Stripe Account'
+                  : 'Bank Account'
+          };
+        }
+      }
+
+      // Get teacher's user ID from mentor ID
+      const mentor = await storage.getMentor(mentorId);
+      if (!mentor) {
+        return res.status(404).json({ message: "Teacher not found" });
+      }
+
+      // Get teacher's default payment method
+      const teacherPaymentMethods = await db.select().from(paymentMethods)
+        .where(
+          and(
+            eq(paymentMethods.userId, mentor.userId),
+            eq(paymentMethods.isActive, true),
+            eq(paymentMethods.isDefault, true)
+          )
+        )
+        .limit(1);
+
+      let teacherPaymentAccount = null;
+      if (teacherPaymentMethods.length > 0) {
+        const method = teacherPaymentMethods[0];
+        teacherPaymentAccount = {
+          type: method.type,
+          displayName: method.displayName,
+          details: method.type === 'upi' 
+            ? method.upiId 
+            : method.type === 'card' 
+              ? `****${method.cardLast4}` 
+              : method.type === 'stripe'
+                ? 'Stripe Account'
+                : 'Bank Account'
+        };
+      }
+
+      res.json({
+        adminPaymentAccount,
+        teacherPaymentAccount,
+        teacherName: `${mentor.user?.firstName || ''} ${mentor.user?.lastName || ''}`.trim() || 'Teacher'
+      });
+    } catch (error) {
+      console.error("Error loading payment accounts:", error);
+      res.status(500).json({ error: "Failed to load payment accounts" });
+    }
+  });
+
   app.get("/api/admin/course-config", async (req, res) => {
     try {
       // Load course configuration from adminConfig table

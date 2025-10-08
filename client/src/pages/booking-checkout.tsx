@@ -469,6 +469,7 @@ export default function BookingCheckout() {
   const [bookingDetails, setBookingDetails] = useState<any>(null);
   const [stripePromise, setStripePromise] = useState<any>(null);
   const [paymentConfigLoaded, setPaymentConfigLoaded] = useState(false);
+  const [paymentAccounts, setPaymentAccounts] = useState<any>(null);
   const { toast } = useToast();
 
   // Extract parameters from URL
@@ -517,6 +518,14 @@ export default function BookingCheckout() {
 
     const booking = JSON.parse(storedBooking);
     setBookingDetails(booking);
+
+    // Fetch payment account details for display
+    fetch(`/api/payment-accounts/${booking.mentorId}`)
+      .then(res => res.json())
+      .then(data => {
+        setPaymentAccounts(data);
+      })
+      .catch(err => console.error('Failed to load payment accounts:', err));
 
     // Create PaymentIntent only if Stripe is enabled (for card payments)
     // UPI and Net Banking don't need Stripe
@@ -649,6 +658,38 @@ export default function BookingCheckout() {
                       <li>✓ Follow-up notes and summary</li>
                     </ul>
                   </div>
+
+                  {/* Payment Flow Information */}
+                  {paymentAccounts && (
+                    <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                      <h4 className="font-semibold text-amber-900 mb-3 flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        Payment Flow
+                      </h4>
+                      <div className="space-y-3 text-sm">
+                        {paymentAccounts.adminPaymentAccount && (
+                          <div className="bg-white p-3 rounded-md border border-amber-200">
+                            <p className="text-xs text-gray-500 mb-1">Platform Account (Admin)</p>
+                            <p className="font-medium text-gray-900">{paymentAccounts.adminPaymentAccount.displayName}</p>
+                            <p className="text-xs text-gray-600">{paymentAccounts.adminPaymentAccount.details}</p>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-center">
+                          <div className="text-gray-400">↓</div>
+                        </div>
+                        {paymentAccounts.teacherPaymentAccount && (
+                          <div className="bg-white p-3 rounded-md border border-amber-200">
+                            <p className="text-xs text-gray-500 mb-1">Teacher Account ({paymentAccounts.teacherName})</p>
+                            <p className="font-medium text-gray-900">{paymentAccounts.teacherPaymentAccount.displayName}</p>
+                            <p className="text-xs text-gray-600">{paymentAccounts.teacherPaymentAccount.details}</p>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs text-amber-700 mt-3">
+                        Your payment will be processed through the platform and transferred to the teacher's account.
+                      </p>
+                    </div>
+                  )}
                   
                   <div className="border-t pt-4">
                     <div className="flex justify-between text-lg font-semibold">
