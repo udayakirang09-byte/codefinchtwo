@@ -2838,6 +2838,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update/edit course route
+  app.patch("/api/courses/:courseId", async (req, res) => {
+    try {
+      const { courseId } = req.params;
+      const courseData = req.body;
+
+      // Get the existing course
+      const existingCourse = await storage.getCourse(courseId);
+      if (!existingCourse) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      // Validate mentorId if provided in update
+      if (courseData.mentorId && courseData.mentorId !== existingCourse.mentorId) {
+        return res.status(403).json({ 
+          message: "Cannot change course ownership" 
+        });
+      }
+
+      // Process course data for update
+      const updateData: any = {};
+      
+      // Only include fields that are provided
+      if (courseData.title !== undefined) updateData.title = courseData.title;
+      if (courseData.description !== undefined) updateData.description = courseData.description;
+      if (courseData.category !== undefined) updateData.category = courseData.category;
+      if (courseData.difficulty !== undefined) updateData.difficulty = courseData.difficulty;
+      if (courseData.price !== undefined) updateData.price = courseData.price;
+      if (courseData.duration !== undefined) updateData.duration = courseData.duration;
+      if (courseData.maxStudents !== undefined) updateData.maxStudents = courseData.maxStudents;
+      if (courseData.prerequisites !== undefined) updateData.prerequisites = courseData.prerequisites;
+      if (courseData.tags !== undefined) updateData.tags = Array.isArray(courseData.tags) ? courseData.tags : [];
+      if (courseData.isActive !== undefined) updateData.isActive = courseData.isActive;
+
+      // Update the course
+      await storage.updateCourse(courseId, updateData);
+
+      console.log(`✅ Course updated: "${updateData.title || existingCourse.title}" (ID: ${courseId})`);
+      res.json({ message: "Course updated successfully", courseId });
+    } catch (error) {
+      console.error("Error updating course:", error);
+      res.status(500).json({ message: "Failed to update course" });
+    }
+  });
+
   // Comprehensive system test endpoint
   app.post('/api/test/run-all', async (req, res) => {
     try {
