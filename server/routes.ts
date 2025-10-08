@@ -3501,7 +3501,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const originalTransaction = await storage.getPaymentTransactionByStripeId(charge.payment_intent);
       
       if (originalTransaction) {
-        // Create refund transaction record
+        // Get admin's preferred payment method (where refund comes from)
+        const adminPreferredMethodConfig = await db.select().from(adminConfig)
+          .where(eq(adminConfig.configKey, 'admin_preferred_payment_method'))
+          .limit(1);
+        
+        const adminPreferredMethodType = adminPreferredMethodConfig[0]?.configValue || 'upi';
+        
+        // Get admin user
+        const adminUsers = await db.select().from(users)
+          .where(eq(users.role, 'admin'))
+          .limit(1);
+        
+        let adminPaymentMethodId = null;
+        if (adminUsers.length > 0) {
+          const adminPaymentMethods = await db.select().from(paymentMethods)
+            .where(
+              and(
+                eq(paymentMethods.userId, adminUsers[0].id),
+                eq(paymentMethods.type, adminPreferredMethodType),
+                eq(paymentMethods.isActive, true)
+              )
+            )
+            .limit(1);
+          
+          if (adminPaymentMethods.length > 0) {
+            adminPaymentMethodId = adminPaymentMethods[0].id;
+          }
+        }
+
+        // Create refund transaction record with payment method references
         const refundData = {
           bookingId: originalTransaction.bookingId,
           courseId: originalTransaction.courseId,
@@ -3510,8 +3539,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           transactionFee: "0.00",
           netAmount: (charge.amount_refunded / 100).toString(),
           currency: "INR",
-          fromUserId: originalTransaction.toUserId,
-          toUserId: originalTransaction.fromUserId,
+          fromUserId: originalTransaction.toUserId,  // Admin (where refund comes from)
+          toUserId: originalTransaction.fromUserId,   // Student (where refund goes to)
+          fromPaymentMethod: adminPaymentMethodId,  // Admin's preferred payment method
+          toPaymentMethod: originalTransaction.fromPaymentMethod,  // Student's original payment method
           status: "completed",
           workflowStage: "refund_to_student",
           stripePaymentIntentId: charge.payment_intent,
@@ -3520,7 +3551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
 
         const refundTransaction = await storage.createPaymentTransaction(refundData);
-        console.log(`✅ Refund transaction created: ${refundTransaction.id}`);
+        console.log(`✅ Refund transaction created: ${refundTransaction.id} (from admin ${adminPreferredMethodType} to student)`);
 
         // Update booking status if applicable
         if (originalTransaction.bookingId) {
