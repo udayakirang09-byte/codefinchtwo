@@ -63,6 +63,9 @@ export default function AllActiveClasses() {
   const [bulkErrorMessage, setBulkErrorMessage] = useState('');
   const [cancelCourseDialogOpen, setCancelCourseDialogOpen] = useState(false);
   const [selectedEnrollment, setSelectedEnrollment] = useState<Enrollment | null>(null);
+  const [cancelBookingDialogOpen, setCancelBookingDialogOpen] = useState(false);
+  const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
+  const [bulkCancelDialogOpen, setBulkCancelDialogOpen] = useState(false);
 
   // Get student ID from user email
   const { data: studentData } = useQuery({
@@ -260,9 +263,15 @@ export default function AllActiveClasses() {
   };
 
   const handleCancel = (bookingId: string) => {
-    if (confirm('Are you sure you want to cancel this booking?')) {
-      cancelMutation.mutate(bookingId);
-    }
+    setBookingToCancel(bookingId);
+    setCancelBookingDialogOpen(true);
+  };
+
+  const confirmCancelBooking = () => {
+    if (!bookingToCancel) return;
+    cancelMutation.mutate(bookingToCancel);
+    setCancelBookingDialogOpen(false);
+    setBookingToCancel(null);
   };
 
   const toggleBookingSelection = (bookingId: string) => {
@@ -290,9 +299,12 @@ export default function AllActiveClasses() {
 
   const handleBulkCancel = () => {
     if (selectedBookingIds.length === 0) return;
-    if (confirm(`Are you sure you want to cancel ${selectedBookingIds.length} selected booking(s)? Any applicable payments will be refunded.`)) {
-      bulkCancelMutation.mutate(selectedBookingIds);
-    }
+    setBulkCancelDialogOpen(true);
+  };
+
+  const confirmBulkCancel = () => {
+    bulkCancelMutation.mutate(selectedBookingIds);
+    setBulkCancelDialogOpen(false);
   };
 
   const handleCancelCourse = (enrollment: Enrollment) => {
@@ -418,10 +430,6 @@ export default function AllActiveClasses() {
                         </div>
                         
                         <div className="flex gap-3">
-                          <Button size="sm" data-testid={`button-join-${booking.id}`}>
-                            <Video className="w-4 h-4 mr-2" />
-                            Join Session
-                          </Button>
                           <Button 
                             size="sm" 
                             variant="outline" 
@@ -612,6 +620,69 @@ export default function AllActiveClasses() {
               data-testid="button-confirm-bulk-reschedule"
             >
               {bulkRescheduleMutation.isPending ? 'Rescheduling...' : `Reschedule ${selectedBookingIds.length} Booking(s)`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Booking Dialog */}
+      <Dialog open={cancelBookingDialogOpen} onOpenChange={setCancelBookingDialogOpen}>
+        <DialogContent data-testid="dialog-cancel-booking">
+          <DialogHeader>
+            <DialogTitle>Cancel Class Booking?</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel this booking? Any applicable payment will be refunded.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCancelBookingDialogOpen(false);
+                setBookingToCancel(null);
+              }}
+              data-testid="button-cancel-booking-cancel"
+            >
+              No, Keep It
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmCancelBooking}
+              disabled={cancelMutation.isPending}
+              data-testid="button-confirm-cancel-booking"
+            >
+              {cancelMutation.isPending ? 'Cancelling...' : 'Yes, Cancel'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Cancel Dialog */}
+      <Dialog open={bulkCancelDialogOpen} onOpenChange={setBulkCancelDialogOpen}>
+        <DialogContent data-testid="dialog-bulk-cancel">
+          <DialogHeader>
+            <DialogTitle>Cancel Multiple Bookings?</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel {selectedBookingIds.length} selected booking(s)? Any applicable payments will be refunded.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setBulkCancelDialogOpen(false)}
+              data-testid="button-cancel-bulk-cancel"
+            >
+              No, Keep Them
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmBulkCancel}
+              disabled={bulkCancelMutation.isPending}
+              data-testid="button-confirm-bulk-cancel"
+            >
+              {bulkCancelMutation.isPending ? 'Cancelling...' : `Yes, Cancel ${selectedBookingIds.length} Booking(s)`}
             </Button>
           </DialogFooter>
         </DialogContent>
