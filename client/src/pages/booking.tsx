@@ -529,30 +529,26 @@ export default function Booking() {
                     {mentor.title}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {mentor.experience} years experience • ${mentor.hourlyRate || "50"}/hour
+                    {mentor.experience} years experience
                   </p>
                 </div>
               </div>
 
               <div className="space-y-3">
-                <h4 className="font-medium text-foreground">What you'll get:</h4>
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <div className="flex items-center space-x-2">
-                    <Calendar size={16} />
-                    <span>Personalized 1-on-1 coding session</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Clock size={16} />
-                    <span>Interactive learning experience</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <User size={16} />
-                    <span>Expert guidance and mentorship</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <MessageSquare size={16} />
-                    <span>Follow-up resources and support</span>
-                  </div>
+                <h4 className="font-medium text-foreground">Teacher Specialities:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {mentor.specialties && mentor.specialties.length > 0 ? (
+                    mentor.specialties.map((specialty: string, index: number) => (
+                      <span 
+                        key={index} 
+                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary"
+                      >
+                        {specialty}
+                      </span>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No specialties listed</p>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -626,7 +622,7 @@ export default function Booking() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="selectedTime">Preferred Time ({getTimezoneAbbreviation()}) *</Label>
-                    <Select onValueChange={(value) => handleInputChange("selectedTime", value)} required>
+                    <Select value={formData.selectedTime} onValueChange={(value) => handleInputChange("selectedTime", value)} required>
                       <SelectTrigger data-testid="select-session-time">
                         <SelectValue placeholder="Select time" />
                       </SelectTrigger>
@@ -647,7 +643,7 @@ export default function Booking() {
 
                 <div className="space-y-2">
                   <Label htmlFor="duration">Session Duration</Label>
-                  <Select onValueChange={(value) => handleInputChange("duration", value)} defaultValue="60">
+                  <Select value={formData.duration} onValueChange={(value) => handleInputChange("duration", value)}>
                     <SelectTrigger data-testid="select-session-duration">
                       <SelectValue />
                     </SelectTrigger>
@@ -662,7 +658,7 @@ export default function Booking() {
 
                 <div className="space-y-2">
                   <Label htmlFor="subject">Subject *</Label>
-                  <Select onValueChange={(value) => handleInputChange("subject", value)} required>
+                  <Select value={formData.subject} onValueChange={(value) => handleInputChange("subject", value)} required>
                     <SelectTrigger data-testid="select-session-subject">
                       <SelectValue placeholder="Select a subject" />
                     </SelectTrigger>
@@ -671,7 +667,7 @@ export default function Booking() {
                         <>
                           {mentorSubjects.subjects.map((subject) => (
                             <SelectItem key={subject.name} value={subject.name}>
-                              {subject.name} - ₹{subject.fee}
+                              {subject.name}
                             </SelectItem>
                           ))}
                         </>
