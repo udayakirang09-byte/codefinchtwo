@@ -642,6 +642,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get mentor by user ID - MUST come before /api/mentors/:id to avoid route collision
+  app.get("/api/mentors/by-user/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const mentor = await db.select()
+        .from(mentors)
+        .where(eq(mentors.userId, userId))
+        .limit(1);
+      
+      if (!mentor || mentor.length === 0) {
+        return res.status(404).json({ message: "Mentor not found for this user" });
+      }
+      res.json(mentor[0]);
+    } catch (error) {
+      console.error("Error fetching mentor by user:", error);
+      res.status(500).json({ message: "Failed to fetch mentor" });
+    }
+  });
+
   app.get("/api/mentors/:id", async (req, res) => {
     try {
       const { id } = req.params;
@@ -1516,6 +1535,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         ...course,
+        price: parseFloat(course.price as string),
+        maxClasses: parseInt(course.maxClasses as any) || 8,
         mentor: mentor || null,
         image: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
       });
@@ -1768,8 +1789,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(bookings.studentId, studentId));
       
       const now = new Date();
+      
+      // Filter out cancelled bookings first
+      const nonCancelledBookings = studentBookings.filter((b: any) => b.status !== 'cancelled');
+      
       // Include both explicitly completed AND scheduled classes past their end time
-      const completedBookings = studentBookings.filter((b: any) => {
+      const completedBookings = nonCancelledBookings.filter((b: any) => {
         if (b.status === 'completed') return true;
         if (b.status === 'scheduled') {
           const classEndTime = new Date(new Date(b.scheduledAt).getTime() + b.duration * 60000);
@@ -1779,13 +1804,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const totalHours = completedBookings.reduce((sum: number, booking: any) => sum + (booking.duration || 0), 0) / 60;
       
-      // Calculate skill-based progress - group completed bookings by subject
-      const skillProgress: Record<string, { completed: number; total: number }> = {};
+      // Calculate skill-based progress - only for subjects with attended classes
+      const skillProgress: Record<string, { completed: number; total: number; attended: number }> = {};
       
-      studentBookings.forEach((booking: any) => {
+      nonCancelledBookings.forEach((booking: any) => {
         const subject = booking.subject || 'General';
         if (!skillProgress[subject]) {
-          skillProgress[subject] = { completed: 0, total: 0 };
+          skillProgress[subject] = { completed: 0, total: 0, attended: 0 };
         }
         skillProgress[subject].total++;
         
@@ -1795,20 +1820,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (isCompleted) {
           skillProgress[subject].completed++;
+          skillProgress[subject].attended++;
         }
       });
       
-      // Convert to skill levels array with progress percentage
-      const skillLevels = Object.entries(skillProgress).map(([skill, progress]) => ({
-        skill,
-        level: Math.round((progress.completed / progress.total) * 100),
-        classesCompleted: progress.completed,
-        totalClasses: progress.total
-      }));
+      // Convert to skill levels array - only include subjects with attended classes
+      const skillLevels = Object.entries(skillProgress)
+        .filter(([_, progress]) => progress.attended > 0)
+        .map(([skill, progress]) => ({
+          skill,
+          level: Math.round((progress.completed / progress.total) * 100),
+          classesCompleted: progress.completed,
+          totalClasses: progress.total
+        }));
       
-      // Calculate overall progress as average across all subjects
-      const overallProgress = skillLevels.length > 0
-        ? Math.round(skillLevels.reduce((sum, s) => sum + s.level, 0) / skillLevels.length)
+      // Calculate overall progress: (completed / total non-cancelled) * 100
+      const overallProgress = nonCancelledBookings.length > 0
+        ? Math.round((completedBookings.length / nonCancelledBookings.length) * 100)
         : 0;
       
       // Get actual achievements (but also include completed classes count)
@@ -1840,10 +1868,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       const progressData = {
-        totalClasses: studentBookings.length,
+        totalClasses: nonCancelledBookings.length,
         completedClasses: completedBookings.length,
         hoursLearned: parseFloat(totalHours.toFixed(1)), // Show decimal hours like 1.0
-        overallProgress: Math.round((completedBookings.length / Math.max(studentBookings.length, 1)) * 100), // Percentage of total classes completed
+        overallProgress: overallProgress, // Already calculated above
         achievementsCount: completedBookings.length, // Achievements = number of completed classes
         achievements: studentAchievements.map((ach: any) => ({
           id: ach.id,

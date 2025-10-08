@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Clock, Video, MessageCircle, Users, BookOpen, DollarSign, Bell, TrendingUp, CreditCard, CheckCircle, Save, Edit2, Plus } from "lucide-react";
 import { formatDistanceToNow, addHours, addMinutes } from "date-fns";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -149,6 +150,11 @@ export default function TeacherDashboard() {
       return mentorResponse.json();
     },
     enabled: !!user?.id
+  });
+
+  // Fetch available subjects from the platform
+  const { data: availableSubjects = [] } = useQuery<Array<{id: string; name: string}>>({
+    queryKey: ['/api/subjects'],
   });
 
   const { data: teacherSubjects = [], isLoading: subjectsLoading } = useQuery({
@@ -606,10 +612,10 @@ export default function TeacherDashboard() {
                             <Button
                               onClick={() => {
                                 const fee = parseFloat(editingFee);
-                                if (isNaN(fee) || fee < 0) {
+                                if (isNaN(fee) || fee < 100 || fee > 2500) {
                                   toast({
                                     title: "Invalid Fee",
-                                    description: "Please enter a valid positive number",
+                                    description: "Class fee must be between ₹100 and ₹2500",
                                     variant: "destructive",
                                   });
                                   return;
@@ -687,13 +693,18 @@ export default function TeacherDashboard() {
                   <div className="space-y-4 mt-4">
                     <div className="space-y-2">
                       <Label htmlFor="subject">Subject Name</Label>
-                      <Input
-                        id="subject"
-                        value={newSubject}
-                        onChange={(e) => setNewSubject(e.target.value)}
-                        placeholder="e.g., Mathematics, Physics"
-                        data-testid="input-subject-name"
-                      />
+                      <Select value={newSubject} onValueChange={setNewSubject}>
+                        <SelectTrigger data-testid="select-subject-name">
+                          <SelectValue placeholder="Select a subject" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableSubjects.map((subject: any) => (
+                            <SelectItem key={subject.id} value={subject.name}>
+                              {subject.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="experience">Teaching Experience</Label>
@@ -706,10 +717,12 @@ export default function TeacherDashboard() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="classFee">Class Fee (₹)</Label>
+                      <Label htmlFor="classFee">Class Fee (₹) - Min: 100, Max: 2500</Label>
                       <Input
                         id="classFee"
                         type="number"
+                        min="100"
+                        max="2500"
                         value={newClassFee}
                         onChange={(e) => setNewClassFee(e.target.value)}
                         placeholder="e.g., 500"
@@ -740,10 +753,10 @@ export default function TeacherDashboard() {
                             return;
                           }
                           const fee = parseFloat(newClassFee);
-                          if (isNaN(fee) || fee < 0) {
+                          if (isNaN(fee) || fee < 100 || fee > 2500) {
                             toast({
                               title: "Invalid Fee",
-                              description: "Please enter a valid positive number for class fee",
+                              description: "Class fee must be between ₹100 and ₹2500",
                               variant: "destructive",
                             });
                             return;
@@ -751,7 +764,7 @@ export default function TeacherDashboard() {
                           if (!mentorData?.id) {
                             toast({
                               title: "Error",
-                              description: "Mentor data not found",
+                              description: "Mentor data not found. Please ensure you are registered as a teacher.",
                               variant: "destructive",
                             });
                             return;
@@ -1154,10 +1167,21 @@ export default function TeacherDashboard() {
                         </span>
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline" className="text-orange-600 border-orange-200 hover:bg-orange-50">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="text-orange-600 border-orange-200 hover:bg-orange-50"
+                          onClick={() => window.location.href = `/teacher/courses/${course.id}/edit`}
+                          data-testid={`button-edit-course-${course.id}`}
+                        >
                           Edit Course
                         </Button>
-                        <Button size="sm" className="bg-orange-600 hover:bg-orange-700">
+                        <Button 
+                          size="sm" 
+                          className="bg-orange-600 hover:bg-orange-700"
+                          onClick={() => window.location.href = `/teacher/courses/${course.id}`}
+                          data-testid={`button-view-course-${course.id}`}
+                        >
                           View Details
                         </Button>
                       </div>
