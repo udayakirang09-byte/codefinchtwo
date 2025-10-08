@@ -218,14 +218,23 @@ export default function CourseEnrollment() {
       time: schedule.time
     }));
 
-    enrollmentMutation.mutate({
+    // Store enrollment details in sessionStorage and redirect to payment page
+    const enrollmentData = {
       courseId: course.id,
+      courseName: course.title,
       studentEmail: user?.email,
       mentorId: course.mentorId,
+      mentorName: `${course.mentor?.user?.firstName} ${course.mentor?.user?.lastName}`,
       schedule: scheduleData,
       totalClasses: course.maxClasses,
-      courseFee: course.price
-    });
+      courseFee: course.price,
+      scheduledDays: selectedDays.length
+    };
+
+    sessionStorage.setItem('pendingCourseEnrollment', JSON.stringify(enrollmentData));
+    
+    // Redirect to course checkout page for payment
+    navigate(`/course-checkout?amount=${course.price}&courseId=${course.id}`);
   };
 
   const selectedDaysCount = Object.values(weeklySchedule).filter(s => s.enabled).length;

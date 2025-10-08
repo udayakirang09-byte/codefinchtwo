@@ -61,6 +61,7 @@ import Projects from "./pages/projects";
 import Events from "./pages/events";
 import Recordings from "./pages/recordings";
 import CourseEnrollment from "./pages/course-enrollment";
+import CourseCheckout from "./pages/course-checkout";
 
 function Router() {
   return (
@@ -73,6 +74,7 @@ function Router() {
       <Route path="/booking-success" component={BookingSuccess} />
       <Route path="/courses" component={Courses} />
       <Route path="/course-enrollment/:courseId" component={CourseEnrollment} />
+      <Route path="/course-checkout" component={CourseCheckout} />
       <Route path="/checkout" component={Checkout} />
       <Route path="/payment" component={Payment} />
       <Route path="/payment-success" component={PaymentSuccess} />
