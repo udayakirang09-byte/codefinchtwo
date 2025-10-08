@@ -51,17 +51,11 @@ export default function ViewCourse() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <Navigation />
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="mb-6 flex justify-between items-center">
+        <div className="mb-6">
           <Link href="/teacher/home">
             <Button variant="outline" size="sm" data-testid="button-back">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Home
-            </Button>
-          </Link>
-          <Link href={`/teacher/courses/${courseId}/edit`}>
-            <Button size="sm" data-testid="button-edit-course">
-              <Edit2 className="w-4 h-4 mr-2" />
-              Edit Course
             </Button>
           </Link>
         </div>
