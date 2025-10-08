@@ -1437,6 +1437,18 @@ export default function AdminDashboard() {
                 </div>
               </Button>
             </Link>
+
+            <Link href="/admin/payment-config">
+              <Button variant="outline" className="w-full h-auto py-4 hover:bg-amber-50 hover:border-amber-400 transition-all" data-testid="button-nav-payment-config">
+                <div className="flex items-center gap-3 w-full">
+                  <CreditCard className="h-5 w-5 text-amber-600" />
+                  <div className="text-left flex-1">
+                    <div className="font-semibold text-gray-900">Payment Configuration</div>
+                    <div className="text-xs text-gray-600">Configure payment gateways & methods</div>
+                  </div>
+                </div>
+              </Button>
+            </Link>
           </div>
         </CardContent>
       </Card>
