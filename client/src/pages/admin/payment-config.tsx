@@ -243,7 +243,8 @@ export default function AdminPaymentConfig() {
       updateConfigMutation.mutate({
         paymentMode: 'dummy',
         razorpayMode: 'upi',
-        enableRazorpay: false
+        enableRazorpay: false,
+        adminUpiId: adminUpiId
       });
     } else {
       if (!razorpayKeyId || !razorpayKeySecret) {
@@ -258,7 +259,9 @@ export default function AdminPaymentConfig() {
       updateConfigMutation.mutate({
         paymentMode: 'realtime',
         razorpayMode: 'api_keys',
-        enableRazorpay: true
+        enableRazorpay: true,
+        razorpayKeyId: razorpayKeyId,
+        razorpayKeySecret: razorpayKeySecret
       });
     }
   };

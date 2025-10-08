@@ -337,6 +337,12 @@ export default function AdminHome() {
                     Mentor Approval
                   </Button>
                 </Link>
+                <Link href="/admin/payment-config">
+                  <Button variant="outline" className="w-full" data-testid="button-payment-config">
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Payment Configuration
+                  </Button>
+                </Link>
                 <Link href="/admin/analytics">
                   <Button variant="outline" className="w-full" data-testid="button-ai-analytics">
                     <Brain className="w-4 h-4 mr-2" />
