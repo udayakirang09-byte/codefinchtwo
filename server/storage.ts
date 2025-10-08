@@ -344,7 +344,8 @@ export interface IStorage {
   updateAdminPaymentConfig(
     paymentMode?: 'dummy' | 'realtime',
     razorpayMode?: 'upi' | 'api_keys',
-    enableRazorpay?: boolean
+    enableRazorpay?: boolean,
+    adminUpiId?: string
   ): Promise<void>;
   
   // Admin UI Configuration operations
@@ -2221,7 +2222,8 @@ export class DatabaseStorage implements IStorage {
   async updateAdminPaymentConfig(
     paymentMode?: 'dummy' | 'realtime',
     razorpayMode?: 'upi' | 'api_keys',
-    enableRazorpay?: boolean
+    enableRazorpay?: boolean,
+    adminUpiId?: string
   ): Promise<void> {
     const existing = await this.getAdminPaymentConfig();
     
@@ -2229,6 +2231,7 @@ export class DatabaseStorage implements IStorage {
     if (paymentMode !== undefined) updates.paymentMode = paymentMode;
     if (razorpayMode !== undefined) updates.razorpayMode = razorpayMode;
     if (enableRazorpay !== undefined) updates.enableRazorpay = enableRazorpay;
+    if (adminUpiId !== undefined) updates.adminUpiId = adminUpiId;
     
     if (existing) {
       await db
@@ -2239,7 +2242,8 @@ export class DatabaseStorage implements IStorage {
       await db.insert(adminPaymentConfig).values({ 
         paymentMode: paymentMode || 'dummy',
         razorpayMode: razorpayMode || 'upi',
-        enableRazorpay: enableRazorpay || false
+        enableRazorpay: enableRazorpay || false,
+        ...(adminUpiId && { adminUpiId })
       });
     }
   }

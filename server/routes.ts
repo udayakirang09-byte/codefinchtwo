@@ -6484,7 +6484,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         paymentMode: config.paymentMode,
         razorpayMode: config.razorpayMode || 'upi',
-        enableRazorpay: config.enableRazorpay || false
+        enableRazorpay: config.enableRazorpay || false,
+        adminUpiId: config.adminUpiId || undefined
       });
     } catch (error) {
       console.error('Error fetching admin payment config:', error);
@@ -6499,7 +6500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Admin access required' });
       }
 
-      const { paymentMode, razorpayMode, enableRazorpay } = req.body;
+      const { paymentMode, razorpayMode, enableRazorpay, adminUpiId } = req.body;
       if (paymentMode && !['dummy', 'realtime'].includes(paymentMode)) {
         return res.status(400).json({ message: 'paymentMode must be either "dummy" or "realtime"' });
       }
@@ -6507,7 +6508,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'razorpayMode must be either "upi" or "api_keys"' });
       }
 
-      await storage.updateAdminPaymentConfig(paymentMode, razorpayMode, enableRazorpay);
+      await storage.updateAdminPaymentConfig(paymentMode, razorpayMode, enableRazorpay, adminUpiId);
       res.json({ success: true, message: 'Payment configuration updated successfully' });
     } catch (error) {
       console.error('Error updating admin payment config:', error);

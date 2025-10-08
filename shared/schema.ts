@@ -432,6 +432,7 @@ export const adminPaymentConfig = pgTable("admin_payment_config", {
   paymentMode: varchar("payment_mode").notNull().default("dummy"), // "dummy" or "realtime"
   razorpayMode: varchar("razorpay_mode").notNull().default("upi"), // "upi" or "api_keys"
   enableRazorpay: boolean("enable_razorpay").default(false), // Toggle for Razorpay integration
+  adminUpiId: varchar("admin_upi_id"), // Admin UPI ID for UPI mode
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
