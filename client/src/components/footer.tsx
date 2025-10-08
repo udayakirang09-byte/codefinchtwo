@@ -2,8 +2,39 @@ import { Code, Cookie } from "lucide-react";
 import { Link } from "wouter";
 import { CookieSettingsDialog } from "@/components/cookie-policy";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+
+interface UiConfigResponse {
+  footerLinks: {
+    studentCommunity: boolean;
+    mentorCommunity: boolean;
+    successStories: boolean;
+    achievementBadges: boolean;
+    discussionForums: boolean;
+    projectShowcase: boolean;
+    communityEvents: boolean;
+    contactUs: boolean;
+  };
+  showHelpCenter: boolean;
+}
 
 export default function Footer() {
+  const { data: uiConfig } = useQuery<UiConfigResponse>({
+    queryKey: ['/api/admin/ui-config'],
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
+
+  const footerLinks = uiConfig?.footerLinks || {
+    studentCommunity: true,
+    mentorCommunity: true,
+    successStories: true,
+    achievementBadges: true,
+    discussionForums: true,
+    projectShowcase: true,
+    communityEvents: true,
+    contactUs: true,
+  };
+
   return (
     <footer className="bg-foreground text-white py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -69,31 +100,41 @@ export default function Footer() {
                   Browse Courses
                 </Link>
               </li>
-              <li>
-                <Link href="/student-community" className="hover:text-white transition-colors" data-testid="link-student-community">
-                  Student Community
-                </Link>
-              </li>
-              <li>
-                <Link href="/achievement-badges" className="hover:text-white transition-colors" data-testid="link-achievement-badges">
-                  Achievement Badges
-                </Link>
-              </li>
-              <li>
-                <Link href="/forums" className="hover:text-white transition-colors" data-testid="link-forums">
-                  Discussion Forums
-                </Link>
-              </li>
-              <li>
-                <Link href="/projects" className="hover:text-white transition-colors" data-testid="link-projects">
-                  Project Showcase
-                </Link>
-              </li>
-              <li>
-                <Link href="/events" className="hover:text-white transition-colors" data-testid="link-events">
-                  Community Events
-                </Link>
-              </li>
+              {footerLinks.studentCommunity && (
+                <li>
+                  <Link href="/student-community" className="hover:text-white transition-colors" data-testid="link-student-community">
+                    Student Community
+                  </Link>
+                </li>
+              )}
+              {footerLinks.achievementBadges && (
+                <li>
+                  <Link href="/achievement-badges" className="hover:text-white transition-colors" data-testid="link-achievement-badges">
+                    Achievement Badges
+                  </Link>
+                </li>
+              )}
+              {footerLinks.discussionForums && (
+                <li>
+                  <Link href="/forums" className="hover:text-white transition-colors" data-testid="link-forums">
+                    Discussion Forums
+                  </Link>
+                </li>
+              )}
+              {footerLinks.projectShowcase && (
+                <li>
+                  <Link href="/projects" className="hover:text-white transition-colors" data-testid="link-projects">
+                    Project Showcase
+                  </Link>
+                </li>
+              )}
+              {footerLinks.communityEvents && (
+                <li>
+                  <Link href="/events" className="hover:text-white transition-colors" data-testid="link-events">
+                    Community Events
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
           
@@ -110,16 +151,20 @@ export default function Footer() {
                   Teacher Resources
                 </Link>
               </li>
-              <li>
-                <Link href="/mentor-community" className="hover:text-white transition-colors" data-testid="link-mentor-community">
-                  Mentor Community
-                </Link>
-              </li>
-              <li>
-                <Link href="/success-stories" className="hover:text-white transition-colors" data-testid="link-success-stories">
-                  Success Stories
-                </Link>
-              </li>
+              {footerLinks.mentorCommunity && (
+                <li>
+                  <Link href="/mentor-community" className="hover:text-white transition-colors" data-testid="link-mentor-community">
+                    Mentor Community
+                  </Link>
+                </li>
+              )}
+              {footerLinks.successStories && (
+                <li>
+                  <Link href="/success-stories" className="hover:text-white transition-colors" data-testid="link-success-stories">
+                    Success Stories
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
           
@@ -131,11 +176,13 @@ export default function Footer() {
                   Safety Guidelines
                 </Link>
               </li>
-              <li>
-                <Link href="/help" className="hover:text-white transition-colors" data-testid="link-contact-us">
-                  Contact Us
-                </Link>
-              </li>
+              {footerLinks.contactUs && (
+                <li>
+                  <Link href="/help" className="hover:text-white transition-colors" data-testid="link-contact-us">
+                    Contact Us
+                  </Link>
+                </li>
+              )}
               <li>
                 <Link href="/privacy" className="hover:text-white transition-colors" data-testid="link-privacy-policy">
                   Privacy Policy
