@@ -6200,10 +6200,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let isOwnMentor = false;
       if (req.user.role === 'mentor') {
         const mentor = await storage.getMentor(mentorId);
+        console.log('[DEBUG] Teacher subject fees auth check:', {
+          mentorId,
+          userId: req.user.id,
+          userRole: req.user.role,
+          mentorUserId: mentor?.userId,
+          isMatch: mentor && mentor.userId === req.user.id
+        });
         isOwnMentor = mentor && mentor.userId === req.user.id;
       }
 
       if (!isOwnMentor && !isAdmin) {
+        console.log('[DEBUG] Authorization failed for teacher subjects:', {
+          isOwnMentor,
+          isAdmin,
+          userRole: req.user.role,
+          userId: req.user.id,
+          mentorId
+        });
         return res.status(403).json({ message: 'Not authorized to view subject fees for this mentor' });
       }
 
