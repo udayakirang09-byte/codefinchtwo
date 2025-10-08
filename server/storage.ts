@@ -128,8 +128,10 @@ export interface IStorage {
   
   // Course Enrollment operations
   createCourseEnrollment(enrollment: any): Promise<any>;
+  getCourseEnrollment(id: string): Promise<any | undefined>;
   getCourseEnrollmentsByStudent(studentId: string): Promise<any[]>;
   getCourseEnrollmentsByMentor(mentorId: string): Promise<any[]>;
+  updateCourseEnrollmentStatus(id: string, status: string): Promise<void>;
   
   // Booking operations
   getBookings(): Promise<BookingWithDetails[]>;
@@ -835,6 +837,33 @@ export class DatabaseStorage implements IStorage {
       course,
       student: student ? { ...student, user } : null,
     }));
+  }
+
+  async getCourseEnrollment(id: string): Promise<any | undefined> {
+    const [result] = await db
+      .select()
+      .from(courseEnrollments)
+      .leftJoin(courses, eq(courseEnrollments.courseId, courses.id))
+      .leftJoin(mentors, eq(courseEnrollments.mentorId, mentors.id))
+      .leftJoin(students, eq(courseEnrollments.studentId, students.id))
+      .where(eq(courseEnrollments.id, id))
+      .limit(1);
+
+    if (!result) return undefined;
+
+    return {
+      ...result.course_enrollments,
+      course: result.courses,
+      mentor: result.mentors,
+      student: result.students,
+    };
+  }
+
+  async updateCourseEnrollmentStatus(id: string, status: string): Promise<void> {
+    await db
+      .update(courseEnrollments)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(courseEnrollments.id, id));
   }
 
   // Review operations

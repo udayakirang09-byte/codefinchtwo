@@ -61,6 +61,8 @@ export default function AllActiveClasses() {
   const [bulkRescheduleDialogOpen, setBulkRescheduleDialogOpen] = useState(false);
   const [bulkNewDateTime, setBulkNewDateTime] = useState('');
   const [bulkErrorMessage, setBulkErrorMessage] = useState('');
+  const [cancelCourseDialogOpen, setCancelCourseDialogOpen] = useState(false);
+  const [selectedEnrollment, setSelectedEnrollment] = useState<Enrollment | null>(null);
 
   // Get mentor ID from user email
   const { data: mentorData } = useQuery({
@@ -211,6 +213,36 @@ export default function AllActiveClasses() {
     },
   });
 
+  // Cancel course mutation
+  const cancelCourseMutation = useMutation({
+    mutationFn: async ({ enrollmentId, userId }: { enrollmentId: string; userId: string }) => {
+      const response = await apiRequest('POST', `/api/enrollments/${enrollmentId}/cancel`, { userId });
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/mentors', mentorId, 'enrollments'] });
+      setCancelCourseDialogOpen(false);
+      setSelectedEnrollment(null);
+      const refundAmount = data.refundAmount ? parseFloat(data.refundAmount) : 0;
+      const refundPercentage = data.refundPercentage || 0;
+      let description = 'Course cancelled successfully.';
+      if (refundAmount > 0) {
+        description += ` Refund of ₹${refundAmount} (${refundPercentage}%) will be processed in 3-5 business days.`;
+      }
+      toast({
+        title: 'Course Cancelled',
+        description,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Cancellation Failed',
+        description: error.message || 'Unable to cancel the course. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleReschedule = (booking: Booking) => {
     setSelectedBooking(booking);
     setRescheduleDialogOpen(true);
@@ -261,6 +293,20 @@ export default function AllActiveClasses() {
     if (confirm(`Are you sure you want to cancel ${selectedBookingIds.length} selected booking(s)? Any applicable payments will be refunded.`)) {
       bulkCancelMutation.mutate(selectedBookingIds);
     }
+  };
+
+  const handleCancelCourse = (enrollment: Enrollment) => {
+    setSelectedEnrollment(enrollment);
+    setCancelCourseDialogOpen(true);
+  };
+
+  const confirmCancelCourse = () => {
+    if (!selectedEnrollment || !user) return;
+    
+    cancelCourseMutation.mutate({
+      enrollmentId: selectedEnrollment.id,
+      userId: user.id
+    });
   };
 
   return (
@@ -439,8 +485,14 @@ export default function AllActiveClasses() {
                             <Calendar className="w-4 h-4 mr-2" />
                             View Schedule
                           </Button>
-                          <Button size="sm" variant="destructive" data-testid={`button-cancel-course-${enrollment.id}`}>
-                            Cancel Course
+                          <Button 
+                            size="sm" 
+                            variant="destructive" 
+                            onClick={() => handleCancelCourse(enrollment)}
+                            disabled={cancelCourseMutation.isPending}
+                            data-testid={`button-cancel-course-${enrollment.id}`}
+                          >
+                            {cancelCourseMutation.isPending ? 'Cancelling...' : 'Cancel Course'}
                           </Button>
                         </div>
                       </CardContent>
@@ -560,6 +612,67 @@ export default function AllActiveClasses() {
               data-testid="button-confirm-bulk-reschedule"
             >
               {bulkRescheduleMutation.isPending ? 'Rescheduling...' : `Reschedule ${selectedBookingIds.length} Booking(s)`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Course Dialog */}
+      <Dialog open={cancelCourseDialogOpen} onOpenChange={setCancelCourseDialogOpen}>
+        <DialogContent data-testid="dialog-cancel-course">
+          <DialogHeader>
+            <DialogTitle>Cancel Course Enrollment?</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel this student's enrollment in {selectedEnrollment?.course?.title || 'this course'}?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm font-medium">Course:</span>
+                <span className="text-sm">{selectedEnrollment?.course?.title}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm font-medium">Student:</span>
+                <span className="text-sm">{selectedEnrollment?.student?.user?.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm font-medium">Progress:</span>
+                <span className="text-sm">{selectedEnrollment?.completedClasses}/{selectedEnrollment?.totalClasses} classes completed</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm font-medium">Refund:</span>
+                <span className="text-sm">Will be calculated based on remaining classes</span>
+              </div>
+            </div>
+
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                This will cancel all future classes in this course. Any applicable refund will be processed in 3-5 business days.
+              </AlertDescription>
+            </Alert>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCancelCourseDialogOpen(false);
+                setSelectedEnrollment(null);
+              }}
+              data-testid="button-cancel-course-cancel"
+            >
+              Keep Course
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmCancelCourse}
+              disabled={cancelCourseMutation.isPending}
+              data-testid="button-confirm-cancel-course"
+            >
+              {cancelCourseMutation.isPending ? 'Cancelling...' : 'Cancel Course'}
             </Button>
           </DialogFooter>
         </DialogContent>

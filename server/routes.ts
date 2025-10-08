@@ -1170,6 +1170,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cancel course enrollment with prorated refund
+  app.post("/api/enrollments/:id/cancel", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required" });
+      }
+
+      // Get the enrollment
+      const enrollment = await storage.getCourseEnrollment(id);
+      
+      if (!enrollment) {
+        return res.status(404).json({ message: "Enrollment not found" });
+      }
+
+      if (enrollment.status === 'cancelled') {
+        return res.status(400).json({ message: "Enrollment is already cancelled" });
+      }
+
+      // Find the payment transaction for this course
+      const transactions = await storage.getTransactionsByUser(userId);
+      const courseTransaction = transactions.find(t => 
+        t.courseId === enrollment.courseId && 
+        t.status === 'completed' &&
+        t.transactionType === 'course_payment'
+      );
+
+      let refundAmount = 0;
+      let refundPercentage = 0;
+
+      if (courseTransaction) {
+        // Calculate prorated refund based on remaining classes
+        const totalClasses = enrollment.totalClasses || 1;
+        const completedClasses = enrollment.completedClasses || 0;
+        const remainingClasses = totalClasses - completedClasses;
+        
+        // Refund = (Total Price) * (Remaining Classes / Total Classes)
+        const totalPrice = parseFloat(courseTransaction.amount);
+        refundAmount = (totalPrice * remainingClasses) / totalClasses;
+        refundPercentage = (remainingClasses / totalClasses) * 100;
+
+        // Update the transaction to mark it for refund
+        if (refundAmount > 0) {
+          await storage.updatePaymentTransactionStatus(
+            courseTransaction.id, 
+            'cancelled', 
+            'refund_to_student'
+          );
+        }
+      }
+
+      // Update enrollment status to cancelled
+      await storage.updateCourseEnrollmentStatus(id, 'cancelled');
+
+      res.json({
+        message: "Course enrollment cancelled successfully",
+        refundAmount: refundAmount.toFixed(2),
+        refundPercentage: Math.round(refundPercentage),
+        completedClasses: enrollment.completedClasses || 0,
+        totalClasses: enrollment.totalClasses || 1,
+        refundTime: refundAmount > 0 ? "3-5 business days" : undefined
+      });
+    } catch (error) {
+      console.error("Error cancelling course enrollment:", error);
+      res.status(500).json({ message: "Failed to cancel course enrollment" });
+    }
+  });
+
   // Review routes
   app.get("/api/mentors/:id/reviews", async (req, res) => {
     try {
