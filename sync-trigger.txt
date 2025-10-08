@@ -1,0 +1,3 @@
+# Azure Database Sync Trigger
+# This file triggers GitHub Actions to sync Replit data to Azure
+# Timestamp: 2025-10-08 17:55:00
