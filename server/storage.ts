@@ -131,6 +131,7 @@ export interface IStorage {
   getCourseEnrollment(id: string): Promise<any | undefined>;
   getCourseEnrollmentsByStudent(studentId: string): Promise<any[]>;
   getCourseEnrollmentsByMentor(mentorId: string): Promise<any[]>;
+  getCourseEnrollmentsByCourse(courseId: string): Promise<any[]>;
   updateCourseEnrollmentStatus(id: string, status: string): Promise<void>;
   
   // Booking operations
@@ -848,6 +849,23 @@ export class DatabaseStorage implements IStorage {
     return result.map(({ course_enrollments: enrollment, courses: course, students: student, users: user }) => ({
       ...enrollment,
       course,
+      student: student ? { ...student, user } : null,
+    }));
+  }
+
+  async getCourseEnrollmentsByCourse(courseId: string): Promise<any[]> {
+    const result = await db
+      .select()
+      .from(courseEnrollments)
+      .leftJoin(students, eq(courseEnrollments.studentId, students.id))
+      .leftJoin(users, eq(students.userId, users.id))
+      .where(eq(courseEnrollments.courseId, courseId))
+      .orderBy(desc(courseEnrollments.enrolledAt));
+
+    return result.map(({ course_enrollments: enrollment, students: student, users: user }) => ({
+      ...enrollment,
+      studentName: user ? `${user.firstName} ${user.lastName}` : 'Unknown Student',
+      studentEmail: user?.email,
       student: student ? { ...student, user } : null,
     }));
   }

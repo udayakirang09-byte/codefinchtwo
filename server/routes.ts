@@ -1546,6 +1546,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get enrollments for a specific course
+  app.get("/api/courses/:courseId/enrollments", async (req, res) => {
+    try {
+      const { courseId } = req.params;
+      
+      const enrollments = await storage.getCourseEnrollmentsByCourse(courseId);
+      res.json(enrollments);
+    } catch (error) {
+      console.error("Error fetching course enrollments:", error);
+      res.status(500).json({ message: "Failed to fetch course enrollments" });
+    }
+  });
+
   // Course enrollment route
   app.post("/api/course-enrollments", async (req, res) => {
     try {
