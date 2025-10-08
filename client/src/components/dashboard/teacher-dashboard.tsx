@@ -44,6 +44,8 @@ export default function TeacherDashboard() {
   const [newSubject, setNewSubject] = useState("");
   const [newExperience, setNewExperience] = useState("");
   const [newClassFee, setNewClassFee] = useState("500");
+  const [isEditingUpi, setIsEditingUpi] = useState(false);
+  const [upiId, setUpiId] = useState("");
   
   // Fetch teacher's classes from API
   const { data: teacherClasses = [], isLoading: classesLoading, error: classesError } = useQuery({
@@ -208,6 +210,35 @@ export default function TeacherDashboard() {
       });
     }
   });
+
+  // Mutation for updating UPI ID
+  const updateUpiMutation = useMutation({
+    mutationFn: async ({ mentorId, upiId }: { mentorId: string; upiId: string }) => {
+      return apiRequest('PUT', `/api/mentors/${mentorId}/upi`, { upiId });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "UPI ID updated successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ['mentor-by-user', user?.id] });
+      setIsEditingUpi(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update UPI ID",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Initialize UPI ID from mentor data
+  useEffect(() => {
+    if (mentorData?.upiId && !isEditingUpi) {
+      setUpiId(mentorData.upiId);
+    }
+  }, [mentorData, isEditingUpi]);
   
   const upcomingClasses = Array.isArray(teacherClasses) ? teacherClasses.filter((booking: any) => {
     const scheduledAt = new Date(booking.scheduledAt);
@@ -749,6 +780,114 @@ export default function TeacherDashboard() {
                 <strong>Note:</strong> These fees will be used when students book classes for specific subjects. 
                 Course fees can still be set separately when creating courses.
               </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* UPI ID Configuration Section */}
+        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-600 text-white">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <CreditCard className="h-6 w-6" />
+              Payment Configuration
+              <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30">
+                {mentorData?.upiId ? 'Configured' : 'Not Set'}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-5">
+                <Label htmlFor="upiId" className="text-sm font-semibold text-gray-700 mb-2 block">
+                  UPI ID for Payment Collection
+                </Label>
+                <p className="text-xs text-gray-600 mb-3">
+                  Add your UPI ID to receive payments from students directly
+                </p>
+                <div className="flex items-center gap-3">
+                  {isEditingUpi ? (
+                    <>
+                      <Input
+                        id="upiId"
+                        value={upiId}
+                        onChange={(e) => setUpiId(e.target.value)}
+                        placeholder="yourname@okicici"
+                        className="flex-1"
+                        data-testid="input-upi-id"
+                      />
+                      <Button
+                        onClick={() => {
+                          if (!upiId.trim()) {
+                            toast({
+                              title: "Invalid UPI ID",
+                              description: "Please enter a valid UPI ID",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          if (!mentorData?.id) {
+                            toast({
+                              title: "Error",
+                              description: "Mentor data not found",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          updateUpiMutation.mutate({ 
+                            mentorId: mentorData.id, 
+                            upiId: upiId.trim() 
+                          });
+                        }}
+                        disabled={updateUpiMutation.isPending}
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700"
+                        data-testid="button-save-upi"
+                      >
+                        <Save className="h-4 w-4 mr-1" />
+                        {updateUpiMutation.isPending ? "Saving..." : "Save"}
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setIsEditingUpi(false);
+                          setUpiId(mentorData?.upiId || "");
+                        }}
+                        variant="outline"
+                        size="sm"
+                        data-testid="button-cancel-upi"
+                      >
+                        Cancel
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex-1 bg-white px-4 py-2.5 rounded-lg border border-gray-200">
+                        <span className="text-gray-700 font-medium" data-testid="text-upi-id">
+                          {mentorData?.upiId || "Not configured"}
+                        </span>
+                      </div>
+                      <Button
+                        onClick={() => {
+                          setIsEditingUpi(true);
+                          setUpiId(mentorData?.upiId || "");
+                        }}
+                        variant="outline"
+                        size="sm"
+                        data-testid="button-edit-upi"
+                      >
+                        <Edit2 className="h-4 w-4 mr-1" />
+                        {mentorData?.upiId ? "Edit" : "Add"}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>Note:</strong> Your UPI ID will be used to receive payments from students. 
+                  Make sure it's correct to avoid payment issues.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
