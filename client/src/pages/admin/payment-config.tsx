@@ -67,6 +67,8 @@ export default function AdminPaymentConfig() {
 
   // Form states
   const [selectedPaymentMode, setSelectedPaymentMode] = useState<'dummy' | 'realtime'>('dummy');
+  const [razorpayMode, setRazorpayMode] = useState<'upi' | 'api_keys'>('upi');
+  const [enableRazorpay, setEnableRazorpay] = useState(false);
 
   const [upiForm, setUpiForm] = useState({
     upiId: '',
@@ -95,10 +97,18 @@ export default function AdminPaymentConfig() {
     queryFn: async () => {
       try {
         const result = await apiRequest('GET', '/api/admin/payment-config');
-        return result as unknown as { paymentMode: 'dummy' | 'realtime' };
+        return result as unknown as { 
+          paymentMode: 'dummy' | 'realtime';
+          razorpayMode?: 'upi' | 'api_keys';
+          enableRazorpay?: boolean;
+        };
       } catch (error) {
         console.error('Failed to fetch payment mode:', error);
-        return { paymentMode: 'dummy' as const };
+        return { 
+          paymentMode: 'dummy' as const,
+          razorpayMode: 'upi' as const,
+          enableRazorpay: false
+        };
       }
     },
   });
@@ -176,6 +186,8 @@ export default function AdminPaymentConfig() {
   useEffect(() => {
     if (paymentModeConfig) {
       setSelectedPaymentMode(paymentModeConfig.paymentMode);
+      setRazorpayMode(paymentModeConfig.razorpayMode || 'upi');
+      setEnableRazorpay(paymentModeConfig.enableRazorpay || false);
     }
   }, [paymentModeConfig]);
 
@@ -267,19 +279,23 @@ export default function AdminPaymentConfig() {
 
   // Update payment mode mutation
   const updatePaymentModeMutation = useMutation({
-    mutationFn: async (paymentMode: 'dummy' | 'realtime') => {
-      return apiRequest('PUT', '/api/admin/payment-config', { paymentMode });
+    mutationFn: async (data: { 
+      paymentMode: 'dummy' | 'realtime';
+      razorpayMode?: 'upi' | 'api_keys';
+      enableRazorpay?: boolean;
+    }) => {
+      return apiRequest('PUT', '/api/admin/payment-config', data);
     },
     onSuccess: () => {
       toast({
-        title: "Payment Mode Updated",
-        description: "Payment mode has been updated successfully!",
+        title: "Payment Configuration Updated",
+        description: "Payment configuration has been updated successfully!",
       });
       queryClient.invalidateQueries({ queryKey: ['admin-payment-mode-config'] });
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to Update Payment Mode",
+        title: "Failed to Update Configuration",
         description: error.message || "Something went wrong",
         variant: "destructive",
       });
@@ -677,20 +693,125 @@ export default function AdminPaymentConfig() {
 
                     <Separator />
 
+                    {/* Razorpay Configuration */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label className="text-base font-semibold">Razorpay Payment Gateway</Label>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Enable Razorpay for India-based transactions (student and teacher must both be in India)
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="enableRazorpay"
+                            checked={enableRazorpay}
+                            onChange={(e) => setEnableRazorpay(e.target.checked)}
+                            className="w-4 h-4 text-primary focus:ring-primary cursor-pointer"
+                            data-testid="checkbox-enable-razorpay"
+                          />
+                          <Label htmlFor="enableRazorpay" className="cursor-pointer">
+                            {enableRazorpay ? 'Enabled' : 'Disabled'}
+                          </Label>
+                        </div>
+                      </div>
+
+                      {enableRazorpay && (
+                        <div className="pl-4 border-l-2 border-primary space-y-3">
+                          <Label className="text-sm font-semibold">Razorpay Mode</Label>
+                          <div className="space-y-2">
+                            <div 
+                              className={`flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                                razorpayMode === 'upi' 
+                                  ? 'border-primary bg-primary/5' 
+                                  : 'border-gray-200 hover:border-gray-300'
+                              }`}
+                              onClick={() => setRazorpayMode('upi')}
+                              data-testid="radio-razorpay-mode-upi"
+                            >
+                              <div className="flex items-center h-5">
+                                <input
+                                  type="radio"
+                                  name="razorpayMode"
+                                  value="upi"
+                                  checked={razorpayMode === 'upi'}
+                                  onChange={() => setRazorpayMode('upi')}
+                                  className="w-4 h-4 text-primary focus:ring-primary cursor-pointer"
+                                  data-testid="input-razorpay-mode-upi"
+                                />
+                              </div>
+                              <div className="ml-3 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <Label className="text-sm font-medium cursor-pointer">UPI ID Mode</Label>
+                                  <Badge variant="secondary">Direct Transfer</Badge>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Use admin UPI ID to collect and distribute payments (manual UPI-to-UPI transfers)
+                                </p>
+                              </div>
+                            </div>
+
+                            <div 
+                              className={`flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                                razorpayMode === 'api_keys' 
+                                  ? 'border-primary bg-primary/5' 
+                                  : 'border-gray-200 hover:border-gray-300'
+                              }`}
+                              onClick={() => setRazorpayMode('api_keys')}
+                              data-testid="radio-razorpay-mode-api"
+                            >
+                              <div className="flex items-center h-5">
+                                <input
+                                  type="radio"
+                                  name="razorpayMode"
+                                  value="api_keys"
+                                  checked={razorpayMode === 'api_keys'}
+                                  onChange={() => setRazorpayMode('api_keys')}
+                                  className="w-4 h-4 text-primary focus:ring-primary cursor-pointer"
+                                  data-testid="input-razorpay-mode-api"
+                                />
+                              </div>
+                              <div className="ml-3 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <Label className="text-sm font-medium cursor-pointer">API Keys Mode</Label>
+                                  <Badge variant="secondary">Automated</Badge>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Use Razorpay API keys for automated payment processing and payouts
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <Separator />
+
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">
                           Current Mode: <span className="font-semibold text-foreground">
                             {paymentModeConfig?.paymentMode === 'realtime' ? 'Realtime (Production)' : 'Dummy (Test)'}
                           </span>
+                          {paymentModeConfig?.enableRazorpay && (
+                            <span className="ml-2 text-xs">
+                              | Razorpay: {paymentModeConfig.razorpayMode === 'upi' ? 'UPI Mode' : 'API Keys'}
+                            </span>
+                          )}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
                           This setting applies to all payment sections across the application
                         </p>
                       </div>
                       <Button
-                        onClick={() => updatePaymentModeMutation.mutate(selectedPaymentMode)}
-                        disabled={updatePaymentModeMutation.isPending || selectedPaymentMode === paymentModeConfig?.paymentMode}
+                        onClick={() => updatePaymentModeMutation.mutate({
+                          paymentMode: selectedPaymentMode,
+                          razorpayMode,
+                          enableRazorpay
+                        })}
+                        disabled={updatePaymentModeMutation.isPending}
                         data-testid="button-save-payment-mode"
                       >
                         {updatePaymentModeMutation.isPending ? (
@@ -701,7 +822,7 @@ export default function AdminPaymentConfig() {
                         ) : (
                           <>
                             <Save className="h-4 w-4 mr-2" />
-                            Save Payment Mode
+                            Save Configuration
                           </>
                         )}
                       </Button>
