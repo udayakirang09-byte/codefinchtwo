@@ -57,12 +57,8 @@ export default function CommunitySection() {
         
         <div className="flex items-center justify-center space-x-12 text-white/80">
           <div className="text-center" data-testid="stat-community-members">
-            <div className="text-3xl font-bold">50K+</div>
+            <div className="text-3xl font-bold">2K+</div>
             <div>Community Members</div>
-          </div>
-          <div className="text-center" data-testid="stat-projects-created">
-            <div className="text-3xl font-bold">1M+</div>
-            <div>Projects Created</div>
           </div>
           <div className="text-center" data-testid="stat-parent-satisfaction">
             <div className="text-3xl font-bold">99%</div>

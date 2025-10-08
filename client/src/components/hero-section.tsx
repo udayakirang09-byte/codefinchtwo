@@ -19,7 +19,7 @@ export default function HeroSection() {
           <div className="text-center lg:text-left">
             <h1 className="text-5xl lg:text-7xl font-bold text-white mb-6 leading-tight" data-testid="text-hero-title">
               Where You
-              <span className="block">Minds Meet</span>
+              <span className="block">can find</span>
               <span className="block text-accent">Mentors For CS, IGCSE, IB, AP Subjects</span>
             </h1>
             <p className="text-xl text-white/90 mb-8 max-w-2xl" data-testid="text-hero-description">

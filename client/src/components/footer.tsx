@@ -14,7 +14,7 @@ export default function Footer() {
               CodeConnect
             </div>
             <p className="text-white/80 mb-6" data-testid="text-footer-description">
-              Connecting young minds with passionate coding mentors to build the future, one line of code at a time.
+              Connecting you with passionate mentors across world.
             </p>
             <div className="flex space-x-4">
               <a 
