@@ -43,6 +43,8 @@ import {
 } from "@shared/schema";
 import { aiAnalytics } from "./ai-analytics";
 import Stripe from "stripe";
+import Razorpay from "razorpay";
+import crypto from "crypto";
 import {
   insertUserSchema,
   insertMentorSchema,
@@ -73,8 +75,27 @@ const stripe = stripeSecretKey && stripeSecretKey !== 'NA'
 
 if (stripe) {
   console.log('✅ Stripe payment system ready');
+}
+
+// Initialize Razorpay with appropriate keys
+const razorpayKeyId = process.env.RAZORPAY_KEY_ID !== 'NA'
+  ? process.env.RAZORPAY_KEY_ID
+  : process.env.TESTING_RAZORPAY_KEY_ID;
+
+const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET !== 'NA'
+  ? process.env.RAZORPAY_KEY_SECRET
+  : process.env.TESTING_RAZORPAY_KEY_SECRET;
+
+let razorpay: Razorpay | null = null;
+
+if (razorpayKeyId && razorpayKeySecret && razorpayKeyId !== 'NA' && razorpayKeySecret !== 'NA') {
+  razorpay = new Razorpay({
+    key_id: razorpayKeyId,
+    key_secret: razorpayKeySecret
+  });
+  console.log('✅ Razorpay payment system ready');
 } else {
-  console.log('❌ Stripe payment system disabled');
+  console.warn('⚠️ Razorpay not configured - UPI payment features disabled');
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1556,6 +1577,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching course enrollments:", error);
       res.status(500).json({ message: "Failed to fetch course enrollments" });
+    }
+  });
+
+  // Razorpay: Create order for course payment
+  app.post("/api/razorpay/create-course-order", async (req, res) => {
+    try {
+      if (!razorpay) {
+        return res.status(503).json({ 
+          message: "Razorpay payment system is not configured",
+          error: "RAZORPAY_NOT_CONFIGURED"
+        });
+      }
+
+      const { amount, courseId, courseName, studentEmail } = req.body;
+
+      if (!amount || !courseId || !studentEmail) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // Create Razorpay order
+      const options = {
+        amount: Math.round(amount * 100), // Convert to paise (smallest currency unit)
+        currency: "INR",
+        receipt: `course_${courseId}_${Date.now()}`,
+        notes: {
+          courseId,
+          courseName: courseName || '',
+          studentEmail,
+          type: 'course_enrollment'
+        }
+      };
+
+      const order = await razorpay.orders.create(options);
+      
+      console.log('✅ Razorpay order created:', order.id);
+
+      res.json({
+        orderId: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        keyId: razorpayKeyId
+      });
+    } catch (error: any) {
+      console.error("❌ Error creating Razorpay order:", error);
+      res.status(500).json({ 
+        message: "Failed to create payment order",
+        error: error.message 
+      });
+    }
+  });
+
+  // Razorpay: Verify payment signature
+  app.post("/api/razorpay/verify-payment", async (req, res) => {
+    try {
+      if (!razorpay) {
+        return res.status(503).json({ 
+          message: "Razorpay payment system is not configured" 
+        });
+      }
+
+      const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+      if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+        return res.status(400).json({ message: "Missing payment verification details" });
+      }
+
+      // Verify signature
+      const text = razorpay_order_id + "|" + razorpay_payment_id;
+      const expectedSignature = crypto
+        .createHmac("sha256", razorpayKeySecret!)
+        .update(text)
+        .digest("hex");
+
+      if (expectedSignature === razorpay_signature) {
+        console.log('✅ Razorpay payment verified:', razorpay_payment_id);
+        res.json({ 
+          verified: true,
+          paymentId: razorpay_payment_id,
+          orderId: razorpay_order_id
+        });
+      } else {
+        console.error('❌ Razorpay payment signature verification failed');
+        res.status(400).json({ 
+          verified: false,
+          message: "Payment verification failed" 
+        });
+      }
+    } catch (error: any) {
+      console.error("❌ Error verifying Razorpay payment:", error);
+      res.status(500).json({ 
+        message: "Failed to verify payment",
+        error: error.message 
+      });
     }
   });
 
