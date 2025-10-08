@@ -21,9 +21,21 @@ export async function apiRequest(
   const startTime = performance.now();
   debugLog('API_REQUEST', `${method} ${url}`, data);
   
+  // Get session token from localStorage
+  const sessionToken = localStorage.getItem('sessionToken');
+  
+  // Build headers with Authorization if session token exists
+  const headers: Record<string, string> = {};
+  if (data) {
+    headers["Content-Type"] = "application/json";
+  }
+  if (sessionToken) {
+    headers["Authorization"] = `Bearer ${sessionToken}`;
+  }
+  
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
@@ -41,7 +53,17 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    // Get session token from localStorage
+    const sessionToken = localStorage.getItem('sessionToken');
+    
+    // Build headers with Authorization if session token exists
+    const headers: Record<string, string> = {};
+    if (sessionToken) {
+      headers["Authorization"] = `Bearer ${sessionToken}`;
+    }
+    
     const res = await fetch(queryKey.join("/") as string, {
+      headers,
       credentials: "include",
     });
 

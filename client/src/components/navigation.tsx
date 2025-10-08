@@ -151,7 +151,11 @@ export default function Navigation() {
                       return;
                     }
                     localStorage.removeItem('isAuthenticated');
+                    localStorage.removeItem('sessionToken');
                     localStorage.removeItem('userEmail');
+                    localStorage.removeItem('userRole');
+                    localStorage.removeItem('userId');
+                    localStorage.removeItem('userName');
                     window.location.href = '/';
                   }}
                 >

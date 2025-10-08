@@ -90,8 +90,9 @@ export default function Login() {
       
       const userData = await response.json();
       
-      // Store authentication state
+      // Store authentication state and session token
       localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('sessionToken', userData.sessionToken);
       localStorage.setItem('userEmail', userData.user.email);
       localStorage.setItem('userRole', userData.user.role);
       localStorage.setItem('userId', userData.user.id);
