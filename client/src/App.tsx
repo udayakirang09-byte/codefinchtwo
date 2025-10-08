@@ -48,7 +48,7 @@ import SuccessStories from "./pages/success-stories";
 import SafetyGuidelines from "./pages/safety-guidelines";
 import AdminAnalytics from "./pages/admin/analytics";
 import CloudDeployments from "./pages/admin/cloud-deployments";
-import TeacherHome from "./pages/teacher/home";
+import TeacherDashboard from "./components/dashboard/teacher-dashboard";
 import AdminHome from "./pages/admin/home";
 import CodeMapping from "./pages/admin/code-mapping";
 import TestManagement from "./pages/admin/test-management";
@@ -98,7 +98,7 @@ function Router() {
       <Route path="/admin/code-mapping" component={CodeMapping} />
       <Route path="/admin/test-management" component={TestManagement} />
       <Route path="/admin/load-testing" component={LoadTestingGuide} />
-      <Route path="/teacher/home" component={TeacherHome} />
+      <Route path="/teacher/home" component={TeacherDashboard} />
       <Route path="/teacher/payment-config" component={TeacherPaymentConfig} />
       <Route path="/admin/home" component={AdminHome} />
       <Route path="/student/active-classes" component={ActiveClasses} />
