@@ -102,11 +102,10 @@ export default function Booking() {
     enabled: !!mentorId,
   });
 
-  // Fetch mentor subjects (specialties + course titles)
+  // Fetch mentor subjects from Class Fee Configuration
   const { data: mentorSubjects } = useQuery<{
-    subjects: string[],
-    specialties: string[],
-    courses: Array<{title: string, category: string}>
+    subjects: Array<{name: string, fee: string, experience: string}>,
+    message?: string
   }>({
     queryKey: ["/api/mentors", mentorId, "subjects"],
     enabled: !!mentorId,
@@ -127,18 +126,10 @@ export default function Booking() {
     },
   });
 
-  // Fetch teacher's subject-specific fee when subject is selected
-  const { data: subjectFeeData, isLoading: subjectFeeLoading, isFetching: subjectFeeFetching } = useQuery<{ fee: number | null }>({
-    queryKey: ["/api/teacher-subjects", mentorId, "fee", formData.subject],
-    queryFn: async () => {
-      const response = await fetch(`/api/teacher-subjects/${mentorId}/fee/${encodeURIComponent(formData.subject)}`);
-      if (!response.ok) {
-        return { fee: null };
-      }
-      return response.json();
-    },
-    enabled: !!mentorId && !!formData.subject,
-  });
+  // Get selected subject's fee from mentorSubjects
+  const selectedSubjectFee = formData.subject && mentorSubjects
+    ? mentorSubjects.subjects.find(s => s.name === formData.subject)?.fee
+    : null;
 
   // Auto-populate form fields when student data loads
   useEffect(() => {
@@ -152,14 +143,14 @@ export default function Booking() {
     }
   }, [studentData, user]);
 
-  // Calculate displayed session cost (same logic as submit handler)
+  // Calculate displayed session cost using selected subject's fee
   const calculateSessionCost = (): number => {
     const duration = parseInt(formData.duration) || 60;
     
     // Check if there's a subject-specific fee
-    if (subjectFeeData && subjectFeeData.fee !== null && subjectFeeData.fee !== undefined) {
+    if (selectedSubjectFee) {
       // Subject fees are flat per-class, regardless of duration
-      return subjectFeeData.fee;
+      return parseFloat(selectedSubjectFee);
     } else {
       // Fall back to hourly rate (multiplied by duration)
       const hourlyRate = (typeof mentor?.hourlyRate === 'number' ? mentor.hourlyRate : parseFloat(String(mentor?.hourlyRate))) || 500;
@@ -236,16 +227,6 @@ export default function Booking() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // CRITICAL: Block submission if subject fee is still loading
-    if (formData.subject && (subjectFeeLoading || subjectFeeFetching)) {
-      toast({
-        title: "Please Wait",
-        description: "Calculating class fee for the selected subject...",
-        variant: "default",
-      });
-      return;
-    }
     
     // Comprehensive validation
     // Student name validation
@@ -360,9 +341,9 @@ export default function Booking() {
     let sessionCost: number;
     
     // Check if there's a subject-specific fee
-    if (subjectFeeData && subjectFeeData.fee !== null && subjectFeeData.fee !== undefined) {
+    if (selectedSubjectFee) {
       // Subject fees are flat per-class, regardless of duration
-      sessionCost = subjectFeeData.fee;
+      sessionCost = parseFloat(selectedSubjectFee);
       console.log(`💰 Using subject-specific fee: ₹${sessionCost} for ${formData.subject} (flat per-class)`);
     } else {
       // Fall back to hourly rate (multiplied by duration)
@@ -688,34 +669,15 @@ export default function Booking() {
                     <SelectContent>
                       {mentorSubjects && mentorSubjects.subjects.length > 0 ? (
                         <>
-                          {mentorSubjects.specialties.length > 0 && (
-                            <>
-                              <SelectItem value="__specialties__" disabled className="font-semibold text-blue-600">
-                                Teacher Specialties
-                              </SelectItem>
-                              {mentorSubjects.specialties.map((specialty) => (
-                                <SelectItem key={specialty} value={specialty}>
-                                  {specialty}
-                                </SelectItem>
-                              ))}
-                            </>
-                          )}
-                          {mentorSubjects.courses.length > 0 && (
-                            <>
-                              <SelectItem value="__courses__" disabled className="font-semibold text-purple-600">
-                                Available Courses
-                              </SelectItem>
-                              {mentorSubjects.courses.map((course) => (
-                                <SelectItem key={course.title} value={course.title}>
-                                  {course.title} ({course.category})
-                                </SelectItem>
-                              ))}
-                            </>
-                          )}
+                          {mentorSubjects.subjects.map((subject) => (
+                            <SelectItem key={subject.name} value={subject.name}>
+                              {subject.name} - ₹{subject.fee}
+                            </SelectItem>
+                          ))}
                         </>
                       ) : (
-                        <SelectItem value="General Programming">
-                          General Programming
+                        <SelectItem value="no-subjects" disabled>
+                          Teacher has not configured any subjects yet
                         </SelectItem>
                       )}
                     </SelectContent>
@@ -737,17 +699,11 @@ export default function Booking() {
                 <div className="pt-4 border-t">
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-lg font-medium">Total Cost:</span>
-                    {formData.subject && (subjectFeeLoading || subjectFeeFetching) ? (
-                      <span className="text-lg text-muted-foreground" data-testid="text-total-cost">
-                        Calculating fee...
-                      </span>
-                    ) : (
-                      <span className="text-2xl font-bold text-primary" data-testid="text-total-cost">
-                        ₹{displayedCost.toFixed(2)}
-                      </span>
-                    )}
+                    <span className="text-2xl font-bold text-primary" data-testid="text-total-cost">
+                      ₹{displayedCost.toFixed(2)}
+                    </span>
                   </div>
-                  {formData.subject && subjectFeeData && subjectFeeData.fee !== null && (
+                  {formData.subject && selectedSubjectFee && (
                     <p className="text-sm text-muted-foreground mb-4">
                       Using subject-specific flat fee for {formData.subject}
                     </p>
@@ -757,12 +713,10 @@ export default function Booking() {
                     type="submit" 
                     className="w-full" 
                     size="lg"
-                    disabled={bookingMutation.isPending || (!!formData.subject && (subjectFeeLoading || subjectFeeFetching))}
+                    disabled={bookingMutation.isPending}
                     data-testid="button-confirm-booking"
                   >
-                    {bookingMutation.isPending ? "Booking..." : 
-                     (formData.subject && (subjectFeeLoading || subjectFeeFetching)) ? "Loading fee..." : 
-                     "Confirm Booking"}
+                    {bookingMutation.isPending ? "Booking..." : "Confirm Booking"}
                   </Button>
                 </div>
               </form>

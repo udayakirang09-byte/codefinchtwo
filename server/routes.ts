@@ -35,6 +35,7 @@ import {
   paymentWorkflows,
   paymentMethods,
   videoSessions,
+  teacherSubjects,
   type InsertAdminConfig, 
   type InsertFooterLink, 
   type InsertTimeSlot, 
@@ -725,35 +726,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get mentor's available subjects (specialties + course titles)
+  // Get mentor's available subjects from Class Fee Configuration
   app.get("/api/mentors/:id/subjects", async (req, res) => {
     try {
       const { id } = req.params;
       
-      // Get mentor specialties
-      const mentor = await db.select().from(mentors).where(eq(mentors.id, id)).limit(1);
-      if (!mentor || mentor.length === 0) {
-        return res.status(404).json({ message: "Mentor not found" });
+      // Get mentor's class fee configuration subjects
+      const mentorSubjects = await db.select({
+        id: teacherSubjects.id,
+        subject: teacherSubjects.subject,
+        experience: teacherSubjects.experience,
+        classFee: teacherSubjects.classFee,
+        priority: teacherSubjects.priority
+      }).from(teacherSubjects).where(eq(teacherSubjects.mentorId, id)).orderBy(teacherSubjects.priority);
+
+      if (!mentorSubjects || mentorSubjects.length === 0) {
+        return res.json({
+          subjects: [],
+          message: "Teacher has not configured any subjects in Class Fee Configuration yet."
+        });
       }
 
-      const specialties = (mentor[0].specialties as string[]) || [];
-      
-      // Get mentor's courses
-      const mentorCourses = await db.select({
-        title: courses.title,
-        category: courses.category
-      }).from(courses).where(eq(courses.mentorId, id));
-
-      const courseTitles = mentorCourses.map((course: { title: string; category: string }) => course.title);
-
-      // Combine unique subjects
-      const combined = specialties.concat(courseTitles);
-      const allSubjects = Array.from(new Set(combined));
-
       res.json({
-        subjects: allSubjects,
-        specialties,
-        courses: mentorCourses
+        subjects: mentorSubjects.map(s => ({
+          name: s.subject,
+          fee: s.classFee,
+          experience: s.experience
+        }))
       });
     } catch (error) {
       console.error("Error fetching mentor subjects:", error);
