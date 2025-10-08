@@ -83,4 +83,10 @@ jobs:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
         STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+        RAZORPAY_KEY_ID: ${{ secrets.RAZORPAY_KEY_ID }}
+        RAZORPAY_KEY_SECRET: ${{ secrets.RAZORPAY_KEY_SECRET }}
+        RAZORPAY_ADMINUPI: ${{ secrets.RAZORPAY_ADMINUPI }}
+        TESTING_RAZORPAY_KEY_ID: ${{ secrets.TESTING_RAZORPAY_KEY_ID }}
+        TESTING_RAZORPAY_KEY_SECRET: ${{ secrets.TESTING_RAZORPAY_KEY_SECRET }}
+        TESTING_STRIPE_SECRET_KEY: ${{ secrets.TESTING_STRIPE_SECRET_KEY }}
         NODE_ENV: production
