@@ -11,6 +11,12 @@ import { apiRequest } from "@/lib/queryClient";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 export default function CourseCheckout() {
   const [, navigate] = useLocation();
   const [location] = useLocation();
@@ -85,14 +91,69 @@ export default function CourseCheckout() {
           return;
         }
 
-        // Simulate UPI payment processing
-        toast({
-          title: "UPI Payment Initiated",
-          description: `Payment request sent to ${upiId}. Please approve on your UPI app.`,
+        // Create Razorpay order
+        const orderResponse = await apiRequest("POST", "/api/razorpay/create-course-order", {
+          amount: enrollmentDetails.courseFee,
+          courseId: enrollmentDetails.courseId,
+          courseName: enrollmentDetails.courseName,
+          studentEmail: enrollmentDetails.studentEmail
         });
 
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        await createEnrollment();
+        // Open Razorpay checkout
+        const options = {
+          key: orderResponse.keyId,
+          amount: orderResponse.amount,
+          currency: orderResponse.currency,
+          name: "CodeConnect",
+          description: `Enrollment for ${enrollmentDetails.courseName}`,
+          order_id: orderResponse.orderId,
+          prefill: {
+            email: enrollmentDetails.studentEmail,
+            contact: ""
+          },
+          theme: {
+            color: "#6366f1"
+          },
+          method: {
+            upi: true,
+            netbanking: false,
+            card: false,
+            wallet: false
+          },
+          handler: async function (response: any) {
+            try {
+              // Verify payment
+              await apiRequest("POST", "/api/razorpay/verify-payment", {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              });
+
+              // Create enrollment after successful payment
+              await createEnrollment();
+            } catch (error) {
+              toast({
+                title: "Payment Verification Failed",
+                description: "Payment verification failed. Please contact support.",
+                variant: "destructive",
+              });
+              setProcessing(false);
+            }
+          },
+          modal: {
+            ondismiss: function() {
+              setProcessing(false);
+              toast({
+                title: "Payment Cancelled",
+                description: "You cancelled the payment process.",
+                variant: "destructive",
+              });
+            }
+          }
+        };
+
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
 
       } else if (selectedPaymentMethod === 'netbanking') {
         // Validate Net Banking details
@@ -115,10 +176,10 @@ export default function CourseCheckout() {
         await new Promise(resolve => setTimeout(resolve, 2000));
         await createEnrollment();
       }
-    } catch (err) {
+    } catch (err: any) {
       toast({
         title: "Payment Error",
-        description: "An unexpected error occurred during payment processing.",
+        description: err.message || "An unexpected error occurred during payment processing.",
         variant: "destructive",
       });
       setProcessing(false);
@@ -281,13 +342,13 @@ export default function CourseCheckout() {
                             <Input
                               id="upiId"
                               type="text"
-                              placeholder="yourname@upi"
+                              placeholder="Enter your UPI ID (e.g., user@paytm, user@phonepe)"
                               value={upiId}
                               onChange={(e) => setUpiId(e.target.value)}
                               data-testid="input-upi-id"
                               className="text-base"
                             />
-                            <p className="text-xs text-gray-500">Enter your UPI ID (e.g., user@paytm, user@phonepe)</p>
+                            <p className="text-xs text-gray-500">Enter your UPI ID to complete the payment</p>
                           </div>
                         </CardContent>
                       </Card>
