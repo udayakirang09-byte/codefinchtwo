@@ -29,8 +29,9 @@ import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
 interface PaymentConfig {
-  paymentMode?: 'upi' | 'razorpay';
-  razorpayEnabled: boolean;
+  paymentMode?: 'dummy' | 'realtime';
+  razorpayMode?: 'upi' | 'api_keys';
+  enableRazorpay?: boolean;
   razorpayKeyId?: string;
   razorpayKeySecret?: string;
   adminUpiId?: string;
@@ -88,8 +89,9 @@ export default function AdminPaymentConfig() {
       } catch (error) {
         console.error('Failed to fetch payment config:', error);
         return { 
-          paymentMode: 'upi' as const,
-          razorpayEnabled: false
+          paymentMode: 'dummy' as const,
+          razorpayMode: 'upi' as const,
+          enableRazorpay: false
         };
       }
     },
@@ -153,7 +155,10 @@ export default function AdminPaymentConfig() {
   // Sync form state when config loads
   useEffect(() => {
     if (paymentConfig) {
-      setPaymentMode(paymentConfig.paymentMode || 'upi');
+      // Map backend values to frontend state
+      // dummy mode = UPI, realtime mode = Razorpay
+      const mappedMode = paymentConfig.paymentMode === 'dummy' ? 'upi' : 'razorpay';
+      setPaymentMode(mappedMode);
       setAdminUpiId(paymentConfig.adminUpiId || '');
       setRazorpayKeyId(paymentConfig.razorpayKeyId || '');
       setRazorpayKeySecret(paymentConfig.razorpayKeySecret || '');
@@ -234,10 +239,11 @@ export default function AdminPaymentConfig() {
         });
         return;
       }
+      // UPI mode = dummy payment mode with UPI-based razorpay mode
       updateConfigMutation.mutate({
-        paymentMode: 'upi',
-        adminUpiId,
-        razorpayEnabled: false
+        paymentMode: 'dummy',
+        razorpayMode: 'upi',
+        enableRazorpay: false
       });
     } else {
       if (!razorpayKeyId || !razorpayKeySecret) {
@@ -248,11 +254,11 @@ export default function AdminPaymentConfig() {
         });
         return;
       }
+      // Razorpay mode = realtime payment mode with API keys
       updateConfigMutation.mutate({
-        paymentMode: 'razorpay',
-        razorpayEnabled: true,
-        razorpayKeyId,
-        razorpayKeySecret
+        paymentMode: 'realtime',
+        razorpayMode: 'api_keys',
+        enableRazorpay: true
       });
     }
   };
@@ -499,14 +505,14 @@ export default function AdminPaymentConfig() {
                           <span className="font-semibold">Current Configuration</span>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Mode: <Badge variant="outline">{paymentConfig.paymentMode === 'upi' ? 'UPI ID Mode (Testing)' : 'Razorpay Mode (Production)'}</Badge>
+                          Mode: <Badge variant="outline">{paymentConfig.paymentMode === 'dummy' ? 'UPI ID Mode (Testing)' : 'Razorpay Mode (Production)'}</Badge>
                         </p>
-                        {paymentConfig.paymentMode === 'upi' && paymentConfig.adminUpiId && (
+                        {paymentConfig.paymentMode === 'dummy' && paymentConfig.adminUpiId && (
                           <p className="text-sm text-muted-foreground mt-1">
                             Admin UPI: {paymentConfig.adminUpiId}
                           </p>
                         )}
-                        {paymentConfig.paymentMode === 'razorpay' && paymentConfig.razorpayKeyId && (
+                        {paymentConfig.paymentMode === 'realtime' && paymentConfig.razorpayKeyId && (
                           <p className="text-sm text-muted-foreground mt-1">
                             Razorpay Key ID: {paymentConfig.razorpayKeyId}
                           </p>
