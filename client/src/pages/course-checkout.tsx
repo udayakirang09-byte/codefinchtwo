@@ -91,13 +91,35 @@ export default function CourseCheckout() {
           return;
         }
 
-        // Create Razorpay order
-        const orderResponse = await apiRequest("POST", "/api/razorpay/create-course-order", {
+        // Check if Razorpay SDK is loaded
+        if (!window.Razorpay) {
+          toast({
+            title: "Payment System Unavailable",
+            description: "Payment system failed to load. Please refresh the page and try again.",
+            variant: "destructive",
+          });
+          setProcessing(false);
+          return;
+        }
+
+        // Create Razorpay order (server validates course and amount)
+        const orderResponse: any = await apiRequest("POST", "/api/razorpay/create-course-order", {
           amount: enrollmentDetails.courseFee,
           courseId: enrollmentDetails.courseId,
           courseName: enrollmentDetails.courseName,
           studentEmail: enrollmentDetails.studentEmail
         });
+
+        // Validate response
+        if (!orderResponse || !orderResponse.orderId || !orderResponse.keyId) {
+          toast({
+            title: "Payment Order Failed",
+            description: "Failed to create payment order. Please try again.",
+            variant: "destructive",
+          });
+          setProcessing(false);
+          return;
+        }
 
         // Open Razorpay checkout
         const options = {
