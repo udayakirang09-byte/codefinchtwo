@@ -70,8 +70,9 @@ export default function FinanceDashboard() {
     queryKey: ['finance-analytics'],
     queryFn: async (): Promise<FinanceAnalytics> => {
       try {
-        const result = await apiRequest('GET', '/api/admin/finance-analytics');
-        return (result as unknown as FinanceAnalytics) || {
+        const response = await apiRequest('GET', '/api/admin/finance-analytics');
+        const result = await response.json();
+        return result || {
           totalAdminRevenue: 0,
           totalTeacherPayouts: 0,
           totalRefunds: 0,
@@ -101,8 +102,9 @@ export default function FinanceDashboard() {
     queryKey: ['active-payment-workflows'],
     queryFn: async (): Promise<PaymentWorkflow[]> => {
       try {
-        const result = await apiRequest('GET', '/api/payment-workflows/active');
-        return (result as unknown as PaymentWorkflow[]) || [];
+        const response = await apiRequest('GET', '/api/payment-workflows/active');
+        const result = await response.json();
+        return result || [];
       } catch (error) {
         console.error('Failed to fetch active workflows:', error);
         return [];
@@ -116,8 +118,9 @@ export default function FinanceDashboard() {
     queryKey: ['unsettled-finances'],
     queryFn: async () => {
       try {
-        const result = await apiRequest('GET', '/api/admin/unsettled-finances');
-        return (result as unknown as any[]) || [];
+        const response = await apiRequest('GET', '/api/admin/unsettled-finances');
+        const result = await response.json();
+        return result || [];
       } catch (error) {
         console.error('Failed to fetch unsettled finances:', error);
         return [];
