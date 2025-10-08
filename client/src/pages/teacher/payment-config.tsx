@@ -380,7 +380,18 @@ export default function TeacherPaymentConfig() {
                 ) : (
                   <div className="space-y-3">
                     {Array.isArray(paymentMethods) && paymentMethods.map((method) => (
-                      <div key={method.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div 
+                        key={method.id} 
+                        className={`flex items-center justify-between p-4 border rounded-lg transition-all ${
+                          !method.isDefault ? 'cursor-pointer hover:border-indigo-500 hover:shadow-md' : ''
+                        }`}
+                        onClick={() => {
+                          if (!method.isDefault && !setDefaultMutation.isPending) {
+                            setDefaultMutation.mutate(method.id);
+                          }
+                        }}
+                        data-testid={`payment-method-${method.id}`}
+                      >
                         <div className="flex items-center space-x-3">
                           {method.type === 'upi' ? (
                             <IndianRupee className="h-5 w-5 text-green-600" />
@@ -407,7 +418,10 @@ export default function TeacherPaymentConfig() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setDefaultMutation.mutate(method.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDefaultMutation.mutate(method.id);
+                              }}
                               disabled={setDefaultMutation.isPending}
                               data-testid={`button-set-default-${method.id}`}
                             >
@@ -417,7 +431,8 @@ export default function TeacherPaymentConfig() {
                           <Button
                             variant="destructive"
                             size="sm"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               if (window.confirm(`Are you sure you want to delete "${method.displayName}"?`)) {
                                 deleteMutation.mutate(method.id);
                               }
