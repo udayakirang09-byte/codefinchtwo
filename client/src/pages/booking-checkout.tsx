@@ -541,7 +541,20 @@ export default function BookingCheckout() {
         })
         .catch((error) => {
           console.error('Payment setup error (Stripe):', error);
-          // Don't show error toast since UPI/Net Banking can still work
+          // Show validation errors (admin/teacher payment method missing)
+          if (error.message && (
+            error.message.includes('payment method') || 
+            error.message.includes('Teacher not found') ||
+            error.message.includes('Admin payment') ||
+            error.message.includes('Teacher has not configured')
+          )) {
+            toast({
+              title: "Payment Configuration Error",
+              description: error.message,
+              variant: "destructive",
+            });
+          }
+          // Don't show error toast for other errors since UPI/Net Banking can still work
         });
     }
   }, [stripePromise]);

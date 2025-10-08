@@ -880,6 +880,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
           interests: ['programming']
         });
       }
+
+      // VALIDATION: Check admin preferred payment method
+      const adminPreferredMethod = await db.select().from(adminConfig)
+        .where(eq(adminConfig.configKey, 'admin_preferred_payment_method'))
+        .limit(1);
+      
+      if (!adminPreferredMethod || adminPreferredMethod.length === 0 || !adminPreferredMethod[0].configValue) {
+        return res.status(400).json({ 
+          message: "Admin payment method not configured. Please contact support to set up payment receiving method.",
+          error: "ADMIN_PAYMENT_METHOD_MISSING"
+        });
+      }
+
+      // VALIDATION: Check teacher default payment method
+      if (req.body.mentorId) {
+        const mentor = await storage.getMentor(req.body.mentorId);
+        if (!mentor) {
+          return res.status(400).json({ 
+            message: "Teacher not found",
+            error: "TEACHER_NOT_FOUND"
+          });
+        }
+
+        const teacherPaymentMethods = await db.select()
+          .from(paymentMethods)
+          .where(
+            and(
+              eq(paymentMethods.userId, mentor.userId),
+              eq(paymentMethods.isActive, true),
+              eq(paymentMethods.isDefault, true)
+            )
+          )
+          .limit(1);
+
+        if (!teacherPaymentMethods || teacherPaymentMethods.length === 0) {
+          return res.status(400).json({ 
+            message: "Teacher has not configured payment receiving method. Please contact the teacher to set up their payment details before booking.",
+            error: "TEACHER_PAYMENT_METHOD_MISSING"
+          });
+        }
+      }
       
       const bookingData = {
         studentId: student.id,
@@ -1506,6 +1547,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const course = await storage.getCourse(courseId);
       if (!course) {
         return res.status(404).json({ message: "Course not found" });
+      }
+
+      // VALIDATION: Check admin preferred payment method
+      const adminPreferredMethod = await db.select().from(adminConfig)
+        .where(eq(adminConfig.configKey, 'admin_preferred_payment_method'))
+        .limit(1);
+      
+      if (!adminPreferredMethod || adminPreferredMethod.length === 0 || !adminPreferredMethod[0].configValue) {
+        return res.status(400).json({ 
+          message: "Admin payment method not configured. Please contact support to set up payment receiving method.",
+          error: "ADMIN_PAYMENT_METHOD_MISSING"
+        });
+      }
+
+      // VALIDATION: Check teacher default payment method
+      if (mentorId) {
+        const mentor = await storage.getMentor(mentorId);
+        if (!mentor) {
+          return res.status(400).json({ 
+            message: "Teacher not found",
+            error: "TEACHER_NOT_FOUND"
+          });
+        }
+
+        const teacherPaymentMethods = await db.select()
+          .from(paymentMethods)
+          .where(
+            and(
+              eq(paymentMethods.userId, mentor.userId),
+              eq(paymentMethods.isActive, true),
+              eq(paymentMethods.isDefault, true)
+            )
+          )
+          .limit(1);
+
+        if (!teacherPaymentMethods || teacherPaymentMethods.length === 0) {
+          return res.status(400).json({ 
+            message: "Teacher has not configured payment receiving method. Please contact the teacher to set up their payment details before booking.",
+            error: "TEACHER_PAYMENT_METHOD_MISSING"
+          });
+        }
       }
 
       // Create enrollment
@@ -3132,6 +3214,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!amount || amount <= 0) {
         return res.status(400).json({ message: "Invalid amount provided" });
+      }
+
+      // VALIDATION: Check admin preferred payment method
+      const adminPreferredMethod = await db.select().from(adminConfig)
+        .where(eq(adminConfig.configKey, 'admin_preferred_payment_method'))
+        .limit(1);
+      
+      if (!adminPreferredMethod || adminPreferredMethod.length === 0 || !adminPreferredMethod[0].configValue) {
+        return res.status(400).json({ 
+          message: "Admin payment method not configured. Please contact support to set up payment receiving method.",
+          error: "ADMIN_PAYMENT_METHOD_MISSING"
+        });
+      }
+
+      // VALIDATION: Check teacher default payment method (if mentorId is provided)
+      if (mentorId) {
+        const mentor = await storage.getMentor(mentorId);
+        if (!mentor) {
+          return res.status(400).json({ 
+            message: "Teacher not found",
+            error: "TEACHER_NOT_FOUND"
+          });
+        }
+
+        const teacherPaymentMethods = await db.select()
+          .from(paymentMethods)
+          .where(
+            and(
+              eq(paymentMethods.userId, mentor.userId),
+              eq(paymentMethods.isActive, true),
+              eq(paymentMethods.isDefault, true)
+            )
+          )
+          .limit(1);
+
+        if (!teacherPaymentMethods || teacherPaymentMethods.length === 0) {
+          return res.status(400).json({ 
+            message: "Teacher has not configured payment receiving method. Please contact the teacher to set up their payment details before booking.",
+            error: "TEACHER_PAYMENT_METHOD_MISSING"
+          });
+        }
       }
 
       const paymentIntent = await stripe.paymentIntents.create({

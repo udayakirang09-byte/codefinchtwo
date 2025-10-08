@@ -148,10 +148,11 @@ export default function Booking() {
       queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
       navigate("/");
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      const errorMessage = error.message || "There was an error booking your session. Please try again.";
       toast({
         title: "Booking Failed",
-        description: "There was an error booking your session. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
       console.error("Booking error:", error);

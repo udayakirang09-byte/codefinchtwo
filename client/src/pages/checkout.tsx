@@ -162,7 +162,14 @@ export default function Checkout() {
         courseName: course.title 
       }),
     })
-      .then((res) => res.json())
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) {
+          // Handle validation errors from backend
+          throw new Error(data.message || 'Failed to create payment intent');
+        }
+        return data;
+      })
       .then((data) => {
         if (data.clientSecret) {
           setClientSecret(data.clientSecret);
@@ -173,8 +180,8 @@ export default function Checkout() {
       .catch((error) => {
         console.error('Payment setup error:', error);
         toast({
-          title: "Setup Error",
-          description: "Failed to initialize payment. Please try again.",
+          title: "Payment Configuration Error",
+          description: error.message || "Failed to initialize payment. Please try again.",
           variant: "destructive",
         });
       });
