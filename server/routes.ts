@@ -1804,23 +1804,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const totalHours = completedBookings.reduce((sum: number, booking: any) => sum + (booking.duration || 0), 0) / 60;
       
-      // Calculate skill-based progress - only for subjects with attended classes
+      // Calculate skill-based progress - only for subjects with ACTUALLY ATTENDED classes
       const skillProgress: Record<string, { completed: number; total: number; attended: number }> = {};
       
       nonCancelledBookings.forEach((booking: any) => {
         const subject = booking.subject || 'General';
-        if (!skillProgress[subject]) {
-          skillProgress[subject] = { completed: 0, total: 0, attended: 0 };
-        }
-        skillProgress[subject].total++;
         
-        // Check if this booking is completed
-        const isCompleted = booking.status === 'completed' || 
-          (booking.status === 'scheduled' && now >= new Date(new Date(booking.scheduledAt).getTime() + booking.duration * 60000));
+        // Only count classes that were explicitly completed (student attended)
+        // Do NOT count scheduled classes past their end time as attended
+        const wasActuallyAttended = booking.status === 'completed';
         
-        if (isCompleted) {
+        if (wasActuallyAttended) {
+          if (!skillProgress[subject]) {
+            skillProgress[subject] = { completed: 0, total: 0, attended: 0 };
+          }
           skillProgress[subject].completed++;
           skillProgress[subject].attended++;
+          skillProgress[subject].total++;
         }
       });
       
@@ -1829,9 +1829,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .filter(([_, progress]) => progress.attended > 0)
         .map(([skill, progress]) => ({
           skill,
-          level: Math.round((progress.completed / progress.total) * 100),
+          level: Math.round((progress.completed / progress.attended) * 100),
           classesCompleted: progress.completed,
-          totalClasses: progress.total
+          totalClasses: progress.attended  // Only count attended classes, not scheduled ones
         }));
       
       // Calculate overall progress: (completed / total non-cancelled) * 100
