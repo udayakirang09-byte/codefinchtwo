@@ -18,6 +18,7 @@ export default function Signup() {
     password: "",
     confirmPassword: "",
     role: "",
+    country: "India", // Default to India
     // Mentor qualification fields
     qualifications: [
       { qualification: "", specialization: "", score: "" },
@@ -265,6 +266,7 @@ export default function Signup() {
           email: formData.email,
           password: formData.password,
           role: formData.role,
+          country: formData.country,
           // Include mentor data if role is mentor or both
           mentorData: (formData.role === "mentor" || formData.role === "both") ? {
             qualifications: formData.qualifications.filter(q => q.qualification.trim() !== ""),
@@ -380,6 +382,25 @@ export default function Signup() {
                   <SelectItem value="student">Learn coding (Student)</SelectItem>
                   <SelectItem value="mentor">Teach coding (Mentor)</SelectItem>
                   <SelectItem value="both">Both learn and teach</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="country">Country</Label>
+              <Select value={formData.country} onValueChange={(value) => handleInputChange("country", value)}>
+                <SelectTrigger data-testid="select-country">
+                  <SelectValue placeholder="Select your country" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="India">India</SelectItem>
+                  <SelectItem value="USA">United States</SelectItem>
+                  <SelectItem value="UK">United Kingdom</SelectItem>
+                  <SelectItem value="Canada">Canada</SelectItem>
+                  <SelectItem value="Australia">Australia</SelectItem>
+                  <SelectItem value="Germany">Germany</SelectItem>
+                  <SelectItem value="France">France</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>

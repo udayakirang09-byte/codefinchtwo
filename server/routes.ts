@@ -91,12 +91,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hasDatabaseUrl: !!process.env.DATABASE_URL
       });
       
-      const { firstName, lastName, email, password, role, mentorData }: {
+      const { firstName, lastName, email, password, role, country, mentorData }: {
         firstName: string;
         lastName: string;
         email: string;
         password: string;
         role: string;
+        country?: string;
         mentorData?: any;
       } = req.body;
       
@@ -136,7 +137,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastName,
         email: email.trim(),
         password: hashedPassword!, // Store hashed password
-        role
+        role,
+        country: country || 'India' // Default to India if not provided
       });
       
       console.log('✅ User created successfully');
