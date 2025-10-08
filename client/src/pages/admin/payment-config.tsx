@@ -158,9 +158,9 @@ export default function AdminPaymentConfig() {
   // Sync form state when config loads
   useEffect(() => {
     if (paymentConfig) {
-      // Map backend values to frontend state
-      // dummy mode = UPI, realtime mode = Razorpay
-      const mappedMode = paymentConfig.paymentMode === 'dummy' ? 'upi' : 'razorpay';
+      // Determine mode based on razorpayMode field
+      // razorpayMode='upi' means UPI ID mode, razorpayMode='api_keys' means Razorpay API mode
+      const mappedMode = paymentConfig.razorpayMode === 'upi' ? 'upi' : 'razorpay';
       setPaymentMode(mappedMode);
       setAdminUpiId(paymentConfig.adminUpiId || '');
       setRazorpayKeyId(paymentConfig.razorpayKeyId || '');
@@ -242,9 +242,9 @@ export default function AdminPaymentConfig() {
         });
         return;
       }
-      // UPI mode = dummy payment mode with UPI-based razorpay mode
+      // UPI mode = realtime payment with UPI transfers
       updateConfigMutation.mutate({
-        paymentMode: 'dummy',
+        paymentMode: 'realtime',
         razorpayMode: 'upi',
         enableRazorpay: false,
         adminUpiId: adminUpiId
