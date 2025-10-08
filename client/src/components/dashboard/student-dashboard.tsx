@@ -734,6 +734,16 @@ export default function StudentDashboard() {
                 <span className="font-bold text-lg">Completed Classes</span>
                 <span className="text-xs text-gray-500 mt-1 text-center">View past classes</span>
               </Button>
+              <Button 
+                variant="outline" 
+                className="h-32 p-6 flex-col hover:bg-indigo-50 hover:border-indigo-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                data-testid="button-all-active-classes"
+                onClick={() => window.location.href = '/student/all-active-classes'}
+              >
+                <Calendar className="h-10 w-10 mb-3 text-indigo-600 group-hover:scale-110 transition-transform duration-200" />
+                <span className="font-bold text-lg">All Active Classes</span>
+                <span className="text-xs text-gray-500 mt-1 text-center">Manage your schedule</span>
+              </Button>
             </div>
           </CardContent>
         </Card>
