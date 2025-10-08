@@ -15,6 +15,40 @@ import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 import type { MentorWithUser } from "@shared/schema";
 
+// Helper function to get timezone abbreviation
+function getTimezoneAbbreviation(): string {
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  
+  // Common timezone mappings
+  const timezoneMap: { [key: string]: string } = {
+    'Asia/Kolkata': 'IST',
+    'Asia/Calcutta': 'IST',
+    'America/New_York': 'EST',
+    'America/Chicago': 'CST',
+    'America/Denver': 'MST',
+    'America/Los_Angeles': 'PST',
+    'Europe/London': 'GMT',
+    'Europe/Paris': 'CET',
+    'Asia/Tokyo': 'JST',
+    'Australia/Sydney': 'AEDT',
+  };
+
+  if (timezoneMap[timezone]) {
+    return timezoneMap[timezone];
+  }
+
+  // Fallback: get offset-based abbreviation
+  const offset = new Date().getTimezoneOffset();
+  const hours = Math.floor(Math.abs(offset) / 60);
+  const minutes = Math.abs(offset) % 60;
+  const sign = offset > 0 ? '-' : '+';
+  
+  if (minutes === 0) {
+    return `UTC${sign}${hours}`;
+  }
+  return `UTC${sign}${hours}:${minutes.toString().padStart(2, '0')}`;
+}
+
 export default function Booking() {
   const [, navigate] = useLocation();
   const [match, params] = useRoute("/booking/:mentorId");
@@ -610,7 +644,7 @@ export default function Booking() {
                     <p className="text-xs text-muted-foreground">Bookings available for next 5 days only</p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="selectedTime">Preferred Time *</Label>
+                    <Label htmlFor="selectedTime">Preferred Time ({getTimezoneAbbreviation()}) *</Label>
                     <Select onValueChange={(value) => handleInputChange("selectedTime", value)} required>
                       <SelectTrigger data-testid="select-session-time">
                         <SelectValue placeholder="Select time" />

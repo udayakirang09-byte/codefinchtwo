@@ -923,19 +923,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // VALIDATION: Check admin preferred payment method
-      const adminPreferredMethod = await db.select().from(adminConfig)
-        .where(eq(adminConfig.configKey, 'admin_preferred_payment_method'))
-        .limit(1);
+      // VALIDATION: Check admin payment configuration
+      const adminPaymentConf = await storage.getAdminPaymentConfig();
       
-      if (!adminPreferredMethod || adminPreferredMethod.length === 0 || !adminPreferredMethod[0].configValue) {
+      if (!adminPaymentConf) {
         return res.status(400).json({ 
           message: "Admin payment method not configured. Please contact support to set up payment receiving method.",
           error: "ADMIN_PAYMENT_METHOD_MISSING"
         });
       }
 
-      // VALIDATION: Check teacher default payment method
+      // VALIDATION: Check teacher payment method based on payment mode
       if (req.body.mentorId) {
         const mentor = await storage.getMentor(req.body.mentorId);
         if (!mentor) {
@@ -945,22 +943,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        const teacherPaymentMethods = await db.select()
-          .from(paymentMethods)
-          .where(
-            and(
-              eq(paymentMethods.userId, mentor.userId),
-              eq(paymentMethods.isActive, true),
-              eq(paymentMethods.isDefault, true)
+        // If payment mode is dummy with UPI, check for teacher's UPI ID in mentors table
+        if (adminPaymentConf.paymentMode === 'dummy' && adminPaymentConf.razorpayMode === 'upi') {
+          if (!mentor.upiId) {
+            return res.status(400).json({ 
+              message: "Teacher has not configured UPI ID for receiving payments. Please contact the teacher to set up their UPI ID.",
+              error: "TEACHER_UPI_MISSING"
+            });
+          }
+        } else {
+          // For real payment mode, check payment methods table
+          const teacherPaymentMethods = await db.select()
+            .from(paymentMethods)
+            .where(
+              and(
+                eq(paymentMethods.userId, mentor.userId),
+                eq(paymentMethods.isActive, true),
+                eq(paymentMethods.isDefault, true)
+              )
             )
-          )
-          .limit(1);
+            .limit(1);
 
-        if (!teacherPaymentMethods || teacherPaymentMethods.length === 0) {
-          return res.status(400).json({ 
-            message: "Teacher has not configured payment receiving method. Please contact the teacher to set up their payment details before booking.",
-            error: "TEACHER_PAYMENT_METHOD_MISSING"
-          });
+          if (!teacherPaymentMethods || teacherPaymentMethods.length === 0) {
+            return res.status(400).json({ 
+              message: "Teacher has not configured payment receiving method. Please contact the teacher to set up their payment details before booking.",
+              error: "TEACHER_PAYMENT_METHOD_MISSING"
+            });
+          }
         }
       }
       
@@ -1715,19 +1724,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Course not found" });
       }
 
-      // VALIDATION: Check admin preferred payment method
-      const adminPreferredMethod = await db.select().from(adminConfig)
-        .where(eq(adminConfig.configKey, 'admin_preferred_payment_method'))
-        .limit(1);
+      // VALIDATION: Check admin payment configuration
+      const adminPaymentConf = await storage.getAdminPaymentConfig();
       
-      if (!adminPreferredMethod || adminPreferredMethod.length === 0 || !adminPreferredMethod[0].configValue) {
+      if (!adminPaymentConf) {
         return res.status(400).json({ 
           message: "Admin payment method not configured. Please contact support to set up payment receiving method.",
           error: "ADMIN_PAYMENT_METHOD_MISSING"
         });
       }
 
-      // VALIDATION: Check teacher default payment method
+      // VALIDATION: Check teacher payment method based on payment mode
       if (mentorId) {
         const mentor = await storage.getMentor(mentorId);
         if (!mentor) {
@@ -1737,22 +1744,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        const teacherPaymentMethods = await db.select()
-          .from(paymentMethods)
-          .where(
-            and(
-              eq(paymentMethods.userId, mentor.userId),
-              eq(paymentMethods.isActive, true),
-              eq(paymentMethods.isDefault, true)
+        // If payment mode is dummy with UPI, check for teacher's UPI ID in mentors table
+        if (adminPaymentConf.paymentMode === 'dummy' && adminPaymentConf.razorpayMode === 'upi') {
+          if (!mentor.upiId) {
+            return res.status(400).json({ 
+              message: "Teacher has not configured UPI ID for receiving payments. Please contact the teacher to set up their UPI ID.",
+              error: "TEACHER_UPI_MISSING"
+            });
+          }
+        } else {
+          // For real payment mode, check payment methods table
+          const teacherPaymentMethods = await db.select()
+            .from(paymentMethods)
+            .where(
+              and(
+                eq(paymentMethods.userId, mentor.userId),
+                eq(paymentMethods.isActive, true),
+                eq(paymentMethods.isDefault, true)
+              )
             )
-          )
-          .limit(1);
+            .limit(1);
 
-        if (!teacherPaymentMethods || teacherPaymentMethods.length === 0) {
-          return res.status(400).json({ 
-            message: "Teacher has not configured payment receiving method. Please contact the teacher to set up their payment details before booking.",
-            error: "TEACHER_PAYMENT_METHOD_MISSING"
-          });
+          if (!teacherPaymentMethods || teacherPaymentMethods.length === 0) {
+            return res.status(400).json({ 
+              message: "Teacher has not configured payment receiving method. Please contact the teacher to set up their payment details before booking.",
+              error: "TEACHER_PAYMENT_METHOD_MISSING"
+            });
+          }
         }
       }
 
@@ -3434,19 +3452,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid amount provided" });
       }
 
-      // VALIDATION: Check admin preferred payment method
-      const adminPreferredMethod = await db.select().from(adminConfig)
-        .where(eq(adminConfig.configKey, 'admin_preferred_payment_method'))
-        .limit(1);
+      // VALIDATION: Check admin payment configuration
+      const adminPaymentConf = await storage.getAdminPaymentConfig();
       
-      if (!adminPreferredMethod || adminPreferredMethod.length === 0 || !adminPreferredMethod[0].configValue) {
+      if (!adminPaymentConf) {
         return res.status(400).json({ 
           message: "Admin payment method not configured. Please contact support to set up payment receiving method.",
           error: "ADMIN_PAYMENT_METHOD_MISSING"
         });
       }
 
-      // VALIDATION: Check teacher default payment method (if mentorId is provided)
+      // VALIDATION: Check teacher payment method based on payment mode (if mentorId is provided)
       if (mentorId) {
         const mentor = await storage.getMentor(mentorId);
         if (!mentor) {
@@ -3456,22 +3472,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        const teacherPaymentMethods = await db.select()
-          .from(paymentMethods)
-          .where(
-            and(
-              eq(paymentMethods.userId, mentor.userId),
-              eq(paymentMethods.isActive, true),
-              eq(paymentMethods.isDefault, true)
+        // If payment mode is dummy with UPI, check for teacher's UPI ID in mentors table
+        if (adminPaymentConf.paymentMode === 'dummy' && adminPaymentConf.razorpayMode === 'upi') {
+          if (!mentor.upiId) {
+            return res.status(400).json({ 
+              message: "Teacher has not configured UPI ID for receiving payments. Please contact the teacher to set up their UPI ID.",
+              error: "TEACHER_UPI_MISSING"
+            });
+          }
+        } else {
+          // For real payment mode, check payment methods table
+          const teacherPaymentMethods = await db.select()
+            .from(paymentMethods)
+            .where(
+              and(
+                eq(paymentMethods.userId, mentor.userId),
+                eq(paymentMethods.isActive, true),
+                eq(paymentMethods.isDefault, true)
+              )
             )
-          )
-          .limit(1);
+            .limit(1);
 
-        if (!teacherPaymentMethods || teacherPaymentMethods.length === 0) {
-          return res.status(400).json({ 
-            message: "Teacher has not configured payment receiving method. Please contact the teacher to set up their payment details before booking.",
-            error: "TEACHER_PAYMENT_METHOD_MISSING"
-          });
+          if (!teacherPaymentMethods || teacherPaymentMethods.length === 0) {
+            return res.status(400).json({ 
+              message: "Teacher has not configured payment receiving method. Please contact the teacher to set up their payment details before booking.",
+              error: "TEACHER_PAYMENT_METHOD_MISSING"
+            });
+          }
         }
       }
 
