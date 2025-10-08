@@ -6,6 +6,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import cors from "cors";
 import { RecordingScheduler } from "./recordingScheduler";
 import { RetentionScheduler } from "./retentionScheduler";
+import { NoShowScheduler } from "./noShowScheduler";
 import { storage } from "./storage";
 
 const app = express();
@@ -96,6 +97,10 @@ app.use((req, res, next) => {
   // Start retention scheduler
   const retentionScheduler = new RetentionScheduler(storage);
   retentionScheduler.start();
+  
+  // Start teacher no-show detection scheduler
+  const noShowScheduler = new NoShowScheduler(storage);
+  noShowScheduler.start();
   
   // Setup WebSocket server for video chat signaling on specific path
   const wss = new WebSocketServer({ 
