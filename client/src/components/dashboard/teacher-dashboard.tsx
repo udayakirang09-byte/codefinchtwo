@@ -143,7 +143,16 @@ export default function TeacherDashboard() {
   const { data: mentorData } = useQuery({
     queryKey: ['mentor-by-user', user?.id],
     queryFn: async () => {
-      const mentorResponse = await fetch(`/api/mentors/by-user/${user?.id}`);
+      const sessionToken = localStorage.getItem('sessionToken');
+      const headers: Record<string, string> = {};
+      if (sessionToken) {
+        headers["Authorization"] = `Bearer ${sessionToken}`;
+      }
+      
+      const mentorResponse = await fetch(`/api/mentors/by-user/${user?.id}`, {
+        headers,
+        credentials: "include"
+      });
       if (!mentorResponse.ok) {
         return null;
       }
@@ -160,7 +169,16 @@ export default function TeacherDashboard() {
   const { data: teacherSubjects = [], isLoading: subjectsLoading } = useQuery({
     queryKey: ['teacher-subjects-fees', mentorData?.id],
     queryFn: async () => {
-      const response = await fetch(`/api/teacher-subjects/${mentorData?.id}/fees`);
+      const sessionToken = localStorage.getItem('sessionToken');
+      const headers: Record<string, string> = {};
+      if (sessionToken) {
+        headers["Authorization"] = `Bearer ${sessionToken}`;
+      }
+      
+      const response = await fetch(`/api/teacher-subjects/${mentorData?.id}/fees`, {
+        headers,
+        credentials: "include"
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch teacher subjects');
       }
