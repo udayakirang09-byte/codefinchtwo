@@ -46,6 +46,20 @@ interface StudentStats {
   achievementsCount: number;
 }
 
+interface UiConfigResponse {
+  footerLinks: {
+    studentCommunity: boolean;
+    mentorCommunity: boolean;
+    achievementBadges: boolean;
+    discussionForums: boolean;
+    projectShowcase: boolean;
+    communityEvents: boolean;
+    successStories: boolean;
+    contactUs: boolean;
+  };
+  showHelpCenter: boolean;
+}
+
 export default function StudentDashboard() {
   const [upcomingClasses, setUpcomingClasses] = useState<UpcomingClass[]>([]);
   const [completedClasses, setCompletedClasses] = useState<CompletedClass[]>([]);
@@ -104,6 +118,12 @@ export default function StudentDashboard() {
       return response.json();
     },
     enabled: !!user?.id && isAuthenticated,
+  });
+
+  // Fetch UI configuration for Help Center visibility
+  const { data: uiConfig } = useQuery<UiConfigResponse>({
+    queryKey: ['/api/admin/ui-config'],
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
   // Fetch upcoming classes for the student
@@ -682,16 +702,18 @@ export default function StudentDashboard() {
                 <span className="font-bold text-lg">Browse Courses</span>
                 <span className="text-xs text-gray-500 mt-1 text-center">Explore new topics</span>
               </Button>
-              <Button 
-                variant="outline" 
-                className="h-32 p-6 flex-col hover:bg-orange-50 hover:border-orange-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
-                data-testid="button-help-center"
-                onClick={handleHelpCenter}
-              >
-                <Users className="h-10 w-10 mb-3 text-orange-600 group-hover:scale-110 transition-transform duration-200" />
-                <span className="font-bold text-lg">Help Center</span>
-                <span className="text-xs text-gray-500 mt-1 text-center">Get support & guides</span>
-              </Button>
+              {uiConfig?.showHelpCenter && (
+                <Button 
+                  variant="outline" 
+                  className="h-32 p-6 flex-col hover:bg-orange-50 hover:border-orange-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                  data-testid="button-help-center"
+                  onClick={handleHelpCenter}
+                >
+                  <Users className="h-10 w-10 mb-3 text-orange-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold text-lg">Help Center</span>
+                  <span className="text-xs text-gray-500 mt-1 text-center">Get support & guides</span>
+                </Button>
+              )}
               <Button 
                 variant="outline" 
                 className="h-32 p-6 flex-col hover:bg-red-50 hover:border-red-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
