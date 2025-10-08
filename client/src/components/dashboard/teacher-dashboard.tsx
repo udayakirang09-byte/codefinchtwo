@@ -1156,7 +1156,10 @@ export default function TeacherDashboard() {
                           size="sm" 
                           variant="outline" 
                           className="text-orange-600 border-orange-200 hover:bg-orange-50"
-                          onClick={() => window.location.href = `/teacher/courses/${course.id}/edit`}
+                          onClick={() => {
+                            // Navigate to teacher home for course editing
+                            window.location.href = '/teacher/home';
+                          }}
                           data-testid={`button-edit-course-${course.id}`}
                         >
                           Edit Course
@@ -1164,7 +1167,10 @@ export default function TeacherDashboard() {
                         <Button 
                           size="sm" 
                           className="bg-orange-600 hover:bg-orange-700"
-                          onClick={() => window.location.href = `/teacher/courses/${course.id}`}
+                          onClick={() => {
+                            // Navigate to teacher home for course details
+                            window.location.href = '/teacher/home';
+                          }}
                           data-testid={`button-view-course-${course.id}`}
                         >
                           View Details
