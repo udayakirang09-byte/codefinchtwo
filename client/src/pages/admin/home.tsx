@@ -392,6 +392,12 @@ export default function AdminHome() {
                     💰 Payment Config
                   </Button>
                 </Link>
+                <Link href="/admin/ui-config">
+                  <Button variant="outline" className="w-full" data-testid="button-nav-ui-config">
+                    <Settings className="w-4 h-4 mr-2" />
+                    🎨 UI Configuration
+                  </Button>
+                </Link>
                 <Link href="/admin/finance-dashboard">
                   <Button variant="outline" className="w-full" data-testid="button-nav-finance-analytics">
                     <TrendingUp className="w-4 h-4 mr-2" />
