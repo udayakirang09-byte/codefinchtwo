@@ -1590,20 +1590,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const { amount, courseId, courseName, studentEmail } = req.body;
+      const { courseId, studentEmail } = req.body;
 
-      if (!amount || !courseId || !studentEmail) {
+      if (!courseId || !studentEmail) {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
+      // SECURITY: Fetch course from database to get verified price
+      const course = await storage.getCourse(courseId);
+      
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      const coursePrice = parseFloat(course.price as string);
+      
+      if (!course.price || isNaN(coursePrice) || coursePrice <= 0) {
+        return res.status(400).json({ message: "Invalid course price" });
+      }
+
+      // Use database-verified price, not client-provided amount
+      const verifiedAmount = coursePrice;
+
       // Create Razorpay order
       const options = {
-        amount: Math.round(amount * 100), // Convert to paise (smallest currency unit)
+        amount: Math.round(verifiedAmount * 100), // Convert to paise (smallest currency unit)
         currency: "INR",
         receipt: `course_${courseId}_${Date.now()}`,
         notes: {
           courseId,
-          courseName: courseName || '',
+          courseName: course.title || '',
           studentEmail,
           type: 'course_enrollment'
         }
@@ -1611,7 +1627,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const order = await razorpay.orders.create(options);
       
-      console.log('✅ Razorpay order created:', order.id);
+      console.log('✅ Razorpay order created:', order.id, `Amount: ₹${verifiedAmount}`);
 
       res.json({
         orderId: order.id,
