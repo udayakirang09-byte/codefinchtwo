@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck, Mail, MessageSquare, Phone, CreditCard, Key, Lock, X, Building } from "lucide-react";
+import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck, Mail, MessageSquare, Phone, CreditCard, Key, Lock, X, Building, Activity, TestTube, Zap, Monitor, Map } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 
 interface SystemStats {
   totalUsers: number;
@@ -1318,6 +1319,91 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       )}
+
+      {/* Quick Navigation / Admin Actions Section */}
+      <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-blue-600 to-cyan-700 text-white">
+          <CardTitle className="flex items-center gap-3 text-xl">
+            <Settings className="h-6 w-6" />
+            Quick Navigation & System Tools
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Link href="/admin/system-health">
+              <Button variant="outline" className="w-full h-auto py-4 hover:bg-emerald-50 hover:border-emerald-400 transition-all" data-testid="button-nav-system-health">
+                <div className="flex items-center gap-3 w-full">
+                  <Activity className="h-5 w-5 text-emerald-600" />
+                  <div className="text-left flex-1">
+                    <div className="font-semibold text-gray-900">System Health Monitoring</div>
+                    <div className="text-xs text-gray-600">Monitor real-time system metrics</div>
+                  </div>
+                </div>
+              </Button>
+            </Link>
+
+            <Link href="/admin/code-mapping">
+              <Button variant="outline" className="w-full h-auto py-4 hover:bg-blue-50 hover:border-blue-400 transition-all" data-testid="button-nav-function-mapping">
+                <div className="flex items-center gap-3 w-full">
+                  <Map className="h-5 w-5 text-blue-600" />
+                  <div className="text-left flex-1">
+                    <div className="font-semibold text-gray-900">Application Function Mapping</div>
+                    <div className="text-xs text-gray-600">View code & API mappings</div>
+                  </div>
+                </div>
+              </Button>
+            </Link>
+
+            <Link href="/admin/test-management">
+              <Button variant="outline" className="w-full h-auto py-4 hover:bg-purple-50 hover:border-purple-400 transition-all" data-testid="button-nav-unit-tests">
+                <div className="flex items-center gap-3 w-full">
+                  <TestTube className="h-5 w-5 text-purple-600" />
+                  <div className="text-left flex-1">
+                    <div className="font-semibold text-gray-900">Unit Test Cases</div>
+                    <div className="text-xs text-gray-600">Review & run unit tests</div>
+                  </div>
+                </div>
+              </Button>
+            </Link>
+
+            <Link href="/system-test">
+              <Button variant="outline" className="w-full h-auto py-4 hover:bg-indigo-50 hover:border-indigo-400 transition-all" data-testid="button-nav-system-tests">
+                <div className="flex items-center gap-3 w-full">
+                  <Shield className="h-5 w-5 text-indigo-600" />
+                  <div className="text-left flex-1">
+                    <div className="font-semibold text-gray-900">System Test Cases</div>
+                    <div className="text-xs text-gray-600">End-to-end system tests</div>
+                  </div>
+                </div>
+              </Button>
+            </Link>
+
+            <Link href="/admin/load-testing">
+              <Button variant="outline" className="w-full h-auto py-4 hover:bg-orange-50 hover:border-orange-400 transition-all" data-testid="button-nav-load-testing">
+                <div className="flex items-center gap-3 w-full">
+                  <Zap className="h-5 w-5 text-orange-600" />
+                  <div className="text-left flex-1">
+                    <div className="font-semibold text-gray-900">Load Testing Strategy</div>
+                    <div className="text-xs text-gray-600">Performance & load analysis</div>
+                  </div>
+                </div>
+              </Button>
+            </Link>
+
+            <Link href="/admin/monitoring">
+              <Button variant="outline" className="w-full h-auto py-4 hover:bg-cyan-50 hover:border-cyan-400 transition-all" data-testid="button-nav-system-monitoring">
+                <div className="flex items-center gap-3 w-full">
+                  <Monitor className="h-5 w-5 text-cyan-600" />
+                  <div className="text-left flex-1">
+                    <div className="font-semibold text-gray-900">System Testing & Monitoring</div>
+                    <div className="text-xs text-gray-600">Comprehensive monitoring dashboard</div>
+                  </div>
+                </div>
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* System Health */}
       <Card className="modern-card modern-card-green overflow-hidden">
