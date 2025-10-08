@@ -32,6 +32,49 @@ interface CompletedClass {
   earnings: number;
 }
 
+interface TeacherStats {
+  totalStudents: number;
+  monthlyEarnings: number;
+  averageRating: number;
+  completedSessions: number;
+  totalEarnings?: number;
+  averageSessionEarnings?: number;
+  totalReviews?: number;
+  feedbackResponseRate?: number;
+  totalHours?: number;
+}
+
+interface TeacherNotification {
+  id: string;
+  message: string;
+  timestamp: Date;
+  read: boolean;
+}
+
+interface TeacherReview {
+  id: string;
+  studentName: string;
+  rating: number;
+  comment: string;
+  createdAt: Date;
+}
+
+interface TeacherCourse {
+  id: string;
+  name: string;
+  subject: string;
+  description?: string;
+  price: number;
+  schedule?: any;
+}
+
+interface TeacherSubject {
+  id: string;
+  subject: string;
+  experience: string;
+  classFee: number;
+}
+
 export default function TeacherDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -49,15 +92,8 @@ export default function TeacherDashboard() {
   const [upiId, setUpiId] = useState("");
   
   // Fetch teacher's classes from API
-  const { data: teacherClasses = [], isLoading: classesLoading, error: classesError } = useQuery({
-    queryKey: ['teacher-classes', user?.id],
-    queryFn: async () => {
-      const response = await fetch(`/api/teacher/classes?teacherId=${user?.id}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch classes: ${response.status}`);
-      }
-      return response.json();
-    },
+  const { data: teacherClasses = [], isLoading: classesLoading, error: classesError } = useQuery<UpcomingClass[]>({
+    queryKey: [`/api/teacher/classes?teacherId=${user?.id}`],
     enabled: !!user?.id
   });
   
@@ -67,98 +103,45 @@ export default function TeacherDashboard() {
     monthlyEarnings: 0,
     averageRating: 0,
     completedSessions: 0
-  }, isLoading: statsLoading, error: statsError } = useQuery({
-    queryKey: ['teacher-stats', user?.id],
-    queryFn: async () => {
-      const response = await fetch(`/api/teacher/stats?teacherId=${user?.id}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch stats: ${response.status}`);
-      }
-      return response.json();
-    },
+  }, isLoading: statsLoading, error: statsError } = useQuery<TeacherStats>({
+    queryKey: [`/api/teacher/stats?teacherId=${user?.id}`],
     enabled: !!user?.id
   });
   
   // Fetch teacher notifications from API
-  const { data: notifications = [], isLoading: notificationsLoading } = useQuery({
-    queryKey: ['teacher-notifications', user?.id],
-    queryFn: async () => {
-      const response = await fetch(`/api/teacher/notifications?teacherId=${user?.id}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch notifications: ${response.status}`);
-      }
-      return response.json();
-    },
+  const { data: notifications = [], isLoading: notificationsLoading } = useQuery<TeacherNotification[]>({
+    queryKey: [`/api/teacher/notifications?teacherId=${user?.id}`],
     enabled: !!user?.id
   });
   
   // Fetch teacher reviews from API
-  const { data: teacherReviews = [], isLoading: reviewsLoading } = useQuery({
-    queryKey: ['teacher-reviews', user?.id],
-    queryFn: async () => {
-      const response = await fetch(`/api/teacher/reviews?teacherId=${user?.id}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch reviews: ${response.status}`);
-      }
-      return response.json();
-    },
+  const { data: teacherReviews = [], isLoading: reviewsLoading } = useQuery<TeacherReview[]>({
+    queryKey: [`/api/teacher/reviews?teacherId=${user?.id}`],
     enabled: !!user?.id
   });
 
   // Fetch teacher courses from API
-  const { data: teacherCourses = [], isLoading: coursesLoading } = useQuery({
-    queryKey: ['teacher-courses', user?.id],
-    queryFn: async () => {
-      const response = await fetch(`/api/teacher/courses?teacherId=${user?.id}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch courses: ${response.status}`);
-      }
-      return response.json();
-    },
+  const { data: teacherCourses = [], isLoading: coursesLoading } = useQuery<TeacherCourse[]>({
+    queryKey: [`/api/teacher/courses?teacherId=${user?.id}`],
     enabled: !!user?.id
   });
 
-  // Fetch teacher audio analytics from API
-  const { data: audioAnalytics, isLoading: audioLoading } = useQuery({
-    queryKey: ['teacher-audio-analytics', user?.id],
-    queryFn: async () => {
-      // First get the mentor record to get mentorId
-      const mentorResponse = await fetch(`/api/mentors/by-user/${user?.id}`);
-      if (!mentorResponse.ok) {
-        return null; // Teacher might not be set up as mentor yet
-      }
-      const mentor = await mentorResponse.json();
-      
-      // Then get audio analytics
-      const analyticsResponse = await fetch(`/api/teacher/audio-aggregate/${mentor.id}`);
-      if (!analyticsResponse.ok) {
-        return null; // No analytics data yet
-      }
-      return analyticsResponse.json();
-    },
+  // Fetch mentor data first
+  const { data: mentorData } = useQuery<{id: string; userId: string; fullName: string; bio?: string; upiId?: string}>({
+    queryKey: [`/api/mentors/by-user/${user?.id}`],
     enabled: !!user?.id
   });
 
-  // Fetch teacher subjects with fees
-  const { data: mentorData } = useQuery({
-    queryKey: ['mentor-by-user', user?.id],
-    queryFn: async () => {
-      const sessionToken = localStorage.getItem('sessionToken');
-      const headers: Record<string, string> = {};
-      if (sessionToken) {
-        headers["Authorization"] = `Bearer ${sessionToken}`;
-      }
-      
-      const mentorResponse = await fetch(`/api/mentors/by-user/${user?.id}`, {
-        headers,
-        credentials: "include"
-      });
-      if (!mentorResponse.ok) {
-        return null;
-      }
-      return mentorResponse.json();
-    },
-    enabled: !!user?.id
+  // Fetch teacher audio analytics from API (chains two requests)
+  const { data: audioAnalytics, isLoading: audioLoading } = useQuery<{
+    totalClasses: number;
+    encourageInvolvement: number;
+    pleasantCommunication: number;
+    avoidPersonalDetails: number;
+    overallScore: number;
+  }>({
+    queryKey: [`/api/teacher/audio-aggregate/${mentorData?.id}`],
+    enabled: !!mentorData?.id
   });
 
   // Fetch available subjects from the platform
@@ -166,24 +149,8 @@ export default function TeacherDashboard() {
     queryKey: ['/api/subjects'],
   });
 
-  const { data: teacherSubjects = [], isLoading: subjectsLoading } = useQuery({
-    queryKey: ['teacher-subjects-fees', mentorData?.id],
-    queryFn: async () => {
-      const sessionToken = localStorage.getItem('sessionToken');
-      const headers: Record<string, string> = {};
-      if (sessionToken) {
-        headers["Authorization"] = `Bearer ${sessionToken}`;
-      }
-      
-      const response = await fetch(`/api/teacher-subjects/${mentorData?.id}/fees`, {
-        headers,
-        credentials: "include"
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch teacher subjects');
-      }
-      return response.json();
-    },
+  const { data: teacherSubjects = [], isLoading: subjectsLoading } = useQuery<TeacherSubject[]>({
+    queryKey: [`/api/teacher-subjects/${mentorData?.id}/fees`],
     enabled: !!mentorData?.id
   });
 
@@ -197,7 +164,7 @@ export default function TeacherDashboard() {
         title: "Success",
         description: "Class fee updated successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: ['teacher-subjects-fees', mentorData?.id] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teacher-subjects/${mentorData?.id}/fees`] });
       setEditingSubjectId(null);
       setEditingFee("");
     },
@@ -220,7 +187,7 @@ export default function TeacherDashboard() {
         title: "Success",
         description: "Subject added successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: ['teacher-subjects-fees', mentorData?.id] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teacher-subjects/${mentorData?.id}/fees`] });
       setShowAddSubjectDialog(false);
       setNewSubject("");
       setNewExperience("");
@@ -245,7 +212,7 @@ export default function TeacherDashboard() {
         title: "Success",
         description: "UPI ID updated successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: ['mentor-by-user', user?.id] });
+      queryClient.invalidateQueries({ queryKey: [`/api/mentors/by-user/${user?.id}`] });
       setIsEditingUpi(false);
     },
     onError: (error: any) => {
