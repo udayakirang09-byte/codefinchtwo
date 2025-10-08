@@ -6137,6 +6137,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add subject to teacher profile - SECURED (mentors only)
+  app.post('/api/teacher-subjects/add', authenticateSession, async (req: any, res) => {
+    try {
+      const { mentorId, subject, experience, classFee } = req.body;
+
+      if (!mentorId || !subject || !experience) {
+        return res.status(400).json({ message: 'Mentor ID, subject, and experience are required' });
+      }
+
+      // Authorization: Must be a mentor
+      if (req.user.role !== 'mentor') {
+        return res.status(403).json({ message: 'Only mentors can add subjects' });
+      }
+
+      // Get mentor to verify it belongs to this user
+      const mentor = await storage.getMentor(mentorId);
+      if (!mentor || mentor.userId !== req.user.id) {
+        return res.status(403).json({ message: 'Not authorized to add subjects for this mentor' });
+      }
+
+      // Create teacher subject record with optional class fee
+      const fee = classFee ? parseFloat(classFee) : undefined;
+      await storage.createTeacherSubject(mentorId, subject, experience, fee);
+
+      res.json({ success: true, message: 'Subject added successfully' });
+    } catch (error) {
+      console.error('Error adding teacher subject:', error);
+      res.status(500).json({ message: 'Failed to add teacher subject' });
+    }
+  });
+
   // Update teacher subject fee - SECURED (mentors only)
   app.patch('/api/teacher-subjects/:subjectId/fee', authenticateSession, async (req: any, res) => {
     try {

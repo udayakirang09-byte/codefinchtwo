@@ -194,6 +194,7 @@ export interface IStorage {
   // Teacher Profile operations
   createTeacherProfile(profile: InsertTeacherProfile): Promise<TeacherProfile>;
   getTeacherProfile(userId: string): Promise<TeacherProfile | undefined>;
+  updateTeacherProfile(userId: string, updates: Partial<InsertTeacherProfile>): Promise<void>;
   
   // Payment Method operations
   createPaymentMethod(paymentMethod: InsertPaymentMethod): Promise<PaymentMethod>;
@@ -333,6 +334,7 @@ export interface IStorage {
   
   // Teacher Subject Fee operations
   getTeacherSubjectsByMentor(mentorId: string): Promise<TeacherSubject[]>;
+  createTeacherSubject(mentorId: string, subject: string, experience: string, classFee?: number): Promise<TeacherSubject>;
   updateTeacherSubjectFee(subjectId: string, classFee: number): Promise<void>;
   getTeacherSubjectFee(mentorId: string, subject: string): Promise<number | null>;
   
@@ -1132,6 +1134,29 @@ export class DatabaseStorage implements IStorage {
   async getTeacherProfile(userId: string): Promise<TeacherProfile | undefined> {
     const [profile] = await db.select().from(teacherProfiles).where(eq(teacherProfiles.userId, userId));
     return profile;
+  }
+
+  async updateTeacherProfile(userId: string, updates: Partial<InsertTeacherProfile>): Promise<void> {
+    const processedUpdates: any = { ...updates };
+    
+    // Process array fields safely
+    if (processedUpdates.achievements) {
+      processedUpdates.achievements = Array.from(processedUpdates.achievements as any[]);
+    }
+    if (processedUpdates.qualifications) {
+      processedUpdates.qualifications = Array.from(processedUpdates.qualifications as any[]);
+    }
+    if (processedUpdates.programmingLanguages) {
+      processedUpdates.programmingLanguages = Array.from(processedUpdates.programmingLanguages as any[]);
+    }
+    if (processedUpdates.subjects) {
+      processedUpdates.subjects = Array.from(processedUpdates.subjects as any[]);
+    }
+    
+    await db
+      .update(teacherProfiles)
+      .set(processedUpdates)
+      .where(eq(teacherProfiles.userId, userId));
   }
 
   // Payment Method operations
@@ -2113,6 +2138,20 @@ export class DatabaseStorage implements IStorage {
       .from(teacherSubjects)
       .where(eq(teacherSubjects.mentorId, mentorId))
       .orderBy(teacherSubjects.priority);
+  }
+
+  async createTeacherSubject(mentorId: string, subject: string, experience: string, classFee?: number): Promise<TeacherSubject> {
+    const [teacherSubject] = await db
+      .insert(teacherSubjects)
+      .values({
+        mentorId,
+        subject,
+        experience,
+        classFee: classFee ? classFee.toString() : "500.00",
+        priority: 1
+      })
+      .returning();
+    return teacherSubject;
   }
 
   async updateTeacherSubjectFee(subjectId: string, classFee: number): Promise<void> {

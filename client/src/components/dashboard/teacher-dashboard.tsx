@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Calendar, Clock, Video, MessageCircle, Users, BookOpen, DollarSign, Bell, TrendingUp, CreditCard, CheckCircle, Save, Edit2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Calendar, Clock, Video, MessageCircle, Users, BookOpen, DollarSign, Bell, TrendingUp, CreditCard, CheckCircle, Save, Edit2, Plus } from "lucide-react";
 import { formatDistanceToNow, addHours, addMinutes } from "date-fns";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -38,6 +40,10 @@ export default function TeacherDashboard() {
   const [showCompletedClasses, setShowCompletedClasses] = useState(false);
   const [editingSubjectId, setEditingSubjectId] = useState<string | null>(null);
   const [editingFee, setEditingFee] = useState<string>("");
+  const [showAddSubjectDialog, setShowAddSubjectDialog] = useState(false);
+  const [newSubject, setNewSubject] = useState("");
+  const [newExperience, setNewExperience] = useState("");
+  const [newClassFee, setNewClassFee] = useState("500");
   
   // Fetch teacher's classes from API
   const { data: teacherClasses = [], isLoading: classesLoading, error: classesError } = useQuery({
@@ -173,6 +179,31 @@ export default function TeacherDashboard() {
       toast({
         title: "Error",
         description: error.message || "Failed to update class fee",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Mutation for adding new subject
+  const addSubjectMutation = useMutation({
+    mutationFn: async ({ mentorId, subject, experience, classFee }: { mentorId: string; subject: string; experience: string; classFee: number }) => {
+      return apiRequest('POST', '/api/teacher-subjects/add', { mentorId, subject, experience, classFee });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Subject added successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ['teacher-subjects-fees', mentorData?.id] });
+      setShowAddSubjectDialog(false);
+      setNewSubject("");
+      setNewExperience("");
+      setNewClassFee("500");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add subject",
         variant: "destructive",
       });
     }
@@ -605,6 +636,114 @@ export default function TeacherDashboard() {
                 ))}
               </div>
             )}
+            
+            {/* Add Subject Button and Dialog */}
+            <div className="mt-6 flex justify-center">
+              <Dialog open={showAddSubjectDialog} onOpenChange={setShowAddSubjectDialog}>
+                <DialogTrigger asChild>
+                  <Button 
+                    className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white"
+                    data-testid="button-add-subject"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Subject
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add New Subject</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 mt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="subject">Subject Name</Label>
+                      <Input
+                        id="subject"
+                        value={newSubject}
+                        onChange={(e) => setNewSubject(e.target.value)}
+                        placeholder="e.g., Mathematics, Physics"
+                        data-testid="input-subject-name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="experience">Teaching Experience</Label>
+                      <Input
+                        id="experience"
+                        value={newExperience}
+                        onChange={(e) => setNewExperience(e.target.value)}
+                        placeholder="e.g., 5 years"
+                        data-testid="input-subject-experience"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="classFee">Class Fee (₹)</Label>
+                      <Input
+                        id="classFee"
+                        type="number"
+                        value={newClassFee}
+                        onChange={(e) => setNewClassFee(e.target.value)}
+                        placeholder="e.g., 500"
+                        data-testid="input-subject-fee"
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowAddSubjectDialog(false);
+                          setNewSubject("");
+                          setNewExperience("");
+                          setNewClassFee("500");
+                        }}
+                        data-testid="button-cancel-add-subject"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          if (!newSubject || !newExperience || !newClassFee) {
+                            toast({
+                              title: "Missing Information",
+                              description: "Please fill in all fields",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          const fee = parseFloat(newClassFee);
+                          if (isNaN(fee) || fee < 0) {
+                            toast({
+                              title: "Invalid Fee",
+                              description: "Please enter a valid positive number for class fee",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          if (!mentorData?.id) {
+                            toast({
+                              title: "Error",
+                              description: "Mentor data not found",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          addSubjectMutation.mutate({ 
+                            mentorId: mentorData.id, 
+                            subject: newSubject, 
+                            experience: newExperience, 
+                            classFee: fee 
+                          });
+                        }}
+                        disabled={addSubjectMutation.isPending}
+                        className="bg-amber-600 hover:bg-amber-700"
+                        data-testid="button-save-subject"
+                      >
+                        {addSubjectMutation.isPending ? "Adding..." : "Add Subject"}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
             <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-800">
                 <strong>Note:</strong> These fees will be used when students book classes for specific subjects. 
