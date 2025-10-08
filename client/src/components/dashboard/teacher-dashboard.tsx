@@ -1405,45 +1405,6 @@ export default function TeacherDashboard() {
           </CardContent>
         </Card>
       )}
-
-      {/* Run All Tests Button - Only for Teachers */}
-      <Card className="shadow-2xl bg-gradient-to-br from-white via-gray-50 to-blue-50 border-0 rounded-2xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-orange-600 to-red-700 text-white">
-          <CardTitle className="flex items-center gap-3">
-            <TrendingUp className="h-6 w-6" />
-            System Testing
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="text-center">
-            <p className="text-gray-600 mb-4">Run comprehensive tests with teacher credentials</p>
-            <Button 
-              onClick={async () => {
-                console.log('🧪 Running tests for teacher...');
-                try {
-                  const response = await fetch('/api/test/run-all', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userRole: 'teacher', testType: 'comprehensive' })
-                  });
-                  if (response.ok) {
-                    const results = await response.json();
-                    console.log('✅ Teacher test results:', results);
-                    alert(`Tests completed! ${results.summary.passed}/${results.summary.total} passed`);
-                  }
-                } catch (error) {
-                  console.error('Failed to run tests:', error);
-                  alert('❌ Failed to run tests. Check console for details.');
-                }
-              }}
-              className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 h-12 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-              data-testid="button-run-all-tests-teacher"
-            >
-              Run All Tests (Teacher)
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
       </div>
     </div>
   );
