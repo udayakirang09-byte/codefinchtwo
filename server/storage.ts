@@ -859,7 +859,12 @@ export class DatabaseStorage implements IStorage {
       .from(courseEnrollments)
       .leftJoin(students, eq(courseEnrollments.studentId, students.id))
       .leftJoin(users, eq(students.userId, users.id))
-      .where(eq(courseEnrollments.courseId, courseId))
+      .where(
+        and(
+          eq(courseEnrollments.courseId, courseId),
+          eq(courseEnrollments.status, 'active')
+        )
+      )
       .orderBy(desc(courseEnrollments.enrolledAt));
 
     return result.map(({ course_enrollments: enrollment, students: student, users: user }) => ({
