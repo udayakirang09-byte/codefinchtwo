@@ -5653,6 +5653,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   console.log('✅ Admin Payment Configuration API routes registered successfully!');
 
+  // Admin UI Configuration Routes
+  // Get admin UI configuration - PUBLIC (needed for footer and quick actions)
+  app.get('/api/admin/ui-config', async (req: any, res) => {
+    try {
+      const config = await storage.getAdminUiConfig();
+      if (!config) {
+        // Default configuration
+        return res.json({ 
+          footerLinks: {
+            studentCommunity: true,
+            mentorCommunity: true,
+            successStories: true,
+            achievementBadges: true,
+            discussionForums: true,
+            projectShowcase: true,
+            communityEvents: true,
+            contactUs: true,
+          },
+          showHelpCenter: false 
+        });
+      }
+      res.json({ 
+        footerLinks: config.footerLinks,
+        showHelpCenter: config.showHelpCenter 
+      });
+    } catch (error) {
+      console.error('Error fetching admin UI config:', error);
+      res.status(500).json({ message: 'Failed to fetch admin UI config' });
+    }
+  });
+
+  // Update admin UI configuration - SECURED (admin only)
+  app.put('/api/admin/ui-config', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      const { footerLinks, showHelpCenter } = req.body;
+      await storage.updateAdminUiConfig({ footerLinks, showHelpCenter });
+      res.json({ success: true, message: 'UI configuration updated successfully' });
+    } catch (error) {
+      console.error('Error updating admin UI config:', error);
+      res.status(500).json({ message: 'Failed to update admin UI config' });
+    }
+  });
+
+  console.log('✅ Admin UI Configuration API routes registered successfully!');
+
   const httpServer = createServer(app);
   return httpServer;
 }

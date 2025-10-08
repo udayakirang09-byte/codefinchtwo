@@ -75,6 +75,7 @@ import {
   mergedRecordings,
   teacherSubjects,
   adminPaymentConfig,
+  adminUiConfig,
   type TeacherAudioMetrics,
   type InsertTeacherAudioMetrics,
   type HomeSectionControls,
@@ -88,6 +89,8 @@ import {
   type InsertTeacherSubject,
   type AdminPaymentConfig,
   type InsertAdminPaymentConfig,
+  type AdminUiConfig,
+  type InsertAdminUiConfig,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -330,6 +333,10 @@ export interface IStorage {
   // Admin Payment Configuration operations
   getAdminPaymentConfig(): Promise<AdminPaymentConfig | undefined>;
   updateAdminPaymentConfig(paymentMode: 'dummy' | 'realtime'): Promise<void>;
+  
+  // Admin UI Configuration operations
+  getAdminUiConfig(): Promise<AdminUiConfig | undefined>;
+  updateAdminUiConfig(config: { footerLinks?: any; showHelpCenter?: boolean }): Promise<void>;
   
   // Azure Storage Config operations
   updateAzureStorageConfig(config: { storageAccountName: string; containerName: string; retentionMonths: number }): Promise<any>;
@@ -2067,6 +2074,41 @@ export class DatabaseStorage implements IStorage {
         .where(eq(adminPaymentConfig.id, existing.id));
     } else {
       await db.insert(adminPaymentConfig).values({ paymentMode });
+    }
+  }
+
+  // Admin UI Configuration operations
+  async getAdminUiConfig(): Promise<AdminUiConfig | undefined> {
+    const results = await db.select().from(adminUiConfig).limit(1);
+    return results.length > 0 ? results[0] : undefined;
+  }
+
+  async updateAdminUiConfig(config: { footerLinks?: any; showHelpCenter?: boolean }): Promise<void> {
+    const existing = await this.getAdminUiConfig();
+    
+    if (existing) {
+      await db
+        .update(adminUiConfig)
+        .set({ 
+          ...(config.footerLinks && { footerLinks: config.footerLinks }),
+          ...(config.showHelpCenter !== undefined && { showHelpCenter: config.showHelpCenter }),
+          updatedAt: new Date() 
+        })
+        .where(eq(adminUiConfig.id, existing.id));
+    } else {
+      await db.insert(adminUiConfig).values({
+        footerLinks: config.footerLinks || {
+          studentCommunity: true,
+          mentorCommunity: true,
+          successStories: true,
+          achievementBadges: true,
+          discussionForums: true,
+          projectShowcase: true,
+          communityEvents: true,
+          contactUs: true,
+        },
+        showHelpCenter: config.showHelpCenter ?? false,
+      });
     }
   }
 

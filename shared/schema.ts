@@ -1553,6 +1553,32 @@ export const mergedRecordings = pgTable("merged_recordings", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Admin UI Configuration (footer links and button visibility)
+export const adminUiConfig = pgTable("admin_ui_config", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  footerLinks: jsonb("footer_links").$type<{
+    studentCommunity: boolean;
+    mentorCommunity: boolean;
+    successStories: boolean;
+    achievementBadges: boolean;
+    discussionForums: boolean;
+    projectShowcase: boolean;
+    communityEvents: boolean;
+    contactUs: boolean;
+  }>().default({
+    studentCommunity: true,
+    mentorCommunity: true,
+    successStories: true,
+    achievementBadges: true,
+    discussionForums: true,
+    projectShowcase: true,
+    communityEvents: true,
+    contactUs: true,
+  }),
+  showHelpCenter: boolean("show_help_center").default(false), // Default unchecked
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Schema definitions for teacher audio metrics
 export const insertTeacherAudioMetricsSchema = createInsertSchema(teacherAudioMetrics);
 
@@ -1563,6 +1589,8 @@ export const insertAzureStorageConfigSchema = createInsertSchema(azureStorageCon
 export const insertRecordingPartSchema = createInsertSchema(recordingParts);
 
 export const insertMergedRecordingSchema = createInsertSchema(mergedRecordings);
+
+export const insertAdminUiConfigSchema = createInsertSchema(adminUiConfig);
 
 // Types for teacher audio metrics
 export type TeacherAudioMetrics = typeof teacherAudioMetrics.$inferSelect;
@@ -1579,3 +1607,6 @@ export type InsertRecordingPart = z.infer<typeof insertRecordingPartSchema>;
 
 export type MergedRecording = typeof mergedRecordings.$inferSelect;
 export type InsertMergedRecording = z.infer<typeof insertMergedRecordingSchema>;
+
+export type AdminUiConfig = typeof adminUiConfig.$inferSelect;
+export type InsertAdminUiConfig = z.infer<typeof insertAdminUiConfigSchema>;
