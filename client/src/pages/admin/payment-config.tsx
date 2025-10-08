@@ -84,8 +84,9 @@ export default function AdminPaymentConfig() {
     queryKey: ['admin-payment-config'],
     queryFn: async () => {
       try {
-        const result = await apiRequest('GET', '/api/admin/payment-config');
-        return result as unknown as PaymentConfig;
+        const response = await apiRequest('GET', '/api/admin/payment-config');
+        const result = await response.json();
+        return result as PaymentConfig;
       } catch (error) {
         console.error('Failed to fetch payment config:', error);
         return { 
@@ -102,8 +103,9 @@ export default function AdminPaymentConfig() {
     queryKey: ['transaction-fee-config'],
     queryFn: async () => {
       try {
-        const result = await apiRequest('GET', '/api/admin/transaction-fee-config');
-        return result as unknown as TransactionFeeConfig;
+        const response = await apiRequest('GET', '/api/admin/transaction-fee-config');
+        const result = await response.json();
+        return result as TransactionFeeConfig;
       } catch (error) {
         console.error('Failed to fetch fee config:', error);
         return null;
@@ -116,8 +118,9 @@ export default function AdminPaymentConfig() {
     queryKey: ['finance-analytics'],
     queryFn: async (): Promise<FinanceAnalytics> => {
       try {
-        const result = await apiRequest('GET', '/api/admin/finance-analytics');
-        return (result as unknown as FinanceAnalytics) || {
+        const response = await apiRequest('GET', '/api/admin/finance-analytics');
+        const result = await response.json();
+        return result || {
           totalAdminRevenue: 0,
           totalTeacherPayouts: 0,
           totalRefunds: 0,
