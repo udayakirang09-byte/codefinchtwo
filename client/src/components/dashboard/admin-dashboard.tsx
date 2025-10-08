@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck, Mail, MessageSquare, Phone, CreditCard, Key, Lock, X, Building, Activity, TestTube, Zap, Monitor, Map } from "lucide-react";
+import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck, Mail, MessageSquare, Phone, CreditCard, Key, Lock, X, Building, Activity, TestTube, Zap, Monitor, Map, Brain, Cloud } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 
@@ -1397,6 +1397,42 @@ export default function AdminDashboard() {
                   <div className="text-left flex-1">
                     <div className="font-semibold text-gray-900">System Testing & Monitoring</div>
                     <div className="text-xs text-gray-600">Comprehensive monitoring dashboard</div>
+                  </div>
+                </div>
+              </Button>
+            </Link>
+
+            <Link href="/admin/analytics">
+              <Button variant="outline" className="w-full h-auto py-4 hover:bg-violet-50 hover:border-violet-400 transition-all" data-testid="button-nav-ai-analytics">
+                <div className="flex items-center gap-3 w-full">
+                  <Brain className="h-5 w-5 text-violet-600" />
+                  <div className="text-left flex-1">
+                    <div className="font-semibold text-gray-900">AI Analytics</div>
+                    <div className="text-xs text-gray-600">Advanced AI-powered insights</div>
+                  </div>
+                </div>
+              </Button>
+            </Link>
+
+            <Link href="/admin/cloud-deployments">
+              <Button variant="outline" className="w-full h-auto py-4 hover:bg-sky-50 hover:border-sky-400 transition-all" data-testid="button-nav-cloud-deployments">
+                <div className="flex items-center gap-3 w-full">
+                  <Cloud className="h-5 w-5 text-sky-600" />
+                  <div className="text-left flex-1">
+                    <div className="font-semibold text-gray-900">Cloud Deployment</div>
+                    <div className="text-xs text-gray-600">Multi-cloud deployment management</div>
+                  </div>
+                </div>
+              </Button>
+            </Link>
+
+            <Link href="/admin/finance-dashboard">
+              <Button variant="outline" className="w-full h-auto py-4 hover:bg-green-50 hover:border-green-400 transition-all" data-testid="button-nav-finance-dashboard">
+                <div className="flex items-center gap-3 w-full">
+                  <TrendingUp className="h-5 w-5 text-green-600" />
+                  <div className="text-left flex-1">
+                    <div className="font-semibold text-gray-900">Finance Dashboard</div>
+                    <div className="text-xs text-gray-600">Financial analytics & reports</div>
                   </div>
                 </div>
               </Button>
