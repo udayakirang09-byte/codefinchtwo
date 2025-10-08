@@ -49,6 +49,25 @@ function getTimezoneAbbreviation(): string {
   return `UTC${sign}${hours}:${minutes.toString().padStart(2, '0')}`;
 }
 
+// Helper function to get today's date in local timezone as YYYY-MM-DD
+function getTodayLocalDate(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// Helper function to get date N days from now in local timezone
+function getDateNDaysFromNow(days: number): string {
+  const now = new Date();
+  now.setDate(now.getDate() + days);
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export default function Booking() {
   const [, navigate] = useLocation();
   const [match, params] = useRoute("/booking/:mentorId");
@@ -609,12 +628,8 @@ export default function Booking() {
                       type="date"
                       value={formData.selectedDate}
                       onChange={(e) => handleInputChange("selectedDate", e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
-                      max={(() => {
-                        const maxDate = new Date();
-                        maxDate.setDate(maxDate.getDate() + 5);
-                        return maxDate.toISOString().split('T')[0];
-                      })()}
+                      min={getTodayLocalDate()}
+                      max={getDateNDaysFromNow(5)}
                       required
                       data-testid="input-session-date"
                     />
