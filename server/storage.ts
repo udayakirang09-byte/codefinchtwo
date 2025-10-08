@@ -829,10 +829,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(courseEnrollments.studentId, studentId))
       .orderBy(desc(courseEnrollments.enrolledAt));
 
-    return result.map(({ course_enrollments: enrollment, courses: course, mentors: mentor, users: user }) => ({
-      ...enrollment,
-      course,
-      mentor: mentor ? { ...mentor, user } : null,
+    return result.map((row: any) => ({
+      ...row.course_enrollments,
+      course: row.courses,
+      mentor: row.mentors ? { ...row.mentors, user: row.users } : null,
     }));
   }
 
@@ -846,10 +846,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(courseEnrollments.mentorId, mentorId))
       .orderBy(desc(courseEnrollments.enrolledAt));
 
-    return result.map(({ course_enrollments: enrollment, courses: course, students: student, users: user }) => ({
-      ...enrollment,
-      course,
-      student: student ? { ...student, user } : null,
+    return result.map((row: any) => ({
+      ...row.course_enrollments,
+      course: row.courses,
+      student: row.students ? { ...row.students, user: row.users } : null,
     }));
   }
 
@@ -867,11 +867,11 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(desc(courseEnrollments.enrolledAt));
 
-    return result.map(({ course_enrollments: enrollment, students: student, users: user }) => ({
-      ...enrollment,
-      studentName: user ? `${user.firstName} ${user.lastName}` : 'Unknown Student',
-      studentEmail: user?.email,
-      student: student ? { ...student, user } : null,
+    return result.map((row: any) => ({
+      ...row.course_enrollments,
+      studentName: row.users ? `${row.users.firstName} ${row.users.lastName}` : 'Unknown Student',
+      studentEmail: row.users?.email,
+      student: row.students ? { ...row.students, user: row.users } : null,
     }));
   }
 

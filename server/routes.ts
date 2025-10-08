@@ -6327,7 +6327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let isOwnMentor = false;
       if (req.user.role === 'mentor') {
         const mentor = await storage.getMentor(mentorId);
-        isOwnMentor = mentor && mentor.userId === req.user.id;
+        isOwnMentor = !!(mentor && mentor.userId === req.user.id);
       }
 
       if (!isOwnMentor && !isAdmin) {
