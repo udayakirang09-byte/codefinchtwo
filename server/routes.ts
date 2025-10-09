@@ -100,6 +100,55 @@ if (razorpayKeyId && razorpayKeySecret && razorpayKeyId !== 'NA' && razorpayKeyS
   console.warn('⚠️ Razorpay not configured - UPI payment features disabled');
 }
 
+// Session validation middleware for protected routes
+async function validateSession(req: express.Request, res: express.Response, next: express.NextFunction) {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'No session token provided' });
+    }
+    
+    const sessionToken = authHeader.replace('Bearer ', '');
+    
+    // Check if session exists and is active
+    const session = await storage.getUserSessionByToken(sessionToken);
+    
+    if (!session) {
+      return res.status(401).json({ message: 'Invalid session - please log in again' });
+    }
+    
+    if (!session.isActive) {
+      return res.status(401).json({ message: 'Session expired - please log in again' });
+    }
+    
+    // Check if session has expired (if expiresAt is set)
+    if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
+      await storage.deactivateSession(sessionToken);
+      return res.status(401).json({ message: 'Session expired - please log in again' });
+    }
+    
+    // Update last activity
+    await storage.updateSessionActivity(sessionToken);
+    
+    // Attach user info to request
+    const user = await storage.getUser(session.userId);
+    if (!user) {
+      return res.status(401).json({ message: 'User not found' });
+    }
+    
+    // @ts-ignore - Attach user to request
+    req.user = user;
+    // @ts-ignore - Attach session to request
+    req.session = session;
+    
+    next();
+  } catch (error) {
+    console.error('Session validation error:', error);
+    res.status(500).json({ message: 'Session validation failed' });
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // Authentication routes
