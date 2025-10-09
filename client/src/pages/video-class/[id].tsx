@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRoute, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,8 +31,18 @@ export default function VideoClass() {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading } = useAuth();
   
-  // Determine teacher role based on URL parameter or default to student
-  const isTeacher = classId?.includes('teacher') || false;
+  // Query to get booking/class schedule information
+  const { data: bookingData } = useQuery<any>({
+    queryKey: ['/api/bookings', classId],
+    enabled: Boolean(classId),
+  });
+  
+  // Determine teacher role based on booking data
+  const isTeacher = useMemo(() => {
+    if (!bookingData || !user?.id) return false;
+    // Check if current user's ID matches the mentor's user ID
+    return bookingData.mentor?.user?.id === user.id;
+  }, [bookingData, user?.id]);
   
   // WebRTC hook for real video functionality
   // Only pass real userId after auth loads to prevent duplicate participants
@@ -70,12 +80,6 @@ export default function VideoClass() {
     queryKey: ['/api/sessions/multiple-logins'],
     enabled: isAuthenticated && Boolean(user),
     refetchInterval: 30000, // Check every 30 seconds during video session
-  });
-  
-  // Query to get booking/class schedule information
-  const { data: bookingData } = useQuery({
-    queryKey: ['/api/bookings', classId],
-    enabled: Boolean(classId),
   });
 
   // Fetch chat messages

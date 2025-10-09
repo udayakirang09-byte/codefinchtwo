@@ -341,7 +341,8 @@ export default function Booking() {
       console.warn('Subject not selected, defaulting to General Programming');
     }
 
-    const scheduledAt = new Date(`${formData.selectedDate}T${formData.selectedTime}`);
+    // Keep datetime string in local timezone (don't convert to UTC)
+    const scheduledAt = `${formData.selectedDate}T${formData.selectedTime}`;
     
     // Get authenticated user info
     const userEmail = localStorage.getItem('userEmail');
@@ -376,7 +377,7 @@ export default function Booking() {
       userEmail: userEmail,
       mentorId,
       mentorName: `${mentor.user.firstName} ${mentor.user.lastName}`,
-      scheduledAt: scheduledAt.toISOString(),
+      scheduledAt: scheduledAt,
       duration: duration,
       subject: formData.subject || 'General Programming', // Default if not selected
       notes: formData.notes,
