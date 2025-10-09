@@ -226,7 +226,7 @@ export default function AdminHome() {
             </CardHeader>
             <CardContent>
               <Link href="/admin/analytics">
-                <div className="text-2xl font-bold" data-testid="total-revenue">${adminStats.totalRevenue.toLocaleString()}</div>
+                <div className="text-2xl font-bold" data-testid="total-revenue">₹{adminStats.totalRevenue.toLocaleString()}</div>
                 <p className="text-xs opacity-90">
                   <TrendingUp className="inline h-3 w-3 mr-1" />
                   +24% from last month
