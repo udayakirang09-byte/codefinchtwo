@@ -29,10 +29,14 @@ export default function VideoClass() {
   const [newMessage, setNewMessage] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   
   // Determine teacher role based on URL parameter or default to student
   const isTeacher = classId?.includes('teacher') || false;
+  
+  // Wait for auth to load before initializing video
+  // This ensures we have the correct user ID instead of using 'anonymous'
+  const shouldInitializeVideo = !isLoading && user?.id;
   
   // WebRTC hook for real video functionality
   const {
@@ -50,7 +54,7 @@ export default function VideoClass() {
     disconnect
   } = useWebRTC({
     sessionId: classId || 'default',
-    userId: user?.id || 'anonymous',
+    userId: user?.id || 'loading', // Use 'loading' as placeholder, will be replaced once auth loads
     isTeacher,
     onParticipantJoin: (participant) => {
       if (isTeacher) {
@@ -384,6 +388,18 @@ export default function VideoClass() {
       </div>
     );
   };
+
+  // Show loading screen while auth is loading
+  if (isLoading || !user?.id) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white">Loading video session...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 relative">
