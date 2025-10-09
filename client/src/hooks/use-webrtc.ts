@@ -496,13 +496,29 @@ export function useWebRTC({
   // Update local participant's stream when localStream changes
   useEffect(() => {
     if (localStream) {
+      console.log('🎬 Updating local participant stream', {
+        userId,
+        hasStream: !!localStream,
+        videoTracks: localStream.getVideoTracks().length,
+        audioTracks: localStream.getAudioTracks().length
+      });
+      
       setParticipants(prev => {
         const updated = new Map(prev);
         const localParticipant = updated.get(userId);
         if (localParticipant) {
+          console.log('✅ Found local participant, attaching stream');
           localParticipant.stream = localStream;
           updated.set(userId, localParticipant);
+        } else {
+          console.log('⚠️ Local participant not found in map, creating new one');
+          updated.set(userId, {
+            userId,
+            isTeacher: false, // Will be updated when session joins
+            stream: localStream
+          });
         }
+        console.log('📋 Current participants:', Array.from(updated.keys()));
         return updated;
       });
     }
