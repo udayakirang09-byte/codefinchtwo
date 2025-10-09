@@ -870,13 +870,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Course enrollment not found" });
         }
         
+        // Create aliases for users table to join twice
+        const { alias } = await import('drizzle-orm/pg-core');
+        const studentUsers = alias(users, 'studentUsers');
+        const mentorUsers = alias(users, 'mentorUsers');
+        
         // Get all bookings linked to this course enrollment
         const enrollmentBookings = await db
           .select()
           .from(bookings)
           .leftJoin(students, eq(bookings.studentId, students.id))
           .leftJoin(mentors, eq(bookings.mentorId, mentors.id))
-          .leftJoin(users, eq(students.userId, users.id))
+          .leftJoin(studentUsers, eq(students.userId, studentUsers.id))
+          .leftJoin(mentorUsers, eq(mentors.userId, mentorUsers.id))
           .where(
             and(
               eq(bookings.courseId, enrollment.courseId),
@@ -895,8 +901,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const result = enrollmentBookings[classIndex];
         const booking = {
           ...result.bookings,
-          student: { ...result.students!, user: result.users! },
-          mentor: { ...result.mentors!, user: result.users! },
+          student: { ...result.students!, user: result.studentUsers! },
+          mentor: { ...result.mentors!, user: result.mentorUsers! },
         };
         
         console.log(`✅ Found course enrollment class ${classNumber}: ${booking.id}`);
@@ -1024,8 +1030,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const bookingData = {
         studentId: student.id,
         mentorId: req.body.mentorId,
+        courseId: req.body.courseId || null, // Include courseId if provided
         scheduledAt: req.body.scheduledAt,
         duration: req.body.duration,
+        subject: req.body.subject || null, // Include subject if provided
         notes: req.body.notes || ''
       };
       

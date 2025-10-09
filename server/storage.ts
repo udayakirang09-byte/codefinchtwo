@@ -93,7 +93,8 @@ import {
   type InsertAdminUiConfig,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, asc } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 export interface IStorage {
   // User operations
@@ -652,20 +653,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBooking(id: string): Promise<BookingWithDetails | undefined> {
+    const studentUsers = alias(users, 'studentUsers');
+    const mentorUsers = alias(users, 'mentorUsers');
+    
     const [result] = await db
       .select()
       .from(bookings)
       .leftJoin(students, eq(bookings.studentId, students.id))
       .leftJoin(mentors, eq(bookings.mentorId, mentors.id))
-      .leftJoin(users, eq(students.userId, users.id))
+      .leftJoin(studentUsers, eq(students.userId, studentUsers.id))
+      .leftJoin(mentorUsers, eq(mentors.userId, mentorUsers.id))
       .where(eq(bookings.id, id));
 
     if (!result) return undefined;
 
     return {
       ...result.bookings,
-      student: { ...result.students!, user: result.users! },
-      mentor: { ...result.mentors!, user: result.users! },
+      student: { ...result.students!, user: result.studentUsers! },
+      mentor: { ...result.mentors!, user: result.mentorUsers! },
     };
   }
 
