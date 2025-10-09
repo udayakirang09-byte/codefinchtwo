@@ -144,12 +144,29 @@ export default function Navigation() {
                 <Button 
                   variant="ghost"
                   data-testid="button-logout"
-                  onClick={() => {
+                  onClick={async () => {
                     console.log('🚪 Logout button clicked');
                     if (window.location.pathname === '/system-test' || window.location.pathname === '/simple-test') {
                       console.log('✅ Logout button click detected on test page - functionality working');
                       return;
                     }
+                    
+                    // Call backend logout endpoint to delete session
+                    try {
+                      const sessionToken = localStorage.getItem('sessionToken');
+                      if (sessionToken) {
+                        await fetch('/api/auth/logout', {
+                          method: 'POST',
+                          headers: {
+                            'Authorization': `Bearer ${sessionToken}`
+                          }
+                        });
+                      }
+                    } catch (error) {
+                      console.error('Logout error:', error);
+                    }
+                    
+                    // Clear local storage
                     localStorage.removeItem('isAuthenticated');
                     localStorage.removeItem('sessionToken');
                     localStorage.removeItem('userEmail');

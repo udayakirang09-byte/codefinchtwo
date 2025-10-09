@@ -345,9 +345,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userAgent = req.headers['user-agent'] || 'Unknown';
       const ipAddress = req.ip || req.connection.remoteAddress || 'Unknown';
       
-      // Deactivate all existing sessions before creating new one
-      // This prevents session accumulation and keeps only the latest login active
-      await storage.deactivateUserSessions(user.id);
+      // Delete all existing sessions before creating new one (single-session enforcement)
+      // This terminates all other sessions and ensures only one active session per user
+      await storage.deleteUserSessions(user.id);
       
       // Create new session
       await storage.createUserSession({
@@ -372,6 +372,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  app.post("/api/auth/logout", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      const sessionToken = authHeader?.replace('Bearer ', '');
+      
+      if (sessionToken) {
+        await storage.deleteSession(sessionToken);
+      }
+      
+      res.json({ success: true, message: "Logged out successfully" });
+    } catch (error) {
+      console.error("Logout error:", error);
+      res.status(500).json({ message: "Logout failed" });
     }
   });
   

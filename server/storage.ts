@@ -1710,6 +1710,16 @@ export class DatabaseStorage implements IStorage {
       .where(eq(userSessions.userId, userId));
   }
 
+  async deleteUserSessions(userId: string): Promise<void> {
+    await db.delete(userSessions)
+      .where(eq(userSessions.userId, userId));
+  }
+
+  async deleteSession(sessionToken: string): Promise<void> {
+    await db.delete(userSessions)
+      .where(eq(userSessions.sessionToken, sessionToken));
+  }
+
   async getMultipleLoginUsers(): Promise<{ userId: string; sessionCount: number; user: User }[]> {
     const activeSessions = await db.select({
       userId: userSessions.userId,
