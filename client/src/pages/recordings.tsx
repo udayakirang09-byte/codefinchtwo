@@ -63,7 +63,9 @@ export default function StudentRecordings() {
     queryKey: ['/api/students/user', user?.id],
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
-      const response = await fetch(`/api/students/user/${user.id}`);
+      const response = await fetch(`/api/students/user/${user.id}`, {
+        credentials: 'include' // Include cookies for authentication
+      });
       if (!response.ok) throw new Error('Failed to fetch student record');
       return response.json();
     },
@@ -75,7 +77,9 @@ export default function StudentRecordings() {
     queryKey: ['/api/recordings/merged', student?.id],
     queryFn: async () => {
       if (!student?.id) throw new Error('Student record not found');
-      const response = await fetch(`/api/recordings/merged/${student.id}`);
+      const response = await fetch(`/api/recordings/merged/${student.id}`, {
+        credentials: 'include' // Include cookies for authentication
+      });
       if (!response.ok) throw new Error('Failed to fetch recordings');
       return response.json() as Promise<MergedRecording[]>;
     },
@@ -90,7 +94,9 @@ export default function StudentRecordings() {
   const handleWatchRecording = async (recording: MergedRecording) => {
     try {
       // Generate SAS URL for playback
-      const response = await fetch(`/api/recordings/sas-url?blobPath=${encodeURIComponent(recording.blobPath)}&bookingId=${recording.bookingId}`);
+      const response = await fetch(`/api/recordings/sas-url?blobPath=${encodeURIComponent(recording.blobPath)}&bookingId=${recording.bookingId}`, {
+        credentials: 'include' // Include cookies for authentication
+      });
       
       if (!response.ok) {
         if (response.status === 403) {
