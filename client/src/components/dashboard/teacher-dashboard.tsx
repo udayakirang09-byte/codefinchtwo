@@ -1011,7 +1011,7 @@ export default function TeacherDashboard() {
                           <Clock className="h-3 w-3 mr-1" />
                           {upcomingClass.duration} min
                         </Badge>
-                        <p className="text-lg text-green-600 font-bold">${upcomingClass.rate}</p>
+                        <p className="text-lg text-green-600 font-bold">₹{upcomingClass.rate}</p>
                       </div>
                     </div>
                     
@@ -1177,7 +1177,7 @@ export default function TeacherDashboard() {
                       </div>
                       <div className="text-right ml-4">
                         <div className="text-2xl font-bold text-green-600 mb-1">
-                          ${course.price}
+                          ₹{course.price}
                         </div>
                         <div className="text-sm text-gray-500">
                           Max: {course.maxStudents} students
@@ -1321,17 +1321,17 @@ export default function TeacherDashboard() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                   <p className="text-sm text-green-600 font-medium">This Month</p>
-                  <p className="text-2xl font-bold text-green-700">${stats.monthlyEarnings || 0}</p>
+                  <p className="text-2xl font-bold text-green-700">₹{stats.monthlyEarnings || 0}</p>
                   <p className="text-xs text-green-600">+15% from last month</p>
                 </div>
                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                   <p className="text-sm text-blue-600 font-medium">Total Earnings</p>
-                  <p className="text-2xl font-bold text-blue-700">${stats.totalEarnings || 0}</p>
+                  <p className="text-2xl font-bold text-blue-700">₹{stats.totalEarnings || 0}</p>
                   <p className="text-xs text-blue-600">Since joining</p>
                 </div>
                 <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
                   <p className="text-sm text-purple-600 font-medium">Average per Session</p>
-                  <p className="text-2xl font-bold text-purple-700">${stats.averageSessionEarnings || 0}</p>
+                  <p className="text-2xl font-bold text-purple-700">₹{stats.averageSessionEarnings || 0}</p>
                   <p className="text-xs text-purple-600">Across all subjects</p>
                 </div>
               </div>
@@ -1342,7 +1342,7 @@ export default function TeacherDashboard() {
                   {completedClasses.slice(0, 5).map((completedClass) => (
                     <div key={completedClass.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                       <span className="text-sm">{completedClass.subject} - {completedClass.studentName}</span>
-                      <span className="font-medium text-green-600">${completedClass.earnings}</span>
+                      <span className="font-medium text-green-600">₹{completedClass.earnings}</span>
                     </div>
                   ))}
                   {completedClasses.length === 0 && (
@@ -1445,7 +1445,7 @@ export default function TeacherDashboard() {
                           {formatDistanceToNow(new Date(cls.completedAt), { addSuffix: true })}
                         </span>
                       </div>
-                      <span className="text-green-700 font-semibold">${cls.earnings}</span>
+                      <span className="text-green-700 font-semibold">₹{cls.earnings}</span>
                     </div>
                     <p className="text-sm text-gray-700">Subject: {cls.subject}</p>
                   </div>
