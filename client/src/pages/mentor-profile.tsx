@@ -230,7 +230,7 @@ export default function MentorProfile() {
               <CardContent className="p-6">
                 <div className="text-center mb-6">
                   <div className="text-3xl font-bold text-foreground mb-2" data-testid="text-hourly-rate">
-                    ${mentor.hourlyRate || "50"}/hr
+                    ₹{mentor.hourlyRate || "50"}/hr
                   </div>
                   <p className="text-muted-foreground">1-on-1 sessions</p>
                 </div>
