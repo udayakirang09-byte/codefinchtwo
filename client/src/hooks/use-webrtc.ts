@@ -351,6 +351,15 @@ export function useWebRTC({
             
             // Create participants map
             const newParticipants = new Map<string, Participant>();
+            
+            // Add local user to participants first
+            newParticipants.set(userId, {
+              userId,
+              isTeacher,
+              stream: localStream || undefined
+            });
+            
+            // Add remote participants
             data.participants.forEach((p: any) => {
               if (p.userId !== userId) {
                 newParticipants.set(p.userId, {
@@ -483,6 +492,21 @@ export function useWebRTC({
     setParticipants(new Map());
     setConnectionQuality('disconnected');
   }, [sessionId, userId, localStream]);
+
+  // Update local participant's stream when localStream changes
+  useEffect(() => {
+    if (localStream) {
+      setParticipants(prev => {
+        const updated = new Map(prev);
+        const localParticipant = updated.get(userId);
+        if (localParticipant) {
+          localParticipant.stream = localStream;
+          updated.set(userId, localParticipant);
+        }
+        return updated;
+      });
+    }
+  }, [localStream, userId]);
 
   // Auto-connect on mount (only once)
   useEffect(() => {
