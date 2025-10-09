@@ -59,6 +59,7 @@ export const bookings = pgTable("bookings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   studentId: varchar("student_id").references(() => students.id).notNull(),
   mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
+  courseId: varchar("course_id").references(() => courses.id), // Optional: only set for course bookings
   scheduledAt: timestamp("scheduled_at").notNull(),
   duration: integer("duration").notNull(), // minutes
   status: varchar("status").notNull().default("scheduled"), // scheduled, completed, cancelled

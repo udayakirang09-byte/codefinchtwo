@@ -1946,6 +1946,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const booking = await storage.createBooking({
             studentId: student.id,
             mentorId,
+            courseId, // Link booking to course
             scheduledAt: nextClassDate,
             duration: 60, // Default 60 minutes
             subject: course.title,
