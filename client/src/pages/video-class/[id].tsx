@@ -581,42 +581,100 @@ export default function VideoClass() {
                       </Button>
                     </div>
                     
-                    {localStream && isVideoEnabled ? (
-                      <>
-                        {/* Local video feed */}
-                        <video
-                          ref={(el) => {
-                            if (el && localStream) {
-                              el.srcObject = localStream;
-                            }
-                            if (localVideoRef) {
-                              (localVideoRef as any).current = el;
-                            }
-                          }}
-                          autoPlay
-                          playsInline
-                          muted
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                        <div className="absolute top-4 left-4 bg-black/70 text-white text-sm px-2 py-1 rounded">
-                          You ({isTeacher ? 'Teacher' : 'Student'})
+                    {/* Main Video Display Logic: Prioritize Remote Participants */}
+                    {(() => {
+                      // Get remote participants (not current user)
+                      const remoteParticipants = participants.filter(p => p.userId !== user?.id);
+                      
+                      // Show remote participant video at full size if available
+                      if (remoteParticipants.length > 0 && remoteParticipants[0].stream) {
+                        return (
+                          <>
+                            {/* Remote Participant Video - Full Size */}
+                            <video
+                              autoPlay
+                              playsInline
+                              muted={false}
+                              className="w-full h-full object-cover rounded-lg"
+                              ref={(el) => {
+                                if (el && remoteParticipants[0].stream) {
+                                  el.srcObject = remoteParticipants[0].stream;
+                                }
+                              }}
+                            />
+                            <div className="absolute top-4 left-4 bg-black/70 text-white text-sm px-2 py-1 rounded z-10">
+                              {remoteParticipants[0].isTeacher ? '👨‍🏫 Teacher' : '👨‍🎓 Student'}
+                            </div>
+                            
+                            {/* Local Video - Picture in Picture */}
+                            {localStream && isVideoEnabled && (
+                              <div className="absolute bottom-4 right-4 w-56 h-40 bg-gray-900 rounded-lg border-2 border-gray-600 overflow-hidden shadow-2xl z-10">
+                                <video
+                                  ref={(el) => {
+                                    if (el && localStream) {
+                                      el.srcObject = localStream;
+                                    }
+                                    if (localVideoRef) {
+                                      (localVideoRef as any).current = el;
+                                    }
+                                  }}
+                                  autoPlay
+                                  playsInline
+                                  muted
+                                  className="w-full h-full object-cover"
+                                />
+                                <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-1 rounded">
+                                  You ({isTeacher ? 'Teacher' : 'Student'})
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Additional remote participants overlay (if more than 1) */}
+                            {remoteParticipants.length > 1 && (
+                              <div className="absolute bottom-4 left-4 bg-black/80 backdrop-blur-sm text-white text-sm px-3 py-2 rounded-lg z-10">
+                                +{remoteParticipants.length - 1} more participant(s)
+                              </div>
+                            )}
+                          </>
+                        );
+                      }
+                      
+                      // Fallback: Show local video if no remote participants yet
+                      if (localStream && isVideoEnabled) {
+                        return (
+                          <>
+                            <video
+                              ref={(el) => {
+                                if (el && localStream) {
+                                  el.srcObject = localStream;
+                                }
+                                if (localVideoRef) {
+                                  (localVideoRef as any).current = el;
+                                }
+                              }}
+                              autoPlay
+                              playsInline
+                              muted
+                              className="w-full h-full object-cover rounded-lg"
+                            />
+                            <div className="absolute top-4 left-4 bg-black/70 text-white text-sm px-2 py-1 rounded z-10">
+                              You ({isTeacher ? 'Teacher' : 'Student'}) - Waiting for others...
+                            </div>
+                          </>
+                        );
+                      }
+                      
+                      // No video available
+                      return (
+                        <div className="text-center">
+                          <VideoOff className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-400">
+                            {localStream ? 'Video is turned off' : 'Camera not available'}
+                          </p>
+                          <p className="text-gray-500 text-sm mt-2">Waiting for participants...</p>
                         </div>
-                      </>
-                    ) : (
-                      <div className="text-center">
-                        <VideoOff className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-400">
-                          {localStream ? 'Video is turned off' : 'Camera not available'}
-                        </p>
-                      </div>
-                    )}
-                    
-                    {/* Participants grid overlay (for small view) */}
-                    {participants.length > 0 && (
-                      <div className="absolute bottom-4 right-4 w-48 h-32 bg-gray-800/90 rounded-lg border border-gray-600 p-2">
-                        <ParticipantGrid />
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 </CardContent>
               </Card>

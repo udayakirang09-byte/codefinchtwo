@@ -34,6 +34,9 @@ export function useWebRTC({
   const wsRef = useRef<WebSocket | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
+  const cameraStreamRef = useRef<MediaStream | null>(null); // Keep camera/mic stream separate
+  const screenStreamRef = useRef<MediaStream | null>(null); // Keep screen stream separate
+  const isSharingScreenRef = useRef<boolean>(false); // Track screen sharing state
   
   // ICE servers configuration with TURN for NAT traversal
   const iceServers = [
@@ -58,6 +61,8 @@ export function useWebRTC({
         audioTracks: stream.getAudioTracks().length
       });
       
+      // Store in both state and ref for camera stream
+      cameraStreamRef.current = stream;
       setLocalStream(stream);
       
       if (localVideoRef.current) {
@@ -72,6 +77,7 @@ export function useWebRTC({
         console.log('🔄 Trying audio-only fallback...');
         const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         console.log('✅ Audio-only access granted');
+        cameraStreamRef.current = audioStream;
         setLocalStream(audioStream);
         return audioStream;
       } catch (audioError) {
@@ -85,11 +91,32 @@ export function useWebRTC({
   const createPeerConnection = useCallback((targetUserId: string): RTCPeerConnection => {
     const peerConnection = new RTCPeerConnection({ iceServers });
     
-    // Add local stream tracks to peer connection
-    if (localStream) {
-      localStream.getTracks().forEach(track => {
-        peerConnection.addTrack(track, localStream);
-      });
+    // Add tracks to peer connection
+    // CRITICAL: Always use camera stream for audio (microphone), even during screen share
+    // Video track depends on whether we're screen sharing or not
+    if (cameraStreamRef.current) {
+      const audioTrack = cameraStreamRef.current.getAudioTracks()[0];
+      
+      // Always add microphone audio from camera stream
+      if (audioTrack) {
+        peerConnection.addTrack(audioTrack, cameraStreamRef.current);
+        console.log(`🎤 Added microphone audio track for peer ${targetUserId}`);
+      }
+      
+      // Add video track - use screen if sharing, otherwise camera
+      if (isSharingScreenRef.current && screenStreamRef.current) {
+        const screenVideoTrack = screenStreamRef.current.getVideoTracks()[0];
+        if (screenVideoTrack) {
+          peerConnection.addTrack(screenVideoTrack, screenStreamRef.current);
+          console.log(`🖥️ Added screen video track for peer ${targetUserId}`);
+        }
+      } else {
+        const cameraVideoTrack = cameraStreamRef.current.getVideoTracks()[0];
+        if (cameraVideoTrack) {
+          peerConnection.addTrack(cameraVideoTrack, cameraStreamRef.current);
+          console.log(`📹 Added camera video track for peer ${targetUserId}`);
+        }
+      }
     }
     
     // Handle incoming remote stream
@@ -211,60 +238,117 @@ export function useWebRTC({
 
   // Toggle video
   const toggleVideo = useCallback(() => {
-    if (localStream) {
-      const videoTrack = localStream.getVideoTracks()[0];
+    // Toggle the appropriate video track (screen or camera)
+    const stream = isSharingScreenRef.current && screenStreamRef.current 
+      ? screenStreamRef.current 
+      : cameraStreamRef.current;
+      
+    if (stream) {
+      const videoTrack = stream.getVideoTracks()[0];
       if (videoTrack) {
         videoTrack.enabled = !videoTrack.enabled;
         setIsVideoEnabled(videoTrack.enabled);
       }
     }
-  }, [localStream]);
+  }, []);
 
   // Toggle audio
   const toggleAudio = useCallback(() => {
-    if (localStream) {
-      const audioTrack = localStream.getAudioTracks()[0];
+    // CRITICAL: Always toggle the microphone from camera stream, never screen audio
+    if (cameraStreamRef.current) {
+      const audioTrack = cameraStreamRef.current.getAudioTracks()[0];
       if (audioTrack) {
         audioTrack.enabled = !audioTrack.enabled;
         setIsAudioEnabled(audioTrack.enabled);
+        console.log(`🎤 Microphone ${audioTrack.enabled ? 'enabled' : 'muted'}`);
       }
     }
-  }, [localStream]);
+  }, []);
 
   // Share screen
   const startScreenShare = useCallback(async () => {
     try {
+      console.log('🖥️ Starting screen share...');
       const screenStream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
         audio: true
       });
       
-      // Replace video track in all peer connections
-      const videoTrack = screenStream.getVideoTracks()[0];
+      console.log('✅ Screen capture granted', {
+        videoTracks: screenStream.getVideoTracks().length,
+        audioTracks: screenStream.getAudioTracks().length
+      });
       
-      peerConnectionsRef.current.forEach((peerConnection) => {
-        const sender = peerConnection.getSenders().find(s => 
+      const screenVideoTrack = screenStream.getVideoTracks()[0];
+      
+      // Store screen stream in ref and update state flag
+      screenStreamRef.current = screenStream;
+      isSharingScreenRef.current = true;
+      
+      // Replace ONLY the video track in all existing peer connections
+      // Keep audio sender on the microphone track
+      let replacedCount = 0;
+      peerConnectionsRef.current.forEach((peerConnection, peerId) => {
+        const videoSender = peerConnection.getSenders().find(s => 
           s.track && s.track.kind === 'video'
         );
-        if (sender) {
-          sender.replaceTrack(videoTrack);
+        if (videoSender) {
+          console.log(`🔄 Replacing video track with screen for peer ${peerId}`);
+          videoSender.replaceTrack(screenVideoTrack).then(() => {
+            console.log(`✅ Screen track sent to peer ${peerId}`);
+            replacedCount++;
+          }).catch(err => {
+            console.error(`❌ Failed to replace track for peer ${peerId}:`, err);
+          });
+        } else {
+          console.warn(`⚠️ No video sender found for peer ${peerId}`);
         }
       });
       
-      // Update local video
+      console.log(`📊 Replaced video track in ${replacedCount} peer connections`);
+      
+      // Update local video element to show screen share
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = screenStream;
+        console.log('🎥 Updated local video element with screen share');
       }
       
-      // Handle screen share end
-      videoTrack.onended = () => {
-        initializeLocalStream();
+      // Handle screen share end - restore camera
+      screenVideoTrack.onended = () => {
+        console.log('🛑 Screen share ended, restoring camera...');
+        
+        // Clear screen sharing state
+        screenStreamRef.current = null;
+        isSharingScreenRef.current = false;
+        
+        // Restore camera video track in all peer connections
+        if (cameraStreamRef.current) {
+          const cameraVideoTrack = cameraStreamRef.current.getVideoTracks()[0];
+          
+          if (cameraVideoTrack) {
+            peerConnectionsRef.current.forEach((peerConnection, peerId) => {
+              const videoSender = peerConnection.getSenders().find(s => 
+                s.track && s.track.kind === 'video'
+              );
+              if (videoSender) {
+                videoSender.replaceTrack(cameraVideoTrack).then(() => {
+                  console.log(`✅ Restored camera track for peer ${peerId}`);
+                });
+              }
+            });
+            
+            // Restore local video element to camera
+            if (localVideoRef.current) {
+              localVideoRef.current.srcObject = cameraStreamRef.current;
+            }
+          }
+        }
       };
       
     } catch (error) {
-      console.error('Failed to start screen share:', error);
+      console.error('❌ Failed to start screen share:', error);
     }
-  }, [initializeLocalStream]);
+  }, []);
 
   // Connect to WebSocket and join session
   const connect = useCallback(async () => {
