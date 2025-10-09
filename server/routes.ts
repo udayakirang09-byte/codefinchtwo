@@ -4586,31 +4586,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Teacher not found" });
       }
 
-      // Get teacher's default payment method
-      const teacherPaymentMethods = await db.select().from(paymentMethods)
-        .where(
-          and(
-            eq(paymentMethods.userId, mentor.userId),
-            eq(paymentMethods.isActive, true),
-            eq(paymentMethods.isDefault, true)
-          )
-        )
-        .limit(1);
-
+      // Priority 1: Check if teacher has UPI ID configured in mentors table
       let teacherPaymentAccount = null;
-      if (teacherPaymentMethods.length > 0) {
-        const method = teacherPaymentMethods[0];
+      if (mentor.upiId) {
         teacherPaymentAccount = {
-          type: method.type,
-          displayName: method.displayName,
-          details: method.type === 'upi' 
-            ? method.upiId 
-            : method.type === 'card' 
-              ? `****${method.cardLast4}` 
-              : method.type === 'stripe'
-                ? 'Stripe Account'
-                : 'Bank Account'
+          type: 'upi',
+          displayName: mentor.user?.firstName || 'Teacher',
+          details: mentor.upiId
         };
+      } else {
+        // Priority 2: Fallback to payment methods table
+        const teacherPaymentMethods = await db.select().from(paymentMethods)
+          .where(
+            and(
+              eq(paymentMethods.userId, mentor.userId),
+              eq(paymentMethods.isActive, true),
+              eq(paymentMethods.isDefault, true)
+            )
+          )
+          .limit(1);
+
+        if (teacherPaymentMethods.length > 0) {
+          const method = teacherPaymentMethods[0];
+          teacherPaymentAccount = {
+            type: method.type,
+            displayName: method.displayName,
+            details: method.type === 'upi' 
+              ? method.upiId 
+              : method.type === 'card' 
+                ? `****${method.cardLast4}` 
+                : method.type === 'stripe'
+                  ? 'Stripe Account'
+                  : 'Bank Account'
+          };
+        }
       }
 
       res.json({
