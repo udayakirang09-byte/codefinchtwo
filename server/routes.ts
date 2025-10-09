@@ -1290,11 +1290,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const allBookings = await storage.getStudentBookings(student.id);
+      console.log(`📊 Total bookings for student: ${allBookings.length}`);
+      
       const courseBookings = allBookings.filter((b: any) => 
         b.courseId === enrollment.courseId && 
         b.status === 'scheduled' &&
         new Date(b.scheduledAt) > new Date()
       );
+      console.log(`📊 Future scheduled bookings for course ${enrollment.courseId}: ${courseBookings.length}`);
 
       // Check for bookings within 6 hours
       const now = new Date();
@@ -1303,9 +1306,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const bookingsWithin6Hours = courseBookings.filter((b: any) => 
         new Date(b.scheduledAt) <= sixHoursFromNow
       );
+      console.log(`📊 Bookings within 6 hours: ${bookingsWithin6Hours.length}`);
+      console.log(`📊 Force cancel flag: ${forceCancel}`);
 
       // If there are bookings within 6 hours and not forcing cancellation, warn user
       if (bookingsWithin6Hours.length > 0 && !forceCancel) {
+        console.log(`⚠️ Returning warning - ${bookingsWithin6Hours.length} classes within 6 hours`);
         return res.status(400).json({
           message: "Some classes cannot be cancelled (within 6 hours)",
           hasNonCancellableClasses: true,
@@ -1319,16 +1325,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const bookingsToCancel = forceCancel ? 
         courseBookings.filter((b: any) => !bookingsWithin6Hours.some(w => w.id === b.id)) :
         courseBookings;
+      
+      console.log(`🗑️ Bookings to cancel: ${bookingsToCancel.length}`);
+      console.log(`🗑️ Booking IDs to cancel: ${bookingsToCancel.map((b: any) => b.id).join(', ')}`);
 
       let cancelledCount = 0;
       for (const booking of bookingsToCancel) {
         try {
+          console.log(`🗑️ Cancelling booking ${booking.id}...`);
           await storage.cancelBooking(booking.id);
           cancelledCount++;
+          console.log(`✅ Successfully cancelled booking ${booking.id}`);
         } catch (error) {
-          console.error(`Failed to cancel booking ${booking.id}:`, error);
+          console.error(`❌ Failed to cancel booking ${booking.id}:`, error);
         }
       }
+      console.log(`📊 Total cancelled: ${cancelledCount} bookings`);
+
 
       // Find the payment transaction for this course
       const transactions = await storage.getTransactionsByUser(userId);

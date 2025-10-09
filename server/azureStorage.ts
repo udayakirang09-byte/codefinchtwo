@@ -11,7 +11,7 @@ function initializeClients() {
   const connectionString = process.env.STORAGE_CONNECTION_STRING || process.env.BLOBCONSTR;
   
   if (!connectionString) {
-    console.warn('⚠️  STORAGE_CONNECTION_STRING environment variable not set - Azure Storage operations will fail');
+    console.warn('⚠️  Azure Storage connection string not set (STORAGE_CONNECTION_STRING or BLOBCONSTR) - Azure Storage operations will fail');
     return null;
   }
 
