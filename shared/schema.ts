@@ -275,6 +275,10 @@ export const chatMessages = pgTable("chat_messages", {
   senderId: varchar("sender_id").notNull(), // Store user identifier (email or ID)
   senderName: varchar("sender_name").notNull(),
   message: text("message").notNull(),
+  fileUrl: varchar("file_url"), // URL to uploaded file (if any)
+  fileName: varchar("file_name"), // Original file name
+  fileType: varchar("file_type"), // MIME type
+  readBy: varchar("read_by").array().default(sql`ARRAY[]::varchar[]`), // Array of user IDs who have read this message
   sentAt: timestamp("sent_at").defaultNow(),
 });
 

@@ -8,6 +8,7 @@ import { Send, Users, Video, Loader2, RefreshCw, Home, X } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { addMinutes, formatDistanceToNow } from "date-fns";
 
 interface ChatMessage {
   id: string;
@@ -79,6 +80,18 @@ export default function ChatClass() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Mark messages as read when chat is opened
+  useEffect(() => {
+    if (user?.id && classId) {
+      apiRequest('POST', `/api/bookings/${classId}/messages/mark-read`, {
+        userId: user.id
+      }).catch(err => console.error('Failed to mark messages as read:', err));
+      
+      // Invalidate unread count in student dashboard
+      queryClient.invalidateQueries({ queryKey: [`/api/bookings/${classId}/messages/unread/${user.id}`] });
+    }
+  }, [user?.id, classId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -157,15 +170,24 @@ export default function ChatClass() {
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
-            <Button 
-              size="sm" 
-              onClick={handleJoinVideo}
-              className="bg-blue-600 hover:bg-blue-700"
-              data-testid={`button-join-video-${classId}`}
-            >
-              <Video className="h-4 w-4 mr-2" />
-              Join Video
-            </Button>
+            {(() => {
+              const scheduledAt = booking?.scheduledAt ? new Date(booking.scheduledAt) : null;
+              const now = new Date();
+              const videoEnabled = scheduledAt && now >= addMinutes(scheduledAt, -5);
+              
+              return (
+                <Button 
+                  size="sm" 
+                  onClick={handleJoinVideo}
+                  disabled={!videoEnabled}
+                  className={videoEnabled ? "bg-green-600 hover:bg-green-700" : "bg-gray-300 text-gray-500 cursor-not-allowed"}
+                  data-testid={`button-join-video-${classId}`}
+                >
+                  <Video className="h-4 w-4 mr-2" />
+                  {videoEnabled ? "Join Video" : `Video in ${scheduledAt ? formatDistanceToNow(addMinutes(scheduledAt, -5)) : '...'}`}
+                </Button>
+              );
+            })()}
           </div>
         </div>
       </div>

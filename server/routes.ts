@@ -2225,6 +2225,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get unread message count for a booking
+  app.get("/api/bookings/:bookingId/messages/unread/:userId", async (req, res) => {
+    console.log(`📬 GET /api/bookings/${req.params.bookingId}/messages/unread/${req.params.userId} - Getting unread count`);
+    try {
+      const { bookingId, userId } = req.params;
+
+      const unreadMessages = await db
+        .select()
+        .from(chatMessages)
+        .where(
+          and(
+            eq(chatMessages.bookingId, bookingId),
+            sql`NOT (${userId} = ANY(${chatMessages.readBy}))`, // User ID not in readBy array
+            sql`${chatMessages.senderId} != ${userId}` // Exclude own messages
+          )
+        );
+
+      console.log(`✅ Found ${unreadMessages.length} unread messages for user ${userId}`);
+      res.json({ count: unreadMessages.length });
+    } catch (error) {
+      console.error("❌ Error fetching unread count:", error);
+      res.status(500).json({ message: "Failed to fetch unread count" });
+    }
+  });
+
+  // Mark messages as read for a user
+  app.post("/api/bookings/:bookingId/messages/mark-read", async (req, res) => {
+    console.log(`✓ POST /api/bookings/${req.params.bookingId}/messages/mark-read - Marking messages as read`);
+    try {
+      const { bookingId } = req.params;
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ message: "userId is required" });
+      }
+
+      // Update all unread messages in this booking to include this userId in readBy array
+      await db
+        .update(chatMessages)
+        .set({
+          readBy: sql`array_append(${chatMessages.readBy}, ${userId})`
+        })
+        .where(
+          and(
+            eq(chatMessages.bookingId, bookingId),
+            sql`NOT (${userId} = ANY(${chatMessages.readBy}))`, // User ID not in readBy array
+            sql`${chatMessages.senderId} != ${userId}` // Exclude own messages
+          )
+        );
+
+      console.log(`✅ Marked messages as read for user ${userId} in booking ${bookingId}`);
+      res.json({ message: "Messages marked as read" });
+    } catch (error) {
+      console.error("❌ Error marking messages as read:", error);
+      res.status(500).json({ message: "Failed to mark messages as read" });
+    }
+  });
+
   // Student recording access routes
   app.get("/api/students/:studentUserId/recordings", async (req, res) => {
     console.log(`🎥 GET /api/students/${req.params.studentUserId}/recordings - Fetching student recordings`);

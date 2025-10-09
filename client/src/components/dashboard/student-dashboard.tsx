@@ -8,6 +8,55 @@ import { formatDistanceToNow, isWithinInterval, addHours, addMinutes } from "dat
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 
+// Component to show unread messages indicator on chat button
+function UnreadChatButton({ 
+  classId, 
+  userId, 
+  chatEnabled, 
+  scheduledAt, 
+  onJoinChat 
+}: { 
+  classId: string; 
+  userId: string; 
+  chatEnabled: boolean; 
+  scheduledAt: Date; 
+  onJoinChat: (id: string) => void;
+}) {
+  const { data: unreadData } = useQuery<{ count: number }>({
+    queryKey: [`/api/bookings/${classId}/messages/unread/${userId}`],
+    refetchInterval: 5000, // Poll every 5 seconds
+    enabled: !!userId && chatEnabled,
+  });
+
+  const unreadCount = unreadData?.count || 0;
+
+  return (
+    <Button
+      size="lg"
+      variant={chatEnabled ? "outline" : "secondary"}
+      disabled={!chatEnabled}
+      onClick={() => onJoinChat(classId)}
+      data-testid={`button-chat-${classId}`}
+      className={`relative flex-1 h-12 text-base font-semibold rounded-xl border-2 ${
+        chatEnabled 
+          ? 'border-blue-600 text-blue-600 hover:bg-blue-50 shadow-md' 
+          : 'border-gray-300 text-gray-500 bg-gray-50'
+      }`}
+    >
+      <MessageCircle className="h-5 w-5 mr-2" />
+      {chatEnabled ? "Open Chat" : `Chat in ${formatDistanceToNow(addHours(scheduledAt, -1))}`}
+      {unreadCount > 0 && (
+        <Badge 
+          className="absolute -top-2 -right-2 bg-red-500 text-white border-2 border-white px-2 py-0.5 text-xs font-bold animate-pulse"
+          data-testid={`badge-unread-${classId}`}
+        >
+          {unreadCount}
+        </Badge>
+      )}
+    </Button>
+  );
+}
+
 interface UpcomingClass {
   id: string;
   mentorName: string;
@@ -534,21 +583,13 @@ export default function StudentDashboard() {
                           {videoEnabled ? "Join Video Call" : `Video in ${formatDistanceToNow(addMinutes(upcomingClass.scheduledAt, -5))}`}
                         </Button>
                         
-                        <Button
-                          size="lg"
-                          variant={chatEnabled ? "outline" : "secondary"}
-                          disabled={!chatEnabled}
-                          onClick={() => handleJoinChat(upcomingClass.id)}
-                          data-testid={`button-chat-${upcomingClass.id}`}
-                          className={`flex-1 h-12 text-base font-semibold rounded-xl border-2 ${
-                            chatEnabled 
-                              ? 'border-blue-600 text-blue-600 hover:bg-blue-50 shadow-md' 
-                              : 'border-gray-300 text-gray-500 bg-gray-50'
-                          }`}
-                        >
-                          <MessageCircle className="h-5 w-5 mr-2" />
-                          {chatEnabled ? "Open Chat" : `Chat in ${formatDistanceToNow(addHours(upcomingClass.scheduledAt, -1))}`}
-                        </Button>
+                        <UnreadChatButton 
+                          classId={upcomingClass.id}
+                          userId={user?.id || ''}
+                          chatEnabled={chatEnabled}
+                          scheduledAt={upcomingClass.scheduledAt}
+                          onJoinChat={handleJoinChat}
+                        />
                       </div>
                     </div>
                   );
