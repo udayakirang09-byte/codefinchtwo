@@ -46,10 +46,16 @@ export function useWebRTC({
 
   // Initialize local media stream
   const initializeLocalStream = useCallback(async () => {
+    console.log('🎥 Requesting camera and microphone access...');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: 1280, height: 720 },
         audio: { echoCancellation: true, noiseSuppression: true }
+      });
+      
+      console.log('✅ Camera and microphone access granted', {
+        videoTracks: stream.getVideoTracks().length,
+        audioTracks: stream.getAudioTracks().length
       });
       
       setLocalStream(stream);
@@ -60,14 +66,16 @@ export function useWebRTC({
       
       return stream;
     } catch (error) {
-      console.error('Failed to get local stream:', error);
+      console.error('❌ Failed to get local stream:', error);
       // Fallback to audio-only if video fails
       try {
+        console.log('🔄 Trying audio-only fallback...');
         const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        console.log('✅ Audio-only access granted');
         setLocalStream(audioStream);
         return audioStream;
       } catch (audioError) {
-        console.error('Failed to get audio stream:', audioError);
+        console.error('❌ Failed to get audio stream:', audioError);
         return null;
       }
     }
@@ -262,24 +270,32 @@ export function useWebRTC({
   const connect = useCallback(async () => {
     try {
       setError(null); // Clear any previous errors
-      console.log('Starting connection process...');
+      console.log('📞 Starting connection process...');
       
-      // Initialize local stream first with timeout
-      const streamPromise = initializeLocalStream();
-      const timeoutPromise = new Promise<null>((_, reject) => 
-        setTimeout(() => reject(new Error('Camera/microphone access timeout')), 10000)
-      );
-      
-      const stream = await Promise.race([streamPromise, timeoutPromise]);
-      
-      if (!stream) {
-        const errorMessage = 'Camera and microphone access denied. Please allow access to join the video session.';
-        setError(errorMessage);
-        setConnectionQuality('disconnected');
-        throw new Error(errorMessage);
+      // Check if mediaDevices is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.warn('⚠️ Camera/microphone not supported in this environment');
+        // Continue without media for now (chat-only mode)
+      } else {
+        // Initialize local stream first with timeout
+        console.log('⏱️ Requesting media access with 10s timeout...');
+        const streamPromise = initializeLocalStream();
+        const timeoutPromise = new Promise<null>((_, reject) => 
+          setTimeout(() => reject(new Error('Camera/microphone access timeout')), 10000)
+        );
+        
+        const stream = await Promise.race([streamPromise, timeoutPromise]);
+        
+        if (!stream) {
+          const errorMessage = 'Camera and microphone access denied. Please allow access to join the video session.';
+          console.error('❌', errorMessage);
+          setError(errorMessage);
+          setConnectionQuality('disconnected');
+          throw new Error(errorMessage);
+        }
+        
+        console.log('✅ Local stream initialized successfully');
       }
-      
-      console.log('Local stream initialized successfully');
       
       // Connect to WebSocket on specific path to avoid Vite HMR conflicts
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -472,9 +488,18 @@ export function useWebRTC({
   useEffect(() => {
     let mounted = true;
     
-    if (mounted) {
-      connect();
-    }
+    const initConnection = async () => {
+      if (mounted) {
+        try {
+          await connect();
+        } catch (error) {
+          console.error('Connection failed in useEffect:', error);
+          // Error is already handled in connect() function
+        }
+      }
+    };
+    
+    initConnection();
     
     return () => {
       mounted = false;
