@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { azureStorage } from "./azureStorage";
 import { z } from "zod";
-import { eq, desc, and, gte, lte, or, sql } from "drizzle-orm";
+import { eq, desc, asc, and, gte, lte, or, sql } from "drizzle-orm";
 import { db } from "./db";
 import { 
   adminConfig, 
@@ -856,6 +856,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/bookings/:id", async (req, res) => {
     try {
       const { id } = req.params;
+      
+      // Check if this is a course enrollment class ID (format: enrollmentId-class-N)
+      const classMatch = id.match(/^(.+)-class-(\d+)$/);
+      
+      if (classMatch) {
+        const [, enrollmentId, classNumber] = classMatch;
+        console.log(`📚 Fetching course enrollment class: enrollment=${enrollmentId}, class=${classNumber}`);
+        
+        // Get all bookings for this enrollment
+        const enrollment = await storage.getCourseEnrollment(enrollmentId);
+        if (!enrollment) {
+          return res.status(404).json({ message: "Course enrollment not found" });
+        }
+        
+        // Get all bookings linked to this course enrollment
+        const enrollmentBookings = await db
+          .select()
+          .from(bookings)
+          .leftJoin(students, eq(bookings.studentId, students.id))
+          .leftJoin(mentors, eq(bookings.mentorId, mentors.id))
+          .leftJoin(users, eq(students.userId, users.id))
+          .where(
+            and(
+              eq(bookings.courseId, enrollment.courseId),
+              eq(bookings.studentId, enrollment.studentId),
+              eq(bookings.mentorId, enrollment.mentorId)
+            )
+          )
+          .orderBy(asc(bookings.scheduledAt));
+        
+        // Get the Nth class (1-indexed)
+        const classIndex = parseInt(classNumber) - 1;
+        if (classIndex < 0 || classIndex >= enrollmentBookings.length) {
+          return res.status(404).json({ message: `Class ${classNumber} not found in enrollment` });
+        }
+        
+        const result = enrollmentBookings[classIndex];
+        const booking = {
+          ...result.bookings,
+          student: { ...result.students!, user: result.users! },
+          mentor: { ...result.mentors!, user: result.users! },
+        };
+        
+        console.log(`✅ Found course enrollment class ${classNumber}: ${booking.id}`);
+        return res.json(booking);
+      }
+      
+      // Regular booking ID - fetch normally
       const booking = await storage.getBooking(id);
       if (!booking) {
         return res.status(404).json({ message: "Booking not found" });
