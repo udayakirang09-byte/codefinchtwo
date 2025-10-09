@@ -167,7 +167,8 @@ export function generateCourseCancellationEmail(
           ${refundAmount && parseFloat(refundAmount) > 0 ? `
           <div class="warning-box">
             <h3>💰 Refund Information:</h3>
-            <p>A refund of <strong>₹${refundAmount}</strong> will be processed to the original payment method within 3-5 business days.</p>
+            <p>A refund of <strong>₹${refundAmount}</strong> will be initiated within 48 hours and processed to your original payment method within 3-5 business days thereafter.</p>
+            <p><strong>Note:</strong> Only classes cancelled at least 48 hours before their scheduled time are eligible for refund.</p>
           </div>
           ` : ''}
 
@@ -202,11 +203,100 @@ ${keptClasses > 0 ? `- Classes kept (within 6 hours): ${keptClasses}` : ''}
 
 ${refundAmount && parseFloat(refundAmount) > 0 ? `
 Refund Information:
-A refund of ₹${refundAmount} will be processed to the original payment method within 3-5 business days.
+A refund of ₹${refundAmount} will be initiated within 48 hours and processed to your original payment method within 3-5 business days thereafter.
+
+Note: Only classes cancelled at least 48 hours before their scheduled time are eligible for refund.
 ` : ''}
 
 ${keptClasses > 0 ? `
 Note: ${keptClasses} class(es) could not be cancelled because they are scheduled within the next 6 hours.
+` : ''}
+
+If you have any questions or concerns, please contact our support team at support@codeconnect.com
+
+© 2025 CodeConnect. All rights reserved.
+  `;
+
+  return { subject, html, text };
+}
+
+export function generateClassDeletionEmail(
+  recipientEmail: string,
+  recipientName: string,
+  recipientRole: 'student' | 'mentor',
+  classDate: string,
+  mentorName?: string,
+  refundAmount?: string
+): { subject: string, html: string, text: string } {
+  const subject = `Class Deleted - ${classDate}`;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }
+        .info-box { background: #fff; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🗑️ Class Deleted</h1>
+          <p>CodeConnect - Where Young Minds Meet Coding Mentors</p>
+        </div>
+        <div class="content">
+          <p>Hello ${recipientName},</p>
+          <p>${recipientRole === 'mentor' ? 'You have' : 'Your teacher has'} deleted a scheduled class.</p>
+          
+          <div class="info-box">
+            <h3>Deleted Class Details:</h3>
+            <ul>
+              <li><strong>Date & Time:</strong> ${classDate}</li>
+              ${mentorName ? `<li><strong>Teacher:</strong> ${mentorName}</li>` : ''}
+            </ul>
+          </div>
+
+          ${refundAmount && parseFloat(refundAmount) > 0 ? `
+          <div class="warning-box">
+            <h3>💰 Refund Information:</h3>
+            <p>A refund of <strong>₹${refundAmount}</strong> will be initiated within 48 hours and processed to your original payment method within 3-5 business days thereafter.</p>
+            <p><strong>Important:</strong> The refund will be initiated only for classes deleted at least 48 hours before the scheduled time.</p>
+          </div>
+          ` : ''}
+
+          <p>If you have any questions or concerns, please contact our support team at support@codeconnect.com</p>
+        </div>
+        <div class="footer">
+          <p>© 2025 CodeConnect. All rights reserved.</p>
+          <p>This email was sent to ${recipientEmail}</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+Class Deleted - CodeConnect
+
+Hello ${recipientName},
+
+${recipientRole === 'mentor' ? 'You have' : 'Your teacher has'} deleted a scheduled class.
+
+Deleted Class Details:
+- Date & Time: ${classDate}
+${mentorName ? `- Teacher: ${mentorName}` : ''}
+
+${refundAmount && parseFloat(refundAmount) > 0 ? `
+Refund Information:
+A refund of ₹${refundAmount} will be initiated within 48 hours and processed to your original payment method within 3-5 business days thereafter.
+
+Important: The refund will be initiated only for classes deleted at least 48 hours before the scheduled time.
 ` : ''}
 
 If you have any questions or concerns, please contact our support team at support@codeconnect.com
