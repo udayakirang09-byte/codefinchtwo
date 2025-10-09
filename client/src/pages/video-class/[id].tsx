@@ -497,7 +497,7 @@ export default function VideoClass() {
           <div className="flex items-center gap-4">
             <Badge className="bg-green-600">
               <Users className="h-3 w-3 mr-1" />
-              {participants.length + 1} participants
+              {participants.length} participants
             </Badge>
             <Badge 
               variant="outline" 
@@ -661,7 +661,7 @@ export default function VideoClass() {
                 <CardHeader className="pb-3 border-b border-slate-700/50">
                   <CardTitle className="text-white text-base font-semibold flex items-center">
                     <Users className="h-4 w-4 mr-2 text-blue-400" />
-                    Participants ({participants.length + 1})
+                    Participants ({participants.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 pt-4">
@@ -669,7 +669,7 @@ export default function VideoClass() {
                     <div className="w-2.5 h-2.5 bg-green-500 rounded-full mr-3 animate-pulse shadow-lg shadow-green-500/50"></div>
                     <span className="font-medium">You ({isTeacher ? 'Teacher' : 'Student'})</span>
                   </div>
-                  {participants.map((participant) => (
+                  {participants.filter(p => p.userId !== user?.id).map((participant) => (
                     <div key={participant.userId} className="text-sm text-gray-300 flex items-center p-2.5 rounded-lg bg-slate-700/30 hover:bg-slate-700/50 transition-all">
                       <div className="w-2.5 h-2.5 bg-blue-500 rounded-full mr-3 shadow-md shadow-blue-500/50"></div>
                       <span>{participant.userId} ({participant.isTeacher ? 'Teacher' : 'Student'})</span>
