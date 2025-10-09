@@ -663,7 +663,7 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">Monthly Revenue</p>
-                  <p className="text-3xl font-bold text-gray-800">${stats.monthlyRevenue?.toLocaleString() || '0'}</p>
+                  <p className="text-3xl font-bold text-gray-800">₹{stats.monthlyRevenue?.toLocaleString() || '0'}</p>
                   <p className="text-xs text-green-600 font-medium">+12% from last month</p>
                 </div>
               </div>
@@ -1093,7 +1093,7 @@ export default function AdminDashboard() {
               
               <div className="p-4 bg-green-50 rounded-lg border border-green-200">
                 <h4 className="font-medium text-green-900 mb-2">💵 Monthly Revenue</h4>
-                <p className="text-2xl font-bold text-green-700">${stats.monthlyRevenue?.toFixed(2) || '0.00'}</p>
+                <p className="text-2xl font-bold text-green-700">₹{stats.monthlyRevenue?.toFixed(2) || '0.00'}</p>
                 <p className="text-sm text-green-600">Current month earnings</p>
               </div>
               
@@ -1301,7 +1301,7 @@ export default function AdminDashboard() {
                   <div className="space-y-1">
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Monthly Revenue</span>
-                      <span className="font-medium">${stats.monthlyRevenue?.toFixed(2) || '0.00'}</span>
+                      <span className="font-medium">₹{stats.monthlyRevenue?.toFixed(2) || '0.00'}</span>
                     </div>
                   </div>
                 </div>
@@ -2000,7 +2000,7 @@ export default function AdminDashboard() {
                         <div className="space-y-2">
                           <div className="flex justify-between">
                             <span className="text-gray-600">Revenue</span>
-                            <span className="font-semibold">${item.amount.toLocaleString()}</span>
+                            <span className="font-semibold">₹{item.amount.toLocaleString()}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-600">Transactions</span>
@@ -2008,7 +2008,7 @@ export default function AdminDashboard() {
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-600">Avg Per Session</span>
-                            <span className="font-semibold">${item.avgPerSession}</span>
+                            <span className="font-semibold">₹{item.avgPerSession}</span>
                           </div>
                         </div>
                       </CardContent>
