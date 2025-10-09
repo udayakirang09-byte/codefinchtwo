@@ -524,9 +524,15 @@ export function useWebRTC({
     }
   }, [localStream, userId]);
 
-  // Auto-connect on mount (only once)
+  // Auto-connect on mount and reconnect when userId changes
   useEffect(() => {
     let mounted = true;
+    
+    // Don't connect if userId is still loading or invalid
+    if (!userId || userId === 'loading') {
+      console.log('⏳ Waiting for valid userId before connecting...');
+      return;
+    }
     
     const initConnection = async () => {
       if (mounted) {
@@ -546,7 +552,7 @@ export function useWebRTC({
       disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array - only run once on mount
+  }, [userId]); // Reconnect when userId changes from 'loading' to real ID
 
   return {
     isConnected,

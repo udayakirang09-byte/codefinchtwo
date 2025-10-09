@@ -34,11 +34,8 @@ export default function VideoClass() {
   // Determine teacher role based on URL parameter or default to student
   const isTeacher = classId?.includes('teacher') || false;
   
-  // Wait for auth to load before initializing video
-  // This ensures we have the correct user ID instead of using 'anonymous'
-  const shouldInitializeVideo = !isLoading && user?.id;
-  
   // WebRTC hook for real video functionality
+  // Only pass real userId after auth loads to prevent duplicate participants
   const {
     isConnected,
     participants,
@@ -54,7 +51,7 @@ export default function VideoClass() {
     disconnect
   } = useWebRTC({
     sessionId: classId || 'default',
-    userId: user?.id || 'loading', // Use 'loading' as placeholder, will be replaced once auth loads
+    userId: (!isLoading && user?.id) ? user.id : 'loading', // Wait for auth before using real ID
     isTeacher,
     onParticipantJoin: (participant) => {
       if (isTeacher) {
