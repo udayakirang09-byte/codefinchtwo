@@ -315,13 +315,13 @@ export default function TeacherDashboard() {
   }, []);
 
   const isVideoEnabled = (scheduledAt: Date) => {
-    const fiveMinutesBefore = addMinutes(scheduledAt, -5);
-    return currentTime >= fiveMinutesBefore && currentTime <= addHours(scheduledAt, 2);
+    // Temporarily disabled time restrictions for testing
+    return true;
   };
 
   const isChatEnabled = (scheduledAt: Date) => {
-    const oneHourBefore = addHours(scheduledAt, -1);
-    return currentTime >= oneHourBefore;
+    // Temporarily disabled time restrictions for testing
+    return true;
   };
 
   const handleJoinVideo = (classId: string) => {
