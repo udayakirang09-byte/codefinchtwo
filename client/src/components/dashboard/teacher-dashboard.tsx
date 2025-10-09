@@ -334,23 +334,6 @@ export default function TeacherDashboard() {
     window.location.href = `/chat/${classId}`;
   };
 
-  const handleManageClass = (classId: string) => {
-    // For now, show a confirmation dialog with options
-    const action = window.confirm(
-      `Manage Class ${classId}\n\n` +
-      `Choose an action:\n` +
-      `• OK: Reschedule class\n` +
-      `• Cancel: Close this dialog\n\n` +
-      `(More management options will be available soon)`
-    );
-    
-    if (action) {
-      // Handle reschedule action
-      alert(`Reschedule functionality for class ${classId} will be implemented soon.`);
-      // TODO: Implement reschedule dialog/modal
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
       <div className="space-y-8 p-6 max-w-7xl mx-auto">
@@ -1050,16 +1033,6 @@ export default function TeacherDashboard() {
                         scheduledAt={upcomingClass.scheduledAt}
                         onJoinChat={handleJoinChat}
                       />
-
-                      <Button
-                        size="lg"
-                        variant="ghost"
-                        onClick={() => handleManageClass(upcomingClass.id)}
-                        className="hover:bg-gray-100 rounded-xl"
-                        data-testid={`button-manage-class-${upcomingClass.id}`}
-                      >
-                        Manage
-                      </Button>
                     </div>
                   </div>
                 );

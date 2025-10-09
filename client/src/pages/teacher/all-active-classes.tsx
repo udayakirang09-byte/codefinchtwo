@@ -8,12 +8,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Calendar, Clock, Video, Home, BookOpen, Users, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, Video, Home, BookOpen, Users, AlertCircle, TrendingUp } from 'lucide-react';
 import { Link } from 'wouter';
 import Navigation from '@/components/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { format, isPast } from 'date-fns';
+import { format, isPast, formatDistanceToNow } from 'date-fns';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 
 interface Booking {
@@ -227,7 +227,7 @@ export default function AllActiveClasses() {
       const refundPercentage = data.refundPercentage || 0;
       let description = 'Course cancelled successfully.';
       if (refundAmount > 0) {
-        description += ` Refund of ₹${refundAmount} (${refundPercentage}%) will be processed in 3-5 business days.`;
+        description += ` Refund of ₹${refundAmount} (${refundPercentage}%) will be processed in 48 hours.`;
       }
       toast({
         title: 'Course Cancelled',
@@ -310,10 +310,10 @@ export default function AllActiveClasses() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
       <Navigation />
       
-      <div className="max-w-6xl mx-auto p-6 mt-16">
+      <div className="max-w-7xl mx-auto p-6 mt-16">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900" data-testid="text-page-title">All Active Classes</h1>
@@ -333,7 +333,7 @@ export default function AllActiveClasses() {
             <p className="mt-4 text-gray-600">Loading your active classes...</p>
           </div>
         ) : !hasActiveClasses ? (
-          <Card>
+          <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl">
             <CardContent className="text-center py-12">
               <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">No Active Classes</h3>
@@ -347,159 +347,195 @@ export default function AllActiveClasses() {
           <div className="space-y-8">
             {/* Bulk Actions Bar */}
             {activeBookings.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-4 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <span className="text-sm text-gray-600">
-                    {selectedBookingIds.length > 0 
-                      ? `${selectedBookingIds.length} booking(s) selected` 
-                      : 'Select bookings for bulk actions'}
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={handleBulkReschedule}
-                    disabled={selectedBookingIds.length === 0 || bulkRescheduleMutation.isPending || bulkCancelMutation.isPending}
-                    data-testid="button-bulk-reschedule"
-                  >
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Bulk Reschedule
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="destructive"
-                    onClick={handleBulkCancel}
-                    disabled={selectedBookingIds.length === 0 || bulkRescheduleMutation.isPending || bulkCancelMutation.isPending}
-                    data-testid="button-bulk-cancel"
-                  >
-                    {bulkCancelMutation.isPending ? 'Cancelling...' : 'Bulk Cancel'}
-                  </Button>
-                </div>
-              </div>
+              <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm text-gray-600 font-medium">
+                        {selectedBookingIds.length > 0 
+                          ? `${selectedBookingIds.length} booking(s) selected` 
+                          : 'Select bookings for bulk actions'}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={handleBulkReschedule}
+                        disabled={selectedBookingIds.length === 0 || bulkRescheduleMutation.isPending || bulkCancelMutation.isPending}
+                        data-testid="button-bulk-reschedule"
+                        className="rounded-xl"
+                      >
+                        <Calendar className="w-4 h-4 mr-2" />
+                        Bulk Reschedule
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="destructive"
+                        onClick={handleBulkCancel}
+                        disabled={selectedBookingIds.length === 0 || bulkRescheduleMutation.isPending || bulkCancelMutation.isPending}
+                        data-testid="button-bulk-cancel"
+                        className="rounded-xl"
+                      >
+                        {bulkCancelMutation.isPending ? 'Cancelling...' : 'Bulk Cancel'}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
             {/* Single Classes Section */}
             {activeBookings.length > 0 && (
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Single Classes ({activeBookings.length})</h2>
-                <div className="grid gap-4">
-                  {activeBookings.map((booking) => (
-                    <Card key={booking.id} className="hover:shadow-lg transition-shadow duration-200" data-testid={`card-booking-${booking.id}`}>
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-3">
-                            <Checkbox 
-                              checked={selectedBookingIds.includes(booking.id)}
-                              onCheckedChange={() => toggleBookingSelection(booking.id)}
-                              data-testid={`checkbox-select-${booking.id}`}
-                              className="mt-1"
-                            />
-                            <div>
-                              <CardTitle className="text-xl font-semibold">{booking.subject}</CardTitle>
-                              <CardDescription className="text-base mt-1">
-                                with {booking.student?.user?.name || 'Student'}
-                              </CardDescription>
+              <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <Calendar className="h-6 w-6" />
+                    Single Classes
+                    <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30">
+                      {activeBookings.length} scheduled
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-6">
+                    {activeBookings.map((booking) => {
+                      const scheduledDate = new Date(booking.scheduledAt);
+                      
+                      return (
+                        <div key={booking.id} className="bg-gradient-to-r from-slate-50 to-blue-50 border border-blue-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+                          <div className="flex justify-between items-start mb-4">
+                            <div className="flex items-start gap-3">
+                              <Checkbox 
+                                checked={selectedBookingIds.includes(booking.id)}
+                                onCheckedChange={() => toggleBookingSelection(booking.id)}
+                                data-testid={`checkbox-select-${booking.id}`}
+                                className="mt-1"
+                              />
+                              <div>
+                                <h3 className="font-bold text-xl text-gray-800 mb-1">{booking.subject}</h3>
+                                <p className="text-blue-600 font-medium">with {booking.student?.user?.name || 'Student'}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <Badge variant="outline" className="mb-2 bg-blue-100 text-blue-700 border-blue-300">
+                                <Clock className="h-3 w-3 mr-1" />
+                                {booking.duration} min
+                              </Badge>
                             </div>
                           </div>
-                          <Badge variant="default" data-testid={`badge-status-${booking.id}`}>Scheduled</Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid md:grid-cols-2 gap-4 mb-4">
-                          <div className="flex items-center text-gray-600">
-                            <Calendar className="w-4 h-4 mr-2" />
-                            <span>{format(new Date(booking.scheduledAt), 'PPP')}</span>
+                          
+                          <div className="flex items-center gap-6 mb-4 text-sm">
+                            <div className="flex items-center gap-2 bg-white/70 px-3 py-2 rounded-lg">
+                              <Calendar className="h-4 w-4 text-blue-600" />
+                              <span className="font-medium">{format(scheduledDate, 'PPP')}</span>
+                            </div>
+                            <div className="flex items-center gap-2 bg-white/70 px-3 py-2 rounded-lg">
+                              <Clock className="h-4 w-4 text-purple-600" />
+                              <span className="font-medium">{format(scheduledDate, 'p')}</span>
+                            </div>
+                            <div className="flex items-center gap-2 bg-white/70 px-3 py-2 rounded-lg">
+                              <TrendingUp className="h-4 w-4 text-green-600" />
+                              <span className="font-medium">{formatDistanceToNow(scheduledDate, { addSuffix: true })}</span>
+                            </div>
                           </div>
-                          <div className="flex items-center text-gray-600">
-                            <Clock className="w-4 h-4 mr-2" />
-                            <span>{format(new Date(booking.scheduledAt), 'p')} ({booking.duration} min)</span>
+                          
+                          <div className="flex gap-3">
+                            <Button 
+                              size="lg" 
+                              variant="outline" 
+                              onClick={() => handleReschedule(booking)}
+                              disabled={cancelMutation.isPending || rescheduleMutation.isPending || bulkRescheduleMutation.isPending || bulkCancelMutation.isPending}
+                              data-testid={`button-reschedule-${booking.id}`}
+                              className="rounded-xl"
+                            >
+                              <Calendar className="w-5 h-5 mr-2" />
+                              Reschedule
+                            </Button>
+                            <Button 
+                              size="lg" 
+                              variant="destructive" 
+                              onClick={() => handleCancel(booking.id)}
+                              disabled={cancelMutation.isPending || rescheduleMutation.isPending || bulkRescheduleMutation.isPending || bulkCancelMutation.isPending}
+                              data-testid={`button-cancel-${booking.id}`}
+                              className="rounded-xl"
+                            >
+                              {cancelMutation.isPending ? 'Cancelling...' : 'Cancel'}
+                            </Button>
                           </div>
                         </div>
-                        
-                        <div className="flex gap-3">
-                          <Button size="sm" data-testid={`button-join-${booking.id}`}>
-                            <Video className="w-4 h-4 mr-2" />
-                            Join Session
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => handleReschedule(booking)}
-                            disabled={cancelMutation.isPending || rescheduleMutation.isPending || bulkRescheduleMutation.isPending || bulkCancelMutation.isPending}
-                            data-testid={`button-reschedule-${booking.id}`}
-                          >
-                            <Calendar className="w-4 h-4 mr-2" />
-                            Reschedule
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="destructive" 
-                            onClick={() => handleCancel(booking.id)}
-                            disabled={cancelMutation.isPending || rescheduleMutation.isPending || bulkRescheduleMutation.isPending || bulkCancelMutation.isPending}
-                            data-testid={`button-cancel-${booking.id}`}
-                          >
-                            {cancelMutation.isPending ? 'Cancelling...' : 'Cancel'}
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
             {/* Course Classes Section */}
             {activeEnrollments.length > 0 && (
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Course Enrollments ({activeEnrollments.length})</h2>
-                <div className="grid gap-4">
-                  {activeEnrollments.map((enrollment) => (
-                    <Card key={enrollment.id} className="hover:shadow-lg transition-shadow duration-200" data-testid={`card-enrollment-${enrollment.id}`}>
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
+              <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-orange-600 to-red-700 text-white">
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <BookOpen className="h-6 w-6" />
+                    Course Enrollments
+                    <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30">
+                      {activeEnrollments.length} active
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-6">
+                    {activeEnrollments.map((enrollment) => (
+                      <div key={enrollment.id} className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+                        <div className="flex justify-between items-start mb-4">
                           <div>
-                            <CardTitle className="text-xl font-semibold">{enrollment.course?.title || 'Course'}</CardTitle>
-                            <CardDescription className="text-base mt-1">
-                              with {enrollment.student?.user?.name || 'Student'}
-                            </CardDescription>
+                            <h3 className="font-bold text-xl text-gray-800 mb-1">{enrollment.course?.title || 'Course'}</h3>
+                            <p className="text-orange-600 font-medium">with {enrollment.student?.user?.name || 'Student'}</p>
                           </div>
-                          <Badge variant="secondary" data-testid={`badge-enrollment-${enrollment.id}`}>Active Course</Badge>
+                          <Badge variant="secondary" className="bg-orange-100 text-orange-700 border-orange-300">
+                            Active Course
+                          </Badge>
                         </div>
-                      </CardHeader>
-                      <CardContent>
+                        
                         <p className="text-gray-600 mb-4">{enrollment.course?.description}</p>
-                        <div className="grid md:grid-cols-3 gap-4 mb-4">
-                          <div className="flex items-center text-gray-600">
-                            <BookOpen className="w-4 h-4 mr-2" />
-                            <span>{enrollment.completedClasses}/{enrollment.totalClasses} classes completed</span>
+                        
+                        <div className="flex items-center gap-6 mb-4 text-sm">
+                          <div className="flex items-center gap-2 bg-white/70 px-3 py-2 rounded-lg">
+                            <BookOpen className="h-4 w-4 text-orange-600" />
+                            <span className="font-medium">{enrollment.completedClasses}/{enrollment.totalClasses} classes completed</span>
                           </div>
-                          <div className="flex items-center text-gray-600">
-                            <Calendar className="w-4 h-4 mr-2" />
-                            <span>Enrolled {format(new Date(enrollment.enrolledAt), 'PP')}</span>
+                          <div className="flex items-center gap-2 bg-white/70 px-3 py-2 rounded-lg">
+                            <Calendar className="h-4 w-4 text-purple-600" />
+                            <span className="font-medium">Enrolled {format(new Date(enrollment.enrolledAt), 'PP')}</span>
                           </div>
                         </div>
                         
                         <div className="flex gap-3">
-                          <Button size="sm" variant="outline" data-testid={`button-view-schedule-${enrollment.id}`}>
-                            <Calendar className="w-4 h-4 mr-2" />
+                          <Button 
+                            size="lg" 
+                            variant="outline" 
+                            data-testid={`button-view-schedule-${enrollment.id}`}
+                            className="rounded-xl"
+                          >
+                            <Calendar className="w-5 h-5 mr-2" />
                             View Schedule
                           </Button>
                           <Button 
-                            size="sm" 
+                            size="lg" 
                             variant="destructive" 
                             onClick={() => handleCancelCourse(enrollment)}
                             disabled={cancelCourseMutation.isPending}
                             data-testid={`button-cancel-course-${enrollment.id}`}
+                            className="rounded-xl"
                           >
                             {cancelCourseMutation.isPending ? 'Cancelling...' : 'Cancel Course'}
                           </Button>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             )}
           </div>
         )}
@@ -567,7 +603,7 @@ export default function AllActiveClasses() {
           <DialogHeader>
             <DialogTitle>Bulk Reschedule Classes</DialogTitle>
             <DialogDescription>
-              Choose a new date and time for {selectedBookingIds.length} selected booking(s)
+              Reschedule {selectedBookingIds.length} selected booking(s) to a new time
             </DialogDescription>
           </DialogHeader>
           
@@ -587,10 +623,10 @@ export default function AllActiveClasses() {
                 value={bulkNewDateTime}
                 onChange={(e) => setBulkNewDateTime(e.target.value)}
                 min={new Date().toISOString().slice(0, 16)}
-                data-testid="input-bulk-new-datetime"
+                data-testid="input-bulk-datetime"
               />
               <p className="text-sm text-gray-500 mt-1">
-                Note: The 6-hour restriction applies to each booking individually. Some bookings may fail if they're too close to their scheduled time.
+                Note: Only bookings that meet the 6-hour restriction will be rescheduled.
               </p>
             </div>
           </div>
@@ -611,7 +647,7 @@ export default function AllActiveClasses() {
               disabled={!bulkNewDateTime || bulkRescheduleMutation.isPending}
               data-testid="button-confirm-bulk-reschedule"
             >
-              {bulkRescheduleMutation.isPending ? 'Rescheduling...' : `Reschedule ${selectedBookingIds.length} Booking(s)`}
+              {bulkRescheduleMutation.isPending ? 'Rescheduling...' : `Reschedule ${selectedBookingIds.length} Classes`}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -621,48 +657,25 @@ export default function AllActiveClasses() {
       <Dialog open={cancelCourseDialogOpen} onOpenChange={setCancelCourseDialogOpen}>
         <DialogContent data-testid="dialog-cancel-course">
           <DialogHeader>
-            <DialogTitle>Cancel Course Enrollment?</DialogTitle>
+            <DialogTitle>Cancel Course</DialogTitle>
             <DialogDescription>
-              Are you sure you want to cancel this student's enrollment in {selectedEnrollment?.course?.title || 'this course'}?
+              Are you sure you want to cancel the course "{selectedEnrollment?.course?.title}"?
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm font-medium">Course:</span>
-                <span className="text-sm">{selectedEnrollment?.course?.title}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm font-medium">Student:</span>
-                <span className="text-sm">{selectedEnrollment?.student?.user?.name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm font-medium">Progress:</span>
-                <span className="text-sm">{selectedEnrollment?.completedClasses}/{selectedEnrollment?.totalClasses} classes completed</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm font-medium">Refund:</span>
-                <span className="text-sm">Will be calculated based on remaining classes</span>
-              </div>
-            </div>
-
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                This will cancel all future classes in this course. Any applicable refund will be processed in 3-5 business days.
-              </AlertDescription>
-            </Alert>
-          </div>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              This will cancel all future classes for this course enrollment. 
+              Classes within 6 hours cannot be cancelled and will not be refunded.
+            </AlertDescription>
+          </Alert>
 
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => {
-                setCancelCourseDialogOpen(false);
-                setSelectedEnrollment(null);
-              }}
-              data-testid="button-cancel-course-cancel"
+              onClick={() => setCancelCourseDialogOpen(false)}
+              data-testid="button-cancel-course-dialog"
             >
               Keep Course
             </Button>
