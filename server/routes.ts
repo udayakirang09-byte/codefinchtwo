@@ -345,9 +345,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userAgent = req.headers['user-agent'] || 'Unknown';
       const ipAddress = req.ip || req.connection.remoteAddress || 'Unknown';
       
-      // Check for multiple active sessions
-      const activeSessions = await storage.getActiveUserSessions(user.id);
-      const hasMultipleSessions = activeSessions.length > 0;
+      // Deactivate all existing sessions before creating new one
+      // This prevents session accumulation and keeps only the latest login active
+      await storage.deactivateUserSessions(user.id);
       
       // Create new session
       await storage.createUserSession({
@@ -361,7 +361,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         success: true, 
         sessionToken,
-        hasMultipleSessions,
         user: { 
           id: user.id, 
           email: user.email, 
