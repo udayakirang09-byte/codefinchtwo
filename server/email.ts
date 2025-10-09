@@ -108,3 +108,101 @@ Need help? Contact our support team at support@codeconnect.com
 
   return { subject, html, text };
 }
+
+export function generateCourseCancellationEmail(
+  recipientEmail: string,
+  recipientName: string,
+  courseTitle: string,
+  cancelledBy: 'student' | 'teacher',
+  cancelledClasses: number,
+  keptClasses: number,
+  refundAmount?: string
+): { subject: string, html: string, text: string } {
+  const isStudent = cancelledBy === 'student';
+  const subject = `Course Cancellation - ${courseTitle}`;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }
+        .info-box { background: #fff; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>📚 Course Cancellation Notice</h1>
+          <p>CodeConnect - Where Young Minds Meet Coding Mentors</p>
+        </div>
+        <div class="content">
+          <p>Hello ${recipientName},</p>
+          <p>${isStudent ? 'Your' : "A student's"} enrollment in <strong>${courseTitle}</strong> has been cancelled.</p>
+          
+          <div class="info-box">
+            <h3>Cancellation Details:</h3>
+            <ul>
+              <li><strong>Cancelled by:</strong> ${isStudent ? 'Student' : 'Teacher'}</li>
+              <li><strong>Classes cancelled:</strong> ${cancelledClasses}</li>
+              ${keptClasses > 0 ? `<li><strong>Classes kept (within 6 hours):</strong> ${keptClasses}</li>` : ''}
+            </ul>
+          </div>
+
+          ${refundAmount && parseFloat(refundAmount) > 0 ? `
+          <div class="warning-box">
+            <h3>💰 Refund Information:</h3>
+            <p>A refund of <strong>₹${refundAmount}</strong> will be processed to your original payment method within 3-5 business days.</p>
+          </div>
+          ` : ''}
+
+          ${keptClasses > 0 ? `
+          <div class="warning-box">
+            <p><strong>Note:</strong> ${keptClasses} class(es) could not be cancelled because they are scheduled within the next 6 hours.</p>
+          </div>
+          ` : ''}
+
+          <p>If you have any questions or concerns, please contact our support team at support@codeconnect.com</p>
+        </div>
+        <div class="footer">
+          <p>© 2025 CodeConnect. All rights reserved.</p>
+          <p>This email was sent to ${recipientEmail}</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+Course Cancellation Notice - CodeConnect
+
+Hello ${recipientName},
+
+${isStudent ? 'Your' : "A student's"} enrollment in ${courseTitle} has been cancelled.
+
+Cancellation Details:
+- Cancelled by: ${isStudent ? 'Student' : 'Teacher'}
+- Classes cancelled: ${cancelledClasses}
+${keptClasses > 0 ? `- Classes kept (within 6 hours): ${keptClasses}` : ''}
+
+${refundAmount && parseFloat(refundAmount) > 0 ? `
+Refund Information:
+A refund of ₹${refundAmount} will be processed to your original payment method within 3-5 business days.
+` : ''}
+
+${keptClasses > 0 ? `
+Note: ${keptClasses} class(es) could not be cancelled because they are scheduled within the next 6 hours.
+` : ''}
+
+If you have any questions or concerns, please contact our support team at support@codeconnect.com
+
+© 2025 CodeConnect. All rights reserved.
+  `;
+
+  return { subject, html, text };
+}

@@ -1366,7 +1366,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update enrollment status to cancelled
       await storage.updateCourseEnrollmentStatus(id, 'cancelled');
 
-      // TODO: Send email notifications to student and teacher
+      // Get user and course details for email notifications
+      const user = await storage.getUser(userId);
+      const course = await storage.getCourse(enrollment.courseId);
+      const mentor = await storage.getMentor(enrollment.mentorId);
+      const mentorUser = mentor ? await storage.getUser(mentor.userId) : null;
+
+      // Send email notifications
+      if (user && course) {
+        const { sendEmail, generateCourseCancellationEmail } = await import('./email');
+        
+        // Send to student
+        const studentEmail = generateCourseCancellationEmail(
+          user.email,
+          `${user.firstName} ${user.lastName}`,
+          course.title,
+          'student',
+          cancelledCount,
+          bookingsWithin6Hours.length,
+          refundAmount > 0 ? refundAmount.toFixed(2) : undefined
+        );
+        await sendEmail({ to: user.email, ...studentEmail });
+
+        // Send to teacher
+        if (mentorUser) {
+          const teacherEmail = generateCourseCancellationEmail(
+            mentorUser.email,
+            `${mentorUser.firstName} ${mentorUser.lastName}`,
+            course.title,
+            'student',
+            cancelledCount,
+            bookingsWithin6Hours.length
+          );
+          await sendEmail({ to: mentorUser.email, ...teacherEmail });
+        }
+      }
+
       // TODO: Create in-app notifications for both
 
       res.json({
