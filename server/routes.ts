@@ -749,7 +749,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json({
-        subjects: mentorSubjects.map(s => ({
+        subjects: mentorSubjects.map((s: typeof mentorSubjects[number]) => ({
           name: s.subject,
           fee: s.classFee,
           experience: s.experience
