@@ -564,7 +564,14 @@ export default function VideoClass() {
                       <>
                         {/* Local video feed */}
                         <video
-                          ref={localVideoRef}
+                          ref={(el) => {
+                            if (el && localStream) {
+                              el.srcObject = localStream;
+                            }
+                            if (localVideoRef) {
+                              (localVideoRef as any).current = el;
+                            }
+                          }}
                           autoPlay
                           playsInline
                           muted
