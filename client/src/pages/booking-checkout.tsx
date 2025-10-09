@@ -470,6 +470,7 @@ export default function BookingCheckout() {
   const [stripePromise, setStripePromise] = useState<any>(null);
   const [paymentConfigLoaded, setPaymentConfigLoaded] = useState(false);
   const [paymentAccounts, setPaymentAccounts] = useState<any>(null);
+  const [paymentConfig, setPaymentConfig] = useState<any>(null);
   const { toast } = useToast();
 
   // Extract parameters from URL
@@ -483,6 +484,7 @@ export default function BookingCheckout() {
       .then(res => res.json())
       .then(data => {
         console.log('💳 Payment config loaded:', data);
+        setPaymentConfig(data); // Store the entire config
         if (data.stripeEnabled && data.stripePublishableKey && data.stripePublishableKey !== 'NA') {
           console.log('✅ Loading Stripe with key:', data.stripePublishableKey.substring(0, 20) + '...');
           setStripePromise(loadStripe(data.stripePublishableKey));
@@ -527,9 +529,12 @@ export default function BookingCheckout() {
       })
       .catch(err => console.error('Failed to load payment accounts:', err));
 
-    // Create PaymentIntent only if Stripe is enabled (for card payments)
-    // UPI and Net Banking don't need Stripe
-    if (stripePromise) {
+    // Create PaymentIntent only if Stripe is enabled AND not using UPI mode
+    // When razorpayMode='upi', use native UPI flow instead of Stripe
+    const shouldUseStripe = stripePromise && paymentConfig && paymentConfig.razorpayMode !== 'upi';
+    
+    if (shouldUseStripe) {
+      console.log('💳 Creating Stripe PaymentIntent for card payment');
       apiRequest("POST", "/api/create-payment-intent", { 
         amount: booking.sessionCost,
         mentorId: booking.mentorId,
@@ -565,8 +570,10 @@ export default function BookingCheckout() {
           }
           // Don't show error toast for other errors since UPI/Net Banking can still work
         });
+    } else if (paymentConfig && paymentConfig.razorpayMode === 'upi') {
+      console.log('💰 Using UPI payment flow - skipping Stripe PaymentIntent');
     }
-  }, [stripePromise]);
+  }, [stripePromise, paymentConfig]);
 
   if (!bookingDetails) {
     return (
