@@ -1,13 +1,15 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRoute, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useWebRTC } from "@/hooks/use-webrtc";
-import { Video, VideoOff, Mic, MicOff, Users, MessageCircle, Phone, Settings, AlertTriangle, Wifi, WifiOff, Shield, Monitor, Home, ArrowLeft, Maximize, Minimize } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Video, VideoOff, Mic, MicOff, Users, MessageCircle, Phone, Settings, AlertTriangle, Wifi, WifiOff, Shield, Monitor, Home, ArrowLeft, Maximize, Minimize, Send, X } from "lucide-react";
 
 export default function VideoClass() {
   const [, params] = useRoute("/video-class/:id");
@@ -23,6 +25,9 @@ export default function VideoClass() {
   const [multipleLoginUsers, setMultipleLoginUsers] = useState<Array<{userId: string, sessionCount: number, user: any}>>([]);
   const [lastAlertedUsers, setLastAlertedUsers] = useState<Set<string>>(new Set());
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [newMessage, setNewMessage] = useState("");
+  const chatEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
   
@@ -70,6 +75,28 @@ export default function VideoClass() {
   const { data: bookingData } = useQuery({
     queryKey: ['/api/bookings', classId],
     enabled: Boolean(classId),
+  });
+
+  // Fetch chat messages
+  const { data: messages = [] } = useQuery<any[]>({
+    queryKey: ['/api/bookings', classId, 'messages'],
+    enabled: Boolean(classId) && showChat,
+    refetchInterval: 3000, // Poll every 3 seconds when chat is open
+  });
+
+  // Send message mutation
+  const sendMessageMutation = useMutation({
+    mutationFn: async (messageText: string) => {
+      return apiRequest('POST', `/api/bookings/${classId}/messages`, {
+        senderId: user?.id,
+        senderName: user?.email?.split('@')[0] || user?.id || 'User',
+        message: messageText
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/bookings', classId, 'messages'] });
+      setNewMessage("");
+    }
   });
   
   const [classInfo] = useState({
@@ -256,9 +283,27 @@ export default function VideoClass() {
   };
 
   const handleOpenChat = () => {
-    console.log(`💬 Opening chat for class ${classId}`);
-    window.open(`/chat/${classId}`, '_blank', 'width=400,height=600');
+    setShowChat(!showChat);
   };
+
+  const handleSendMessage = () => {
+    if (!newMessage.trim() || sendMessageMutation.isPending) return;
+    sendMessageMutation.mutate(newMessage);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  // Auto-scroll chat
+  useEffect(() => {
+    if (showChat && chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, showChat]);
 
   const toggleFullscreen = () => {
     const videoContainer = document.querySelector('.video-container');
@@ -771,6 +816,86 @@ export default function VideoClass() {
           </Button>
         </div>
       </div>
+
+      {/* Chat Panel - Slide up from bottom */}
+      {showChat && (
+        <div className="fixed bottom-24 right-6 w-96 h-[500px] bg-slate-900 border border-slate-700 rounded-lg shadow-2xl flex flex-col z-50">
+          <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-t-lg">
+            <h3 className="font-semibold flex items-center gap-2">
+              <MessageCircle className="h-4 w-4" />
+              Class Chat
+            </h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowChat(false)}
+              className="text-white hover:bg-white/20"
+              data-testid="button-close-chat"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-800">
+            {messages.length === 0 ? (
+              <div className="text-center text-gray-400 mt-8">
+                <MessageCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>No messages yet. Start the conversation!</p>
+              </div>
+            ) : (
+              messages.map((message: any) => {
+                const isOwn = message.senderId === user?.id;
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[70%] px-3 py-2 rounded-lg ${
+                        isOwn
+                          ? 'bg-blue-600 text-white rounded-br-sm'
+                          : 'bg-slate-700 text-gray-100 rounded-bl-sm'
+                      }`}
+                    >
+                      {!isOwn && (
+                        <div className="text-xs text-gray-300 mb-1 font-medium">
+                          {message.senderName}
+                        </div>
+                      )}
+                      <div className="text-sm">{message.message}</div>
+                      <div className="text-xs opacity-70 mt-1">
+                        {new Date(message.sentAt).toLocaleTimeString()}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            <div ref={chatEndRef} />
+          </div>
+          
+          <div className="p-4 bg-slate-900 border-t border-slate-700">
+            <div className="flex gap-2">
+              <Input
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Type your message..."
+                className="flex-1 bg-slate-800 border-slate-600 text-white placeholder-gray-400"
+                data-testid="input-chat-message"
+              />
+              <Button
+                onClick={handleSendMessage}
+                disabled={!newMessage.trim() || sendMessageMutation.isPending}
+                className="bg-blue-600 hover:bg-blue-700"
+                data-testid="button-send-message"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
