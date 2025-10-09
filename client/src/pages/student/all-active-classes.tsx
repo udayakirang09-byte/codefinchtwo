@@ -218,17 +218,39 @@ export default function AllActiveClasses() {
 
   // Cancel course mutation
   const cancelCourseMutation = useMutation({
-    mutationFn: async ({ enrollmentId, userId }: { enrollmentId: string; userId: string }) => {
-      const response = await apiRequest('POST', `/api/enrollments/${enrollmentId}/cancel`, { userId });
-      return await response.json();
+    mutationFn: async ({ enrollmentId, userId, forceCancel }: { enrollmentId: string; userId: string; forceCancel?: boolean }) => {
+      try {
+        const response = await apiRequest('POST', `/api/enrollments/${enrollmentId}/cancel`, { userId, forceCancel });
+        return await response.json();
+      } catch (error: any) {
+        // apiRequest throws Error with format "${status}: ${jsonText}"
+        // Try to parse the JSON from the error message
+        const errorMessage = error.message || '';
+        const match = errorMessage.match(/^\d+:\s*(.+)$/);
+        if (match) {
+          try {
+            const errorData = JSON.parse(match[1]);
+            if (errorData.hasNonCancellableClasses) {
+              throw { isWarning: true, ...errorData };
+            }
+          } catch (parseError) {
+            // Not JSON, fall through
+          }
+        }
+        throw error;
+      }
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/students', studentId, 'enrollments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/students', studentId, 'bookings'] });
       setCancelCourseDialogOpen(false);
       setSelectedEnrollment(null);
       const refundAmount = data.refundAmount ? parseFloat(data.refundAmount) : 0;
       const refundPercentage = data.refundPercentage || 0;
       let description = 'Course cancelled successfully.';
+      if (data.keptClasses > 0) {
+        description += ` ${data.keptClasses} class(es) within 6 hours cannot be cancelled.`;
+      }
       if (refundAmount > 0) {
         description += ` Refund of ₹${refundAmount} (${refundPercentage}%) will be processed in 3-5 business days.`;
       }
@@ -238,11 +260,31 @@ export default function AllActiveClasses() {
       });
     },
     onError: (error: any) => {
-      toast({
-        title: 'Cancellation Failed',
-        description: error.message || 'Unable to cancel the course. Please try again.',
-        variant: 'destructive',
-      });
+      // Check if it's a warning about non-cancellable classes
+      if (error.isWarning && error.hasNonCancellableClasses) {
+        // Show confirmation dialog with the warning
+        const message = `${error.nonCancellableCount} class(es) are within 6 hours and cannot be cancelled.\n\nWould you like to cancel the remaining ${error.cancellableCount} class(es) and the course?`;
+        
+        if (window.confirm(message)) {
+          // Retry with forceCancel = true
+          if (selectedEnrollment && user) {
+            cancelCourseMutation.mutate({
+              enrollmentId: selectedEnrollment.id,
+              userId: user.id,
+              forceCancel: true
+            });
+          }
+        } else {
+          setCancelCourseDialogOpen(false);
+          setSelectedEnrollment(null);
+        }
+      } else {
+        toast({
+          title: 'Cancellation Failed',
+          description: error.message || 'Unable to cancel the course. Please try again.',
+          variant: 'destructive',
+        });
+      }
     },
   });
 

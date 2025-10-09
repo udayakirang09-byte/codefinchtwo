@@ -1266,7 +1266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/enrollments/:id/cancel", async (req, res) => {
     try {
       const { id } = req.params;
-      const { userId } = req.body;
+      const { userId, forceCancel } = req.body;
 
       if (!userId) {
         return res.status(400).json({ message: "User ID is required" });
@@ -1283,6 +1283,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Enrollment is already cancelled" });
       }
 
+      // Get all bookings for this enrollment/course
+      const student = await storage.getStudentByUserId(userId);
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      const allBookings = await storage.getStudentBookings(student.id);
+      const courseBookings = allBookings.filter((b: any) => 
+        b.courseId === enrollment.courseId && 
+        b.status === 'scheduled' &&
+        new Date(b.scheduledAt) > new Date()
+      );
+
+      // Check for bookings within 6 hours
+      const now = new Date();
+      const sixHoursFromNow = new Date(now.getTime() + 6 * 60 * 60 * 1000);
+      
+      const bookingsWithin6Hours = courseBookings.filter((b: any) => 
+        new Date(b.scheduledAt) <= sixHoursFromNow
+      );
+
+      // If there are bookings within 6 hours and not forcing cancellation, warn user
+      if (bookingsWithin6Hours.length > 0 && !forceCancel) {
+        return res.status(400).json({
+          message: "Some classes cannot be cancelled (within 6 hours)",
+          hasNonCancellableClasses: true,
+          nonCancellableCount: bookingsWithin6Hours.length,
+          cancellableCount: courseBookings.length - bookingsWithin6Hours.length,
+          totalFutureClasses: courseBookings.length
+        });
+      }
+
+      // Cancel all bookings except those within 6 hours
+      const bookingsToCancel = forceCancel ? 
+        courseBookings.filter((b: any) => !bookingsWithin6Hours.some(w => w.id === b.id)) :
+        courseBookings;
+
+      let cancelledCount = 0;
+      for (const booking of bookingsToCancel) {
+        try {
+          await storage.cancelBooking(booking.id);
+          cancelledCount++;
+        } catch (error) {
+          console.error(`Failed to cancel booking ${booking.id}:`, error);
+        }
+      }
+
       // Find the payment transaction for this course
       const transactions = await storage.getTransactionsByUser(userId);
       const courseTransaction = transactions.find(t => 
@@ -1295,15 +1342,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let refundPercentage = 0;
 
       if (courseTransaction) {
-        // Calculate prorated refund based on remaining classes
+        // Calculate prorated refund based on cancelled classes
         const totalClasses = enrollment.totalClasses || 1;
         const completedClasses = enrollment.completedClasses || 0;
-        const remainingClasses = totalClasses - completedClasses;
+        const keptClasses = bookingsWithin6Hours.length; // Classes that can't be cancelled
+        const refundableClasses = totalClasses - completedClasses - keptClasses;
         
-        // Refund = (Total Price) * (Remaining Classes / Total Classes)
+        // Refund = (Total Price) * (Refundable Classes / Total Classes)
         const totalPrice = parseFloat(courseTransaction.amount);
-        refundAmount = (totalPrice * remainingClasses) / totalClasses;
-        refundPercentage = (remainingClasses / totalClasses) * 100;
+        refundAmount = (totalPrice * refundableClasses) / totalClasses;
+        refundPercentage = (refundableClasses / totalClasses) * 100;
 
         // Update the transaction to mark it for refund
         if (refundAmount > 0) {
@@ -1318,12 +1366,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update enrollment status to cancelled
       await storage.updateCourseEnrollmentStatus(id, 'cancelled');
 
+      // TODO: Send email notifications to student and teacher
+      // TODO: Create in-app notifications for both
+
       res.json({
         message: "Course enrollment cancelled successfully",
         refundAmount: refundAmount.toFixed(2),
         refundPercentage: Math.round(refundPercentage),
         completedClasses: enrollment.completedClasses || 0,
         totalClasses: enrollment.totalClasses || 1,
+        cancelledClasses: cancelledCount,
+        keptClasses: bookingsWithin6Hours.length,
         refundTime: refundAmount > 0 ? "3-5 business days" : undefined
       });
     } catch (error) {
