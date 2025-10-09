@@ -33,9 +33,7 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
     return true;
   } catch (error) {
     console.error('📧 SendGrid email error:', error);
-    console.log(`📧 Falling back to email simulation: ${params.subject} to ${params.to}`);
-    // Fall back to simulation mode for demo purposes
-    return true;
+    return false;
   }
 }
 
@@ -112,14 +110,26 @@ Need help? Contact our support team at support@codeconnect.com
 export function generateCourseCancellationEmail(
   recipientEmail: string,
   recipientName: string,
+  recipientRole: 'student' | 'mentor',
   courseTitle: string,
-  cancelledBy: 'student' | 'teacher',
+  cancelledBy: 'student' | 'mentor',
   cancelledClasses: number,
   keptClasses: number,
   refundAmount?: string
 ): { subject: string, html: string, text: string } {
-  const isStudent = cancelledBy === 'student';
   const subject = `Course Cancellation - ${courseTitle}`;
+  
+  // Determine message based on recipient role and who cancelled
+  let mainMessage: string;
+  if (recipientRole === 'student') {
+    mainMessage = cancelledBy === 'student' 
+      ? 'You have cancelled your enrollment in'
+      : 'Your teacher has cancelled the course';
+  } else {
+    mainMessage = cancelledBy === 'student'
+      ? 'A student has cancelled their enrollment in'
+      : 'You have cancelled the course';
+  }
   
   const html = `
     <!DOCTYPE html>
@@ -143,12 +153,12 @@ export function generateCourseCancellationEmail(
         </div>
         <div class="content">
           <p>Hello ${recipientName},</p>
-          <p>${isStudent ? 'Your' : "A student's"} enrollment in <strong>${courseTitle}</strong> has been cancelled.</p>
+          <p>${mainMessage} <strong>${courseTitle}</strong>.</p>
           
           <div class="info-box">
             <h3>Cancellation Details:</h3>
             <ul>
-              <li><strong>Cancelled by:</strong> ${isStudent ? 'Student' : 'Teacher'}</li>
+              <li><strong>Cancelled by:</strong> ${cancelledBy === 'student' ? 'Student' : 'Teacher'}</li>
               <li><strong>Classes cancelled:</strong> ${cancelledClasses}</li>
               ${keptClasses > 0 ? `<li><strong>Classes kept (within 6 hours):</strong> ${keptClasses}</li>` : ''}
             </ul>
@@ -157,7 +167,7 @@ export function generateCourseCancellationEmail(
           ${refundAmount && parseFloat(refundAmount) > 0 ? `
           <div class="warning-box">
             <h3>💰 Refund Information:</h3>
-            <p>A refund of <strong>₹${refundAmount}</strong> will be processed to your original payment method within 3-5 business days.</p>
+            <p>A refund of <strong>₹${refundAmount}</strong> will be processed to the original payment method within 3-5 business days.</p>
           </div>
           ` : ''}
 
@@ -183,16 +193,16 @@ Course Cancellation Notice - CodeConnect
 
 Hello ${recipientName},
 
-${isStudent ? 'Your' : "A student's"} enrollment in ${courseTitle} has been cancelled.
+${mainMessage} ${courseTitle}.
 
 Cancellation Details:
-- Cancelled by: ${isStudent ? 'Student' : 'Teacher'}
+- Cancelled by: ${cancelledBy === 'student' ? 'Student' : 'Teacher'}
 - Classes cancelled: ${cancelledClasses}
 ${keptClasses > 0 ? `- Classes kept (within 6 hours): ${keptClasses}` : ''}
 
 ${refundAmount && parseFloat(refundAmount) > 0 ? `
 Refund Information:
-A refund of ₹${refundAmount} will be processed to your original payment method within 3-5 business days.
+A refund of ₹${refundAmount} will be processed to the original payment method within 3-5 business days.
 ` : ''}
 
 ${keptClasses > 0 ? `

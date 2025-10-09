@@ -1380,29 +1380,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const studentEmail = generateCourseCancellationEmail(
           user.email,
           `${user.firstName} ${user.lastName}`,
+          'student', // recipient role
           course.title,
-          'student',
+          'student', // cancelled by
           cancelledCount,
           bookingsWithin6Hours.length,
           refundAmount > 0 ? refundAmount.toFixed(2) : undefined
         );
-        await sendEmail({ to: user.email, ...studentEmail });
+        const studentEmailSent = await sendEmail({ to: user.email, ...studentEmail });
+        if (!studentEmailSent) {
+          console.warn(`Failed to send cancellation email to student ${user.email}`);
+        }
 
         // Send to teacher
         if (mentorUser) {
           const teacherEmail = generateCourseCancellationEmail(
             mentorUser.email,
             `${mentorUser.firstName} ${mentorUser.lastName}`,
+            'mentor', // recipient role
             course.title,
-            'student',
+            'student', // cancelled by
             cancelledCount,
             bookingsWithin6Hours.length
           );
-          await sendEmail({ to: mentorUser.email, ...teacherEmail });
+          const teacherEmailSent = await sendEmail({ to: mentorUser.email, ...teacherEmail });
+          if (!teacherEmailSent) {
+            console.warn(`Failed to send cancellation email to mentor ${mentorUser.email}`);
+          }
         }
       }
 
-      // TODO: Create in-app notifications for both
+      // Create in-app notifications
+      if (user && course) {
+        // Notification for student
+        await storage.createNotification({
+          userId: user.id,
+          title: 'Course Cancelled',
+          message: `Your enrollment in "${course.title}" has been cancelled. ${cancelledCount} class(es) were cancelled.${refundAmount > 0 ? ` Refund of ₹${refundAmount.toFixed(2)} will be processed.` : ''}`,
+          type: 'course_cancellation',
+          relatedId: id,
+        });
+
+        // Notification for mentor
+        if (mentor) {
+          await storage.createNotification({
+            userId: mentor.userId,
+            title: 'Course Cancelled by Student',
+            message: `A student cancelled their enrollment in "${course.title}". ${cancelledCount} class(es) were cancelled.`,
+            type: 'course_cancellation',
+            relatedId: id,
+          });
+        }
+      }
 
       res.json({
         message: "Course enrollment cancelled successfully",

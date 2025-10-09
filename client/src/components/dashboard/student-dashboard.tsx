@@ -484,9 +484,16 @@ export default function StudentDashboard() {
           <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
             <CardHeader className="bg-gradient-to-r from-amber-500 to-orange-600 text-white">
               <CardTitle className="flex items-center gap-3 text-xl">
-                <Bell className="h-6 w-6" />
+                <Bell className={`h-6 w-6 ${notifications.filter(n => !n.isRead).length > 0 ? 'animate-wiggle' : ''}`} />
                 Notifications
-                <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30">
+                <Badge 
+                  variant="secondary" 
+                  className={`ml-auto bg-white/20 text-white border-white/30 ${
+                    notifications.filter(n => !n.isRead).length > 0 
+                      ? 'animate-pulse' 
+                      : ''
+                  }`}
+                >
                   {notifications.filter(n => !n.isRead).length} new
                 </Badge>
               </CardTitle>
