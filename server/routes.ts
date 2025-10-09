@@ -2670,7 +2670,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const mentorId = teacherUser[0].mentorId;
       
-      // Get real bookings for this teacher with student details
+      // Get real bookings for this teacher with student details and subject fees
       const teacherBookings = await db.select({
         id: bookings.id,
         studentId: bookings.studentId,
@@ -2680,7 +2680,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: bookings.status,
         subject: bookings.subject,
         notes: bookings.notes,
-        amount: sql<number>`COALESCE(150, 0)`, // Default amount since not in schema
+        amount: sql<number>`COALESCE(${teacherSubjects.classFee}::numeric, 150)`, // Use subject-specific fee or default to 150
         studentFirstName: users.firstName,
         studentLastName: users.lastName,
         studentEmail: users.email,
@@ -2689,6 +2689,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .from(bookings)
       .leftJoin(students, eq(bookings.studentId, students.id))
       .leftJoin(users, eq(students.userId, users.id))
+      .leftJoin(teacherSubjects, and(
+        eq(teacherSubjects.mentorId, bookings.mentorId),
+        eq(teacherSubjects.subject, bookings.subject)
+      ))
       .where(eq(bookings.mentorId, mentorId));
       
       // Get course enrollments for this teacher
