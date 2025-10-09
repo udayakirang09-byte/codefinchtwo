@@ -8,10 +8,10 @@ let blobServiceClient: BlobServiceClient | null = null;
 let containerClient: ContainerClient | null = null;
 
 function initializeClients() {
-  const connectionString = process.env.BLOBCONSTR;
+  const connectionString = process.env.STORAGE_CONNECTION_STRING || process.env.BLOBCONSTR;
   
   if (!connectionString) {
-    console.warn('⚠️  BLOBCONSTR environment variable not set - Azure Storage operations will fail');
+    console.warn('⚠️  STORAGE_CONNECTION_STRING environment variable not set - Azure Storage operations will fail');
     return null;
   }
 
@@ -30,7 +30,7 @@ function getContainerClient(): ContainerClient {
   if (!containerClient) {
     const client = initializeClients();
     if (!client) {
-      throw new Error('Azure Storage not configured - BLOBCONSTR environment variable missing');
+      throw new Error('Azure Storage not configured - STORAGE_CONNECTION_STRING environment variable missing');
     }
   }
   return containerClient!;
