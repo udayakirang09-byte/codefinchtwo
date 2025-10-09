@@ -12,6 +12,7 @@ import {
   timeSlots, 
   teacherProfiles, 
   courses,
+  courseEnrollments,
   successStories,
   analyticsEvents,
   aiInsights,
@@ -2397,14 +2398,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Teacher ID is required" });
       }
       
-      // Get teacher's mentor ID from their user email
+      // Get teacher's mentor ID from their user ID or email
       const teacherUser = await db.select({
         userId: users.id,
         mentorId: mentors.id
       })
       .from(users)
       .leftJoin(mentors, eq(mentors.userId, users.id))
-      .where(eq(users.email, teacherId))
+      .where(or(eq(users.id, teacherId), eq(users.email, teacherId)))
       .limit(1);
       
       if (!teacherUser.length || !teacherUser[0].mentorId) {
@@ -2421,32 +2422,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
         scheduledAt: bookings.scheduledAt,
         duration: bookings.duration,
         status: bookings.status,
+        subject: bookings.subject,
         notes: bookings.notes,
         amount: sql<number>`COALESCE(150, 0)`, // Default amount since not in schema
         studentFirstName: users.firstName,
         studentLastName: users.lastName,
-        studentEmail: users.email
+        studentEmail: users.email,
+        source: sql<string>`'booking'`
       })
       .from(bookings)
       .leftJoin(students, eq(bookings.studentId, students.id))
       .leftJoin(users, eq(students.userId, users.id))
-      .where(eq(bookings.mentorId, mentorId))
-      .orderBy(bookings.scheduledAt);
+      .where(eq(bookings.mentorId, mentorId));
+      
+      // Get course enrollments for this teacher
+      const courseEnrollmentsData = await db.select({
+        id: courseEnrollments.id,
+        studentId: courseEnrollments.studentId,
+        courseId: courseEnrollments.courseId,
+        courseFee: courseEnrollments.courseFee,
+        totalClasses: courseEnrollments.totalClasses,
+        weeklySchedule: courseEnrollments.weeklySchedule,
+        enrolledAt: courseEnrollments.enrolledAt,
+        courseName: courses.title,
+        studentFirstName: users.firstName,
+        studentLastName: users.lastName,
+        studentEmail: users.email
+      })
+      .from(courseEnrollments)
+      .leftJoin(courses, eq(courseEnrollments.courseId, courses.id))
+      .leftJoin(students, eq(courseEnrollments.studentId, students.id))
+      .leftJoin(users, eq(students.userId, users.id))
+      .where(eq(courseEnrollments.mentorId, mentorId));
+
+      // Expand course enrollments into individual class sessions
+      const courseClasses: any[] = [];
+      for (const enrollment of courseEnrollmentsData) {
+        // Parse the weekly schedule
+        const schedule = enrollment.weeklySchedule || [];
+        const totalClasses = enrollment.totalClasses || 0;
+        const enrolledDate = new Date(enrollment.enrolledAt);
+        
+        // Generate class dates based on schedule
+        for (let i = 0; i < totalClasses; i++) {
+          if (schedule.length === 0) break;
+          
+          const scheduleItem = schedule[i % schedule.length];
+          const classDate = new Date(enrolledDate);
+          
+          // Calculate the date for this class
+          const weeksToAdd = Math.floor(i / schedule.length);
+          classDate.setDate(classDate.getDate() + (weeksToAdd * 7));
+          
+          // Set the time from schedule
+          const [hours, minutes] = scheduleItem.time.split(':');
+          classDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+          
+          courseClasses.push({
+            id: `${enrollment.id}-class-${i + 1}`,
+            studentId: enrollment.studentId,
+            mentorId: mentorId,
+            scheduledAt: classDate,
+            duration: 60, // Default 60 minutes for course classes
+            status: classDate < new Date() ? 'completed' : 'scheduled',
+            subject: enrollment.courseName || 'Course Session',
+            notes: `Class ${i + 1} of ${totalClasses}`,
+            amount: Math.round((enrollment.courseFee || 0) / totalClasses),
+            studentFirstName: enrollment.studentFirstName,
+            studentLastName: enrollment.studentLastName,
+            studentEmail: enrollment.studentEmail,
+            source: 'course-enrollment'
+          });
+        }
+      }
+      
+      // Combine bookings and course classes
+      const allClasses = [...teacherBookings, ...courseClasses];
+      
+      // Sort by scheduled date
+      allClasses.sort((a, b) => 
+        new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
+      );
       
       // Format the data to match the expected structure
-      const formattedClasses = teacherBookings.map((booking: any) => ({
-        id: booking.id,
+      const formattedClasses = allClasses.map((item: any) => ({
+        id: item.id,
         student: {
           user: {
-            firstName: booking.studentFirstName || 'Unknown',
-            lastName: booking.studentLastName || 'Student'
+            firstName: item.studentFirstName || 'Unknown',
+            lastName: item.studentLastName || 'Student'
           }
         },
-        subject: booking.notes || 'Programming Session', // Using notes as subject for now
-        scheduledAt: booking.scheduledAt,
-        duration: booking.duration,
-        status: booking.status,
-        amount: booking.amount
+        subject: item.subject || item.notes || 'Programming Session',
+        scheduledAt: item.scheduledAt,
+        duration: item.duration,
+        status: item.status,
+        amount: item.amount
       }));
       
       res.json(formattedClasses);
@@ -2464,14 +2535,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Teacher ID is required" });
       }
       
-      // Get teacher's mentor ID from their user email
+      // Get teacher's mentor ID from their user ID or email
       const teacherUser = await db.select({
         userId: users.id,
         mentorId: mentors.id
       })
       .from(users)
       .leftJoin(mentors, eq(mentors.userId, users.id))
-      .where(eq(users.email, teacherId))
+      .where(or(eq(users.id, teacherId), eq(users.email, teacherId)))
       .limit(1);
       
       if (!teacherUser.length || !teacherUser[0].mentorId) {
@@ -2560,14 +2631,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Teacher ID is required" });
       }
       
-      // Get teacher's mentor ID from their user email
+      // Get teacher's mentor ID from their user ID or email
       const teacherUser = await db.select({
         userId: users.id,
         mentorId: mentors.id
       })
       .from(users)
       .leftJoin(mentors, eq(mentors.userId, users.id))
-      .where(eq(users.email, teacherId))
+      .where(or(eq(users.id, teacherId), eq(users.email, teacherId)))
       .limit(1);
       
       if (!teacherUser.length || !teacherUser[0].mentorId) {
