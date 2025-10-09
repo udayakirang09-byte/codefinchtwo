@@ -1227,9 +1227,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           await storage.cancelBooking(id);
 
-          // If there was a payment, mark it for refund
+          // If there was a payment, mark it for refund (48 hours from now)
           if (transaction) {
-            await storage.updatePaymentTransactionStatus(transaction.id, 'cancelled', 'refund_to_student');
+            const scheduledRefundAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours from now
+            await db.update(paymentTransactions)
+              .set({ 
+                status: 'cancelled', 
+                workflowStage: 'refund_to_student',
+                scheduledRefundAt,
+                updatedAt: new Date()
+              })
+              .where(eq(paymentTransactions.id, transaction.id));
             results.successful.push({ 
               id, 
               refundAmount: transaction.amount 
@@ -1254,7 +1262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         successful: results.successful,
         failed: results.failed,
         totalRefundAmount: totalRefund.toFixed(2),
-        refundTime: totalRefund > 0 ? "3-5 business days" : undefined
+        refundTime: totalRefund > 0 ? "48 hours" : undefined
       });
     } catch (error) {
       console.error("Error bulk cancelling bookings:", error);
@@ -1366,13 +1374,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         refundAmount = (totalPrice * refundableClasses) / totalClasses;
         refundPercentage = (refundableClasses / totalClasses) * 100;
 
-        // Update the transaction to mark it for refund
+        // Update the transaction to mark it for refund (48 hours from now)
         if (refundAmount > 0) {
-          await storage.updatePaymentTransactionStatus(
-            courseTransaction.id, 
-            'cancelled', 
-            'refund_to_student'
-          );
+          const scheduledRefundAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours from now
+          await db.update(paymentTransactions)
+            .set({ 
+              status: 'cancelled', 
+              workflowStage: 'refund_to_student',
+              scheduledRefundAt,
+              updatedAt: new Date()
+            })
+            .where(eq(paymentTransactions.id, courseTransaction.id));
         }
       }
 
@@ -5548,7 +5560,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalTransactionFees: 0,
         conflictAmount: 0,
         studentsCount: 0,
-        teachersCount: 0
+        teachersCount: 0,
+        pendingRefunds: 0,
+        pendingRefundsCount: 0
       };
       res.status(200).json(defaultAnalytics); // Return 200 with default data
     }
@@ -5897,8 +5911,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Update transaction to cancelled
-      await storage.updatePaymentTransactionStatus(transaction.id, 'cancelled', 'refund_to_student');
+      // Update transaction to cancelled with 48-hour refund schedule
+      const scheduledRefundAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours from now
+      await db.update(paymentTransactions)
+        .set({ 
+          status: 'cancelled', 
+          workflowStage: 'refund_to_student',
+          scheduledRefundAt,
+          updatedAt: new Date()
+        })
+        .where(eq(paymentTransactions.id, transaction.id));
       
       // Update any associated workflow
       const workflows = await storage.getActivePaymentWorkflows();
@@ -5908,12 +5930,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.updatePaymentWorkflowStage(workflow.id, 'completed', undefined);
       }
       
-      console.log(`✅ Cancelled booking ${bookingId} and initiated refund`);
+      console.log(`✅ Cancelled booking ${bookingId} and initiated 48-hour refund`);
       
       res.json({
         message: 'Booking cancelled and refund initiated',
         refundAmount: transaction.amount,
-        refundTime: '3-5 business days'
+        refundTime: '48 hours'
       });
     } catch (error: any) {
       console.error('❌ Error cancelling booking:', error);

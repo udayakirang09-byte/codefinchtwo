@@ -252,6 +252,8 @@ export interface IStorage {
     conflictAmount: number;
     studentsCount: number;
     teachersCount: number;
+    pendingRefunds: number;
+    pendingRefundsCount: number;
   }>;
   
   // Educational dropdown operations
@@ -1403,12 +1405,25 @@ export class DatabaseStorage implements IStorage {
     conflictAmount: number;
     studentsCount: number;
     teachersCount: number;
+    pendingRefunds: number;
+    pendingRefundsCount: number;
   }> {
     // Get all completed transactions
     const transactions = await db
       .select()
       .from(paymentTransactions)
       .where(eq(paymentTransactions.status, 'completed'));
+
+    // Get pending refunds (cancelled transactions with scheduledRefundAt)
+    const pendingRefundTransactions = await db
+      .select()
+      .from(paymentTransactions)
+      .where(
+        and(
+          eq(paymentTransactions.status, 'cancelled'),
+          eq(paymentTransactions.workflowStage, 'refund_to_student')
+        )
+      );
 
     // Get unsettled finance conflicts
     const conflicts = await db
@@ -1426,6 +1441,7 @@ export class DatabaseStorage implements IStorage {
     let totalTeacherPayouts = 0;
     let totalRefunds = 0;
     let totalTransactionFees = 0;
+    let pendingRefunds = 0;
 
     for (const transaction of transactions) {
       const amount = parseFloat(transaction.amount);
@@ -1441,6 +1457,12 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
+    // Calculate pending refunds
+    for (const transaction of pendingRefundTransactions) {
+      const amount = parseFloat(transaction.amount);
+      pendingRefunds += amount;
+    }
+
     const conflictAmount = conflicts.reduce((sum: number, conflict: UnsettledFinance) => {
       return sum + parseFloat(conflict.conflictAmount);
     }, 0);
@@ -1453,6 +1475,8 @@ export class DatabaseStorage implements IStorage {
       conflictAmount,
       studentsCount,
       teachersCount,
+      pendingRefunds,
+      pendingRefundsCount: pendingRefundTransactions.length,
     };
   }
 

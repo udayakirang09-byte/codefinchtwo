@@ -696,10 +696,11 @@ export const paymentTransactions = pgTable("payment_transactions", {
   status: varchar("status").notNull().default("pending"), // pending, processing, completed, failed, refunded, cancelled
   workflowStage: varchar("workflow_stage").notNull(), // "student_to_admin", "admin_to_teacher", "refund_to_student"
   
-  // Timing Controls (5hr cancellation, 24hr teacher payout)
+  // Timing Controls (5hr cancellation, 24hr teacher payout, 48hr refund)
   scheduledAt: timestamp("scheduled_at"), // When the class/course is scheduled
   cancellationDeadline: timestamp("cancellation_deadline"), // 5 hours before scheduled time
   teacherPayoutEligibleAt: timestamp("teacher_payout_eligible_at"), // 24 hours after class completion
+  scheduledRefundAt: timestamp("scheduled_refund_at"), // When refund should be processed (48 hours after cancellation)
   
   // External Payment References  
   stripePaymentIntentId: varchar("stripe_payment_intent_id"),
