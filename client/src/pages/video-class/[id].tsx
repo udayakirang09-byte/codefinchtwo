@@ -104,13 +104,30 @@ export default function VideoClass() {
     }
   });
   
-  const [classInfo] = useState({
-    subject: "Python Basics",
-    mentor: "Sarah Johnson", 
-    duration: 60,
-    startTime: new Date(),
-    isTeacher
-  });
+  // Derive class info from bookingData
+  const classInfo = useMemo(() => {
+    if (!bookingData) {
+      return {
+        subject: "Loading...",
+        mentor: "Loading...",
+        duration: 60,
+        startTime: new Date(),
+        isTeacher
+      };
+    }
+    
+    const mentorName = bookingData.mentor?.user 
+      ? `${bookingData.mentor.user.firstName} ${bookingData.mentor.user.lastName}`
+      : "Unknown Mentor";
+    
+    return {
+      subject: bookingData.subject || "Class",
+      mentor: mentorName,
+      duration: bookingData.duration || 60,
+      startTime: bookingData.scheduledAt ? new Date(bookingData.scheduledAt) : new Date(),
+      isTeacher
+    };
+  }, [bookingData, isTeacher]);
   
   // Recording state
   const [isRecording, setIsRecording] = useState(false);
