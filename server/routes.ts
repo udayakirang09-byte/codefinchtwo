@@ -7048,6 +7048,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   console.log('✅ Admin UI Configuration API routes registered successfully!');
 
+  // Abusive Language Incidents API Routes
+  // Get all abusive language incidents for admin dashboard
+  app.get('/api/admin/abusive-incidents', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      const incidents = await db
+        .select()
+        .from(abusiveLanguageIncidents)
+        .orderBy(desc(abusiveLanguageIncidents.detectedAt))
+        .limit(100); // Limit to latest 100 incidents
+
+      res.json(incidents);
+    } catch (error) {
+      console.error('❌ Error fetching abusive language incidents:', error);
+      res.status(500).json({ message: 'Failed to fetch incidents' });
+    }
+  });
+
+  // Get count of unread/unreviewed incidents
+  app.get('/api/admin/abusive-incidents/unread-count', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      const count = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(abusiveLanguageIncidents)
+        .execute();
+
+      res.json({ count: count[0]?.count || 0 });
+    } catch (error) {
+      console.error('❌ Error fetching unread incident count:', error);
+      res.status(500).json({ message: 'Failed to fetch count' });
+    }
+  });
+
+  console.log('✅ Abusive Language Incidents API routes registered successfully!');
+
   const httpServer = createServer(app);
   return httpServer;
 }

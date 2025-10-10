@@ -31,6 +31,7 @@ export function detectAbusiveLanguage(text: string): AbusiveLanguageResult {
     return {
       isAbusive: false,
       detectedWords: [],
+      severity: 'low',
       originalText: text || '',
     };
   }
