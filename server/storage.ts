@@ -1413,22 +1413,36 @@ export class DatabaseStorage implements IStorage {
     pendingRefunds: number;
     pendingRefundsCount: number;
   }> {
-    // Get all completed transactions
-    const transactions = await db
-      .select()
-      .from(paymentTransactions)
-      .where(eq(paymentTransactions.status, 'completed'));
+    // Get user counts
+    const allUsers = await db.select().from(users);
+    const studentsCount = allUsers.filter((u: User) => u.role === 'student').length;
+    const teachersCount = allUsers.filter((u: User) => u.role === 'mentor').length;
 
-    // Get pending refunds (cancelled transactions with scheduledRefundAt)
-    const pendingRefundTransactions = await db
-      .select()
-      .from(paymentTransactions)
-      .where(
-        and(
-          eq(paymentTransactions.status, 'cancelled'),
-          eq(paymentTransactions.workflowStage, 'refund_to_student')
-        )
-      );
+    // Get completed bookings with their class fees from teacherSubjects
+    const completedBookingsWithFees = await db.select({
+      id: bookings.id,
+      status: bookings.status,
+      classFee: sql<number>`COALESCE(${teacherSubjects.classFee}::numeric, 150)`
+    })
+    .from(bookings)
+    .leftJoin(teacherSubjects, and(
+      eq(teacherSubjects.mentorId, bookings.mentorId),
+      eq(teacherSubjects.subject, bookings.subject)
+    ))
+    .where(eq(bookings.status, 'completed'));
+
+    // Get cancelled bookings for refunds
+    const cancelledBookingsWithFees = await db.select({
+      id: bookings.id,
+      status: bookings.status,
+      classFee: sql<number>`COALESCE(${teacherSubjects.classFee}::numeric, 150)`
+    })
+    .from(bookings)
+    .leftJoin(teacherSubjects, and(
+      eq(teacherSubjects.mentorId, bookings.mentorId),
+      eq(teacherSubjects.subject, bookings.subject)
+    ))
+    .where(eq(bookings.status, 'cancelled'));
 
     // Get unsettled finance conflicts
     const conflicts = await db
@@ -1436,37 +1450,23 @@ export class DatabaseStorage implements IStorage {
       .from(unsettledFinances)
       .where(eq(unsettledFinances.status, 'open'));
 
-    // Get user counts
-    const allUsers = await db.select().from(users);
-    const studentsCount = allUsers.filter((u: User) => u.role === 'student').length;
-    const teachersCount = allUsers.filter((u: User) => u.role === 'mentor').length;
+    // Get active transaction fee configuration
+    const feeConfig = await this.getActiveTransactionFeeConfig();
+    const platformFeePercent = feeConfig ? (parseFloat(feeConfig.feePercentage) / 100) : 0.02;
 
-    // Calculate financial metrics
-    let totalAdminRevenue = 0;
-    let totalTeacherPayouts = 0;
-    let totalRefunds = 0;
-    let totalTransactionFees = 0;
-    let pendingRefunds = 0;
+    // Calculate financial metrics from bookings
+    const totalAdminRevenue = completedBookingsWithFees.reduce((sum, b) => sum + Number(b.classFee), 0);
+    const totalRefunds = cancelledBookingsWithFees.reduce((sum, b) => sum + Number(b.classFee), 0);
+    
+    // Platform fee from config (or default 2%)
+    const totalTransactionFees = totalAdminRevenue * platformFeePercent;
+    
+    // Teacher payouts = revenue - platform fees
+    const totalTeacherPayouts = totalAdminRevenue - totalTransactionFees;
 
-    for (const transaction of transactions) {
-      const amount = parseFloat(transaction.amount);
-      const fee = parseFloat(transaction.transactionFee || '0');
-
-      if (transaction.transactionType === 'booking_payment' || transaction.transactionType === 'course_payment') {
-        totalAdminRevenue += amount;
-        totalTransactionFees += fee;
-      } else if (transaction.transactionType === 'teacher_payout') {
-        totalTeacherPayouts += amount;
-      } else if (transaction.transactionType === 'refund') {
-        totalRefunds += amount;
-      }
-    }
-
-    // Calculate pending refunds
-    for (const transaction of pendingRefundTransactions) {
-      const amount = parseFloat(transaction.amount);
-      pendingRefunds += amount;
-    }
+    // Pending refunds (same as total refunds for now)
+    const pendingRefunds = totalRefunds;
+    const pendingRefundsCount = cancelledBookingsWithFees.length;
 
     const conflictAmount = conflicts.reduce((sum: number, conflict: UnsettledFinance) => {
       return sum + parseFloat(conflict.conflictAmount);
@@ -1481,7 +1481,7 @@ export class DatabaseStorage implements IStorage {
       studentsCount,
       teachersCount,
       pendingRefunds,
-      pendingRefundsCount: pendingRefundTransactions.length,
+      pendingRefundsCount,
     };
   }
 

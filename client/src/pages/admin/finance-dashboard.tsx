@@ -231,7 +231,7 @@ export default function FinanceDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-green-600" data-testid="total-admin-revenue">
-                    ${(analytics?.totalAdminRevenue || 0).toFixed(2)}
+                    ₹{(analytics?.totalAdminRevenue || 0).toFixed(2)}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     <ArrowUpRight className="inline h-3 w-3 mr-1 text-green-500" />
@@ -247,7 +247,7 @@ export default function FinanceDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-blue-600" data-testid="total-teacher-payouts">
-                    ${(analytics?.totalTeacherPayouts || 0).toFixed(2)}
+                    ₹{(analytics?.totalTeacherPayouts || 0).toFixed(2)}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     <TrendingUp className="inline h-3 w-3 mr-1" />
@@ -263,7 +263,7 @@ export default function FinanceDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-purple-600" data-testid="platform-revenue">
-                    ${netPlatformRevenue.toFixed(2)}
+                    ₹{netPlatformRevenue.toFixed(2)}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Transaction fees (2%)
@@ -278,7 +278,7 @@ export default function FinanceDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-red-600" data-testid="total-refunds">
-                    ${(analytics?.totalRefunds || 0).toFixed(2)}
+                    ₹{(analytics?.totalRefunds || 0).toFixed(2)}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     <TrendingDown className="inline h-3 w-3 mr-1 text-red-500" />
@@ -300,7 +300,7 @@ export default function FinanceDashboard() {
                     {analytics?.studentsCount || 0}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Avg transaction: ${averageTransactionValue.toFixed(2)}
+                    Avg transaction: ₹{averageTransactionValue.toFixed(2)}
                   </p>
                 </CardContent>
               </Card>
@@ -315,7 +315,7 @@ export default function FinanceDashboard() {
                     {analytics?.teachersCount || 0}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Avg payout: ${revenuePerTeacher.toFixed(2)}
+                    Avg payout: ₹{revenuePerTeacher.toFixed(2)}
                   </p>
                 </CardContent>
               </Card>
@@ -327,7 +327,7 @@ export default function FinanceDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-orange-600" data-testid="conflict-amount">
-                    ${(analytics?.conflictAmount || 0).toFixed(2)}
+                    ₹{(analytics?.conflictAmount || 0).toFixed(2)}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Unsettled finances
@@ -351,7 +351,7 @@ export default function FinanceDashboard() {
                     <XAxis dataKey="date" />
                     <YAxis />
                     <Tooltip 
-                      formatter={(value, name) => [`$${value}`, name]}
+                      formatter={(value, name) => [`₹${value}`, name]}
                       labelFormatter={(label) => `Date: ${label}`}
                     />
                     <Legend />
@@ -453,7 +453,7 @@ export default function FinanceDashboard() {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value) => `$${value}`} />
+                      <Tooltip formatter={(value) => `₹${value}`} />
                     </PieChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -565,7 +565,7 @@ export default function FinanceDashboard() {
                         </div>
                         <div className="text-right">
                           <div className="font-semibold text-red-600">
-                            ${parseFloat(finance.conflictAmount).toFixed(2)}
+                            ₹{parseFloat(finance.conflictAmount).toFixed(2)}
                           </div>
                           <Badge variant="destructive">{finance.status}</Badge>
                         </div>
