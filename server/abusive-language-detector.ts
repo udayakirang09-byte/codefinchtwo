@@ -12,9 +12,12 @@ const ABUSIVE_WORDS = [
   // Add more as needed
 ];
 
+export type SeverityLevel = 'low' | 'medium' | 'high';
+
 export interface AbusiveLanguageResult {
   isAbusive: boolean;
   detectedWords: string[];
+  severity: SeverityLevel;
   originalText: string;
 }
 
@@ -55,9 +58,24 @@ export function detectAbusiveLanguage(text: string): AbusiveLanguageResult {
     }
   }
 
+  // Calculate severity based on number and type of words
+  let severity: SeverityLevel = 'low';
+  const uniqueWords = Array.from(new Set(detectedWords));
+  
+  if (uniqueWords.length === 0) {
+    severity = 'low';
+  } else if (uniqueWords.length === 1 || uniqueWords.some(w => ['damn', 'crap', 'idiot', 'dumb'].includes(w.toLowerCase()))) {
+    severity = 'low';
+  } else if (uniqueWords.length === 2 || uniqueWords.some(w => ['fuck', 'shit', 'bitch', 'asshole'].includes(w.toLowerCase()))) {
+    severity = 'medium';
+  } else {
+    severity = 'high'; // 3+ words or severe threats
+  }
+
   return {
     isAbusive: detectedWords.length > 0,
-    detectedWords: Array.from(new Set(detectedWords)), // Remove duplicates
+    detectedWords: uniqueWords,
+    severity,
     originalText: text,
   };
 }

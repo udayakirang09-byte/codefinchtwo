@@ -37,6 +37,8 @@ import {
   paymentMethods,
   videoSessions,
   teacherSubjects,
+  abusiveLanguageIncidents,
+  adminUiConfig,
   type InsertAdminConfig, 
   type InsertFooterLink, 
   type InsertTimeSlot, 
@@ -44,6 +46,7 @@ import {
   type InsertCourse
 } from "@shared/schema";
 import { aiAnalytics } from "./ai-analytics";
+import { detectAbusiveLanguage } from "./abusive-language-detector";
 import Stripe from "stripe";
 import Razorpay from "razorpay";
 import crypto from "crypto";
@@ -2444,6 +2447,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const newMessage = await storage.sendChatMessage(messageData);
       console.log(`✅ Message sent successfully: ${newMessage.id}`);
+
+      // Check for abusive language if monitoring is enabled
+      try {
+        const uiConfig = await db.select().from(adminUiConfig).limit(1);
+        const monitoringEnabled = uiConfig[0]?.abusiveLanguageMonitoring || false;
+
+        if (monitoringEnabled) {
+          const detection = detectAbusiveLanguage(message);
+          
+          if (detection.isAbusive) {
+            console.log(`🚨 Abusive language detected: ${detection.detectedWords.join(', ')} (${detection.severity})`);
+            
+            // Get user's role from the users table
+            const user = await db.select().from(users).where(eq(users.id, senderId)).limit(1);
+            const userRole = user[0]?.role || 'unknown';
+
+            // Create incident record
+            await db.insert(abusiveLanguageIncidents).values({
+              bookingId,
+              userId: senderId,
+              userName: senderName,
+              userRole,
+              messageText: message,
+              detectedWords: detection.detectedWords,
+              severity: detection.severity,
+              detectedAt: new Date()
+            });
+
+            console.log(`✅ Abusive language incident recorded for user ${senderName} (${userRole})`);
+          }
+        }
+      } catch (monitorError) {
+        // Don't fail the message send if monitoring fails
+        console.error("❌ Error during abusive language monitoring:", monitorError);
+      }
+
       res.status(201).json(newMessage);
     } catch (error) {
       console.error("❌ Error sending message:", error);
