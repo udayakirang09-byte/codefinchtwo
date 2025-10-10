@@ -2118,15 +2118,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return now < classEndTime;
       }).length;
       
-      // Calculate completed classes: explicitly completed OR scheduled but past end time
-      const completedBookings = bookings.filter(booking => {
-        if (booking.status === 'completed') return true;
-        if (booking.status === 'scheduled') {
-          const classEndTime = new Date(new Date(booking.scheduledAt).getTime() + booking.duration * 60000);
-          return now >= classEndTime;
-        }
-        return false;
-      });
+      // Calculate completed classes: ONLY explicitly completed (actually attended)
+      const completedBookings = bookings.filter(booking => booking.status === 'completed');
       const totalHoursLearned = completedBookings.reduce((total, booking) => total + (booking.duration / 60), 0);
       
       // Calculate progress rate (percentage of completed vs total bookings)
