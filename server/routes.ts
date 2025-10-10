@@ -2111,19 +2111,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const bookings = await storage.getStudentBookings(studentId);
       const now = new Date();
       
+      // Filter out cancelled bookings first
+      const nonCancelledBookings = bookings.filter(booking => booking.status !== 'cancelled');
+      
       // Calculate active classes (scheduled AND not yet ended)
-      const activeClasses = bookings.filter(booking => {
+      const activeClasses = nonCancelledBookings.filter(booking => {
         if (booking.status !== 'scheduled') return false;
         const classEndTime = new Date(new Date(booking.scheduledAt).getTime() + booking.duration * 60000);
         return now < classEndTime;
       }).length;
       
-      // Calculate completed classes: ONLY explicitly completed (actually attended)
-      const completedBookings = bookings.filter(booking => booking.status === 'completed');
+      // Calculate completed classes: Include both explicitly completed AND scheduled classes past their end time
+      const completedBookings = nonCancelledBookings.filter(booking => {
+        if (booking.status === 'completed') return true;
+        if (booking.status === 'scheduled') {
+          const classEndTime = new Date(new Date(booking.scheduledAt).getTime() + booking.duration * 60000);
+          return now >= classEndTime;
+        }
+        return false;
+      });
       const totalHoursLearned = completedBookings.reduce((total, booking) => total + (booking.duration / 60), 0);
       
-      // Calculate progress rate (percentage of completed vs total bookings)
-      const totalBookings = bookings.length;
+      // Calculate progress rate (percentage of completed vs total non-cancelled bookings)
+      const totalBookings = nonCancelledBookings.length;
       const progressRate = totalBookings > 0 ? Math.round((completedBookings.length / totalBookings) * 100) : 0;
       
       // Get achievements count
@@ -2833,19 +2843,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .from(bookings)
       .where(eq(bookings.mentorId, mentorId));
       
-      // Calculate real stats from actual bookings
-      const completedBookings = teacherBookings.filter((b: any) => b.status === 'completed');
-      const scheduledBookings = teacherBookings.filter((b: any) => b.status === 'scheduled');
+      const now = new Date();
       
-      // Calculate unique students from ALL bookings (scheduled + completed)
-      const uniqueStudentIds = new Set(teacherBookings.map((b: any) => b.studentId));
+      // Filter out cancelled bookings first
+      const nonCancelledBookings = teacherBookings.filter((b: any) => b.status !== 'cancelled');
+      
+      // Calculate completed bookings: Include both explicitly completed AND scheduled classes past their end time
+      const completedBookings = nonCancelledBookings.filter((b: any) => {
+        if (b.status === 'completed') return true;
+        if (b.status === 'scheduled') {
+          const classEndTime = new Date(new Date(b.scheduledAt).getTime() + b.duration * 60000);
+          return now >= classEndTime;
+        }
+        return false;
+      });
+      
+      // Calculate truly upcoming scheduled bookings (not yet ended)
+      const scheduledBookings = nonCancelledBookings.filter((b: any) => {
+        if (b.status !== 'scheduled') return false;
+        const classEndTime = new Date(new Date(b.scheduledAt).getTime() + b.duration * 60000);
+        return now < classEndTime;
+      });
+      
+      // Calculate unique students from non-cancelled bookings only
+      const uniqueStudentIds = new Set(nonCancelledBookings.map((b: any) => b.studentId));
       const totalStudents = uniqueStudentIds.size;
       
       // Calculate earnings from booking amount field
       const totalEarnings = completedBookings.reduce((sum: number, b: any) => sum + (b.amount || 0), 0);
       
       // Calculate actual monthly earnings from completed bookings in the current month
-      const now = new Date();
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const monthlyCompletedBookings = completedBookings.filter((b: any) => {
         const bookingDate = new Date(b.scheduledAt);
