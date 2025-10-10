@@ -13,6 +13,7 @@ interface UiConfigResponse {
     discussionForums: boolean;
     projectShowcase: boolean;
     communityEvents: boolean;
+    teacherResources: boolean;
     contactUs: boolean;
   };
   showHelpCenter: boolean;
@@ -32,6 +33,7 @@ export default function Footer() {
     discussionForums: true,
     projectShowcase: true,
     communityEvents: true,
+    teacherResources: true,
     contactUs: true,
   };
 
@@ -146,11 +148,13 @@ export default function Footer() {
                   Become a Mentor
                 </Link>
               </li>
-              <li>
-                <Link href="/teacher-resources" className="hover:text-white transition-colors" data-testid="link-teacher-resources">
-                  Teacher Resources
-                </Link>
-              </li>
+              {footerLinks.teacherResources && (
+                <li>
+                  <Link href="/teacher-resources" className="hover:text-white transition-colors" data-testid="link-teacher-resources">
+                    Teacher Resources
+                  </Link>
+                </li>
+              )}
               {footerLinks.mentorCommunity && (
                 <li>
                   <Link href="/mentor-community" className="hover:text-white transition-colors" data-testid="link-mentor-community">
