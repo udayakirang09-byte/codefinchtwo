@@ -1452,11 +1452,11 @@ export class DatabaseStorage implements IStorage {
 
     // Get active transaction fee configuration
     const feeConfig = await this.getActiveTransactionFeeConfig();
-    const platformFeePercent = feeConfig ? (parseFloat(feeConfig.feePercentage) / 100) : 0.02;
+    const platformFeePercent = feeConfig ? (parseFloat(feeConfig.feePercentage || '0') / 100) : 0.02;
 
     // Calculate financial metrics from bookings
-    const totalAdminRevenue = completedBookingsWithFees.reduce((sum, b) => sum + Number(b.classFee), 0);
-    const totalRefunds = cancelledBookingsWithFees.reduce((sum, b) => sum + Number(b.classFee), 0);
+    const totalAdminRevenue = completedBookingsWithFees.reduce((sum: number, b: any) => sum + Number(b.classFee), 0);
+    const totalRefunds = cancelledBookingsWithFees.reduce((sum: number, b: any) => sum + Number(b.classFee), 0);
     
     // Platform fee from config (or default 2%)
     const totalTransactionFees = totalAdminRevenue * platformFeePercent;
