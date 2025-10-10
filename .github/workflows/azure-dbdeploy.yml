@@ -29,8 +29,9 @@ jobs:
     - name: Test Azure database connection
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        PGSSLMODE: require
       run: |
-        echo "🔗 Testing Azure database connection..."
+        echo "🔗 Testing Azure database connection with SSL..."
         if [ -z "$DATABASE_URL" ]; then
           echo "❌ ERROR: DATABASE_URL is empty!"
           echo "📋 Available secrets: DATABASE_URL, AZURE_POSTGRES_PASSWORD"
@@ -40,7 +41,10 @@ jobs:
         echo "🔍 Connection string starts with: ${DATABASE_URL:0:30}..."
         node -e "
           const { Client } = require('pg');
-          const client = new Client({ connectionString: process.env.DATABASE_URL });
+          const client = new Client({ 
+            connectionString: process.env.DATABASE_URL,
+            ssl: { rejectUnauthorized: false }
+          });
           
           async function testConnection() {
             try {
@@ -60,6 +64,7 @@ jobs:
     - name: Drop existing Azure schema (clean slate)
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        PGSSLMODE: require
       run: |
         echo "🗑️  Dropping all existing tables in Azure..."
         echo "⚠️  This will remove all data and recreate from scratch"
@@ -68,6 +73,7 @@ jobs:
     - name: Deploy database schema using Drizzle
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        PGSSLMODE: require
         NODE_ENV: production
       run: |
         echo "🏗️ Creating fresh database schema from shared/schema.ts..."
@@ -76,11 +82,15 @@ jobs:
     - name: Verify schema deployment
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        PGSSLMODE: require
       run: |
         echo "🔍 Verifying schema deployment..."
         node -e "
           const { Client } = require('pg');
-          const client = new Client({ connectionString: process.env.DATABASE_URL });
+          const client = new Client({ 
+            connectionString: process.env.DATABASE_URL,
+            ssl: { rejectUnauthorized: false }
+          });
           
           async function verifySchema() {
             try {
@@ -158,6 +168,7 @@ jobs:
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
         DATABASE_URL_NEON: ${{ secrets.DATABASE_URL_NEON }}
+        PGSSLMODE: require
         NODE_ENV: production
       run: |
         if [ -n "$DATABASE_URL_NEON" ]; then
@@ -175,11 +186,15 @@ jobs:
     - name: Verify final database state
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        PGSSLMODE: require
       run: |
         echo "✅ Verifying final Azure database state..."
         node -e "
           const { Client } = require('pg');
-          const client = new Client({ connectionString: process.env.DATABASE_URL });
+          const client = new Client({ 
+            connectionString: process.env.DATABASE_URL,
+            ssl: { rejectUnauthorized: false }
+          });
           
           async function verifyFinalState() {
             try {
