@@ -82,12 +82,16 @@ export default function VideoClass() {
     refetchInterval: 30000, // Check every 30 seconds during video session
   });
 
-  // Fetch chat messages
+  // Fetch chat messages (always enabled to detect new messages)
   const { data: messages = [] } = useQuery<any[]>({
     queryKey: ['/api/bookings', classId, 'messages'],
-    enabled: Boolean(classId) && showChat,
-    refetchInterval: 3000, // Poll every 3 seconds when chat is open
+    enabled: Boolean(classId),
+    refetchInterval: 3000, // Poll every 3 seconds to detect new messages
   });
+  
+  // Track previous message count to detect new messages and initial load state
+  const prevMessagesLengthRef = useRef(messages.length);
+  const isInitialLoadRef = useRef(true);
 
   // Send message mutation
   const sendMessageMutation = useMutation({
@@ -327,6 +331,35 @@ export default function VideoClass() {
     }
   }, [messages, showChat]);
 
+  // Auto-open chat when receiving new messages from other participants
+  useEffect(() => {
+    // Skip the initial load when messages are first populated from history
+    if (isInitialLoadRef.current) {
+      isInitialLoadRef.current = false;
+      prevMessagesLengthRef.current = messages.length;
+      return;
+    }
+    
+    // Detect new messages by comparing with previous count
+    if (messages.length > prevMessagesLengthRef.current && messages.length > 0) {
+      // Get the latest message
+      const latestMessage = messages[messages.length - 1];
+      
+      // Check if the message is from another participant (not current user)
+      if (latestMessage.senderId !== user?.id && !showChat) {
+        setShowChat(true);
+        toast({
+          title: "New Message",
+          description: `${latestMessage.senderName}: ${latestMessage.message.substring(0, 50)}${latestMessage.message.length > 50 ? '...' : ''}`,
+          variant: "default",
+        });
+      }
+    }
+    
+    // Update the previous message count
+    prevMessagesLengthRef.current = messages.length;
+  }, [messages, user?.id, showChat, toast]);
+
   const toggleFullscreen = () => {
     const videoContainer = document.querySelector('.video-container');
     
@@ -420,7 +453,7 @@ export default function VideoClass() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-gray-900 via-black to-gray-800 relative overflow-hidden">
+    <div className="h-dvh min-h-[600px] flex flex-col bg-gradient-to-br from-gray-900 via-black to-gray-800 relative overflow-hidden">
       {/* Class End Warning Modal */}
       {showEndWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-pulse">
@@ -487,7 +520,7 @@ export default function VideoClass() {
       )}
 
       {/* Header */}
-      <div className="bg-black/50 backdrop-blur-sm border-b border-gray-700 p-4">
+      <div className="bg-black/50 backdrop-blur-sm border-b border-gray-700 p-2 md:p-4 flex-shrink-0">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-3">
             <Button
@@ -546,7 +579,7 @@ export default function VideoClass() {
       </div>
 
       {/* Main Video Area */}
-      <div className="flex-1 p-4 overflow-hidden">
+      <div className="flex-1 p-2 md:p-4 overflow-auto min-h-0">
         <div className="max-w-7xl mx-auto h-full">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-full">
             {/* Main Video Area */}
@@ -882,43 +915,43 @@ export default function VideoClass() {
       </div>
 
       {/* Controls */}
-      <div className="bg-black/80 backdrop-blur-sm border-t border-gray-700 p-4 flex-shrink-0">
-        <div className="max-w-7xl mx-auto flex items-center justify-center gap-4">
+      <div className="bg-black/80 backdrop-blur-sm border-t border-gray-700 p-3 md:p-4 flex-shrink-0">
+        <div className="max-w-7xl mx-auto flex items-center justify-center gap-3 md:gap-4">
           <Button
             size="lg"
             variant={isVideoEnabled ? "default" : "secondary"}
             onClick={toggleVideo}
-            className={`rounded-full w-14 h-14 ${isVideoEnabled ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600 hover:bg-gray-700'}`}
+            className={`rounded-full w-12 h-12 md:w-14 md:h-14 ${isVideoEnabled ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600 hover:bg-gray-700'}`}
             data-testid="button-toggle-video"
           >
-            {isVideoEnabled ? <Video className="h-6 w-6" /> : <VideoOff className="h-6 w-6" />}
+            {isVideoEnabled ? <Video className="h-5 w-5 md:h-6 md:w-6" /> : <VideoOff className="h-5 w-5 md:h-6 md:w-6" />}
           </Button>
           
           <Button
             size="lg"
             variant={isAudioEnabled ? "default" : "secondary"}
             onClick={toggleAudio}
-            className={`rounded-full w-14 h-14 ${isAudioEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}
+            className={`rounded-full w-12 h-12 md:w-14 md:h-14 ${isAudioEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}
             data-testid="button-toggle-audio"
           >
-            {isAudioEnabled ? <Mic className="h-6 w-6" /> : <MicOff className="h-6 w-6" />}
+            {isAudioEnabled ? <Mic className="h-5 w-5 md:h-6 md:w-6" /> : <MicOff className="h-5 w-5 md:h-6 md:w-6" />}
           </Button>
           
           <Button
             size="lg"
             variant="destructive"
             onClick={handleEndCall}
-            className="rounded-full w-14 h-14 bg-red-600 hover:bg-red-700"
+            className="rounded-full w-12 h-12 md:w-14 md:h-14 bg-red-600 hover:bg-red-700"
             data-testid="button-end-call"
           >
-            <Phone className="h-6 w-6" />
+            <Phone className="h-5 w-5 md:h-6 md:w-6" />
           </Button>
         </div>
       </div>
 
       {/* Chat Panel - Slide up from bottom */}
       {showChat && (
-        <div className="fixed bottom-20 right-6 w-96 h-[calc(100vh-180px)] max-h-[500px] bg-slate-900 border border-slate-700 rounded-lg shadow-2xl flex flex-col z-50">
+        <div className="fixed bottom-16 md:bottom-20 right-2 md:right-6 w-[calc(100vw-1rem)] max-w-md h-[calc(100dvh-140px)] max-h-[500px] bg-slate-900 border border-slate-700 rounded-lg shadow-2xl flex flex-col z-50">
           <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-t-lg">
             <h3 className="font-semibold flex items-center gap-2">
               <MessageCircle className="h-4 w-4" />
