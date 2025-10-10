@@ -93,6 +93,11 @@ export default function AdminAnalytics() {
     queryKey: ['/api/admin/quantum-tasks'],
   });
 
+  // Admin Stats Query for real data
+  const { data: adminStats } = useQuery<any>({
+    queryKey: ['/api/admin/stats'],
+  });
+
   const handleRefreshAnalytics = async () => {
     setRefreshing(true);
     try {
@@ -226,10 +231,9 @@ export default function AdminAnalytics() {
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold" data-testid="total-revenue">₹32,000</div>
+                  <div className="text-2xl font-bold" data-testid="total-revenue">₹{adminStats?.monthlyRevenue?.toLocaleString() || '0'}</div>
                   <p className="text-xs text-muted-foreground">
-                    <TrendingUp className="inline h-3 w-3 mr-1" />
-                    +14.5% from last month
+                    Current month earnings
                   </p>
                 </CardContent>
               </Card>
@@ -240,10 +244,9 @@ export default function AdminAnalytics() {
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold" data-testid="active-users">267</div>
+                  <div className="text-2xl font-bold" data-testid="active-users">{adminStats?.totalUsers || 0}</div>
                   <p className="text-xs text-muted-foreground">
-                    <TrendingUp className="inline h-3 w-3 mr-1" />
-                    +12.1% from last month
+                    {adminStats?.totalMentors || 0} mentors, {adminStats?.totalStudents || 0} students
                   </p>
                 </CardContent>
               </Card>
@@ -254,10 +257,9 @@ export default function AdminAnalytics() {
                   <Activity className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold" data-testid="total-sessions">890</div>
+                  <div className="text-2xl font-bold" data-testid="total-sessions">{adminStats?.totalBookings || 0}</div>
                   <p className="text-xs text-muted-foreground">
-                    <TrendingUp className="inline h-3 w-3 mr-1" />
-                    +8.7% from last month
+                    {adminStats?.completedBookings || 0} completed
                   </p>
                 </CardContent>
               </Card>
@@ -268,10 +270,9 @@ export default function AdminAnalytics() {
                   <BookOpen className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold" data-testid="course-completion">87%</div>
+                  <div className="text-2xl font-bold" data-testid="course-completion">{adminStats?.completionRate?.toFixed(1) || '0'}%</div>
                   <p className="text-xs text-muted-foreground">
-                    <TrendingUp className="inline h-3 w-3 mr-1" />
-                    +5.3% from last month
+                    Of all bookings
                   </p>
                 </CardContent>
               </Card>
