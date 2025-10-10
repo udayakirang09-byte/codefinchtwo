@@ -1589,7 +1589,22 @@ export const adminUiConfig = pgTable("admin_ui_config", {
     contactUs: true,
   }),
   showHelpCenter: boolean("show_help_center").default(false), // Default unchecked
+  abusiveLanguageMonitoring: boolean("abusive_language_monitoring").default(false), // Abusive language detection toggle
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Abusive Language Incidents
+export const abusiveLanguageIncidents = pgTable("abusive_language_incidents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  userRole: varchar("user_role").notNull(), // student, mentor
+  userName: varchar("user_name").notNull(),
+  abusiveWords: jsonb("abusive_words").$type<string[]>().notNull(),
+  messageText: text("message_text").notNull(),
+  detectedAt: timestamp("detected_at").defaultNow(),
+  adminNotified: boolean("admin_notified").default(false),
+  emailSent: boolean("email_sent").default(false),
 });
 
 // Schema definitions for teacher audio metrics
@@ -1604,6 +1619,8 @@ export const insertRecordingPartSchema = createInsertSchema(recordingParts);
 export const insertMergedRecordingSchema = createInsertSchema(mergedRecordings);
 
 export const insertAdminUiConfigSchema = createInsertSchema(adminUiConfig);
+
+export const insertAbusiveLanguageIncidentSchema = createInsertSchema(abusiveLanguageIncidents);
 
 // Types for teacher audio metrics
 export type TeacherAudioMetrics = typeof teacherAudioMetrics.$inferSelect;
@@ -1623,3 +1640,6 @@ export type InsertMergedRecording = z.infer<typeof insertMergedRecordingSchema>;
 
 export type AdminUiConfig = typeof adminUiConfig.$inferSelect;
 export type InsertAdminUiConfig = z.infer<typeof insertAdminUiConfigSchema>;
+
+export type AbusiveLanguageIncident = typeof abusiveLanguageIncidents.$inferSelect;
+export type InsertAbusiveLanguageIncident = z.infer<typeof insertAbusiveLanguageIncidentSchema>;
