@@ -1647,7 +1647,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get student bookings to calculate progress
       const bookings = await storage.getBookingsByStudent(id);
-      const completedBookings = bookings.filter((b: any) => b.status === 'completed');
+      const now = new Date();
+      
+      // Filter out cancelled bookings
+      const nonCancelledBookings = bookings.filter((b: any) => b.status !== 'cancelled');
+      
+      // Calculate completed bookings: Include both explicitly completed AND scheduled classes past their end time
+      const completedBookings = nonCancelledBookings.filter((b: any) => {
+        if (b.status === 'completed') return true;
+        if (b.status === 'scheduled') {
+          const classEndTime = new Date(new Date(b.scheduledAt).getTime() + b.duration * 60000);
+          return now >= classEndTime;
+        }
+        return false;
+      });
       
       // Get student achievements
       const achievements = await storage.getAchievementsByStudent(id);
@@ -1663,7 +1676,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ];
 
       const progressData = {
-        totalClasses: bookings.length,
+        totalClasses: nonCancelledBookings.length,
         completedClasses: completedBookings.length,
         hoursLearned: Math.round(hoursLearned),
         achievements: achievements.map(a => ({
