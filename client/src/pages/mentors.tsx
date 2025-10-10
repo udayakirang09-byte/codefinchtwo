@@ -198,7 +198,7 @@ export default function Mentors() {
               {/* Price Range Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Price Range: ${priceRange[0]} - ${priceRange[1]}/hour
+                  Price Range: ₹{priceRange[0]} - ₹{priceRange[1]}
                 </label>
                 <Slider
                   value={priceRange}
@@ -290,7 +290,7 @@ export default function Mentors() {
                     </div>
                     {mentor.hourlyRate && (
                       <p className="text-lg font-bold text-green-600">
-                        ${mentor.hourlyRate}/hour
+                        ₹{mentor.hourlyRate}
                       </p>
                     )}
                   </div>
