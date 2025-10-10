@@ -82,7 +82,6 @@ interface TeacherStats {
   monthlyEarnings: number;
   averageRating: number;
   completedSessions: number;
-  upcomingSessions?: number;
   totalEarnings?: number;
   averageSessionEarnings?: number;
   totalReviews?: number;
