@@ -919,63 +919,6 @@ export default function TeacherDashboard() {
           </CardContent>
         </Card>
 
-        {/* Class Dues Analytics Section */}
-        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-orange-500 to-red-600 text-white">
-            <CardTitle className="flex items-center gap-3 text-xl">
-              <TrendingUp className="h-6 w-6" />
-              Class Dues Analytics
-              <Button
-                variant="secondary"
-                size="sm"
-                className="ml-auto bg-white/20 text-white border-white/30 hover:bg-white/30"
-                data-testid="button-view-details"
-              >
-                View Details
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Active Classes */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 border border-blue-200 rounded-xl p-6 text-center">
-                <div className="text-4xl font-bold text-blue-600 mb-2" data-testid="metric-active-classes">
-                  {stats?.upcomingSessions || 0}
-                </div>
-                <div className="text-sm font-medium text-gray-700">Active classes</div>
-                <p className="text-xs text-gray-500 mt-1">Upcoming sessions</p>
-              </div>
-
-              {/* Pending Withdrawals */}
-              <div className="bg-gradient-to-br from-yellow-50 to-amber-100 border border-yellow-200 rounded-xl p-6 text-center">
-                <div className="text-4xl font-bold text-yellow-600 mb-2" data-testid="metric-pending-withdrawals">
-                  ₹{stats?.monthlyEarnings || 0}
-                </div>
-                <div className="text-sm font-medium text-gray-700">Pending withdrawals</div>
-                <p className="text-xs text-gray-500 mt-1">24-hour hold period</p>
-              </div>
-
-              {/* Total Revenue */}
-              <div className="bg-gradient-to-br from-green-50 to-emerald-100 border border-green-200 rounded-xl p-6 text-center">
-                <div className="text-4xl font-bold text-green-600 mb-2" data-testid="metric-total-revenue">
-                  ₹{stats?.totalEarnings || 0}
-                </div>
-                <div className="text-sm font-medium text-gray-700">Total revenue</div>
-                <p className="text-xs text-gray-500 mt-1">All completed classes</p>
-              </div>
-
-              {/* Unsettled Amount */}
-              <div className="bg-gradient-to-br from-red-50 to-rose-100 border border-red-200 rounded-xl p-6 text-center">
-                <div className="text-4xl font-bold text-red-600 mb-2" data-testid="metric-unsettled-amount">
-                  ₹0
-                </div>
-                <div className="text-sm font-medium text-gray-700">Unsettled amount</div>
-                <p className="text-xs text-gray-500 mt-1">Conflict resolution</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Beautiful Notifications Panel */}
         {notifications.length > 0 && (
           <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">

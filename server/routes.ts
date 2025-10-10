@@ -2837,8 +2837,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const completedBookings = teacherBookings.filter((b: any) => b.status === 'completed');
       const scheduledBookings = teacherBookings.filter((b: any) => b.status === 'scheduled');
       
-      // Calculate unique students from COMPLETED bookings only (those with submitted feedback)
-      const uniqueStudentIds = new Set(completedBookings.map((b: any) => b.studentId));
+      // Calculate unique students from ALL bookings (scheduled + completed)
+      const uniqueStudentIds = new Set(teacherBookings.map((b: any) => b.studentId));
       const totalStudents = uniqueStudentIds.size;
       
       // Calculate earnings from booking amount field
