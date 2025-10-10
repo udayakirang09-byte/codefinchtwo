@@ -266,7 +266,7 @@ export function generateClassDeletionEmail(
           <div class="warning-box">
             <h3>💰 Refund Information:</h3>
             <p>A refund of <strong>₹${refundAmount}</strong> will be initiated within 48 hours and processed to your original payment method within 3-5 business days thereafter.</p>
-            <p><strong>Important:</strong> The refund will be initiated only for classes deleted at least 48 hours before the scheduled time.</p>
+            <p>**Important:</strong> The refund will be initiated only for classes deleted at least 48 hours before the scheduled time.</p>
           </div>
           ` : ''}
 
@@ -300,6 +300,105 @@ Important: The refund will be initiated only for classes deleted at least 48 hou
 ` : ''}
 
 If you have any questions or concerns, please contact our support team at support@codeconnect.com
+
+© 2025 CodeConnect. All rights reserved.
+  `;
+
+  return { subject, html, text };
+}
+
+export function generateAbusiveLanguageAlertEmail(
+  adminEmail: string,
+  incident: {
+    userName: string;
+    userRole: string;
+    messageText: string;
+    detectedWords: string[];
+    severity: string;
+    bookingId: string;
+    detectedAt: Date;
+  }
+): { subject: string, html: string, text: string } {
+  const subject = `🚨 Abusive Language Alert - ${incident.severity.toUpperCase()} Severity`;
+  
+  const severityColor = incident.severity === 'high' ? '#ef4444' : 
+                       incident.severity === 'medium' ? '#f97316' : '#eab308';
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }
+        .alert-box { background: #fff; border-left: 4px solid ${severityColor}; padding: 15px; margin: 20px 0; }
+        .severity-badge { display: inline-block; padding: 5px 15px; background: ${severityColor}; color: white; border-radius: 4px; font-weight: bold; }
+        .word-badge { display: inline-block; padding: 3px 10px; background: #fca5a5; color: #7f1d1d; border-radius: 4px; margin: 2px; font-family: monospace; }
+        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🚨 Abusive Language Detected</h1>
+          <p>CodeConnect Admin Alert System</p>
+        </div>
+        <div class="content">
+          <p>Hello Admin,</p>
+          <p>An abusive language incident has been detected in a video session chat.</p>
+          
+          <div class="alert-box">
+            <h3>Incident Details:</h3>
+            <ul>
+              <li><strong>User:</strong> ${incident.userName} (${incident.userRole})</li>
+              <li><strong>Severity:</strong> <span class="severity-badge">${incident.severity.toUpperCase()}</span></li>
+              <li><strong>Time:</strong> ${incident.detectedAt.toLocaleString()}</li>
+              <li><strong>Booking ID:</strong> ${incident.bookingId}</li>
+            </ul>
+          </div>
+
+          <div class="alert-box">
+            <h3>Message:</h3>
+            <p style="background: #fee; padding: 10px; border-radius: 4px; font-style: italic;">${incident.messageText}</p>
+          </div>
+
+          <div class="alert-box">
+            <h3>Detected Abusive Words:</h3>
+            <p>${incident.detectedWords.map(word => `<span class="word-badge">${word}</span>`).join(' ')}</p>
+          </div>
+
+          <p><strong>Action Required:</strong> Please review this incident and take appropriate action if necessary. You can view all incidents in the admin dashboard.</p>
+          <p><a href="${process.env.REPLIT_DEV_DOMAIN || 'https://codeconnect.com'}/admin/abusive-incidents" style="display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 6px; margin-top: 10px;">View Incidents Dashboard</a></p>
+        </div>
+        <div class="footer">
+          <p>© 2025 CodeConnect. All rights reserved.</p>
+          <p>This alert was sent to ${adminEmail}</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+🚨 Abusive Language Alert - CodeConnect
+
+An abusive language incident has been detected in a video session chat.
+
+Incident Details:
+- User: ${incident.userName} (${incident.userRole})
+- Severity: ${incident.severity.toUpperCase()}
+- Time: ${incident.detectedAt.toLocaleString()}
+- Booking ID: ${incident.bookingId}
+
+Message:
+"${incident.messageText}"
+
+Detected Abusive Words: ${incident.detectedWords.join(', ')}
+
+Action Required: Please review this incident and take appropriate action if necessary.
+View all incidents at: ${process.env.REPLIT_DEV_DOMAIN || 'https://codeconnect.com'}/admin/abusive-incidents
 
 © 2025 CodeConnect. All rights reserved.
   `;

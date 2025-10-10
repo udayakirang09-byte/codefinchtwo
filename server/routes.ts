@@ -2464,6 +2464,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const userRole = user[0]?.role || 'unknown';
 
             // Create incident record
+            const incidentDate = new Date();
             await db.insert(abusiveLanguageIncidents).values({
               bookingId,
               userId: senderId,
@@ -2472,10 +2473,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
               messageText: message,
               detectedWords: detection.detectedWords,
               severity: detection.severity,
-              detectedAt: new Date()
+              detectedAt: incidentDate
             });
 
             console.log(`✅ Abusive language incident recorded for user ${senderName} (${userRole})`);
+
+            // Send email notifications to all admins
+            try {
+              const admins = await db.select().from(users).where(eq(users.role, 'admin'));
+              const { generateAbusiveLanguageAlertEmail, sendEmail } = await import('./email');
+              
+              for (const admin of admins) {
+                const emailContent = generateAbusiveLanguageAlertEmail(admin.email, {
+                  userName: senderName,
+                  userRole,
+                  messageText: message,
+                  detectedWords: detection.detectedWords,
+                  severity: detection.severity,
+                  bookingId,
+                  detectedAt: incidentDate
+                });
+
+                await sendEmail({
+                  to: admin.email,
+                  subject: emailContent.subject,
+                  text: emailContent.text,
+                  html: emailContent.html
+                });
+
+                console.log(`📧 Abusive language alert sent to admin: ${admin.email}`);
+              }
+            } catch (emailError) {
+              console.error("❌ Error sending abusive language email alerts:", emailError);
+              // Don't fail incident recording if email fails
+            }
           }
         }
       } catch (monitorError) {
