@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useWebRTC } from "@/hooks/use-webrtc";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Video, VideoOff, Mic, MicOff, Users, MessageCircle, Phone, Settings, AlertTriangle, Wifi, WifiOff, Shield, Monitor, Home, ArrowLeft, Maximize, Minimize, Send, X } from "lucide-react";
+import { Video, VideoOff, Mic, MicOff, Users, MessageCircle, Phone, Settings, AlertTriangle, Wifi, WifiOff, Shield, Monitor, Home, ArrowLeft, Maximize, Minimize, Send, X, Hand } from "lucide-react";
 
 export default function VideoClass() {
   const [, params] = useRoute("/video-class/:id");
@@ -27,6 +27,7 @@ export default function VideoClass() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [newMessage, setNewMessage] = useState("");
+  const [isHandRaised, setIsHandRaised] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -35,6 +36,12 @@ export default function VideoClass() {
   const { data: bookingData } = useQuery<any>({
     queryKey: ['/api/bookings', classId],
     enabled: Boolean(classId),
+  });
+
+  // Query to get course enrollments if this is a course class
+  const { data: courseEnrollments } = useQuery<any[]>({
+    queryKey: ['/api/courses', bookingData?.courseId, 'enrollments'],
+    enabled: Boolean(bookingData?.courseId),
   });
   
   // Determine teacher role based on booking data
@@ -74,6 +81,47 @@ export default function VideoClass() {
       }
     }
   });
+
+  // Validate participant access - placed after useWebRTC to access participants
+  const participantAccessError = useMemo(() => {
+    if (!bookingData || !user?.id) return null;
+
+    const teacherId = bookingData.mentor?.user?.id;
+    
+    // If user is the teacher, always allow
+    if (user.id === teacherId) return null;
+
+    // For single class (no courseId): Only the specific student can join
+    if (!bookingData.courseId) {
+      const studentUserId = bookingData.student?.user?.id;
+      if (user.id !== studentUserId) {
+        return "You are not enrolled in this class. Only the enrolled student and teacher can join.";
+      }
+      return null;
+    }
+
+    // For course class: Check if user is enrolled in the course
+    if (bookingData.courseId && courseEnrollments) {
+      const isEnrolled = courseEnrollments.some(
+        enrollment => enrollment.student?.user?.id === user.id
+      );
+      
+      if (!isEnrolled) {
+        return "You are not enrolled in this course. Only enrolled students and the teacher can join.";
+      }
+      
+      // Check participant limit for courses (max 5: 1 teacher + 4 students)
+      // Count only other participants (excluding current user)
+      const otherParticipants = participants.filter(p => p.userId !== user.id);
+      if (otherParticipants.length >= 5) {
+        return "This session has reached the maximum participant limit (5 participants).";
+      }
+      
+      return null;
+    }
+
+    return null;
+  }, [bookingData, user?.id, courseEnrollments, participants]);
 
   // Query to check for multiple login users
   const { data: multipleLogins, refetch: refetchMultipleLogins } = useQuery({
@@ -308,6 +356,31 @@ export default function VideoClass() {
     setLocation('/');
   };
 
+  const toggleHandRaise = () => {
+    const newHandRaisedState = !isHandRaised;
+    setIsHandRaised(newHandRaisedState);
+    
+    if (newHandRaisedState) {
+      toast({
+        title: "Hand Raised",
+        description: "The teacher has been notified",
+        variant: "default",
+      });
+      
+      // TODO: Send hand raise notification via WebSocket to teacher
+      // For now, we'll use the chat system to notify
+      if (!isTeacher) {
+        sendMessageMutation.mutate(`🖐️ ${user?.email?.split('@')[0] || 'Student'} raised their hand`);
+      }
+    } else {
+      toast({
+        title: "Hand Lowered",
+        description: "Hand has been lowered",
+        variant: "default",
+      });
+    }
+  };
+
   const handleOpenChat = () => {
     setShowChat(!showChat);
   };
@@ -452,17 +525,45 @@ export default function VideoClass() {
     );
   }
 
+  // Show error if participant access is denied
+  if (participantAccessError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex items-center justify-center">
+        <div className="max-w-md mx-4">
+          <Card className="bg-gradient-to-br from-red-900 to-red-800 border-red-700">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Shield className="h-6 w-6" />
+                Access Denied
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-red-100 mb-4">{participantAccessError}</p>
+              <Button 
+                onClick={() => setLocation('/')} 
+                className="w-full bg-white text-red-900 hover:bg-gray-100"
+                data-testid="button-back-home"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Home
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-dvh min-h-[600px] flex flex-col bg-gradient-to-br from-gray-900 via-black to-gray-800 relative overflow-hidden">
-      {/* Class End Warning Modal */}
+      {/* Class End Warning Banner - Non-blocking */}
       {showEndWarning && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-pulse">
-          <div className="bg-gradient-to-br from-red-600 to-red-700 p-8 rounded-2xl shadow-2xl max-w-md mx-4 border-2 border-red-400">
+        <div className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-yellow-500 to-yellow-600 p-4 shadow-lg border-b-2 border-yellow-400">
+          <div className="max-w-7xl mx-auto flex items-center justify-center gap-3">
+            <AlertTriangle className="h-6 w-6 text-yellow-900 animate-pulse" />
             <div className="text-center">
-              <AlertTriangle className="h-16 w-16 text-white mx-auto mb-4 animate-bounce" />
-              <h2 className="text-2xl font-bold text-white mb-3">Class Time Completed</h2>
-              <p className="text-red-100 text-lg mb-2">Session will close in 4 minutes</p>
-              <p className="text-red-200 text-sm">Please wrap up your discussion</p>
+              <h3 className="text-lg font-bold text-yellow-900">Class Time Completed</h3>
+              <p className="text-yellow-800 text-sm">Session will close in 4 minutes - Please wrap up your discussion</p>
             </div>
           </div>
         </div>
@@ -864,16 +965,31 @@ export default function VideoClass() {
                     Open Chat
                   </Button>
                   
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={startScreenShare}
-                    className="w-full !bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white border-green-600 shadow-lg shadow-green-600/20 transition-all"
-                    data-testid="button-screen-share"
-                  >
-                    <Monitor className="h-4 w-4 mr-2" />
-                    Share Screen
-                  </Button>
+                  {isTeacher && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={startScreenShare}
+                      className="w-full !bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white border-green-600 shadow-lg shadow-green-600/20 transition-all"
+                      data-testid="button-screen-share"
+                    >
+                      <Monitor className="h-4 w-4 mr-2" />
+                      Share Screen
+                    </Button>
+                  )}
+                  
+                  {!isTeacher && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={toggleHandRaise}
+                      className={`w-full ${isHandRaised ? '!bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700' : '!bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800'} text-white border-${isHandRaised ? 'yellow' : 'blue'}-600 shadow-lg shadow-${isHandRaised ? 'yellow' : 'blue'}-600/20 transition-all`}
+                      data-testid="button-hand-raise"
+                    >
+                      <Hand className={`h-4 w-4 mr-2 ${isHandRaised ? 'animate-bounce' : ''}`} />
+                      {isHandRaised ? 'Lower Hand' : 'Raise Hand'}
+                    </Button>
+                  )}
                   
                   {isTeacher && (
                     <>
