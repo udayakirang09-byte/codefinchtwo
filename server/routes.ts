@@ -2864,7 +2864,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const mentorId = teacherUser[0].mentorId;
       
-      // Get real bookings for this teacher with amount field
+      // Get real bookings for this teacher with amount from subject fee configuration
       const teacherBookings = await db.select({
         id: bookings.id,
         studentId: bookings.studentId,
@@ -2872,9 +2872,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         scheduledAt: bookings.scheduledAt,
         duration: bookings.duration,
         status: bookings.status,
-        amount: sql<number>`150` // Default amount since not in schema
+        subject: bookings.subject,
+        amount: sql<number>`COALESCE(${teacherSubjects.classFee}::numeric, 150)` // Use subject-specific fee or default to 150
       })
       .from(bookings)
+      .leftJoin(teacherSubjects, and(
+        eq(teacherSubjects.mentorId, bookings.mentorId),
+        eq(teacherSubjects.subject, bookings.subject)
+      ))
       .where(eq(bookings.mentorId, mentorId));
       
       const now = new Date();
@@ -2903,8 +2908,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const uniqueStudentIds = new Set(nonCancelledBookings.map((b: any) => b.studentId));
       const totalStudents = uniqueStudentIds.size;
       
-      // Calculate earnings from booking amount field
-      const totalEarnings = completedBookings.reduce((sum: number, b: any) => sum + (b.amount || 0), 0);
+      // Calculate earnings from booking amount field (convert to number since DB returns numeric as string)
+      const totalEarnings = completedBookings.reduce((sum: number, b: any) => sum + (Number(b.amount) || 0), 0);
       
       // Calculate actual monthly earnings from completed bookings in the current month
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -2912,7 +2917,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const bookingDate = new Date(b.scheduledAt);
         return bookingDate >= firstDayOfMonth;
       });
-      const monthlyEarnings = monthlyCompletedBookings.reduce((sum: number, b: any) => sum + b.amount, 0);
+      const monthlyEarnings = monthlyCompletedBookings.reduce((sum: number, b: any) => sum + Number(b.amount), 0);
       
       // Get feedback from classFeedback table - last 6 months only for average rating
       const sixMonthsAgo = new Date();
