@@ -1668,12 +1668,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate hours learned (assuming 60 minutes per booking)
       const hoursLearned = completedBookings.reduce((total, booking) => total + (booking.duration / 60), 0);
       
-      // Mock skill levels for now - in real app this would come from detailed tracking
-      const skillLevels = [
-        { skill: "JavaScript", level: Math.min(completedBookings.length * 15, 100), classes: completedBookings.length },
-        { skill: "Python", level: Math.min(completedBookings.length * 12, 100), classes: Math.floor(completedBookings.length * 0.8) },
-        { skill: "HTML/CSS", level: Math.min(completedBookings.length * 18, 100), classes: Math.floor(completedBookings.length * 0.6) }
-      ];
+      // Calculate skill levels based on actual booking subjects
+      const subjectMap = new Map<string, { total: number; completed: number }>();
+      
+      nonCancelledBookings.forEach((booking: any) => {
+        const subject = booking.subject || 'General Coding';
+        if (!subjectMap.has(subject)) {
+          subjectMap.set(subject, { total: 0, completed: 0 });
+        }
+        const stats = subjectMap.get(subject)!;
+        stats.total++;
+        
+        // Check if this booking is completed
+        const isCompleted = booking.status === 'completed' || 
+          (booking.status === 'scheduled' && 
+           now >= new Date(new Date(booking.scheduledAt).getTime() + booking.duration * 60000));
+        
+        if (isCompleted) {
+          stats.completed++;
+        }
+      });
+      
+      const skillLevels = Array.from(subjectMap.entries()).map(([skill, stats]) => ({
+        skill,
+        level: stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0,
+        classesCompleted: stats.completed,
+        totalClasses: stats.total
+      }));
 
       const progressData = {
         totalClasses: nonCancelledBookings.length,
