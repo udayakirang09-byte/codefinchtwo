@@ -33,11 +33,8 @@ export default function HeroSection() {
                 className="bg-white text-primary px-8 py-4 hover:bg-white/90 hover-lift font-semibold text-lg"
                 data-testid="button-learn"
                 onClick={() => {
-                  console.log('📚 I Want to Learn button clicked - scrolling to mentor discovery');
-                  const discoverSection = document.getElementById('discover');
-                  if (discoverSection) {
-                    discoverSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }
+                  console.log('📚 I Want to Learn button clicked - navigating to signup');
+                  navigate('/signup');
                 }}
               >
                 <GraduationCap className="mr-2" size={20} />

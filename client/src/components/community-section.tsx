@@ -26,9 +26,8 @@ export default function CommunitySection() {
               className="bg-white text-primary hover:bg-white/90 transition-colors"
               data-testid="button-join-student-community"
               onClick={() => {
-                console.log('Join Student Community button clicked');
-                // Navigate to courses page to start learning
-                window.location.href = '/courses';
+                console.log('Join Student Community button clicked - navigating to signup');
+                navigate('/signup');
               }}
             >
               Join Student Community
