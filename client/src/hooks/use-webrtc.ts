@@ -382,87 +382,135 @@ export function useWebRTC({
 
   // Connect to WebSocket and join session
   const connect = useCallback(async () => {
-    try {
-      setError(null); // Clear any previous errors
-      console.log('📞 Starting connection process...');
-      
-      // Check if mediaDevices is supported
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        console.warn('⚠️ Camera/microphone not supported in this environment');
-        // Continue without media for now (chat-only mode)
-      } else {
-        // Initialize local stream first with timeout
-        console.log('⏱️ Requesting media access with 10s timeout...');
-        const streamPromise = initializeLocalStream();
-        const timeoutPromise = new Promise<null>((_, reject) => 
-          setTimeout(() => reject(new Error('Camera/microphone access timeout')), 10000)
-        );
+    return new Promise<void>(async (resolve, reject) => {
+      try {
+        setError(null); // Clear any previous errors
+        console.log('📞 Starting connection process...');
         
-        const stream = await Promise.race([streamPromise, timeoutPromise]);
-        
-        if (!stream) {
-          const errorMessage = 'Camera and microphone access denied. Please allow access to join the video session.';
-          console.error('❌', errorMessage);
-          setError(errorMessage);
-          setConnectionQuality('disconnected');
-          throw new Error(errorMessage);
+        // Check if mediaDevices is supported
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          console.warn('⚠️ Camera/microphone not supported in this environment');
+          // Continue without media for now (chat-only mode)
+        } else {
+          // Initialize local stream first with timeout
+          console.log('⏱️ Requesting media access with 10s timeout...');
+          const streamPromise = initializeLocalStream();
+          const timeoutPromise = new Promise<null>((_, reject) => 
+            setTimeout(() => reject(new Error('Camera/microphone access timeout')), 10000)
+          );
+          
+          const stream = await Promise.race([streamPromise, timeoutPromise]);
+          
+          if (!stream) {
+            const errorMessage = 'Camera and microphone access denied. Please allow access to join the video session.';
+            console.error('❌', errorMessage);
+            setError(errorMessage);
+            setConnectionQuality('disconnected');
+            reject(new Error(errorMessage));
+            return;
+          }
+          
+          console.log('✅ Local stream initialized successfully');
         }
         
-        console.log('✅ Local stream initialized successfully');
-      }
-      
-      // Connect to WebSocket on specific path to avoid Vite HMR conflicts
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/video-signaling`;
-      
-      console.log('Connecting to WebSocket:', wsUrl);
-      wsRef.current = new WebSocket(wsUrl);
-      
-      wsRef.current.onopen = () => {
-        console.log('WebSocket connected successfully');
+        // Connect to WebSocket on specific path to avoid Vite HMR conflicts
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/video-signaling`;
         
-        // Authenticate first
-        if (wsRef.current) {
-          wsRef.current.send(JSON.stringify({
+        console.log('Connecting to WebSocket:', wsUrl);
+        const ws = new WebSocket(wsUrl);
+        
+        // Track if promise is settled to prevent double resolve/reject
+        let isSettled = false;
+        
+        // Set timeout for connection
+        const connectionTimeout = setTimeout(() => {
+          if (!isSettled && ws.readyState !== WebSocket.OPEN) {
+            isSettled = true;
+            ws.close();
+            const errorMsg = 'WebSocket connection timeout';
+            console.error('❌', errorMsg);
+            setError(errorMsg);
+            setConnectionQuality('disconnected');
+            wsRef.current = null;
+            reject(new Error(errorMsg));
+          }
+        }, 10000); // 10 second timeout
+        
+        ws.onopen = () => {
+          console.log('WebSocket connected successfully');
+          
+          // Authenticate first
+          ws.send(JSON.stringify({
             type: 'authenticate',
             userId,
             sessionToken: 'placeholder-token' // In production: use real JWT/session
           }));
-        }
-      };
-      
-      wsRef.current.onmessage = async (event) => {
-        const data = JSON.parse(event.data);
+        };
         
-        switch (data.type) {
-          case 'authenticated':
-            console.log('Authenticated successfully');
-            setIsConnected(true);
-            setConnectionQuality('good');
-            
-            // CRITICAL FIX: Only join video session if local stream is ready
-            // This prevents creating peer connections without tracks
-            if (cameraStreamRef.current && wsRef.current) {
-              console.log('✅ Local stream ready - joining video session immediately');
-              console.log('📊 Stream details:', {
-                videoTracks: cameraStreamRef.current.getVideoTracks().length,
-                audioTracks: cameraStreamRef.current.getAudioTracks().length
-              });
-              wsRef.current.send(JSON.stringify({
-                type: 'join-video-session',
-                sessionId,
-                isTeacher
-              }));
-            } else {
-              console.warn('⚠️ Local stream not ready yet - will join after initialization completes');
-              // Store pending join - will be processed when stream is ready
-              (wsRef.current as any).pendingJoin = { sessionId, isTeacher };
-            }
-            break;
+        ws.onerror = (error: Event) => {
+          if (!isSettled) {
+            isSettled = true;
+            clearTimeout(connectionTimeout);
+            console.error('WebSocket error event:', error);
+            console.error('WebSocket ready state:', ws.readyState);
+            const errorMsg = 'WebSocket connection error. Please check your network connection.';
+            setConnectionQuality('poor');
+            setError(errorMsg);
+            wsRef.current = null;
+            reject(new Error(errorMsg));
+          }
+        };
+        
+        // Store the WebSocket reference
+        wsRef.current = ws;
+        
+        ws.onmessage = async (event) => {
+          const data = JSON.parse(event.data);
+          
+          switch (data.type) {
+            case 'authenticated':
+              if (!isSettled) {
+                isSettled = true;
+                clearTimeout(connectionTimeout);
+                console.log('Authenticated successfully');
+                setIsConnected(true);
+                setConnectionQuality('good');
+                resolve(); // Resolve the Promise on successful authentication
+              }
+              
+              // CRITICAL FIX: Only join video session if local stream is ready
+              // This prevents creating peer connections without tracks
+              if (cameraStreamRef.current && wsRef.current) {
+                console.log('✅ Local stream ready - joining video session immediately');
+                console.log('📊 Stream details:', {
+                  videoTracks: cameraStreamRef.current.getVideoTracks().length,
+                  audioTracks: cameraStreamRef.current.getAudioTracks().length
+                });
+                wsRef.current.send(JSON.stringify({
+                  type: 'join-video-session',
+                  sessionId,
+                  isTeacher
+                }));
+              } else {
+                console.warn('⚠️ Local stream not ready yet - will join after initialization completes');
+                // Store pending join - will be processed when stream is ready
+                (wsRef.current as any).pendingJoin = { sessionId, isTeacher };
+              }
+              break;
             
           case 'auth-failed':
-            console.error('Authentication failed:', data.message);
-            setConnectionQuality('disconnected');
+            if (!isSettled) {
+              isSettled = true;
+              clearTimeout(connectionTimeout);
+              const errorMsg = `Authentication failed: ${data.message}`;
+              console.error('❌', errorMsg);
+              setError(errorMsg);
+              setConnectionQuality('disconnected');
+              ws.close();
+              wsRef.current = null;
+              reject(new Error(errorMsg));
+            }
             break;
             
           case 'error':
@@ -556,22 +604,25 @@ export function useWebRTC({
         }
       };
       
-      wsRef.current.onclose = (event) => {
+      ws.onclose = (event) => {
         console.log('WebSocket disconnected. Code:', event.code, 'Reason:', event.reason, 'Clean:', event.wasClean);
         setIsConnected(false);
         setConnectionQuality('disconnected');
         
-        // Show error if connection closed unexpectedly
-        if (!event.wasClean) {
+        // If promise not yet settled, reject it regardless of clean/unclean close
+        if (!isSettled) {
+          isSettled = true;
+          clearTimeout(connectionTimeout);
+          const errorMsg = event.wasClean 
+            ? 'Connection closed before authentication' 
+            : `Connection lost: ${event.reason || 'Unknown error'}`;
+          setError(errorMsg);
+          wsRef.current = null;
+          reject(new Error(errorMsg));
+        } else if (!event.wasClean) {
+          // If already settled but unclean close, just show error
           setError(`Connection lost: ${event.reason || 'Unknown error'}`);
         }
-      };
-      
-      wsRef.current.onerror = (error: Event) => {
-        console.error('WebSocket error event:', error);
-        console.error('WebSocket ready state:', wsRef.current?.readyState);
-        setConnectionQuality('poor');
-        setError('WebSocket connection error. Please check your network connection.');
       };
       
     } catch (error) {
@@ -579,9 +630,13 @@ export function useWebRTC({
       setConnectionQuality('disconnected');
       if (!error || typeof error !== 'object' || !('message' in error)) {
         setError('Failed to connect to video session');
+        reject(new Error('Failed to connect to video session'));
+      } else {
+        reject(error);
       }
       // Error message already set if it's the camera/mic error
     }
+    });
   }, [sessionId, userId, isTeacher, initializeLocalStream, sendOffer, handleOffer, handleAnswer, handleIceCandidate, onParticipantJoin, onParticipantLeave]);
 
   // Disconnect from session
@@ -651,6 +706,8 @@ export function useWebRTC({
   // Auto-connect on mount and reconnect when userId changes
   useEffect(() => {
     let mounted = true;
+    let retryCount = 0;
+    const maxRetries = 3;
     
     // Don't connect if userId is still loading or invalid
     if (!userId || userId === 'loading') {
@@ -659,12 +716,26 @@ export function useWebRTC({
     }
     
     const initConnection = async () => {
-      if (mounted) {
+      while (mounted && retryCount < maxRetries) {
         try {
+          console.log(`🔄 Attempt ${retryCount + 1}/${maxRetries} to connect WebRTC...`);
           await connect();
+          console.log('✅ WebRTC connected successfully');
+          break; // Exit retry loop on success
         } catch (error) {
-          console.error('Connection failed in useEffect:', error);
-          // Error is already handled in connect() function
+          retryCount++;
+          console.error(`❌ Connection attempt ${retryCount} failed:`, error);
+          
+          if (retryCount < maxRetries && mounted) {
+            const delay = retryCount * 2000; // Exponential backoff
+            console.log(`⏳ Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          } else if (retryCount >= maxRetries) {
+            const errorMsg = 'Failed to establish video connection after 3 attempts. Please refresh the page.';
+            console.error('❌ Max retries reached:', errorMsg);
+            setError(errorMsg);
+            setConnectionQuality('disconnected');
+          }
         }
       }
     };

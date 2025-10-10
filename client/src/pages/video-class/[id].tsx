@@ -420,7 +420,7 @@ export default function VideoClass() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 relative">
+    <div className="h-screen flex flex-col bg-gradient-to-br from-gray-900 via-black to-gray-800 relative overflow-hidden">
       {/* Class End Warning Modal */}
       {showEndWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-pulse">
@@ -546,9 +546,9 @@ export default function VideoClass() {
       </div>
 
       {/* Main Video Area */}
-      <div className="flex-1 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
+      <div className="flex-1 p-4 overflow-hidden">
+        <div className="max-w-7xl mx-auto h-full">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-full">
             {/* Main Video Area */}
             <div className="lg:col-span-3">
               <Card className="h-full bg-gray-900 border-gray-700 video-container">
@@ -882,7 +882,7 @@ export default function VideoClass() {
       </div>
 
       {/* Controls */}
-      <div className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm border-t border-gray-700 p-6">
+      <div className="bg-black/80 backdrop-blur-sm border-t border-gray-700 p-4 flex-shrink-0">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-4">
           <Button
             size="lg"
@@ -918,7 +918,7 @@ export default function VideoClass() {
 
       {/* Chat Panel - Slide up from bottom */}
       {showChat && (
-        <div className="fixed bottom-24 right-6 w-96 h-[500px] bg-slate-900 border border-slate-700 rounded-lg shadow-2xl flex flex-col z-50">
+        <div className="fixed bottom-20 right-6 w-96 h-[calc(100vh-180px)] max-h-[500px] bg-slate-900 border border-slate-700 rounded-lg shadow-2xl flex flex-col z-50">
           <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-t-lg">
             <h3 className="font-semibold flex items-center gap-2">
               <MessageCircle className="h-4 w-4" />
