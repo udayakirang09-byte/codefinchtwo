@@ -35,6 +35,7 @@ interface FooterLinks {
 interface UiConfig {
   footerLinks: FooterLinks;
   showHelpCenter: boolean;
+  abusiveLanguageMonitoring: boolean;
 }
 
 export default function AdminUiConfig() {
@@ -55,6 +56,7 @@ export default function AdminUiConfig() {
   });
 
   const [showHelpCenter, setShowHelpCenter] = useState(false);
+  const [abusiveLanguageMonitoring, setAbusiveLanguageMonitoring] = useState(false);
 
   // Fetch current UI configuration
   const { data: uiConfig, isLoading, error } = useQuery<UiConfig>({
@@ -71,13 +73,14 @@ export default function AdminUiConfig() {
     if (uiConfig) {
       setFooterLinks(uiConfig.footerLinks);
       setShowHelpCenter(uiConfig.showHelpCenter);
+      setAbusiveLanguageMonitoring(uiConfig.abusiveLanguageMonitoring || false);
       setHasChanges(false);
     }
   }, [uiConfig]);
 
   // Update UI config mutation
   const updateConfigMutation = useMutation({
-    mutationFn: async (config: { footerLinks: FooterLinks; showHelpCenter: boolean }) => {
+    mutationFn: async (config: { footerLinks: FooterLinks; showHelpCenter: boolean; abusiveLanguageMonitoring: boolean }) => {
       const response = await apiRequest('PUT', '/api/admin/ui-config', config);
       return response;
     },
@@ -111,14 +114,20 @@ export default function AdminUiConfig() {
     setHasChanges(true);
   };
 
+  const handleAbusiveLanguageMonitoringToggle = () => {
+    setAbusiveLanguageMonitoring(prev => !prev);
+    setHasChanges(true);
+  };
+
   const handleSave = () => {
-    updateConfigMutation.mutate({ footerLinks, showHelpCenter });
+    updateConfigMutation.mutate({ footerLinks, showHelpCenter, abusiveLanguageMonitoring });
   };
 
   const handleReset = () => {
     if (uiConfig) {
       setFooterLinks(uiConfig.footerLinks);
       setShowHelpCenter(uiConfig.showHelpCenter);
+      setAbusiveLanguageMonitoring(uiConfig.abusiveLanguageMonitoring || false);
       setHasChanges(false);
     }
   };
@@ -309,6 +318,38 @@ export default function AdminUiConfig() {
                     checked={showHelpCenter}
                     onCheckedChange={handleHelpCenterToggle}
                     data-testid="switch-help-center"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Security & Monitoring Configuration */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5 text-red-500" />
+                  Security & Monitoring
+                </CardTitle>
+                <CardDescription>
+                  Configure security and monitoring features for video sessions
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
+                  <div className="flex-1">
+                    <Label htmlFor="abusive-language" className="cursor-pointer text-base font-medium">
+                      Abusive Language Monitoring
+                    </Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Enable real-time detection of abusive language in video session chats. 
+                      When enabled, admins will receive immediate notifications via red blinking alert and email when offensive words are detected.
+                    </p>
+                  </div>
+                  <Switch
+                    id="abusive-language"
+                    checked={abusiveLanguageMonitoring}
+                    onCheckedChange={handleAbusiveLanguageMonitoringToggle}
+                    data-testid="switch-abusive-language-monitoring"
                   />
                 </div>
               </CardContent>
