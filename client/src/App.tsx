@@ -57,6 +57,7 @@ import PaymentConfig from "./pages/admin/payment-config";
 import UiConfig from "./pages/admin/ui-config";
 import FinanceDashboard from "./pages/admin/finance-dashboard";
 import StorageConfig from "./pages/admin/storage-config";
+import AbusiveIncidentsPage from "./pages/admin/abusive-incidents";
 import TeacherPaymentConfig from "./pages/teacher/payment-config";
 import Forums from "./pages/forums";
 import Projects from "./pages/projects";
@@ -98,6 +99,7 @@ function Router() {
       <Route path="/admin/code-mapping" component={CodeMapping} />
       <Route path="/admin/test-management" component={TestManagement} />
       <Route path="/admin/load-testing" component={LoadTestingGuide} />
+      <Route path="/admin/abusive-incidents" component={AbusiveIncidentsPage} />
       <Route path="/teacher/home" component={TeacherDashboard} />
       <Route path="/teacher/payment-config" component={TeacherPaymentConfig} />
       <Route path="/admin/home" component={AdminHome} />

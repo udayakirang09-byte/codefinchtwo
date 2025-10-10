@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Code, Menu, X, User, LogOut, Home } from "lucide-react";
+import { Code, Menu, X, User, LogOut, Home, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
 
 export default function Navigation() {
   const [location] = useLocation();
@@ -9,9 +11,18 @@ export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState('');
+  const [userRole, setUserRole] = useState('');
   
   // Only show community navigation on the main/launch page when NOT logged in
   const isMainPage = (location === '/' || location === '') && !isAuthenticated;
+  const isAdmin = userRole === 'admin';
+
+  // Fetch abusive language incident count for admin users
+  const { data: incidentCount } = useQuery<{ count: number }>({
+    queryKey: ['/api/admin/abusive-incidents/unread-count'],
+    enabled: isAdmin && isAuthenticated,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,8 +38,10 @@ export default function Navigation() {
     const checkAuthStatus = () => {
       const authStatus = localStorage.getItem('isAuthenticated') === 'true';
       const email = localStorage.getItem('userEmail') || '';
+      const role = localStorage.getItem('userRole') || '';
       setIsAuthenticated(authStatus);
       setUserEmail(email);
+      setUserRole(role);
     };
 
     checkAuthStatus();
@@ -141,6 +154,31 @@ export default function Navigation() {
                   <User className="h-4 w-4" />
                   <span className="text-sm">{userEmail}</span>
                 </div>
+                
+                {/* Abusive Language Incident Alert Badge for Admins */}
+                {isAdmin && incidentCount && (incidentCount as { count: number }).count > 0 && (
+                  <Link
+                    href="/admin/abusive-incidents"
+                    className="relative"
+                    data-testid="link-abusive-incidents"
+                  >
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="relative"
+                      data-testid="button-incident-alert"
+                    >
+                      <AlertTriangle className="h-5 w-5 text-red-500" />
+                      <Badge 
+                        className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs animate-pulse"
+                        data-testid="badge-incident-count"
+                      >
+                        {(incidentCount as { count: number }).count}
+                      </Badge>
+                    </Button>
+                  </Link>
+                )}
+                
                 <Button 
                   variant="ghost"
                   data-testid="button-logout"
