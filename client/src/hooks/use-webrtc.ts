@@ -69,6 +69,23 @@ export function useWebRTC({
         localVideoRef.current.srcObject = stream;
       }
       
+      // Check if there's a pending join waiting for stream initialization
+      if (wsRef.current && (wsRef.current as any).pendingJoin) {
+        const { sessionId: pendingSessionId, isTeacher: pendingIsTeacher } = (wsRef.current as any).pendingJoin;
+        console.log('✅ Local stream now ready - processing pending join');
+        console.log('📊 Stream details:', {
+          videoTracks: stream.getVideoTracks().length,
+          audioTracks: stream.getAudioTracks().length
+        });
+        wsRef.current.send(JSON.stringify({
+          type: 'join-video-session',
+          sessionId: pendingSessionId,
+          isTeacher: pendingIsTeacher
+        }));
+        // Clear pending join
+        delete (wsRef.current as any).pendingJoin;
+      }
+      
       return stream;
     } catch (error) {
       console.error('❌ Failed to get local stream:', error);
@@ -79,6 +96,19 @@ export function useWebRTC({
         console.log('✅ Audio-only access granted');
         cameraStreamRef.current = audioStream;
         setLocalStream(audioStream);
+        
+        // Check for pending join in audio-only fallback case
+        if (wsRef.current && (wsRef.current as any).pendingJoin) {
+          const { sessionId: pendingSessionId, isTeacher: pendingIsTeacher } = (wsRef.current as any).pendingJoin;
+          console.log('✅ Audio stream ready - processing pending join');
+          wsRef.current.send(JSON.stringify({
+            type: 'join-video-session',
+            sessionId: pendingSessionId,
+            isTeacher: pendingIsTeacher
+          }));
+          delete (wsRef.current as any).pendingJoin;
+        }
+        
         return audioStream;
       } catch (audioError) {
         console.error('❌ Failed to get audio stream:', audioError);
@@ -410,13 +440,23 @@ export function useWebRTC({
             setIsConnected(true);
             setConnectionQuality('good');
             
-            // Now join video session after authentication
-            if (wsRef.current) {
+            // CRITICAL FIX: Only join video session if local stream is ready
+            // This prevents creating peer connections without tracks
+            if (cameraStreamRef.current && wsRef.current) {
+              console.log('✅ Local stream ready - joining video session immediately');
+              console.log('📊 Stream details:', {
+                videoTracks: cameraStreamRef.current.getVideoTracks().length,
+                audioTracks: cameraStreamRef.current.getAudioTracks().length
+              });
               wsRef.current.send(JSON.stringify({
                 type: 'join-video-session',
                 sessionId,
                 isTeacher
               }));
+            } else {
+              console.warn('⚠️ Local stream not ready yet - will join after initialization completes');
+              // Store pending join - will be processed when stream is ready
+              (wsRef.current as any).pendingJoin = { sessionId, isTeacher };
             }
             break;
             
