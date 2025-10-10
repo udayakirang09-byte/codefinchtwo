@@ -6975,6 +6975,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             discussionForums: true,
             projectShowcase: true,
             communityEvents: true,
+            teacherResources: true,
             contactUs: true,
           },
           showHelpCenter: false 

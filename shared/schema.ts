@@ -1575,6 +1575,7 @@ export const adminUiConfig = pgTable("admin_ui_config", {
     discussionForums: boolean;
     projectShowcase: boolean;
     communityEvents: boolean;
+    teacherResources: boolean;
     contactUs: boolean;
   }>().default({
     studentCommunity: true,
@@ -1584,6 +1585,7 @@ export const adminUiConfig = pgTable("admin_ui_config", {
     discussionForums: true,
     projectShowcase: true,
     communityEvents: true,
+    teacherResources: true,
     contactUs: true,
   }),
   showHelpCenter: boolean("show_help_center").default(false), // Default unchecked
