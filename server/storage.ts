@@ -93,7 +93,7 @@ import {
   type InsertAdminUiConfig,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, sql, asc } from "drizzle-orm";
+import { eq, desc, and, sql, asc, ne } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 export interface IStorage {
@@ -1505,22 +1505,43 @@ export class DatabaseStorage implements IStorage {
     // Get active classes (scheduled bookings from all students)
     const activeClasses = await db.select().from(bookings).where(eq(bookings.status, 'scheduled'));
     
-    // Calculate monthly revenue from payment transactions
+    // Calculate monthly revenue from completed bookings with actual class fees
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
     
-    // Get all payment transactions for booking payments that are completed in current month
-    const allTransactions = await db.select().from(paymentTransactions);
-    const monthlyTransactions = allTransactions.filter((t: any) => {
-      if (t.transactionType !== 'booking_payment' || t.status !== 'completed') return false;
-      const transDate = new Date(t.scheduledAt || t.createdAt);
-      return transDate >= firstDayOfMonth && transDate <= lastDayOfMonth;
+    // Get bookings with their class fees from teacherSubjects
+    const bookingsWithFees = await db.select({
+      id: bookings.id,
+      scheduledAt: bookings.scheduledAt,
+      duration: bookings.duration,
+      status: bookings.status,
+      subject: bookings.subject,
+      mentorId: bookings.mentorId,
+      classFee: sql<number>`COALESCE(${teacherSubjects.classFee}::numeric, 150)`
+    })
+    .from(bookings)
+    .leftJoin(teacherSubjects, and(
+      eq(teacherSubjects.mentorId, bookings.mentorId),
+      eq(teacherSubjects.subject, bookings.subject)
+    ))
+    .where(ne(bookings.status, 'cancelled'));
+    
+    // Filter for completed bookings this month (same logic as teacher stats)
+    const monthlyCompletedBookings = bookingsWithFees.filter((b: any) => {
+      const bookingDate = new Date(b.scheduledAt);
+      if (bookingDate < firstDayOfMonth) return false;
+      
+      // Check if completed or past its end time
+      if (b.status === 'completed') return true;
+      if (b.status === 'scheduled') {
+        const classEndTime = new Date(new Date(b.scheduledAt).getTime() + b.duration * 60000);
+        return now >= classEndTime;
+      }
+      return false;
     });
     
-    const monthlyRevenue = monthlyTransactions.reduce((sum: number, t: any) => {
-      const amount = typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount;
-      return sum + (amount || 0);
+    const monthlyRevenue = monthlyCompletedBookings.reduce((sum: number, b: any) => {
+      return sum + (Number(b.classFee) || 0);
     }, 0);
 
     return {

@@ -608,7 +608,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 border border-white/30 text-center min-w-[120px]">
                   <div className="text-white text-3xl font-bold">
-                    ${stats?.monthlyRevenue || 0}
+                    ₹{stats?.monthlyRevenue || 0}
                   </div>
                   <div className="text-orange-100 text-sm font-medium">Monthly Revenue</div>
                 </div>
