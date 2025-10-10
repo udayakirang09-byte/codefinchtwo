@@ -28,6 +28,7 @@ interface FooterLinks {
   discussionForums: boolean;
   projectShowcase: boolean;
   communityEvents: boolean;
+  teacherResources: boolean;
   contactUs: boolean;
 }
 
@@ -49,6 +50,7 @@ export default function AdminUiConfig() {
     discussionForums: true,
     projectShowcase: true,
     communityEvents: true,
+    teacherResources: true,
     contactUs: true,
   });
 
@@ -128,6 +130,7 @@ export default function AdminUiConfig() {
     { key: 'projectShowcase' as const, label: 'Project Showcase', section: 'For Students' },
     { key: 'communityEvents' as const, label: 'Community Events', section: 'For Students' },
     { key: 'mentorCommunity' as const, label: 'Mentor Community', section: 'For Mentors' },
+    { key: 'teacherResources' as const, label: 'Teacher Resources', section: 'For Mentors' },
     { key: 'successStories' as const, label: 'Success Stories', section: 'For Mentors' },
     { key: 'contactUs' as const, label: 'Contact Us', section: 'Support' },
   ];
