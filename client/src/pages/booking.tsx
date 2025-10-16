@@ -123,7 +123,7 @@ export default function Booking() {
 
   // Fetch mentor subjects from Class Fee Configuration
   const { data: mentorSubjects } = useQuery<{
-    subjects: Array<{name: string, fee: string, experience: string}>,
+    subjects: Array<{id: string, subject: string, classFee: string, experience: string, priority: number}>,
     message?: string
   }>({
     queryKey: ["/api/mentors", mentorId, "subjects"],
@@ -147,7 +147,7 @@ export default function Booking() {
 
   // Get selected subject's fee from mentorSubjects
   const selectedSubjectFee = formData.subject && mentorSubjects
-    ? mentorSubjects.subjects.find(s => s.name === formData.subject)?.fee
+    ? mentorSubjects.subjects.find(s => s.subject === formData.subject)?.classFee
     : null;
 
   // Auto-populate form fields when student data loads
@@ -706,8 +706,8 @@ export default function Booking() {
                       {mentorSubjects && mentorSubjects.subjects.length > 0 ? (
                         <>
                           {mentorSubjects.subjects.map((subject) => (
-                            <SelectItem key={subject.name} value={subject.name}>
-                              {subject.name}
+                            <SelectItem key={subject.id} value={subject.subject}>
+                              {subject.subject} - ₹{subject.classFee}
                             </SelectItem>
                           ))}
                         </>
