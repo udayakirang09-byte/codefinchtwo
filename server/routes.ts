@@ -2662,6 +2662,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate SAS URL for playback - SECURED (MUST BE BEFORE :recordingId route!)
+  app.get('/api/recordings/sas-url', authenticateSession, async (req: any, res) => {
+    try {
+      const { blobPath, bookingId } = req.query;
+      
+      if (!blobPath || !bookingId) {
+        return res.status(400).json({ message: 'blobPath and bookingId parameters required' });
+      }
+
+      // Fetch booking to verify ownership
+      const booking = await storage.getBooking(bookingId as string);
+      if (!booking) {
+        return res.status(404).json({ message: 'Booking not found' });
+      }
+
+      // Authorization: Must be student of booking, mentor of booking, or admin
+      const isStudent = req.user.role === 'student' && booking.studentId === req.user.id;
+      const isMentor = req.user.role === 'mentor' && booking.mentorId === req.user.id;
+      const isAdmin = req.user.role === 'admin';
+
+      if (!isStudent && !isMentor && !isAdmin) {
+        return res.status(403).json({ message: 'Not authorized to access recordings for this booking' });
+      }
+
+      const sasUrl = await azureStorage.generateSasUrl(blobPath as string, 60);
+      res.json({ sasUrl });
+    } catch (error) {
+      console.error('Error generating SAS URL:', error);
+      res.status(500).json({ message: 'Failed to generate SAS URL' });
+    }
+  });
+
   // Individual recording access with role validation
   app.get("/api/recordings/:recordingId", async (req, res) => {
     console.log(`🎥 GET /api/recordings/${req.params.recordingId} - Accessing recording`);
@@ -6888,38 +6920,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching merged recordings:', error);
       res.status(500).json({ message: 'Failed to fetch merged recordings' });
-    }
-  });
-
-  // Generate SAS URL for playback - SECURED
-  app.get('/api/recordings/sas-url', authenticateSession, async (req: any, res) => {
-    try {
-      const { blobPath, bookingId } = req.query;
-      
-      if (!blobPath || !bookingId) {
-        return res.status(400).json({ message: 'blobPath and bookingId parameters required' });
-      }
-
-      // Fetch booking to verify ownership
-      const booking = await storage.getBooking(bookingId as string);
-      if (!booking) {
-        return res.status(404).json({ message: 'Booking not found' });
-      }
-
-      // Authorization: Must be student of booking, mentor of booking, or admin
-      const isStudent = req.user.role === 'student' && booking.studentId === req.user.id;
-      const isMentor = req.user.role === 'mentor' && booking.mentorId === req.user.id;
-      const isAdmin = req.user.role === 'admin';
-
-      if (!isStudent && !isMentor && !isAdmin) {
-        return res.status(403).json({ message: 'Not authorized to access recordings for this booking' });
-      }
-
-      const sasUrl = await azureStorage.generateSasUrl(blobPath as string, 60);
-      res.json({ sasUrl });
-    } catch (error) {
-      console.error('Error generating SAS URL:', error);
-      res.status(500).json({ message: 'Failed to generate SAS URL' });
     }
   });
 
