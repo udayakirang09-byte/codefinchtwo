@@ -281,12 +281,29 @@ export default function Mentors() {
                   </div>
                   
                   <div className="mb-4">
+                    <h4 className="text-xs font-semibold text-gray-700 mb-1">Specialties:</h4>
                     <div className="flex flex-wrap gap-1 mb-2">
-                      {(mentor.subjects || []).map((subject: any, idx: number) => (
-                        <Badge key={idx} variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                          {subject.subject} - ₹{subject.classFee}
-                        </Badge>
-                      ))}
+                      {mentor.specialties && mentor.specialties.length > 0 ? (
+                        mentor.specialties.map((specialty: string, idx: number) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {specialty}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-xs text-gray-500">No specialties listed</span>
+                      )}
+                    </div>
+                    <h4 className="text-xs font-semibold text-gray-700 mb-1 mt-2">Subjects & Courses:</h4>
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {(mentor.subjects || []).length > 0 ? (
+                        (mentor.subjects || []).map((subject: any, idx: number) => (
+                          <Badge key={idx} variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                            {subject.subject} - ₹{subject.classFee}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-xs text-gray-500">No subjects listed</span>
+                      )}
                     </div>
                   </div>
                   
