@@ -486,10 +486,10 @@ export class DatabaseStorage implements IStorage {
       const teacherProfile = allTeacherProfiles.find((p: any) => p.userId === user?.id);
       const signupSubjects = teacherProfile?.subjects || [];
 
-      // Calculate total experience from subjects
+      // Calculate total experience from signup subjects (specialties)
       let totalExperience = mentor.experience || 0;
-      if (mentorSubjects.length > 0) {
-        const summedExperience = mentorSubjects.reduce(
+      if (signupSubjects.length > 0) {
+        const summedExperience = signupSubjects.reduce(
           (sum: number, subj: any) => {
             const exp = parseInt(subj.experience) || 0;
             return sum + exp;
@@ -548,10 +548,10 @@ export class DatabaseStorage implements IStorage {
     const [teacherProfile] = await db.select().from(teacherProfiles).where(eq(teacherProfiles.userId, result.users?.id!));
     const signupSubjects = teacherProfile?.subjects || [];
     
-    // Calculate total experience from subjects
+    // Calculate total experience from signup subjects (specialties)
     let totalExperience = result.mentors.experience || 0;
-    if (mentorSubjects.length > 0) {
-      const summedExperience = mentorSubjects.reduce(
+    if (signupSubjects.length > 0) {
+      const summedExperience = signupSubjects.reduce(
         (sum: number, subj: any) => {
           const exp = parseInt(subj.experience) || 0;
           return sum + exp;
