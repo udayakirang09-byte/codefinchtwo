@@ -1,3 +1,7 @@
+// CRITICAL: Set UV_THREADPOOL_SIZE before any imports to improve bcrypt concurrency
+// This must be the first line to ensure proper thread pool initialization
+process.env.UV_THREADPOOL_SIZE = '32';
+
 import express, { type Request, Response, NextFunction } from "express";
 import { createServer } from "http";
 import { WebSocketServer } from "ws";

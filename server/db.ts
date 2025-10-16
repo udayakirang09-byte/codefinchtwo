@@ -30,10 +30,11 @@ try {
   pool = new Pool({ 
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    // Azure-optimized connection settings
-    max: 5, // Reduced for Azure App Service
-    idleTimeoutMillis: 10000, // 10 seconds
-    connectionTimeoutMillis: 5000, // 5 seconds for Azure
+    // High-concurrency connection pool settings (optimized for 3000+ concurrent users)
+    max: 200, // Architect recommendation: Support up to 200 concurrent connections
+    min: 10, // Keep minimum 10 connections alive for fast response
+    idleTimeoutMillis: 30000, // 30 seconds - keep connections alive longer
+    connectionTimeoutMillis: 2000, // 2 seconds - fail fast on connection issues
     // Azure-specific settings
     allowExitOnIdle: true,
     statement_timeout: 30000, // 30 seconds
