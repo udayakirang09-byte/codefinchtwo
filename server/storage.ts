@@ -437,8 +437,23 @@ export class DatabaseStorage implements IStorage {
     // Get all reviews to calculate ratings
     const allReviews = await db.select().from(reviews);
 
-    // Get all teacher subjects
-    const allTeacherSubjects = await db.select().from(teacherSubjects);
+    // Get all teacher subjects - Use raw SQL as workaround for Drizzle ORM issue
+    let allTeacherSubjects: any[] = [];
+    try {
+      const rawSubjects = await db.execute(sql`SELECT * FROM teacher_subjects`);
+      allTeacherSubjects = rawSubjects.rows.map((row: any) => ({
+        id: row.id,
+        mentorId: row.mentor_id,
+        subject: row.subject,
+        experience: row.experience,
+        classFee: row.class_fee,
+        priority: row.priority,
+        createdAt: row.created_at
+      }));
+      console.log(`📚 [DEBUG] Loaded ${allTeacherSubjects.length} teacher subjects using raw SQL`);
+    } catch (error) {
+      console.error(`📚 [DEBUG] ERROR fetching teacherSubjects:`, error);
+    }
 
     // Get all teacher qualifications
     const allTeacherQualifications = await db.select().from(teacherQualifications);
