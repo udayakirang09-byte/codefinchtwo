@@ -196,32 +196,20 @@ export default function MentorProfile() {
             <div className="mb-8">
               <h2 className="text-2xl font-bold text-foreground mb-4">Specialties</h2>
               <div className="flex flex-wrap gap-3">
-                {(() => {
-                  const subjects = (mentor as any).subjects;
-                  if (!subjects || subjects.length === 0) {
-                    return <p className="text-muted-foreground">No specialties listed</p>;
-                  }
-                  const courseCodes = subjects.map((subj: any) => {
-                    const parts = subj.subject.split('-');
-                    return parts.slice(0, -1).join('-');
-                  }).filter((code: string) => code);
-                  const uniqueCodes = Array.from(new Set(courseCodes));
-                  
-                  return uniqueCodes.length > 0 ? (
-                    uniqueCodes.map((code: string, index: number) => (
-                      <Badge 
-                        key={index} 
-                        variant="outline" 
-                        className="text-sm px-3 py-1"
-                        data-testid={`badge-specialty-${index}`}
-                      >
-                        {code}
-                      </Badge>
-                    ))
-                  ) : (
-                    <p className="text-muted-foreground">No specialties listed</p>
-                  );
-                })()}
+                {((mentor as any).subjects && (mentor as any).subjects.length > 0) ? (
+                  (mentor as any).subjects.map((subject: any, index: number) => (
+                    <Badge 
+                      key={index} 
+                      variant="outline" 
+                      className="text-sm px-3 py-1"
+                      data-testid={`badge-specialty-${index}`}
+                    >
+                      {subject.subject} ({subject.experience})
+                    </Badge>
+                  ))
+                ) : (
+                  <p className="text-muted-foreground">No specialties listed</p>
+                )}
               </div>
             </div>
 
