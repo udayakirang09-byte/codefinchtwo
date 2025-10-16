@@ -58,6 +58,8 @@ import UiConfig from "./pages/admin/ui-config";
 import FinanceDashboard from "./pages/admin/finance-dashboard";
 import StorageConfig from "./pages/admin/storage-config";
 import AbusiveIncidentsPage from "./pages/admin/abusive-incidents";
+import AzureMetrics from "./pages/admin/azure-metrics";
+import AzureMetricsDetail from "./pages/admin/azure-metrics-detail";
 import TeacherPaymentConfig from "./pages/teacher/payment-config";
 import Forums from "./pages/forums";
 import Projects from "./pages/projects";
@@ -100,6 +102,8 @@ function Router() {
       <Route path="/admin/test-management" component={TestManagement} />
       <Route path="/admin/load-testing" component={LoadTestingGuide} />
       <Route path="/admin/abusive-incidents" component={AbusiveIncidentsPage} />
+      <Route path="/admin/azure-metrics" component={AzureMetrics} />
+      <Route path="/admin/azure-metrics/:severity" component={AzureMetricsDetail} />
       <Route path="/teacher/home" component={TeacherDashboard} />
       <Route path="/teacher/payment-config" component={TeacherPaymentConfig} />
       <Route path="/admin/home" component={AdminHome} />
