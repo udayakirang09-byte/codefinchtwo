@@ -1349,7 +1349,7 @@ export default function AdminDashboard() {
         </CardHeader>
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Link href="/admin/system-health">
+            <Link href="/system-test">
               <Button variant="outline" className="w-full h-auto py-4 hover:bg-emerald-50 hover:border-emerald-400 transition-all" data-testid="button-nav-system-health">
                 <div className="flex items-center gap-3 w-full">
                   <Activity className="h-5 w-5 text-emerald-600" />
