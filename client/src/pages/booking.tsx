@@ -336,9 +336,14 @@ export default function Booking() {
       return;
     }
 
-    // Subject validation (optional to allow backward compatibility with pending bookings)
-    if (!formData.subject) {
-      console.warn('Subject not selected, defaulting to General Programming');
+    // Subject validation - REQUIRED
+    if (!formData.subject || !formData.subject.trim()) {
+      toast({
+        title: "Subject Required",
+        description: "Please select a subject for the session.",
+        variant: "destructive",
+      });
+      return;
     }
 
     // Keep datetime string in local timezone (don't convert to UTC)
