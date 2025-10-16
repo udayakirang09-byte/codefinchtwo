@@ -32,7 +32,7 @@ export async function runRecordingAccessLoadTest(config: LoadTestConfig) {
   console.log('\n📊 Recording Access Load Test Results:');
   console.log(`Requests: ${result.requests.total}`);
   console.log(`Throughput: ${result.throughput.mean} bytes/sec`);
-  console.log(`Latency: p50=${result.latency.p50}ms, p95=${result.latency.p95}ms, p99=${result.latency.p99}ms`);
+  console.log(`Latency: p50=${result.latency.p50}ms, p97.5=${result.latency.p97_5}ms, p99=${result.latency.p99}ms`);
   console.log(`Errors: ${result.errors}`);
   console.log(`Timeouts: ${result.timeouts}`);
   
