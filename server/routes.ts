@@ -6749,9 +6749,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Recording Parts Upload API (Azure Storage) - SECURED
   app.post('/api/recordings/upload-part', authenticateSession, express.raw({ type: 'video/webm', limit: '100mb' }), async (req: any, res) => {
     try {
+      console.log('📤 Recording upload request - Query params:', req.query);
+      console.log('📤 Recording upload request - Headers:', { contentType: req.headers['content-type'], auth: !!req.headers.authorization });
+      
       // Validate query parameters
       const validation = uploadRecordingSchema.safeParse(req.query);
       if (!validation.success) {
+        console.error('❌ Validation failed:', JSON.stringify(validation.error.errors, null, 2));
         return res.status(400).json({ message: 'Invalid parameters', errors: validation.error.errors });
       }
 

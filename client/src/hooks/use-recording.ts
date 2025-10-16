@@ -46,7 +46,7 @@ export function useRecording(options: RecordingOptions) {
       const sessionToken = localStorage.getItem('sessionToken');
       
       const response = await fetch(
-        `/api/recordings/upload-part?sessionId=${sessionId}&userId=${userId}&partNumber=${partNumber}`,
+        `/api/recordings/upload-part?bookingId=${sessionId}&partNumber=${partNumber}`,
         {
           method: 'POST',
           headers: {
