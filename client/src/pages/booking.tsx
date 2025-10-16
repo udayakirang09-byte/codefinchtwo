@@ -562,29 +562,18 @@ export default function Booking() {
               <div className="space-y-3">
                 <h4 className="font-medium text-foreground">Teacher Specialties:</h4>
                 <div className="flex flex-wrap gap-2">
-                  {(() => {
-                    if (!mentorSubjects?.subjects?.length) {
-                      return <p className="text-sm text-muted-foreground">No specialties listed</p>;
-                    }
-                    const courseCodes = mentorSubjects.subjects.map((subj: any) => {
-                      const parts = subj.subject.split('-');
-                      return parts.slice(0, -1).join('-');
-                    }).filter((code: string) => code);
-                    const uniqueCodes = Array.from(new Set(courseCodes));
-                    
-                    return uniqueCodes.length > 0 ? (
-                      uniqueCodes.map((code: string, index: number) => (
-                        <span 
-                          key={index} 
-                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary"
-                        >
-                          {code}
-                        </span>
-                      ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No specialties listed</p>
-                    );
-                  })()}
+                  {mentorSubjects && mentorSubjects.subjects.length > 0 ? (
+                    mentorSubjects.subjects.map((subject: any, index: number) => (
+                      <span 
+                        key={index} 
+                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary"
+                      >
+                        {subject.subject} ({subject.experience})
+                      </span>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No specialties listed</p>
+                  )}
                 </div>
               </div>
 
