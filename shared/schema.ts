@@ -1607,6 +1607,45 @@ export const abusiveLanguageIncidents = pgTable("abusive_language_incidents", {
   emailSent: boolean("email_sent").default(false),
 });
 
+// Azure Application Insights Configuration
+export const azureAppInsightsConfig = pgTable("azure_app_insights_config", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  appInsightsName: varchar("app_insights_name").notNull(),
+  instrumentationKey: varchar("instrumentation_key"),
+  appId: varchar("app_id"),
+  apiKey: varchar("api_key"),
+  isEnabled: boolean("is_enabled").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Azure Metrics Alerts
+export const azureMetricsAlerts = pgTable("azure_metrics_alerts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  metricName: varchar("metric_name").notNull(),
+  metricCategory: varchar("metric_category").notNull(), // General, Concurrent
+  severity: integer("severity").notNull(), // 0 (Critical), 1, 2, 3, 4 (Info)
+  threshold: decimal("threshold", { precision: 10, scale: 2 }),
+  currentValue: decimal("current_value", { precision: 10, scale: 2 }),
+  unit: varchar("unit"),
+  description: text("description"),
+  hasFix: boolean("has_fix").default(false),
+  fixSolution: text("fix_solution"),
+  fixStatus: varchar("fix_status").default("pending"), // pending, applied, failed
+  isActive: boolean("is_active").default(true),
+  lastChecked: timestamp("last_checked").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Metrics History for trending
+export const azureMetricsHistory = pgTable("azure_metrics_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  metricName: varchar("metric_name").notNull(),
+  value: decimal("value", { precision: 10, scale: 2 }).notNull(),
+  timestamp: timestamp("timestamp").notNull(),
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+});
+
 // Schema definitions for teacher audio metrics
 export const insertTeacherAudioMetricsSchema = createInsertSchema(teacherAudioMetrics);
 
@@ -1621,6 +1660,12 @@ export const insertMergedRecordingSchema = createInsertSchema(mergedRecordings);
 export const insertAdminUiConfigSchema = createInsertSchema(adminUiConfig);
 
 export const insertAbusiveLanguageIncidentSchema = createInsertSchema(abusiveLanguageIncidents);
+
+export const insertAzureAppInsightsConfigSchema = createInsertSchema(azureAppInsightsConfig);
+
+export const insertAzureMetricsAlertSchema = createInsertSchema(azureMetricsAlerts);
+
+export const insertAzureMetricsHistorySchema = createInsertSchema(azureMetricsHistory);
 
 // Types for teacher audio metrics
 export type TeacherAudioMetrics = typeof teacherAudioMetrics.$inferSelect;
@@ -1643,3 +1688,12 @@ export type InsertAdminUiConfig = z.infer<typeof insertAdminUiConfigSchema>;
 
 export type AbusiveLanguageIncident = typeof abusiveLanguageIncidents.$inferSelect;
 export type InsertAbusiveLanguageIncident = z.infer<typeof insertAbusiveLanguageIncidentSchema>;
+
+export type AzureAppInsightsConfig = typeof azureAppInsightsConfig.$inferSelect;
+export type InsertAzureAppInsightsConfig = z.infer<typeof insertAzureAppInsightsConfigSchema>;
+
+export type AzureMetricsAlert = typeof azureMetricsAlerts.$inferSelect;
+export type InsertAzureMetricsAlert = z.infer<typeof insertAzureMetricsAlertSchema>;
+
+export type AzureMetricsHistory = typeof azureMetricsHistory.$inferSelect;
+export type InsertAzureMetricsHistory = z.infer<typeof insertAzureMetricsHistorySchema>;
