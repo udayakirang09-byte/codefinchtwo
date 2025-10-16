@@ -63,6 +63,8 @@ export default function StudentRecordings() {
   const { data: student } = useQuery<Student>({
     queryKey: [`/api/students/user/${user?.id}`],
     enabled: !!user?.id && isAuthenticated,
+    staleTime: 0, // Always consider data stale
+    gcTime: 0, // Don't cache
   });
 
   // Fetch merged recordings for student - Using default queryFn for automatic auth handling

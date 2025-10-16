@@ -2212,7 +2212,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(bookings.studentId, studentId),
-          eq(mergedRecordings.status, 'active')
+          eq(mergedRecordings.status, 'completed')  // Changed from 'active' to 'completed'
         )
       )
       .orderBy(desc(bookings.scheduledAt));
