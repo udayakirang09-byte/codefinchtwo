@@ -283,8 +283,8 @@ export default function TeacherDashboard() {
     return booking.status === 'scheduled' && new Date() < classEndTime && scheduledAt <= seventyTwoHoursFromNow;
   }).map((booking: any) => ({
     id: booking.id,
-    studentName: booking.student?.user?.firstName + ' ' + (booking.student?.user?.lastName || ''),
-    subject: booking.subject,
+    studentName: `${booking.student?.user?.firstName || ''} ${booking.student?.user?.lastName || ''}`.trim() || 'Student',
+    subject: booking.subject || 'Programming Session',
     scheduledAt: new Date(booking.scheduledAt),
     duration: booking.duration,
     videoEnabled: true,
@@ -298,8 +298,8 @@ export default function TeacherDashboard() {
     return booking.status === 'completed';
   }).map((booking: any) => ({
     id: booking.id,
-    studentName: booking.student?.user?.firstName + ' ' + (booking.student?.user?.lastName || ''),
-    subject: booking.subject,
+    studentName: `${booking.student?.user?.firstName || ''} ${booking.student?.user?.lastName || ''}`.trim() || 'Student',
+    subject: booking.subject || 'Programming Session',
     completedAt: new Date(booking.scheduledAt),
     earnings: booking.amount
   })) : [];
