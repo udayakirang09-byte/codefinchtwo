@@ -562,8 +562,8 @@ export default function Booking() {
               <div className="space-y-3">
                 <h4 className="font-medium text-foreground">Teacher Specialties:</h4>
                 <div className="flex flex-wrap gap-2">
-                  {mentorSubjects && mentorSubjects.subjects.length > 0 ? (
-                    mentorSubjects.subjects.map((subject: any, index: number) => (
+                  {(mentor as any).signupSubjects && (mentor as any).signupSubjects.length > 0 ? (
+                    (mentor as any).signupSubjects.map((subject: any, index: number) => (
                       <span 
                         key={index} 
                         className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary"

@@ -283,8 +283,8 @@ export default function Mentors() {
                   <div className="mb-4">
                     <h4 className="text-xs font-semibold text-gray-700 mb-1">Specialties:</h4>
                     <div className="flex flex-wrap gap-1 mb-2">
-                      {(mentor.subjects || []).length > 0 ? (
-                        (mentor.subjects || []).map((subject: any, idx: number) => (
+                      {((mentor as any).signupSubjects || []).length > 0 ? (
+                        ((mentor as any).signupSubjects || []).map((subject: any, idx: number) => (
                           <Badge key={idx} variant="outline" className="text-xs">
                             {subject.subject} ({subject.experience})
                           </Badge>
