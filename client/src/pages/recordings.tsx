@@ -69,6 +69,8 @@ export default function StudentRecordings() {
   const { data: recordings, isLoading, error, refetch } = useQuery<MergedRecording[]>({
     queryKey: [`/api/recordings/merged/${student?.id}`],
     enabled: !!student?.id && isAuthenticated,
+    staleTime: 0, // Always consider data stale
+    gcTime: 0, // Don't cache (formerly cacheTime in v4)
   });
 
   const filteredRecordings = recordings?.filter(recording =>

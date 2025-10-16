@@ -6883,6 +6883,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const recordings = await storage.getMergedRecordingsForStudent(studentId);
+      console.log(`📹 [RECORDINGS] Returning ${recordings.length} recordings for student ${studentId}`);
       res.json(recordings);
     } catch (error) {
       console.error('Error fetching merged recordings:', error);
