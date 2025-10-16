@@ -121,7 +121,7 @@ export class RecordingScheduler {
         blobPath: mergeResult.blobPath,
         blobUrl: mergeResult.url,
         fileSizeBytes: totalSize,
-        partCount: parts.length,
+        totalParts: parts.length,
         expiresAt,
         status: 'completed',
       });

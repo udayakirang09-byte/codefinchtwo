@@ -331,6 +331,7 @@ export interface IStorage {
   getMergedRecordingsForStudent(studentId: string): Promise<any[]>;
   getAzureStorageConfig(): Promise<any | undefined>;
   getBookingsForMerge(twentyMinutesAgo: Date): Promise<Booking[]>;
+  getEndedScheduledBookings(): Promise<Booking[]>;
   
   // Recording Retention operations
   getExpiredRecordings(): Promise<any[]>;
@@ -2266,6 +2267,21 @@ export class DatabaseStorage implements IStorage {
     }
     
     return bookingsWithParts;
+  }
+
+  async getEndedScheduledBookings(): Promise<Booking[]> {
+    const now = new Date();
+    
+    // Find all 'scheduled' bookings where (scheduledAt + duration) < now
+    const result = await db.select().from(bookings)
+      .where(
+        and(
+          eq(bookings.status, 'scheduled'),
+          sql`${bookings.scheduledAt} + (${bookings.duration} || ' minutes')::interval < ${now}`
+        )
+      );
+    
+    return result;
   }
 
   // Recording Retention operations
