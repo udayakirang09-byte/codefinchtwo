@@ -361,6 +361,12 @@ export default function AdminHome() {
                     Cloud Deployments
                   </Button>
                 </Link>
+                <Link href="/admin/azure-metrics">
+                  <Button variant="outline" className="w-full" data-testid="button-azure-metrics">
+                    <Activity className="w-4 h-4 mr-2" />
+                    Azure Metrics
+                  </Button>
+                </Link>
                 <Link href="/admin/code-mapping">
                   <Button variant="outline" className="w-full" data-testid="button-code-mapping">
                     <Map className="w-4 h-4 mr-2" />
