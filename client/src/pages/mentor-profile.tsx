@@ -194,7 +194,27 @@ export default function MentorProfile() {
             )}
 
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-foreground mb-4">Subjects & Experience</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-4">Specialties</h2>
+              <div className="flex flex-wrap gap-3">
+                {mentor.specialties && mentor.specialties.length > 0 ? (
+                  mentor.specialties.map((specialty: string, index: number) => (
+                    <Badge 
+                      key={index} 
+                      variant="outline" 
+                      className="text-sm px-3 py-1"
+                      data-testid={`badge-specialty-${index}`}
+                    >
+                      {specialty}
+                    </Badge>
+                  ))
+                ) : (
+                  <p className="text-muted-foreground">No specialties listed</p>
+                )}
+              </div>
+            </div>
+
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-foreground mb-4">Subjects & Courses</h2>
               <div className="flex flex-wrap gap-3">
                 {((mentor as any).subjects && (mentor as any).subjects.length > 0) ? (
                   (mentor as any).subjects.map((subject: any, index: number) => (
@@ -214,7 +234,7 @@ export default function MentorProfile() {
                       key={index} 
                       variant="secondary" 
                       className="text-sm px-3 py-1"
-                      data-testid={`badge-specialty-${index}`}
+                      data-testid={`badge-subject-exp-${index}`}
                       title={`${item.experience} years experience in ${item.subject}`}
                     >
                       {item.subject} ({item.experience} years)
