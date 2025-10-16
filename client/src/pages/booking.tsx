@@ -555,9 +555,19 @@ export default function Booking() {
               </div>
 
               <div className="space-y-3">
-                <h4 className="font-medium text-foreground">Teacher Specialities:</h4>
+                <h4 className="font-medium text-foreground">Teacher Subjects & Courses:</h4>
                 <div className="flex flex-wrap gap-2">
-                  {mentor.specialties && mentor.specialties.length > 0 ? (
+                  {mentorSubjects && mentorSubjects.subjects.length > 0 ? (
+                    mentorSubjects.subjects.map((subject: any, index: number) => (
+                      <span 
+                        key={index} 
+                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
+                        title={`${subject.experience} experience`}
+                      >
+                        {subject.subject}
+                      </span>
+                    ))
+                  ) : mentor.specialties && mentor.specialties.length > 0 ? (
                     mentor.specialties.map((specialty: string, index: number) => (
                       <span 
                         key={index} 
@@ -567,7 +577,7 @@ export default function Booking() {
                       </span>
                     ))
                   ) : (
-                    <p className="text-sm text-muted-foreground">No specialties listed</p>
+                    <p className="text-sm text-muted-foreground">No subjects listed</p>
                   )}
                 </div>
               </div>

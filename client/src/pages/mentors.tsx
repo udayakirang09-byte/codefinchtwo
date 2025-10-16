@@ -282,17 +282,12 @@ export default function Mentors() {
                   
                   <div className="mb-4">
                     <div className="flex flex-wrap gap-1 mb-2">
-                      {(mentor.subjectsWithExperience || []).map((item: any, idx: number) => (
-                        <Badge key={idx} variant="outline" className="text-xs" title={`${item.experience} years experience`}>
-                          {item.subject} ({item.experience}y)
+                      {(mentor.subjects || []).map((subject: any, idx: number) => (
+                        <Badge key={idx} variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                          {subject.subject} - ₹{subject.classFee}
                         </Badge>
                       ))}
                     </div>
-                    {mentor.hourlyRate && (
-                      <p className="text-lg font-bold text-green-600">
-                        ₹{mentor.hourlyRate}
-                      </p>
-                    )}
                   </div>
                   
                   <div className="flex gap-2">

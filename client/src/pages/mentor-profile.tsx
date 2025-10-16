@@ -167,13 +167,49 @@ export default function MentorProfile() {
               <p className="text-muted-foreground leading-relaxed" data-testid="text-mentor-description">
                 {mentor.description}
               </p>
+              {(mentor as any).country && (mentor as any).country !== 'NA-Country' && (
+                <div className="mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-semibold">Country:</span> {(mentor as any).country}
+                  </p>
+                </div>
+              )}
             </div>
+
+            {(mentor as any).qualifications && (mentor as any).qualifications.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-foreground mb-4">Education</h2>
+                <div className="space-y-3">
+                  {(mentor as any).qualifications.map((qual: any, index: number) => (
+                    <Card key={index} className="bg-muted/50">
+                      <CardContent className="p-4">
+                        <h4 className="font-semibold text-foreground">{qual.qualification}</h4>
+                        <p className="text-sm text-muted-foreground">Specialization: {qual.specialization}</p>
+                        <p className="text-sm text-muted-foreground">Score: {qual.score}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="mb-8">
               <h2 className="text-2xl font-bold text-foreground mb-4">Subjects & Experience</h2>
               <div className="flex flex-wrap gap-3">
-                {mentor.subjectsWithExperience && mentor.subjectsWithExperience.length > 0 ? (
-                  mentor.subjectsWithExperience.map((item: any, index: number) => (
+                {(mentor as any).subjects && (mentor as any).subjects.length > 0 ? (
+                  (mentor as any).subjects.map((subject: any, index: number) => (
+                    <Badge 
+                      key={index} 
+                      variant="secondary" 
+                      className="text-sm px-3 py-1"
+                      data-testid={`badge-subject-${index}`}
+                      title={`${subject.experience} experience - ₹${subject.classFee} per class`}
+                    >
+                      {subject.subject} ({subject.experience})
+                    </Badge>
+                  ))
+                ) : (mentor as any).subjectsWithExperience && (mentor as any).subjectsWithExperience.length > 0 ? (
+                  (mentor as any).subjectsWithExperience.map((item: any, index: number) => (
                     <Badge 
                       key={index} 
                       variant="secondary" 
