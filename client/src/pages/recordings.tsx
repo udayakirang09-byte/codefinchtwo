@@ -18,7 +18,7 @@ interface MergedRecording {
   bookingId: string;
   blobPath: string;
   fileSizeBytes: number;
-  durationSeconds: number;
+  durationSeconds: number | null;
   status: string;
   mergedAt: Date;
   expiresAt: Date;
@@ -121,7 +121,10 @@ export default function StudentRecordings() {
     }
   };
 
-  const formatDuration = (durationSeconds: number) => {
+  const formatDuration = (durationSeconds: number | null | undefined) => {
+    if (!durationSeconds || durationSeconds === 0) {
+      return "Duration unavailable";
+    }
     const minutes = Math.floor(durationSeconds / 60);
     const hours = Math.floor(minutes / 60);
     if (hours > 0) {

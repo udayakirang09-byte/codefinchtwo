@@ -2678,13 +2678,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Authorization: Must be student of booking, mentor of booking, or admin
-      const isStudent = req.user.role === 'student' && booking.studentId === req.user.id;
-      const isMentor = req.user.role === 'mentor' && booking.mentorId === req.user.id;
-      const isAdmin = req.user.role === 'admin';
+      // Note: req.user.id is USER ID, but booking.studentId/mentorId are STUDENT/MENTOR table IDs
+      console.log(`🔐 [SAS AUTH] User role: ${req.user.role}, User ID: ${req.user.id}, Booking: ${bookingId}`);
+      let isAuthorized = false;
+      
+      if (req.user.role === 'admin') {
+        isAuthorized = true;
+        console.log(`🔐 [SAS AUTH] Admin authorized`);
+      } else if (req.user.role === 'student') {
+        const student = await storage.getStudentByUserId(req.user.id);
+        console.log(`🔐 [SAS AUTH] Student lookup result:`, student ? `ID: ${student.id}` : 'NOT FOUND');
+        console.log(`🔐 [SAS AUTH] Booking studentId: ${booking.studentId}`);
+        isAuthorized = student && booking.studentId === student.id;
+        console.log(`🔐 [SAS AUTH] Student authorized: ${isAuthorized}`);
+      } else if (req.user.role === 'mentor' || req.user.role === 'teacher') {
+        const mentor = await storage.getMentorByUserId(req.user.id);
+        console.log(`🔐 [SAS AUTH] Mentor lookup result:`, mentor ? `ID: ${mentor.id}` : 'NOT FOUND');
+        console.log(`🔐 [SAS AUTH] Booking mentorId: ${booking.mentorId}`);
+        isAuthorized = mentor && booking.mentorId === mentor.id;
+        console.log(`🔐 [SAS AUTH] Mentor authorized: ${isAuthorized}`);
+      }
 
-      if (!isStudent && !isMentor && !isAdmin) {
+      if (!isAuthorized) {
+        console.log(`🔐 [SAS AUTH] AUTHORIZATION FAILED`);
         return res.status(403).json({ message: 'Not authorized to access recordings for this booking' });
       }
+      console.log(`🔐 [SAS AUTH] AUTHORIZATION SUCCESS`);
+
 
       const sasUrl = await azureStorage.generateSasUrl(blobPath as string, 60);
       res.json({ sasUrl });

@@ -104,6 +104,7 @@ export class RecordingScheduler {
       blobCreated = true;
 
       const totalSize = parts.reduce((sum, part) => sum + (part.fileSizeBytes || 0), 0);
+      const totalDuration = parts.reduce((sum, part) => sum + (part.durationSeconds || 0), 0);
 
       // Get retention period from config
       const config = await this.storage.getAzureStorageConfig();
@@ -121,6 +122,7 @@ export class RecordingScheduler {
         blobPath: mergeResult.blobPath,
         blobUrl: mergeResult.url,
         fileSizeBytes: totalSize,
+        durationSeconds: totalDuration,
         totalParts: parts.length,
         expiresAt,
         status: 'completed',
