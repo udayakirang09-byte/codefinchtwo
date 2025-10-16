@@ -176,7 +176,7 @@ export default function MentorProfile() {
               )}
             </div>
 
-            {(mentor as any).qualifications && (mentor as any).qualifications.length > 0 && (
+            {((mentor as any).qualifications && (mentor as any).qualifications.length > 0) && (
               <div className="mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4">Education</h2>
                 <div className="space-y-3">
@@ -196,7 +196,7 @@ export default function MentorProfile() {
             <div className="mb-8">
               <h2 className="text-2xl font-bold text-foreground mb-4">Subjects & Experience</h2>
               <div className="flex flex-wrap gap-3">
-                {(mentor as any).subjects && (mentor as any).subjects.length > 0 ? (
+                {((mentor as any).subjects && (mentor as any).subjects.length > 0) ? (
                   (mentor as any).subjects.map((subject: any, index: number) => (
                     <Badge 
                       key={index} 
@@ -208,7 +208,7 @@ export default function MentorProfile() {
                       {subject.subject} ({subject.experience})
                     </Badge>
                   ))
-                ) : (mentor as any).subjectsWithExperience && (mentor as any).subjectsWithExperience.length > 0 ? (
+                ) : ((mentor as any).subjectsWithExperience && (mentor as any).subjectsWithExperience.length > 0) ? (
                   (mentor as any).subjectsWithExperience.map((item: any, index: number) => (
                     <Badge 
                       key={index} 
