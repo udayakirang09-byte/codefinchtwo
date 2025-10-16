@@ -96,6 +96,7 @@ import {
 import { db } from "./db";
 import { eq, desc, and, sql, asc, ne } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
+import { cache } from "./redis";
 
 export interface IStorage {
   // User operations
@@ -376,6 +377,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserWithRoleDataByEmail(email: string): Promise<{ user: User; student?: Student; mentor?: Mentor } | undefined> {
+    // Try cache first
+    const cacheKey = `user:email:${email}`;
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    // If not cached, fetch from database
     const result = await db
       .select()
       .from(users)
@@ -389,11 +398,16 @@ export class DatabaseStorage implements IStorage {
     }
 
     const row = result[0];
-    return {
+    const userData = {
       user: row.users,
       student: row.students || undefined,
       mentor: row.mentors || undefined,
     };
+
+    // Cache for 5 minutes (300 seconds)
+    await cache.set(cacheKey, userData, 300);
+
+    return userData;
   }
 
   async createUser(userData: any): Promise<User> {
@@ -732,11 +746,34 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateUser(id: string, updates: Partial<InsertUser>): Promise<void> {
+    // Get user email for cache invalidation
+    const user = await this.getUser(id);
+    
+    // Update user in database
     await db.update(users).set(updates).where(eq(users.id, id));
+    
+    // Invalidate cache
+    if (user?.email) {
+      await cache.del(`user:email:${user.email}`);
+    }
+    
+    // If email was updated, also invalidate the new email cache
+    if ('email' in updates && updates.email && updates.email !== user?.email) {
+      await cache.del(`user:email:${updates.email}`);
+    }
   }
   
   async deleteUser(id: string): Promise<void> {
+    // Get user email for cache invalidation
+    const user = await this.getUser(id);
+    
+    // Delete user from database
     await db.delete(users).where(eq(users.id, id));
+    
+    // Invalidate cache
+    if (user?.email) {
+      await cache.del(`user:email:${user.email}`);
+    }
   }
 
   async getBookingsByStudent(studentId: string): Promise<BookingWithDetails[]> {

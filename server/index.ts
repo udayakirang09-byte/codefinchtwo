@@ -13,8 +13,12 @@ import { RetentionScheduler } from "./retentionScheduler";
 import { NoShowScheduler } from "./noShowScheduler";
 import { BookingCompletionScheduler } from "./bookingCompletionScheduler";
 import { storage } from "./storage";
+import { initializeRedis } from "./redis";
 
 const app = express();
+
+// Initialize Redis/cache
+initializeRedis().catch(console.error);
 
 // Azure-specific debugging
 console.log('🔐 [AZURE DEBUG] Environment check:', {
