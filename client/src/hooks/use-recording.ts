@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { apiRequest } from '@/lib/queryClient';
+import { recordingDB, type RecordingChunk } from '@/lib/recording-db';
 
 interface RecordingOptions {
   sessionId: string;
@@ -39,8 +40,28 @@ export function useRecording(options: RecordingOptions) {
 
   // Upload chunk with retry logic
   const uploadChunk = useCallback(async (blob: Blob, partNumber: number, attempt = 1): Promise<void> => {
+    const chunkId = `${sessionId}-${partNumber}`;
+    
+    // Check persisted retry count before attempting upload
+    let persistedRetryCount = 0;
     try {
-      console.log(`⬆️ Uploading recording chunk ${partNumber} (${(blob.size / 1024).toFixed(2)} KB)`);
+      const persistedChunk = await recordingDB.getChunk(chunkId);
+      persistedRetryCount = persistedChunk?.retryCount || 0;
+      
+      // If already exceeded retry limit, delete and fail
+      if (persistedRetryCount >= MAX_RETRY_ATTEMPTS) {
+        console.warn(`⚠️ Chunk ${partNumber} already exceeded retry limit (${persistedRetryCount} attempts), deleting`);
+        await recordingDB.deleteChunk(chunkId);
+        const uploadError = new Error(`Chunk ${partNumber} exceeded retry limit`);
+        onError?.(uploadError);
+        throw uploadError;
+      }
+    } catch (err) {
+      console.warn('Failed to check persisted retry count:', err);
+    }
+    
+    try {
+      console.log(`⬆️ Uploading recording chunk ${partNumber} (${(blob.size / 1024).toFixed(2)} KB), total attempts: ${persistedRetryCount + 1}`);
       
       // Get session token from localStorage
       const sessionToken = localStorage.getItem('sessionToken');
@@ -63,6 +84,14 @@ export function useRecording(options: RecordingOptions) {
 
       console.log(`✅ Successfully uploaded chunk ${partNumber}`);
       
+      // Delete chunk from IndexedDB after successful upload
+      try {
+        await recordingDB.deleteChunk(chunkId);
+        console.log(`🗑️ Deleted chunk ${partNumber} from IndexedDB`);
+      } catch (err) {
+        console.warn('Failed to delete chunk from IndexedDB:', err);
+      }
+      
       setState(prev => ({
         ...prev,
         totalSize: prev.totalSize + blob.size,
@@ -71,15 +100,36 @@ export function useRecording(options: RecordingOptions) {
       onChunkUploaded?.(partNumber);
       
     } catch (error) {
-      if (attempt < MAX_RETRY_ATTEMPTS) {
-        console.warn(`⚠️ Upload failed for chunk ${partNumber}, retrying (${attempt}/${MAX_RETRY_ATTEMPTS})...`);
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * attempt));
-        return uploadChunk(blob, partNumber, attempt + 1);
-      } else {
-        const uploadError = new Error(`Failed to upload chunk ${partNumber} after ${MAX_RETRY_ATTEMPTS} attempts`);
+      // Increment retry count in IndexedDB
+      try {
+        await recordingDB.incrementRetryCount(chunkId);
+        persistedRetryCount += 1;
+        console.log(`📈 Incremented retry count for chunk ${partNumber} to ${persistedRetryCount}`);
+      } catch (err) {
+        console.warn('Failed to increment retry count in IndexedDB:', err);
+      }
+      
+      // Check if we've exceeded the retry limit (using both persisted and local attempt counter as fallback)
+      const hasExceededLimit = persistedRetryCount >= MAX_RETRY_ATTEMPTS || attempt >= MAX_RETRY_ATTEMPTS;
+      
+      if (hasExceededLimit) {
+        // Delete chunk from IndexedDB after exhausting retries
+        try {
+          await recordingDB.deleteChunk(chunkId);
+          console.log(`🗑️ Deleted chunk ${partNumber} from IndexedDB after ${persistedRetryCount || attempt} total attempts`);
+        } catch (err) {
+          console.warn('Failed to delete chunk from IndexedDB:', err);
+        }
+        
+        const totalAttempts = Math.max(persistedRetryCount, attempt);
+        const uploadError = new Error(`Failed to upload chunk ${partNumber} after ${totalAttempts} attempts`);
         console.error(`❌ ${uploadError.message}`, error);
         onError?.(uploadError);
         throw uploadError;
+      } else {
+        console.warn(`⚠️ Upload failed for chunk ${partNumber}, retrying (${persistedRetryCount}/${MAX_RETRY_ATTEMPTS}, local: ${attempt}/${MAX_RETRY_ATTEMPTS})...`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * attempt));
+        return uploadChunk(blob, partNumber, attempt + 1);
       }
     }
   }, [sessionId, userId, onChunkUploaded, onError]);
@@ -151,6 +201,22 @@ export function useRecording(options: RecordingOptions) {
           const partNumber = partNumberRef.current;
           
           console.log(`📦 Recording chunk ${partNumber} available (${(event.data.size / 1024).toFixed(2)} KB)`);
+          
+          // Persist chunk to IndexedDB as backup
+          const chunkId = `${sessionId}-${partNumber}`;
+          try {
+            await recordingDB.saveChunk({
+              id: chunkId,
+              sessionId,
+              partNumber,
+              blob: event.data,
+              timestamp: Date.now(),
+              retryCount: 0,
+            });
+            console.log(`💾 Saved chunk ${partNumber} to IndexedDB`);
+          } catch (err) {
+            console.warn('Failed to save chunk to IndexedDB:', err);
+          }
           
           // Queue upload
           uploadQueueRef.current.push({
@@ -233,6 +299,42 @@ export function useRecording(options: RecordingOptions) {
       console.log('✅ Recording stopped and cleanup complete');
     }
   }, []);
+
+  // Rehydrate persisted chunks on mount
+  useEffect(() => {
+    const rehydrateChunks = async () => {
+      try {
+        const persistedChunks = await recordingDB.getChunksBySession(sessionId);
+        if (persistedChunks.length > 0) {
+          console.log(`🔄 Rehydrating ${persistedChunks.length} persisted chunks for session ${sessionId}`);
+          
+          // Sort by part number to maintain order
+          const sortedChunks = persistedChunks.sort((a, b) => a.partNumber - b.partNumber);
+          
+          // Re-enqueue chunks for upload
+          for (const chunk of sortedChunks) {
+            // Only retry if not too many retries already
+            if (chunk.retryCount < MAX_RETRY_ATTEMPTS) {
+              uploadQueueRef.current.push({
+                blob: chunk.blob,
+                partNumber: chunk.partNumber,
+              });
+            } else {
+              console.warn(`⚠️ Chunk ${chunk.partNumber} exceeded retry limit, deleting from IndexedDB`);
+              await recordingDB.deleteChunk(chunk.id);
+            }
+          }
+          
+          // Process the rehydrated queue
+          processUploadQueue();
+        }
+      } catch (err) {
+        console.error('Failed to rehydrate chunks from IndexedDB:', err);
+      }
+    };
+
+    rehydrateChunks();
+  }, [sessionId, processUploadQueue]);
 
   // Cleanup on unmount and handle page unload
   useEffect(() => {
