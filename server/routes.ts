@@ -1173,6 +1173,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.cancelBooking(id);
       
+      // If booking is part of a course, check if all course bookings are now cancelled
+      if (booking.courseId) {
+        const student = await storage.getStudent(booking.studentId);
+        if (student) {
+          const allBookings = await storage.getStudentBookings(booking.studentId);
+          const courseBookings = allBookings.filter((b: any) => 
+            b.courseId === booking.courseId && b.status !== 'cancelled'
+          );
+          
+          // If no active bookings remain for this course, auto-cancel the enrollment
+          if (courseBookings.length === 0) {
+            const enrollments = await storage.getCourseEnrollmentsByStudent(booking.studentId);
+            const enrollment = enrollments.find((e: any) => e.courseId === booking.courseId && e.status === 'active');
+            
+            if (enrollment) {
+              await storage.updateCourseEnrollmentStatus(enrollment.id, 'cancelled');
+              console.log(`✅ Auto-cancelled enrollment ${enrollment.id} - all course bookings cancelled`);
+            }
+          }
+        }
+      }
+      
       res.json({ 
         message: "Booking cancelled successfully"
       });
