@@ -555,7 +555,25 @@ export default function Booking() {
               </div>
 
               <div className="space-y-3">
-                <h4 className="font-medium text-foreground">Teacher Subjects & Courses:</h4>
+                <h4 className="font-medium text-foreground">Teacher Specialties:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {mentor.specialties && mentor.specialties.length > 0 ? (
+                    mentor.specialties.map((specialty: string, index: number) => (
+                      <span 
+                        key={index} 
+                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary"
+                      >
+                        {specialty}
+                      </span>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No specialties listed</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-3 mt-4">
+                <h4 className="font-medium text-foreground">Subjects & Courses:</h4>
                 <div className="flex flex-wrap gap-2">
                   {mentorSubjects && mentorSubjects.subjects.length > 0 ? (
                     mentorSubjects.subjects.map((subject: any, index: number) => (
@@ -565,15 +583,6 @@ export default function Booking() {
                         title={`${subject.experience} experience`}
                       >
                         {subject.subject}
-                      </span>
-                    ))
-                  ) : mentor.specialties && mentor.specialties.length > 0 ? (
-                    mentor.specialties.map((specialty: string, index: number) => (
-                      <span 
-                        key={index} 
-                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary"
-                      >
-                        {specialty}
                       </span>
                     ))
                   ) : (
