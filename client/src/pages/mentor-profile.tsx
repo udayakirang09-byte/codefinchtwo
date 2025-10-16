@@ -196,8 +196,8 @@ export default function MentorProfile() {
             <div className="mb-8">
               <h2 className="text-2xl font-bold text-foreground mb-4">Specialties</h2>
               <div className="flex flex-wrap gap-3">
-                {((mentor as any).subjects && (mentor as any).subjects.length > 0) ? (
-                  (mentor as any).subjects.map((subject: any, index: number) => (
+                {((mentor as any).signupSubjects && (mentor as any).signupSubjects.length > 0) ? (
+                  (mentor as any).signupSubjects.map((subject: any, index: number) => (
                     <Badge 
                       key={index} 
                       variant="outline" 
