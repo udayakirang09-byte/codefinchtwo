@@ -717,36 +717,44 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBookingsByStudent(studentId: string): Promise<BookingWithDetails[]> {
+    const studentUsers = alias(users, 'studentUsers');
+    const mentorUsers = alias(users, 'mentorUsers');
+    
     const result = await db
       .select()
       .from(bookings)
       .leftJoin(students, eq(bookings.studentId, students.id))
+      .leftJoin(studentUsers, eq(students.userId, studentUsers.id))
       .leftJoin(mentors, eq(bookings.mentorId, mentors.id))
-      .leftJoin(users, eq(students.userId, users.id))
+      .leftJoin(mentorUsers, eq(mentors.userId, mentorUsers.id))
       .where(eq(bookings.studentId, studentId))
       .orderBy(desc(bookings.scheduledAt));
 
-    return result.map(({ bookings: booking, students: student, mentors: mentor, users: user }: { bookings: Booking; students: Student; mentors: Mentor; users: User }) => ({
-      ...booking,
-      student: { ...student!, user: user! },
-      mentor: { ...mentor!, user: user! },
+    return result.map((row: any) => ({
+      ...row.bookings,
+      student: { ...row.students!, user: row.studentUsers! },
+      mentor: { ...row.mentors!, user: row.mentorUsers! },
     }));
   }
 
   async getBookingsByMentor(mentorId: string): Promise<BookingWithDetails[]> {
+    const studentUsers = alias(users, 'studentUsers');
+    const mentorUsers = alias(users, 'mentorUsers');
+    
     const result = await db
       .select()
       .from(bookings)
       .leftJoin(students, eq(bookings.studentId, students.id))
+      .leftJoin(studentUsers, eq(students.userId, studentUsers.id))
       .leftJoin(mentors, eq(bookings.mentorId, mentors.id))
-      .leftJoin(users, eq(students.userId, users.id))
+      .leftJoin(mentorUsers, eq(mentors.userId, mentorUsers.id))
       .where(eq(bookings.mentorId, mentorId))
       .orderBy(desc(bookings.scheduledAt));
 
-    return result.map(({ bookings: booking, students: student, mentors: mentor, users: user }: { bookings: Booking; students: Student; mentors: Mentor; users: User }) => ({
-      ...booking,
-      student: { ...student!, user: user! },
-      mentor: { ...mentor!, user: user! },
+    return result.map((row: any) => ({
+      ...row.bookings,
+      student: { ...row.students!, user: row.studentUsers! },
+      mentor: { ...row.mentors!, user: row.mentorUsers! },
     }));
   }
 
