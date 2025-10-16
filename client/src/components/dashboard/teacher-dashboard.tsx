@@ -279,7 +279,8 @@ export default function TeacherDashboard() {
   const upcomingClasses = Array.isArray(teacherClasses) ? teacherClasses.filter((booking: any) => {
     const scheduledAt = new Date(booking.scheduledAt);
     const classEndTime = addMinutes(scheduledAt, booking.duration + 2); // class end + 2 minutes
-    return booking.status === 'scheduled' && new Date() < classEndTime;
+    const seventyTwoHoursFromNow = addHours(new Date(), 72);
+    return booking.status === 'scheduled' && new Date() < classEndTime && scheduledAt <= seventyTwoHoursFromNow;
   }).map((booking: any) => ({
     id: booking.id,
     studentName: booking.student?.user?.firstName + ' ' + (booking.student?.user?.lastName || ''),
@@ -970,7 +971,7 @@ export default function TeacherDashboard() {
           <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
             <CardTitle className="flex items-center gap-3 text-xl">
               <Calendar className="h-6 w-6" />
-              Upcoming Classes
+              Upcoming Classes (Next 72 Hours)
               <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30">
                 {upcomingClasses.length} scheduled
               </Badge>
@@ -1071,7 +1072,7 @@ export default function TeacherDashboard() {
                       <p className="text-emerald-600 font-medium">with {completedClass.studentName}</p>
                     </div>
                     <Badge className="bg-green-600 hover:bg-green-700 text-white shadow-lg">
-                      Earned ${completedClass.earnings}
+                      Earned ₹{completedClass.earnings}
                     </Badge>
                   </div>
                   
@@ -1260,7 +1261,7 @@ export default function TeacherDashboard() {
                 variant="outline" 
                 className="h-32 p-6 flex-col hover:bg-indigo-50 hover:border-indigo-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
                 data-testid="button-completed-classes"
-                onClick={() => setShowCompletedClasses(!showCompletedClasses)}
+                onClick={() => window.location.href = '/teacher/completed-classes'}
               >
                 <CheckCircle className="h-10 w-10 mb-3 text-indigo-600 group-hover:scale-110 transition-transform duration-200" />
                 <span className="font-bold text-lg">Completed Classes</span>
