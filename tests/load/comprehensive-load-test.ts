@@ -4,6 +4,9 @@ import { runDatabaseConnectionPoolTest } from './db-connection-pool-test';
 import { runAuthLoadTest } from './auth-load-test';
 import { runMentorDiscoveryLoadTest } from './mentor-discovery-test';
 import { runRecordingAccessLoadTest } from './recording-access-test';
+import { runVideoClassConcurrencyTest } from './video-class-concurrency-test';
+import { runChatConcurrencyTest } from './chat-concurrency-test';
+import { runStorageUploadConcurrencyTest } from './storage-upload-concurrency-test';
 
 async function runComprehensiveLoadTest() {
   const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
@@ -99,6 +102,57 @@ async function runComprehensiveLoadTest() {
   } catch (error) {
     console.error('⚠️  WebSocket Test Skipped (server may not be running):', error);
     results.push({ phase: 'WebSocket', error: 'WebSocket server unavailable' });
+  }
+  
+  // Get session token for authenticated tests
+  const sessionToken = 'mock-token'; // In production, get real token
+  
+  // Phase 6: Video Class Concurrency
+  console.log('\n\n📍 PHASE 6: VIDEO CLASS CONCURRENCY TEST');
+  console.log('-'.repeat(100));
+  try {
+    const videoResult = await runVideoClassConcurrencyTest({
+      url: baseUrl,
+      connections: concurrentUsers,
+      duration: 30,
+      sessionToken
+    });
+    results.push({ phase: 'Video Class Concurrency', ...videoResult });
+  } catch (error) {
+    console.error('❌ Video Class Concurrency Test Failed:', error);
+    results.push({ phase: 'Video Class Concurrency', error: String(error) });
+  }
+  
+  // Phase 7: Chat Concurrency
+  console.log('\n\n📍 PHASE 7: CHAT CONCURRENCY TEST');
+  console.log('-'.repeat(100));
+  try {
+    const chatResult = await runChatConcurrencyTest({
+      url: baseUrl,
+      connections: concurrentUsers,
+      duration: 30,
+      sessionToken
+    });
+    results.push({ phase: 'Chat Concurrency', ...chatResult });
+  } catch (error) {
+    console.error('❌ Chat Concurrency Test Failed:', error);
+    results.push({ phase: 'Chat Concurrency', error: String(error) });
+  }
+  
+  // Phase 8: Azure Storage Upload Concurrency
+  console.log('\n\n📍 PHASE 8: AZURE STORAGE UPLOAD CONCURRENCY TEST');
+  console.log('-'.repeat(100));
+  try {
+    const storageResult = await runStorageUploadConcurrencyTest({
+      url: baseUrl,
+      connections: concurrentUsers,
+      duration: 30,
+      sessionToken
+    });
+    results.push({ phase: 'Azure Storage Upload Concurrency', ...storageResult });
+  } catch (error) {
+    console.error('❌ Storage Upload Concurrency Test Failed:', error);
+    results.push({ phase: 'Azure Storage Upload Concurrency', error: String(error) });
   }
   
   // Final Summary
