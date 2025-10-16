@@ -458,6 +458,9 @@ export class DatabaseStorage implements IStorage {
     // Get all teacher qualifications
     const allTeacherQualifications = await db.select().from(teacherQualifications);
 
+    // Get all teacher profiles to fetch signup subjects
+    const allTeacherProfiles = await db.select().from(teacherProfiles);
+
     return result.map(({ mentors: mentor, users: user }: any) => {
       // Calculate actual unique students for this mentor
       const mentorBookings = allBookings.filter((b: any) => b.mentorId === mentor.id);
@@ -478,6 +481,10 @@ export class DatabaseStorage implements IStorage {
       
       // Get qualifications for this mentor from teacherQualifications table
       const mentorQualifications = allTeacherQualifications.filter((q: any) => q.mentorId === mentor.id);
+
+      // Get signup subjects from teacher profiles (these are the specialties)
+      const teacherProfile = allTeacherProfiles.find((p: any) => p.userId === user?.id);
+      const signupSubjects = teacherProfile?.subjects || [];
 
       // Calculate total experience from subjects
       let totalExperience = mentor.experience || 0;
@@ -500,6 +507,7 @@ export class DatabaseStorage implements IStorage {
         totalStudents: actualStudentCount,
         experience: totalExperience,
         specialties: mentor.specialties || [],
+        signupSubjects: signupSubjects,
         subjects: mentorSubjects,
         qualifications: mentorQualifications,
         user: user!,
@@ -536,6 +544,10 @@ export class DatabaseStorage implements IStorage {
     // Get qualifications for this mentor from teacherQualifications table
     const mentorQualifications = await db.select().from(teacherQualifications).where(eq(teacherQualifications.mentorId, id));
     
+    // Get signup subjects from teacher profiles (these are the specialties)
+    const [teacherProfile] = await db.select().from(teacherProfiles).where(eq(teacherProfiles.userId, result.users?.id!));
+    const signupSubjects = teacherProfile?.subjects || [];
+    
     // Calculate total experience from subjects
     let totalExperience = result.mentors.experience || 0;
     if (mentorSubjects.length > 0) {
@@ -557,6 +569,7 @@ export class DatabaseStorage implements IStorage {
       totalStudents: actualStudentCount,
       experience: totalExperience,
       specialties: result.mentors.specialties || [],
+      signupSubjects: signupSubjects,
       subjects: mentorSubjects,
       qualifications: mentorQualifications,
       user: result.users!,
