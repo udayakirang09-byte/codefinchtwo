@@ -2,7 +2,7 @@ import { BlobServiceClient, ContainerClient, BlockBlobClient, BlobSASPermissions
 import { Readable } from 'stream';
 
 const STORAGE_ACCOUNT = 'kidzaimathstore31320';
-const CONTAINER_NAME = 'reply-knowledge';
+const CONTAINER_NAME = 'replayknowledge';
 
 let blobServiceClient: BlobServiceClient | null = null;
 let containerClient: ContainerClient | null = null;
