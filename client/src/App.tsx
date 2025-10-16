@@ -38,6 +38,7 @@ import CreateCourse from "./pages/teacher/create-course";
 import EditCourse from "./pages/teacher/edit-course";
 import ViewCourse from "./pages/teacher/view-course";
 import TeacherAllActiveClasses from "./pages/teacher/all-active-classes";
+import TeacherCompletedClasses from "./pages/teacher/completed-classes";
 import ManageSchedule from "./pages/teacher/manage-schedule";
 import Terms from "./pages/terms";
 import Privacy from "./pages/privacy";
@@ -116,6 +117,7 @@ function Router() {
       <Route path="/teacher/courses/:id/edit" component={EditCourse} />
       <Route path="/teacher/courses/:id" component={ViewCourse} />
       <Route path="/teacher/all-active-classes" component={TeacherAllActiveClasses} />
+      <Route path="/teacher/completed-classes" component={TeacherCompletedClasses} />
       <Route path="/teacher/manage-schedule" component={ManageSchedule} />
       <Route path="/student/progress" component={StudentProgress} />
       <Route path="/terms" component={Terms} />
