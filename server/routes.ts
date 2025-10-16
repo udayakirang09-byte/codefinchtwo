@@ -945,6 +945,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const bookings = await storage.getBookingsByStudent(id);
+      
+      // Debug: Log the first booking's mentor data
+      if (bookings && bookings.length > 0) {
+        console.log('📤 [API RESPONSE] First booking mentor data:', {
+          mentorFirstName: bookings[0].mentor?.user?.firstName,
+          mentorLastName: bookings[0].mentor?.user?.lastName,
+          studentFirstName: bookings[0].student?.user?.firstName,
+          studentLastName: bookings[0].student?.user?.lastName
+        });
+      }
+      
       res.json(bookings);
     } catch (error) {
       console.error("Error fetching student bookings:", error);

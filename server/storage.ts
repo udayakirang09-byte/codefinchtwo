@@ -730,6 +730,12 @@ export class DatabaseStorage implements IStorage {
       .where(eq(bookings.studentId, studentId))
       .orderBy(desc(bookings.scheduledAt));
 
+    console.log('📊 [DEBUG] First row keys:', result[0] ? Object.keys(result[0]) : 'No results');
+    if (result[0]) {
+      console.log('📊 [DEBUG] Student user:', result[0].studentUsers);
+      console.log('📊 [DEBUG] Mentor user:', result[0].mentorUsers);
+    }
+
     return result.map((row: any) => ({
       ...row.bookings,
       student: { ...row.students!, user: row.studentUsers! },
