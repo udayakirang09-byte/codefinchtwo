@@ -17,7 +17,7 @@ interface RecordingState {
   error: string | null;
 }
 
-const CHUNK_INTERVAL_MS = 5000; // 5 seconds
+const CHUNK_INTERVAL_MS = 25000; // 25 seconds - optimized to reduce write frequency
 const MAX_RETRY_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 2000;
 
@@ -198,9 +198,24 @@ export function useRecording(options: RecordingOptions) {
     }
   }, [role, processUploadQueue, onError, onRecordingComplete]);
 
+  // Flush any buffered recording data
+  const flushRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      console.log('📤 Flushing buffered recording data...');
+      mediaRecorderRef.current.requestData();
+    }
+  }, []);
+
   // Stop recording
   const stopRecording = useCallback(async () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      // Flush any buffered data before stopping
+      if (mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.requestData();
+        // Give time for the data to be processed
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
       mediaRecorderRef.current.stop();
       
       // Wait for any pending uploads to complete
@@ -219,9 +234,26 @@ export function useRecording(options: RecordingOptions) {
     }
   }, []);
 
-  // Cleanup on unmount
+  // Cleanup on unmount and handle page unload
   useEffect(() => {
+    // Handle page unload - flush recording before leaving
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        console.log('⚠️ Page unloading - flushing recording data...');
+        flushRecording();
+        // Give browser time to process the flush (best effort)
+        const start = Date.now();
+        while (Date.now() - start < 300) {
+          // Synchronous delay
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         mediaRecorderRef.current.stop();
       }
@@ -229,11 +261,12 @@ export function useRecording(options: RecordingOptions) {
         compositeStreamRef.current.getTracks().forEach(track => track.stop());
       }
     };
-  }, []);
+  }, [flushRecording]);
 
   return {
     ...state,
     startRecording,
     stopRecording,
+    flushRecording,
   };
 }
