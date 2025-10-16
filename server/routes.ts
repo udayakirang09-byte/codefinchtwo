@@ -446,14 +446,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const authenticateSession = async (req: any, res: any, next: any) => {
     try {
       const authHeader = req.headers.authorization;
+      console.log(`🔐 [AUTH] Request to ${req.path}, Auth header present: ${!!authHeader}`);
+      
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        console.log(`🔐 [AUTH] Missing or invalid Authorization header`);
         return res.status(401).json({ message: "Authentication required" });
       }
       
       const sessionToken = authHeader.substring(7);
+      console.log(`🔐 [AUTH] Session token: ${sessionToken.substring(0, 10)}...`);
+      
       const session = await storage.getUserSessionByToken(sessionToken);
+      console.log(`🔐 [AUTH] Session found: ${!!session}, Active: ${session?.isActive}`);
       
       if (!session || !session.isActive) {
+        console.log(`🔐 [AUTH] Invalid or inactive session`);
         return res.status(401).json({ message: "Invalid or expired session" });
       }
       
@@ -462,7 +469,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get user information
       const user = await storage.getUser(session.userId);
+      console.log(`🔐 [AUTH] User found: ${!!user}, Role: ${user?.role}`);
+      
       if (!user) {
+        console.log(`🔐 [AUTH] User not found for session`);
         return res.status(401).json({ message: "User not found" });
       }
       
