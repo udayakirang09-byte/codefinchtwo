@@ -776,7 +776,7 @@ export default function AdminDashboard() {
                     setContactSettings(newSettings);
                     saveContactSetting(newSettings);
                   }}
-                  className={contactSettings.emailEnabled ? "data-[state=checked]:bg-green-500" : "bg-red-500"}
+                  className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500"
                   data-testid="switch-email-support"
                 />
               </div>
@@ -796,7 +796,7 @@ export default function AdminDashboard() {
                     setContactSettings(newSettings);
                     saveContactSetting(newSettings);
                   }}
-                  className={contactSettings.chatEnabled ? "data-[state=checked]:bg-green-500" : "bg-red-500"}
+                  className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500"
                   data-testid="switch-live-chat"
                 />
               </div>
@@ -816,7 +816,7 @@ export default function AdminDashboard() {
                     setContactSettings(newSettings);
                     saveContactSetting(newSettings);
                   }}
-                  className={contactSettings.phoneEnabled ? "data-[state=checked]:bg-green-500" : "bg-red-500"}
+                  className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500"
                   data-testid="switch-phone-support"
                 />
               </div>
@@ -838,7 +838,7 @@ export default function AdminDashboard() {
                     onCheckedChange={(checked) => 
                       setPaymentConfig(prev => ({ ...prev, stripeEnabled: checked }))
                     }
-                    className={paymentConfig.stripeEnabled ? "data-[state=checked]:bg-green-500" : "bg-red-500"}
+                    className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500"
                     data-testid="switch-stripe-enabled"
                   />
                 </div>
@@ -889,6 +889,7 @@ export default function AdminDashboard() {
                     onCheckedChange={(checked) => 
                       setPaymentConfig(prev => ({ ...prev, razorpayEnabled: checked }))
                     }
+                    className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500"
                     data-testid="switch-razorpay-enabled"
                   />
                 </div>
