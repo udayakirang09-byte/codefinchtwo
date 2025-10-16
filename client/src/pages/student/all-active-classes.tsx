@@ -19,6 +19,7 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 interface Booking {
   id: string;
   mentorId: string;
+  courseId?: string;
   scheduledAt: string;
   duration: number;
   status: string;
@@ -676,6 +677,15 @@ export default function AllActiveClasses() {
               Are you sure you want to cancel this booking? Any applicable payment will be refunded.
             </DialogDescription>
           </DialogHeader>
+
+          {bookingToCancel && activeBookings.find(b => b.id === bookingToCancel)?.courseId && (
+            <Alert className="bg-yellow-50 border-yellow-200">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription className="text-yellow-800">
+                <strong>Warning:</strong> This class is part of an enrolled course. Deleting individual classes may affect your course progress and completion. Consider using the "Cancel Course" option instead to cancel all remaining classes together.
+              </AlertDescription>
+            </Alert>
+          )}
 
           <DialogFooter>
             <Button
