@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
+import type { Student } from "@shared/schema";
 
 interface MergedRecording {
   id: string;
@@ -58,72 +59,16 @@ export default function StudentRecordings() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
 
-  // First, fetch student record for the logged-in user
-  const { data: student } = useQuery({
+  // Fetch student record for the logged-in user
+  const { data: student } = useQuery<Student>({
     queryKey: ['/api/students/user', user?.id],
-    queryFn: async () => {
-      if (!user?.id) throw new Error('User not authenticated');
-      
-      const sessionToken = localStorage.getItem('sessionToken');
-      const headers: Record<string, string> = {};
-      if (sessionToken) {
-        headers["Authorization"] = `Bearer ${sessionToken}`;
-      }
-      
-      const response = await fetch(`/api/students/user/${user.id}`, {
-        headers,
-        credentials: 'include'
-      });
-      if (!response.ok) throw new Error('Failed to fetch student record');
-      return response.json();
-    },
     enabled: !!user?.id && isAuthenticated,
   });
 
-  // Fetch merged recordings for student
-  const { data: recordings, isLoading, error, refetch } = useQuery({
+  // Fetch merged recordings for student - Using default queryFn for automatic auth handling
+  const { data: recordings, isLoading, error, refetch } = useQuery<MergedRecording[]>({
     queryKey: ['/api/recordings/merged', student?.id],
-    queryFn: async () => {
-      if (!student?.id) throw new Error('Student record not found');
-      
-      const sessionToken = localStorage.getItem('sessionToken');
-      const headers: Record<string, string> = {};
-      if (sessionToken) {
-        headers["Authorization"] = `Bearer ${sessionToken}`;
-      }
-      
-      const response = await fetch(`/api/recordings/merged/${student.id}`, {
-        headers,
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('AUTHENTICATION_REQUIRED: Your session has expired. Please log in again to access your recordings.');
-        } else if (response.status === 403) {
-          throw new Error('ACCESS_DENIED: You don\'t have permission to access these recordings.');
-        } else if (response.status === 404) {
-          throw new Error('NOT_FOUND: Student record not found. Please contact support if this issue persists.');
-        } else if (response.status >= 500) {
-          throw new Error('SERVER_ERROR: Our servers are experiencing issues. Please try again in a few minutes.');
-        } else {
-          throw new Error('UNKNOWN_ERROR: Failed to load recordings. Please try again later.');
-        }
-      }
-      
-      return response.json() as Promise<MergedRecording[]>;
-    },
     enabled: !!student?.id && isAuthenticated,
-    retry: (failureCount, error: any) => {
-      // Don't retry auth errors or client errors (4xx)
-      if (error.message?.includes('AUTHENTICATION_REQUIRED') || 
-          error.message?.includes('ACCESS_DENIED') ||
-          error.message?.includes('NOT_FOUND')) {
-        return false;
-      }
-      // Retry server errors up to 2 times
-      return failureCount < 2;
-    },
   });
 
   const filteredRecordings = recordings?.filter(recording =>
