@@ -788,7 +788,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Student routes
-  app.get("/api/students/user/:userId", async (req, res) => {
+  app.get("/api/students/user/:userId", authenticateSession, async (req, res) => {
     try {
       const { userId } = req.params;
       const student = await storage.getStudentByUserId(userId);
