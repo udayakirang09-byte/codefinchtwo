@@ -468,6 +468,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       req.user = user;
       req.session = session;
+      
+      // Prevent HTTP caching on authenticated endpoints to avoid 304 responses
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
       next();
     } catch (error) {
       console.error("Authentication error:", error);
