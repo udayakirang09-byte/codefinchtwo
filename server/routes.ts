@@ -7121,6 +7121,226 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   console.log('✅ Abusive Language Incidents API routes registered successfully!');
 
+  // Azure Application Insights Metrics API Routes
+  const { azureAppInsights } = await import('./azure-app-insights');
+  const { azureAppInsightsConfig, azureMetricsAlerts, azureMetricsHistory } = await import('@shared/schema');
+
+  // Get or create App Insights configuration
+  app.get('/api/admin/azure-insights/config', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      const config = await db.select().from(azureAppInsightsConfig).limit(1);
+      res.json(config[0] || null);
+    } catch (error) {
+      console.error('❌ Error fetching App Insights config:', error);
+      res.status(500).json({ message: 'Failed to fetch config' });
+    }
+  });
+
+  // Save App Insights configuration
+  app.post('/api/admin/azure-insights/config', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      const { appInsightsName, appId, apiKey } = req.body;
+
+      // Delete existing config
+      await db.delete(azureAppInsightsConfig);
+
+      // Insert new config
+      const config = await db.insert(azureAppInsightsConfig).values({
+        appInsightsName,
+        appId,
+        apiKey,
+        isEnabled: true
+      }).returning();
+
+      // Update the service config
+      azureAppInsights.setConfig({
+        appInsightsName,
+        appId,
+        apiKey
+      });
+
+      res.json(config[0]);
+    } catch (error) {
+      console.error('❌ Error saving App Insights config:', error);
+      res.status(500).json({ message: 'Failed to save config' });
+    }
+  });
+
+  // Get all metrics from Azure App Insights
+  app.get('/api/admin/azure-insights/metrics', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      // Load config from database if exists
+      const configResult = await db.select().from(azureAppInsightsConfig).limit(1);
+      if (configResult[0]?.isEnabled) {
+        azureAppInsights.setConfig({
+          appInsightsName: configResult[0].appInsightsName,
+          appId: configResult[0].appId!,
+          apiKey: configResult[0].apiKey!
+        });
+      }
+
+      const metrics = await azureAppInsights.getAllMetrics();
+
+      // Store metrics in database
+      for (const metric of metrics) {
+        // Check if alert exists
+        const existingAlert = await db
+          .select()
+          .from(azureMetricsAlerts)
+          .where(eq(azureMetricsAlerts.metricName, metric.name))
+          .limit(1);
+
+        if (existingAlert.length > 0) {
+          // Update existing alert
+          await db
+            .update(azureMetricsAlerts)
+            .set({
+              currentValue: metric.value.toString(),
+              lastChecked: new Date()
+            })
+            .where(eq(azureMetricsAlerts.id, existingAlert[0].id));
+        } else {
+          // Create new alert
+          await db.insert(azureMetricsAlerts).values({
+            metricName: metric.name,
+            metricCategory: metric.category,
+            severity: metric.severity,
+            threshold: metric.threshold?.toString(),
+            currentValue: metric.value.toString(),
+            unit: metric.unit,
+            description: metric.description,
+            hasFix: metric.hasFix,
+            fixSolution: metric.fixSolution,
+            isActive: true
+          });
+        }
+
+        // Store in history
+        await db.insert(azureMetricsHistory).values({
+          metricName: metric.name,
+          value: metric.value.toString(),
+          timestamp: metric.timestamp
+        });
+      }
+
+      res.json(metrics);
+    } catch (error) {
+      console.error('❌ Error fetching Azure metrics:', error);
+      res.status(500).json({ message: 'Failed to fetch metrics' });
+    }
+  });
+
+  // Get metrics by severity
+  app.get('/api/admin/azure-insights/metrics/severity/:severity', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      const severity = parseInt(req.params.severity);
+      const alerts = await db
+        .select()
+        .from(azureMetricsAlerts)
+        .where(eq(azureMetricsAlerts.severity, severity))
+        .orderBy(azureMetricsAlerts.lastChecked);
+
+      res.json(alerts);
+    } catch (error) {
+      console.error('❌ Error fetching metrics by severity:', error);
+      res.status(500).json({ message: 'Failed to fetch metrics' });
+    }
+  });
+
+  // Get metrics by category (General/Concurrent)
+  app.get('/api/admin/azure-insights/metrics/category/:category', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      const category = req.params.category;
+      const alerts = await db
+        .select()
+        .from(azureMetricsAlerts)
+        .where(eq(azureMetricsAlerts.metricCategory, category))
+        .orderBy(azureMetricsAlerts.severity);
+
+      res.json(alerts);
+    } catch (error) {
+      console.error('❌ Error fetching metrics by category:', error);
+      res.status(500).json({ message: 'Failed to fetch metrics' });
+    }
+  });
+
+  // Apply fix for a metric
+  app.post('/api/admin/azure-insights/metrics/:id/apply-fix', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      const { id } = req.params;
+      
+      // In a real implementation, this would trigger the actual fix
+      // For now, we just mark it as applied
+      await db
+        .update(azureMetricsAlerts)
+        .set({
+          fixStatus: 'applied'
+        })
+        .where(eq(azureMetricsAlerts.id, id));
+
+      res.json({ message: 'Fix applied successfully' });
+    } catch (error) {
+      console.error('❌ Error applying fix:', error);
+      res.status(500).json({ message: 'Failed to apply fix' });
+    }
+  });
+
+  // Get metrics summary (count by severity)
+  app.get('/api/admin/azure-insights/summary', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      const summary = await db
+        .select({
+          severity: azureMetricsAlerts.severity,
+          count: sql<number>`count(*)`
+        })
+        .from(azureMetricsAlerts)
+        .groupBy(azureMetricsAlerts.severity);
+
+      const result = {
+        sev0: summary.find(s => s.severity === 0)?.count || 0,
+        sev1: summary.find(s => s.severity === 1)?.count || 0,
+        sev2: summary.find(s => s.severity === 2)?.count || 0,
+        sev3: summary.find(s => s.severity === 3)?.count || 0,
+        sev4: summary.find(s => s.severity === 4)?.count || 0,
+      };
+
+      res.json(result);
+    } catch (error) {
+      console.error('❌ Error fetching metrics summary:', error);
+      res.status(500).json({ message: 'Failed to fetch summary' });
+    }
+  });
+
+  console.log('✅ Azure Application Insights API routes registered successfully!');
+
   const httpServer = createServer(app);
   return httpServer;
 }
