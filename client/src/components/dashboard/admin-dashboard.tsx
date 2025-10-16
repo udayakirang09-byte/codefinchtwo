@@ -1350,17 +1350,23 @@ export default function AdminDashboard() {
         </CardHeader>
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Link href="/system-test">
-              <Button variant="outline" className="w-full h-auto py-4 hover:bg-emerald-50 hover:border-emerald-400 transition-all" data-testid="button-nav-system-health">
-                <div className="flex items-center gap-3 w-full">
-                  <Activity className="h-5 w-5 text-emerald-600" />
-                  <div className="text-left flex-1">
-                    <div className="font-semibold text-gray-900">System Health Monitoring</div>
-                    <div className="text-xs text-gray-600">Monitor real-time system metrics</div>
-                  </div>
+            <Button 
+              variant="outline" 
+              className="w-full h-auto py-4 hover:bg-emerald-50 hover:border-emerald-400 transition-all" 
+              data-testid="button-nav-system-health"
+              onClick={() => {
+                // Scroll to System Health Monitoring section
+                document.getElementById('system-health-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+            >
+              <div className="flex items-center gap-3 w-full">
+                <Activity className="h-5 w-5 text-emerald-600" />
+                <div className="text-left flex-1">
+                  <div className="font-semibold text-gray-900">System Health Monitoring</div>
+                  <div className="text-xs text-gray-600">Monitor real-time system metrics</div>
                 </div>
-              </Button>
-            </Link>
+              </div>
+            </Button>
 
             <Button 
               variant="outline" 
@@ -1442,17 +1448,23 @@ export default function AdminDashboard() {
               </div>
             </Button>
 
-            <Link href="/admin/monitoring">
-              <Button variant="outline" className="w-full h-auto py-4 hover:bg-cyan-50 hover:border-cyan-400 transition-all" data-testid="button-nav-system-monitoring">
-                <div className="flex items-center gap-3 w-full">
-                  <Monitor className="h-5 w-5 text-cyan-600" />
-                  <div className="text-left flex-1">
-                    <div className="font-semibold text-gray-900">System Testing & Monitoring</div>
-                    <div className="text-xs text-gray-600">Comprehensive monitoring dashboard</div>
-                  </div>
+            <Button 
+              variant="outline" 
+              className="w-full h-auto py-4 hover:bg-cyan-50 hover:border-cyan-400 transition-all" 
+              data-testid="button-nav-system-monitoring"
+              onClick={() => {
+                // Scroll to System Testing & Monitoring section
+                document.getElementById('system-testing-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+            >
+              <div className="flex items-center gap-3 w-full">
+                <Monitor className="h-5 w-5 text-cyan-600" />
+                <div className="text-left flex-1">
+                  <div className="font-semibold text-gray-900">System Testing & Monitoring</div>
+                  <div className="text-xs text-gray-600">Comprehensive monitoring dashboard</div>
                 </div>
-              </Button>
-            </Link>
+              </div>
+            </Button>
 
             <Link href="/admin/analytics">
               <Button variant="outline" className="w-full h-auto py-4 hover:bg-violet-50 hover:border-violet-400 transition-all" data-testid="button-nav-ai-analytics">
@@ -1506,7 +1518,7 @@ export default function AdminDashboard() {
       </Card>
 
       {/* System Health */}
-      <Card className="modern-card modern-card-green overflow-hidden">
+      <Card id="system-health-section" className="modern-card modern-card-green overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white">
           <CardTitle className="flex items-center gap-3 text-xl">
             <TrendingUp className="h-6 w-6" />
@@ -1901,7 +1913,7 @@ export default function AdminDashboard() {
       )}
 
       {/* System Testing */}
-      <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+      <Card id="system-testing-section" className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
           <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-700 text-white">
             <CardTitle className="flex items-center gap-3 text-xl">
               <BarChart3 className="h-6 w-6" />
