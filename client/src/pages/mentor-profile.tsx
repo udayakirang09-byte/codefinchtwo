@@ -196,20 +196,32 @@ export default function MentorProfile() {
             <div className="mb-8">
               <h2 className="text-2xl font-bold text-foreground mb-4">Specialties</h2>
               <div className="flex flex-wrap gap-3">
-                {mentor.specialties && mentor.specialties.length > 0 ? (
-                  mentor.specialties.map((specialty: string, index: number) => (
-                    <Badge 
-                      key={index} 
-                      variant="outline" 
-                      className="text-sm px-3 py-1"
-                      data-testid={`badge-specialty-${index}`}
-                    >
-                      {specialty}
-                    </Badge>
-                  ))
-                ) : (
-                  <p className="text-muted-foreground">No specialties listed</p>
-                )}
+                {(() => {
+                  const subjects = (mentor as any).subjects;
+                  if (!subjects || subjects.length === 0) {
+                    return <p className="text-muted-foreground">No specialties listed</p>;
+                  }
+                  const courseCodes = subjects.map((subj: any) => {
+                    const parts = subj.subject.split('-');
+                    return parts.slice(0, -1).join('-');
+                  }).filter((code: string) => code);
+                  const uniqueCodes = Array.from(new Set(courseCodes));
+                  
+                  return uniqueCodes.length > 0 ? (
+                    uniqueCodes.map((code: string, index: number) => (
+                      <Badge 
+                        key={index} 
+                        variant="outline" 
+                        className="text-sm px-3 py-1"
+                        data-testid={`badge-specialty-${index}`}
+                      >
+                        {code}
+                      </Badge>
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground">No specialties listed</p>
+                  );
+                })()}
               </div>
             </div>
 
@@ -225,7 +237,7 @@ export default function MentorProfile() {
                       data-testid={`badge-subject-${index}`}
                       title={`${subject.experience} experience - ₹${subject.classFee} per class`}
                     >
-                      {subject.subject} ({subject.experience})
+                      {subject.subject} - ₹{subject.classFee}
                     </Badge>
                   ))
                 ) : ((mentor as any).subjectsWithExperience && (mentor as any).subjectsWithExperience.length > 0) ? (
