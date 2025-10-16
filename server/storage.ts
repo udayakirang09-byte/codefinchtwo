@@ -74,6 +74,7 @@ import {
   recordingParts,
   mergedRecordings,
   teacherSubjects,
+  teacherQualifications,
   adminPaymentConfig,
   adminUiConfig,
   type TeacherAudioMetrics,
@@ -427,7 +428,6 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(mentors)
       .leftJoin(users, eq(mentors.userId, users.id))
-      .leftJoin(teacherProfiles, eq(mentors.userId, teacherProfiles.userId))
       .where(eq(mentors.isActive, true))
       .orderBy(desc(mentors.rating));
 
@@ -437,7 +437,13 @@ export class DatabaseStorage implements IStorage {
     // Get all reviews to calculate ratings
     const allReviews = await db.select().from(reviews);
 
-    return result.map(({ mentors: mentor, users: user, teacher_profiles: profile }: any) => {
+    // Get all teacher subjects
+    const allTeacherSubjects = await db.select().from(teacherSubjects);
+
+    // Get all teacher qualifications
+    const allTeacherQualifications = await db.select().from(teacherQualifications);
+
+    return result.map(({ mentors: mentor, users: user }: any) => {
       // Calculate actual unique students for this mentor
       const mentorBookings = allBookings.filter((b: any) => b.mentorId === mentor.id);
       const uniqueStudentIds = new Set(mentorBookings.map((b: any) => b.studentId));
@@ -452,14 +458,16 @@ export class DatabaseStorage implements IStorage {
         calculatedRating = avgRating.toFixed(2);
       }
 
-      // Calculate total experience from subjects and get subjects with experience
-      let totalExperience = mentor.experience || 0;
-      let subjectsWithExperience: { subject: string; experience: string }[] = [];
+      // Get subjects for this mentor from teacherSubjects table
+      const mentorSubjects = allTeacherSubjects.filter((s: any) => s.mentorId === mentor.id);
       
-      if (profile?.subjects && Array.isArray(profile.subjects)) {
-        subjectsWithExperience = profile.subjects;
-        // Calculate total experience by summing up all subject experiences
-        const summedExperience = profile.subjects.reduce(
+      // Get qualifications for this mentor from teacherQualifications table
+      const mentorQualifications = allTeacherQualifications.filter((q: any) => q.mentorId === mentor.id);
+
+      // Calculate total experience from subjects
+      let totalExperience = mentor.experience || 0;
+      if (mentorSubjects.length > 0) {
+        const summedExperience = mentorSubjects.reduce(
           (sum: number, subj: any) => {
             const exp = parseInt(subj.experience) || 0;
             return sum + exp;
@@ -471,17 +479,14 @@ export class DatabaseStorage implements IStorage {
         }
       }
 
-      // Use subjects for specialties instead of the old specialties field
-      const specialties = subjectsWithExperience.map(s => s.subject);
-
       return {
         ...mentor,
         rating: calculatedRating,
         totalStudents: actualStudentCount,
         experience: totalExperience,
-        specialties: specialties,
-        subjectsWithExperience: subjectsWithExperience,
-        programmingLanguages: profile?.programmingLanguages || [],
+        specialties: mentor.specialties || [],
+        subjects: mentorSubjects,
+        qualifications: mentorQualifications,
         user: user!,
       };
     });
@@ -492,7 +497,6 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(mentors)
       .leftJoin(users, eq(mentors.userId, users.id))
-      .leftJoin(teacherProfiles, eq(mentors.userId, teacherProfiles.userId))
       .where(eq(mentors.id, id));
 
     if (!result) return undefined;
@@ -511,16 +515,16 @@ export class DatabaseStorage implements IStorage {
       calculatedRating = avgRating.toFixed(2);
     }
 
-    const profile = (result as any).teacher_profiles;
+    // Get subjects for this mentor from teacherSubjects table
+    const mentorSubjects = await db.select().from(teacherSubjects).where(eq(teacherSubjects.mentorId, id));
     
-    // Calculate total experience from subjects and get subjects with experience
+    // Get qualifications for this mentor from teacherQualifications table
+    const mentorQualifications = await db.select().from(teacherQualifications).where(eq(teacherQualifications.mentorId, id));
+    
+    // Calculate total experience from subjects
     let totalExperience = result.mentors.experience || 0;
-    let subjectsWithExperience: { subject: string; experience: string }[] = [];
-    
-    if (profile?.subjects && Array.isArray(profile.subjects)) {
-      subjectsWithExperience = profile.subjects;
-      // Calculate total experience by summing up all subject experiences
-      const summedExperience = profile.subjects.reduce(
+    if (mentorSubjects.length > 0) {
+      const summedExperience = mentorSubjects.reduce(
         (sum: number, subj: any) => {
           const exp = parseInt(subj.experience) || 0;
           return sum + exp;
@@ -532,17 +536,14 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
-    // Use subjects for specialties instead of the old specialties field
-    const specialties = subjectsWithExperience.map(s => s.subject);
-
     return {
       ...result.mentors,
       rating: calculatedRating,
       totalStudents: actualStudentCount,
       experience: totalExperience,
-      specialties: specialties,
-      subjectsWithExperience: subjectsWithExperience,
-      programmingLanguages: profile?.programmingLanguages || [],
+      specialties: result.mentors.specialties || [],
+      subjects: mentorSubjects,
+      qualifications: mentorQualifications,
       user: result.users!,
     };
   }
