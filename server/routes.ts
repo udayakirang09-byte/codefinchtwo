@@ -6779,11 +6779,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Authorization: Must be student of booking, teacher/mentor of booking, or admin
-      const isStudent = req.user.role === 'student' && booking.studentId === req.user.id;
-      const isTeacher = (req.user.role === 'teacher' || req.user.role === 'mentor') && booking.mentorId === req.user.id;
-      const isAdmin = req.user.role === 'admin';
+      // Note: req.user.id is the USER ID, but booking.mentorId/studentId are MENTOR/STUDENT table IDs
+      // So we need to look up the mentor/student record first
+      
+      let isAuthorized = false;
+      
+      if (req.user.role === 'admin') {
+        isAuthorized = true;
+      } else if (req.user.role === 'student') {
+        const student = await storage.getStudentByUserId(req.user.id);
+        isAuthorized = student && booking.studentId === student.id;
+      } else if (req.user.role === 'teacher' || req.user.role === 'mentor') {
+        const mentor = await storage.getMentorByUserId(req.user.id);
+        isAuthorized = mentor && booking.mentorId === mentor.id;
+      }
 
-      if (!isStudent && !isTeacher && !isAdmin) {
+      if (!isAuthorized) {
         console.error('❌ Authorization failed:', { userRole: req.user.role, userId: req.user.id, bookingMentorId: booking.mentorId, bookingStudentId: booking.studentId });
         return res.status(403).json({ message: 'Not authorized to upload recordings for this booking' });
       }
