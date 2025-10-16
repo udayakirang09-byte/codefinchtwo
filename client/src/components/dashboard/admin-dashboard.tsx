@@ -109,6 +109,12 @@ export default function AdminDashboard() {
   const [systemHealth, setSystemHealth] = useState<any[]>([]);
   const [testResults, setTestResults] = useState<any>(null);
   const [isRunningTests, setIsRunningTests] = useState(false);
+  
+  // State for Quick Navigation sections visibility
+  const [showFunctionMapping, setShowFunctionMapping] = useState(false);
+  const [showUnitTests, setShowUnitTests] = useState(false);
+  const [showSystemTests, setShowSystemTests] = useState(false);
+  const [showLoadTesting, setShowLoadTesting] = useState(false);
 
   useEffect(() => {
     // Load system health data
@@ -770,6 +776,7 @@ export default function AdminDashboard() {
                     setContactSettings(newSettings);
                     saveContactSetting(newSettings);
                   }}
+                  className={contactSettings.emailEnabled ? "data-[state=checked]:bg-green-500" : "bg-red-500"}
                   data-testid="switch-email-support"
                 />
               </div>
@@ -789,6 +796,7 @@ export default function AdminDashboard() {
                     setContactSettings(newSettings);
                     saveContactSetting(newSettings);
                   }}
+                  className={contactSettings.chatEnabled ? "data-[state=checked]:bg-green-500" : "bg-red-500"}
                   data-testid="switch-live-chat"
                 />
               </div>
@@ -808,6 +816,7 @@ export default function AdminDashboard() {
                     setContactSettings(newSettings);
                     saveContactSetting(newSettings);
                   }}
+                  className={contactSettings.phoneEnabled ? "data-[state=checked]:bg-green-500" : "bg-red-500"}
                   data-testid="switch-phone-support"
                 />
               </div>
@@ -829,6 +838,7 @@ export default function AdminDashboard() {
                     onCheckedChange={(checked) => 
                       setPaymentConfig(prev => ({ ...prev, stripeEnabled: checked }))
                     }
+                    className={paymentConfig.stripeEnabled ? "data-[state=checked]:bg-green-500" : "bg-red-500"}
                     data-testid="switch-stripe-enabled"
                   />
                 </div>
@@ -1032,7 +1042,7 @@ export default function AdminDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <Button 
                   variant="outline" 
                   className="h-24 p-4 flex-col hover:bg-blue-50 hover:border-blue-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
@@ -1050,6 +1060,15 @@ export default function AdminDashboard() {
                 >
                   <Shield className="h-8 w-8 mb-2 text-purple-600 group-hover:scale-110 transition-transform duration-200" />
                   <span className="font-bold">Mentor Approval</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-24 p-4 flex-col hover:bg-cyan-50 hover:border-cyan-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                  data-testid="button-azure-metrics"
+                  onClick={() => window.location.href = '/admin/azure-metrics'}
+                >
+                  <Activity className="h-8 w-8 mb-2 text-cyan-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold">Azure Metrics</span>
                 </Button>
                 <Button 
                   variant="outline" 
@@ -1342,53 +1361,85 @@ export default function AdminDashboard() {
               </Button>
             </Link>
 
-            <Link href="/admin/code-mapping">
-              <Button variant="outline" className="w-full h-auto py-4 hover:bg-blue-50 hover:border-blue-400 transition-all" data-testid="button-nav-function-mapping">
-                <div className="flex items-center gap-3 w-full">
-                  <Map className="h-5 w-5 text-blue-600" />
-                  <div className="text-left flex-1">
-                    <div className="font-semibold text-gray-900">Application Function Mapping</div>
-                    <div className="text-xs text-gray-600">View code & API mappings</div>
-                  </div>
+            <Button 
+              variant="outline" 
+              className="w-full h-auto py-4 hover:bg-blue-50 hover:border-blue-400 transition-all" 
+              data-testid="button-nav-function-mapping"
+              onClick={() => {
+                setShowFunctionMapping(!showFunctionMapping);
+                setShowUnitTests(false);
+                setShowSystemTests(false);
+                setShowLoadTesting(false);
+              }}
+            >
+              <div className="flex items-center gap-3 w-full">
+                <Map className="h-5 w-5 text-blue-600" />
+                <div className="text-left flex-1">
+                  <div className="font-semibold text-gray-900">Application Function Mapping</div>
+                  <div className="text-xs text-gray-600">View code & API mappings</div>
                 </div>
-              </Button>
-            </Link>
+              </div>
+            </Button>
 
-            <Link href="/admin/test-management">
-              <Button variant="outline" className="w-full h-auto py-4 hover:bg-purple-50 hover:border-purple-400 transition-all" data-testid="button-nav-unit-tests">
-                <div className="flex items-center gap-3 w-full">
-                  <TestTube className="h-5 w-5 text-purple-600" />
-                  <div className="text-left flex-1">
-                    <div className="font-semibold text-gray-900">Unit Test Cases</div>
-                    <div className="text-xs text-gray-600">Review & run unit tests</div>
-                  </div>
+            <Button 
+              variant="outline" 
+              className="w-full h-auto py-4 hover:bg-purple-50 hover:border-purple-400 transition-all" 
+              data-testid="button-nav-unit-tests"
+              onClick={() => {
+                setShowUnitTests(!showUnitTests);
+                setShowFunctionMapping(false);
+                setShowSystemTests(false);
+                setShowLoadTesting(false);
+              }}
+            >
+              <div className="flex items-center gap-3 w-full">
+                <TestTube className="h-5 w-5 text-purple-600" />
+                <div className="text-left flex-1">
+                  <div className="font-semibold text-gray-900">Unit Test Cases</div>
+                  <div className="text-xs text-gray-600">Review & run unit tests</div>
                 </div>
-              </Button>
-            </Link>
+              </div>
+            </Button>
 
-            <Link href="/system-test">
-              <Button variant="outline" className="w-full h-auto py-4 hover:bg-indigo-50 hover:border-indigo-400 transition-all" data-testid="button-nav-system-tests">
-                <div className="flex items-center gap-3 w-full">
-                  <Shield className="h-5 w-5 text-indigo-600" />
-                  <div className="text-left flex-1">
-                    <div className="font-semibold text-gray-900">System Test Cases</div>
-                    <div className="text-xs text-gray-600">End-to-end system tests</div>
-                  </div>
+            <Button 
+              variant="outline" 
+              className="w-full h-auto py-4 hover:bg-indigo-50 hover:border-indigo-400 transition-all" 
+              data-testid="button-nav-system-tests"
+              onClick={() => {
+                setShowSystemTests(!showSystemTests);
+                setShowFunctionMapping(false);
+                setShowUnitTests(false);
+                setShowLoadTesting(false);
+              }}
+            >
+              <div className="flex items-center gap-3 w-full">
+                <Shield className="h-5 w-5 text-indigo-600" />
+                <div className="text-left flex-1">
+                  <div className="font-semibold text-gray-900">System Test Cases</div>
+                  <div className="text-xs text-gray-600">End-to-end system tests</div>
                 </div>
-              </Button>
-            </Link>
+              </div>
+            </Button>
 
-            <Link href="/admin/load-testing">
-              <Button variant="outline" className="w-full h-auto py-4 hover:bg-orange-50 hover:border-orange-400 transition-all" data-testid="button-nav-load-testing">
-                <div className="flex items-center gap-3 w-full">
-                  <Zap className="h-5 w-5 text-orange-600" />
-                  <div className="text-left flex-1">
-                    <div className="font-semibold text-gray-900">Load Testing Strategy</div>
-                    <div className="text-xs text-gray-600">Performance & load analysis</div>
-                  </div>
+            <Button 
+              variant="outline" 
+              className="w-full h-auto py-4 hover:bg-orange-50 hover:border-orange-400 transition-all" 
+              data-testid="button-nav-load-testing"
+              onClick={() => {
+                setShowLoadTesting(!showLoadTesting);
+                setShowFunctionMapping(false);
+                setShowUnitTests(false);
+                setShowSystemTests(false);
+              }}
+            >
+              <div className="flex items-center gap-3 w-full">
+                <Zap className="h-5 w-5 text-orange-600" />
+                <div className="text-left flex-1">
+                  <div className="font-semibold text-gray-900">Load Testing Strategy</div>
+                  <div className="text-xs text-gray-600">Performance & load analysis</div>
                 </div>
-              </Button>
-            </Link>
+              </div>
+            </Button>
 
             <Link href="/admin/monitoring">
               <Button variant="outline" className="w-full h-auto py-4 hover:bg-cyan-50 hover:border-cyan-400 transition-all" data-testid="button-nav-system-monitoring">
@@ -1490,6 +1541,7 @@ export default function AdminDashboard() {
       </Card>
 
       {/* Application Mapping Table */}
+      {showFunctionMapping && (
       <Card className="modern-card modern-card-purple overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
           <CardTitle className="flex items-center gap-3 text-xl">
@@ -1580,8 +1632,10 @@ export default function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Unit Test Cases Table */}
+      {showUnitTests && (
       <Card className="modern-card modern-card-blue backdrop-blur-sm overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-700 text-white">
           <CardTitle className="flex items-center gap-3 text-xl">
@@ -1648,8 +1702,10 @@ export default function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* System Test Cases Table */}
+      {showSystemTests && (
       <Card className="modern-card modern-card-blue backdrop-blur-sm overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-purple-600 to-violet-700 text-white">
           <CardTitle className="flex items-center gap-3 text-xl">
@@ -1716,8 +1772,10 @@ export default function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Load Testing Strategy Documentation */}
+      {showLoadTesting && (
       <Card className="modern-card modern-card-blue backdrop-blur-sm overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-orange-600 to-red-700 text-white">
           <CardTitle className="flex items-center gap-3 text-xl">
@@ -1839,9 +1897,10 @@ export default function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
+      )}
 
-        {/* System Testing */}
-        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+      {/* System Testing */}
+      <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
           <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-700 text-white">
             <CardTitle className="flex items-center gap-3 text-xl">
               <BarChart3 className="h-6 w-6" />
