@@ -1199,6 +1199,28 @@ export class DatabaseStorage implements IStorage {
     }
     
     const [profile] = await db.insert(teacherProfiles).values(processedData).returning();
+    
+    // Also insert qualifications into teacher_qualifications table if mentor exists
+    if (processedData.qualifications && processedData.qualifications.length > 0 && processedData.userId) {
+      // Get mentor by userId
+      const [mentor] = await db.select().from(mentors).where(eq(mentors.userId, processedData.userId));
+      
+      if (mentor) {
+        const { randomUUID } = await import('crypto');
+        const qualificationsToInsert = processedData.qualifications.map((qual: any, index: number) => ({
+          id: randomUUID(),
+          mentorId: mentor.id,
+          qualification: qual.qualification || '',
+          specialization: qual.specialization || '',
+          score: qual.score || '',
+          priority: index + 1  // 1=highest, 2=second, 3=third
+        }));
+        
+        await db.insert(teacherQualifications).values(qualificationsToInsert);
+        console.log(`✅ Inserted ${qualificationsToInsert.length} qualifications for mentor ${mentor.id}`);
+      }
+    }
+    
     return profile;
   }
 
