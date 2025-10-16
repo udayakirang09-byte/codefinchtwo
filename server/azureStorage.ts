@@ -2,16 +2,16 @@ import { BlobServiceClient, ContainerClient, BlockBlobClient, BlobSASPermissions
 import { Readable } from 'stream';
 
 const STORAGE_ACCOUNT = 'kidzaimathstore31320';
-const CONTAINER_NAME = 'replayknowledge';
+const CONTAINER_NAME = 'reply-knowledge';
 
 let blobServiceClient: BlobServiceClient | null = null;
 let containerClient: ContainerClient | null = null;
 
 function initializeClients() {
-  const connectionString = process.env.STORAGE_CONNECTION_STRING || process.env.BLOBCONSTR;
+  const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING || process.env.STORAGE_CONNECTION_STRING || process.env.BLOBCONSTR;
   
   if (!connectionString) {
-    console.warn('⚠️  Azure Storage connection string not set (STORAGE_CONNECTION_STRING or BLOBCONSTR) - Azure Storage operations will fail');
+    console.warn('⚠️  Azure Storage connection string not set (AZURE_STORAGE_CONNECTION_STRING, STORAGE_CONNECTION_STRING or BLOBCONSTR) - Azure Storage operations will fail');
     return null;
   }
 
