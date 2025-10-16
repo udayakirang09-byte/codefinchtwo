@@ -6862,10 +6862,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { studentId } = req.params;
 
       // Authorization: Must be the student themselves or admin
-      const isOwnStudent = req.user.role === 'student' && req.user.id === studentId;
-      const isAdmin = req.user.role === 'admin';
+      // Note: req.user.id is USER ID, but studentId is STUDENT table ID
+      let isAuthorized = false;
+      
+      if (req.user.role === 'admin') {
+        isAuthorized = true;
+      } else if (req.user.role === 'student') {
+        const student = await storage.getStudentByUserId(req.user.id);
+        isAuthorized = student && student.id === studentId;
+      }
 
-      if (!isOwnStudent && !isAdmin) {
+      if (!isAuthorized) {
         return res.status(403).json({ message: 'Not authorized to view recordings for this student' });
       }
 

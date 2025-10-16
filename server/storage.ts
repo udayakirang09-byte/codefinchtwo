@@ -2126,7 +2126,8 @@ export class DatabaseStorage implements IStorage {
       .from(teacherAudioMetrics)
       .where(eq(teacherAudioMetrics.mentorId, mentorId));
 
-    if (!result || result.totalClasses === 0) return undefined;
+    // Convert to number to handle both string "0" and number 0
+    if (!result || Number(result.totalClasses) === 0) return undefined;
 
     return {
       encourageInvolvement: Math.round(result.avgEncourageInvolvement * 10) / 10,
