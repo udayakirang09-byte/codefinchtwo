@@ -6767,12 +6767,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Booking not found' });
       }
 
-      // Authorization: Must be student of booking, mentor of booking, or admin
+      // Authorization: Must be student of booking, teacher/mentor of booking, or admin
       const isStudent = req.user.role === 'student' && booking.studentId === req.user.id;
-      const isMentor = req.user.role === 'mentor' && booking.mentorId === req.user.id;
+      const isTeacher = (req.user.role === 'teacher' || req.user.role === 'mentor') && booking.mentorId === req.user.id;
       const isAdmin = req.user.role === 'admin';
 
-      if (!isStudent && !isMentor && !isAdmin) {
+      if (!isStudent && !isTeacher && !isAdmin) {
+        console.error('❌ Authorization failed:', { userRole: req.user.role, userId: req.user.id, bookingMentorId: booking.mentorId, bookingStudentId: booking.studentId });
         return res.status(403).json({ message: 'Not authorized to upload recordings for this booking' });
       }
 
