@@ -197,6 +197,12 @@ export default function AdminHome() {
                   AI Analytics
                 </Button>
               </Link>
+              <Link href="/admin/azure-metrics">
+                <Button variant="outline" data-testid="button-azure-metrics">
+                  <Activity className="w-4 h-4 mr-2" />
+                  Azure Metrics
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -414,12 +420,6 @@ export default function AdminHome() {
                   <Button variant="outline" className="w-full" data-testid="button-nav-cloud-deploy">
                     <Cloud className="w-4 h-4 mr-2" />
                     ☁️ Cloud Deploy
-                  </Button>
-                </Link>
-                <Link href="/admin/azure-metrics">
-                  <Button variant="outline" className="w-full" data-testid="button-nav-azure-metrics">
-                    <Activity className="w-4 h-4 mr-2" />
-                    📊 Azure Metrics
                   </Button>
                 </Link>
                 <Link href="/simple-test">
