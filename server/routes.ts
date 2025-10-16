@@ -676,22 +676,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/mentors", async (req, res) => {
     try {
       const mentors = await storage.getMentors();
-      console.log(`📚 [DEBUG] getMentors() returning ${mentors.length} mentors`);
-      
-      // Find the "test teacher" mentor specifically
-      const testTeacher: any = mentors.find((m: any) => m.id === 'e51c0e61-5edd-4c30-8d99-013c26bb7749');
-      if (testTeacher) {
-        console.log(`📚 [DEBUG] Test teacher mentor:`, {
-          id: testTeacher.id,
-          name: testTeacher.user ? `${testTeacher.user.firstName} ${testTeacher.user.lastName}` : 'N/A',
-          subjectsCount: testTeacher.subjects?.length || 0,
-          specialtiesCount: testTeacher.specialties?.length || 0
-        });
-        if (testTeacher.subjects && testTeacher.subjects.length > 0) {
-          console.log(`📚 [DEBUG] Test teacher sample subject:`, testTeacher.subjects[0]);
-        }
-      }
-      
       res.json(mentors);
     } catch (error) {
       console.error("Error fetching mentors:", error);
