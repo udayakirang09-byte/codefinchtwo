@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 export interface AzureMetric {
+  id: string;
   name: string;
   category: 'General' | 'Concurrent';
   severity: 0 | 1 | 2 | 3 | 4; // 0=Critical, 1=High, 2=Medium, 3=Low, 4=Info
@@ -40,6 +41,10 @@ export class AzureAppInsightsService {
     return {
       'x-api-key': this.config.apiKey
     };
+  }
+
+  private generateMetricId(name: string, category: string): string {
+    return `${category.toLowerCase()}_${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
   }
 
   async getMetric(metricName: string, timespan: string = 'PT1H'): Promise<any> {
@@ -90,6 +95,7 @@ export class AzureAppInsightsService {
           const value = data?.value?.sum || data?.value?.avg || data?.value?.count || 0;
           
           const metric: AzureMetric = {
+            id: this.generateMetricId(metricDef.display, metricDef.category),
             name: metricDef.display,
             category: metricDef.category,
             severity: this.calculateSeverity(value, metricDef.threshold),
@@ -172,6 +178,7 @@ export class AzureAppInsightsService {
     return [
       // General - SEV 0 (Critical)
       {
+        id: this.generateMetricId('Exception Count', 'General'),
         name: 'Exception Count',
         category: 'General',
         severity: 0,
@@ -184,6 +191,7 @@ export class AzureAppInsightsService {
         timestamp: new Date()
       },
       {
+        id: this.generateMetricId('Failed Requests', 'General'),
         name: 'Failed Requests',
         category: 'General',
         severity: 0,
@@ -198,6 +206,7 @@ export class AzureAppInsightsService {
       
       // General - SEV 1 (High)
       {
+        id: this.generateMetricId('Average Response Time', 'General'),
         name: 'Average Response Time',
         category: 'General',
         severity: 1,
@@ -210,6 +219,7 @@ export class AzureAppInsightsService {
         timestamp: new Date()
       },
       {
+        id: this.generateMetricId('CPU Usage', 'General'),
         name: 'CPU Usage',
         category: 'General',
         severity: 1,
@@ -224,6 +234,7 @@ export class AzureAppInsightsService {
 
       // General - SEV 2 (Medium)
       {
+        id: this.generateMetricId('Request Count', 'General'),
         name: 'Request Count',
         category: 'General',
         severity: 2,
@@ -235,6 +246,7 @@ export class AzureAppInsightsService {
         timestamp: new Date()
       },
       {
+        id: this.generateMetricId('Memory Usage', 'General'),
         name: 'Memory Usage',
         category: 'General',
         severity: 2,
@@ -249,6 +261,7 @@ export class AzureAppInsightsService {
 
       // General - SEV 3 (Low)
       {
+        id: this.generateMetricId('Availability', 'General'),
         name: 'Availability',
         category: 'General',
         severity: 3,
@@ -262,6 +275,7 @@ export class AzureAppInsightsService {
 
       // Concurrent - SEV 0 (Critical)
       {
+        id: this.generateMetricId('Dependency Failures', 'Concurrent'),
         name: 'Dependency Failures',
         category: 'Concurrent',
         severity: 0,
@@ -275,6 +289,7 @@ export class AzureAppInsightsService {
 
       // Concurrent - SEV 1 (High)
       {
+        id: this.generateMetricId('Requests/Second', 'Concurrent'),
         name: 'Requests/Second',
         category: 'Concurrent',
         severity: 1,
@@ -286,6 +301,7 @@ export class AzureAppInsightsService {
         timestamp: new Date()
       },
       {
+        id: this.generateMetricId('Dependency Response Time', 'Concurrent'),
         name: 'Dependency Response Time',
         category: 'Concurrent',
         severity: 1,
@@ -299,6 +315,7 @@ export class AzureAppInsightsService {
 
       // Concurrent - SEV 2 (Medium)
       {
+        id: this.generateMetricId('Dependency Calls', 'Concurrent'),
         name: 'Dependency Calls',
         category: 'Concurrent',
         severity: 2,
@@ -312,6 +329,7 @@ export class AzureAppInsightsService {
 
       // Concurrent - SEV 4 (Info)
       {
+        id: this.generateMetricId('Custom Events', 'Concurrent'),
         name: 'Custom Events',
         category: 'Concurrent',
         severity: 4,
