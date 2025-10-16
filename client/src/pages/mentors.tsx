@@ -283,15 +283,23 @@ export default function Mentors() {
                   <div className="mb-4">
                     <h4 className="text-xs font-semibold text-gray-700 mb-1">Specialties:</h4>
                     <div className="flex flex-wrap gap-1 mb-2">
-                      {mentor.specialties && mentor.specialties.length > 0 ? (
-                        mentor.specialties.map((specialty: string, idx: number) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            {specialty}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-xs text-gray-500">No specialties listed</span>
-                      )}
+                      {(() => {
+                        const courseCodes = (mentor.subjects || []).map((subj: any) => {
+                          const parts = subj.subject.split('-');
+                          return parts.slice(0, -1).join('-');
+                        }).filter((code: string) => code);
+                        const uniqueCodes = Array.from(new Set(courseCodes));
+                        
+                        return uniqueCodes.length > 0 ? (
+                          uniqueCodes.map((code: string, idx: number) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {code}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-gray-500">No specialties listed</span>
+                        );
+                      })()}
                     </div>
                     <h4 className="text-xs font-semibold text-gray-700 mb-1 mt-2">Subjects & Courses:</h4>
                     <div className="flex flex-wrap gap-1 mb-2">
