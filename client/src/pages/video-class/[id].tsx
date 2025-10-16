@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useWebRTC } from "@/hooks/use-webrtc";
+import { useRecording } from "@/hooks/use-recording";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Video, VideoOff, Mic, MicOff, Users, MessageCircle, Phone, Settings, AlertTriangle, Wifi, WifiOff, Shield, Monitor, Home, ArrowLeft, Maximize, Minimize, Send, X, Hand } from "lucide-react";
 
@@ -80,6 +81,31 @@ export default function VideoClass() {
         addTeacherAlert(`Participant ${userId} left the session`);
       }
     }
+  });
+
+  // Recording hook - only for teacher
+  const recording = useRecording({
+    sessionId: classId || 'default',
+    userId: user?.id || 'unknown',
+    role: isTeacher ? 'teacher' : 'student',
+    onError: (error) => {
+      console.error('Recording error:', error);
+      toast({
+        title: "Recording Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+    onChunkUploaded: (partNumber) => {
+      console.log(`✅ Recording chunk ${partNumber} uploaded successfully`);
+    },
+    onRecordingComplete: () => {
+      console.log('✅ Recording completed');
+      toast({
+        title: "Recording Saved",
+        description: "The session recording has been saved successfully",
+      });
+    },
   });
 
   // Validate participant access - placed after useWebRTC to access participants
@@ -292,6 +318,25 @@ export default function VideoClass() {
       });
     }
   }, [bookingData, isConnected, isRecording, toast]);
+
+  // Actually start/stop MediaRecorder when isRecording changes
+  useEffect(() => {
+    // Only teacher should record
+    if (!isTeacher) return;
+    
+    if (isRecording && localStream && !recording.isRecording) {
+      // Get remote streams from participants
+      const remoteStreams = participants
+        .map(p => p.stream)
+        .filter((stream): stream is MediaStream => stream !== undefined);
+      
+      console.log(`🎬 Starting MediaRecorder with ${remoteStreams.length} remote streams`);
+      recording.startRecording(localStream, remoteStreams);
+    } else if (!isRecording && recording.isRecording) {
+      console.log('🛑 Stopping MediaRecorder');
+      recording.stopRecording();
+    }
+  }, [isRecording, isTeacher, localStream, participants, recording]);
   
   // Session auto-close system: Warning and disconnect after class time
   useEffect(() => {
