@@ -744,7 +744,21 @@ export default function VideoClass() {
                               <div className="w-2 h-2 bg-white rounded-full"></div>
                             </div>
                           </div>
-                          <span className="text-white font-medium text-sm">Recording started</span>
+                          <div className="flex flex-col">
+                            <span className="text-white font-medium text-sm">
+                              {recording.isRecording ? 'Recording' : 'Preparing...'}
+                            </span>
+                            {recording.partNumber > 0 && (
+                              <span className="text-gray-400 text-xs">
+                                Chunk {recording.partNumber} • {(recording.totalSize / 1024 / 1024).toFixed(1)} MB
+                              </span>
+                            )}
+                            {recording.error && (
+                              <span className="text-red-400 text-xs">
+                                {recording.error}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       )}
                       
