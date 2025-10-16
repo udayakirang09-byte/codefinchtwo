@@ -424,6 +424,21 @@ export default function StudentDashboard() {
     }
   };
 
+  // Helper function to format notification message with highlighted CANCELLED word
+  const formatNotificationMessage = (message: string) => {
+    const parts = message.split(/(cancelled|canceled)/gi);
+    return parts.map((part, index) => {
+      if (part.toLowerCase() === 'cancelled' || part.toLowerCase() === 'canceled') {
+        return (
+          <span key={index} className="font-bold text-red-600">
+            {part.toUpperCase()}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
   // Filter classes that need feedback and are still visible, plus additional filtering by teacher name and course
   const visibleCompletedClasses = completedClasses.filter(cls => {
     const needsFeedback = isFeedbackVisible(cls.completedAt, cls.feedbackDeadline, cls.hasSubmittedFeedback);
@@ -517,7 +532,7 @@ export default function StudentDashboard() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-800 mb-1">{notification.title}</h4>
-                        <p className="text-sm text-gray-600 leading-relaxed">{notification.message}</p>
+                        <p className="text-sm text-gray-600 leading-relaxed">{formatNotificationMessage(notification.message)}</p>
                         <p className="text-xs text-gray-400 mt-2">
                           {formatDistanceToNow(notification.createdAt, { addSuffix: true })}
                         </p>
