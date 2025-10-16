@@ -200,8 +200,8 @@ export default function StudentDashboard() {
         })
         .map((booking: any) => ({
           id: booking.id,
-          mentorName: `${booking.mentor.user.firstName} ${booking.mentor.user.lastName}`,
-          subject: booking.notes || 'Programming Session',
+          mentorName: `${booking.mentor?.user?.firstName || ''} ${booking.mentor?.user?.lastName || ''}`.trim() || 'Teacher',
+          subject: booking.subject || 'Programming Session',
           scheduledAt: new Date(booking.scheduledAt),
           duration: booking.duration,
           videoEnabled: true,
@@ -234,8 +234,8 @@ export default function StudentDashboard() {
         })
         .map((booking: any) => ({
           id: booking.id,
-          mentorName: `${booking.mentor.user.firstName} ${booking.mentor.user.lastName}`,
-          subject: booking.notes || 'Programming Session',
+          mentorName: `${booking.mentor?.user?.firstName || ''} ${booking.mentor?.user?.lastName || ''}`.trim() || 'Teacher',
+          subject: booking.subject || 'Programming Session',
           completedAt: new Date(booking.scheduledAt),
           feedbackDeadline: addHours(new Date(booking.scheduledAt), 12),
           hasSubmittedFeedback: false,
