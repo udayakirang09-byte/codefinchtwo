@@ -73,17 +73,41 @@ export default function StudentRecordings() {
   });
 
   // Fetch merged recordings for student
-  const { data: recordings, isLoading, error } = useQuery({
+  const { data: recordings, isLoading, error, refetch } = useQuery({
     queryKey: ['/api/recordings/merged', student?.id],
     queryFn: async () => {
       if (!student?.id) throw new Error('Student record not found');
       const response = await fetch(`/api/recordings/merged/${student.id}`, {
         credentials: 'include' // Include cookies for authentication
       });
-      if (!response.ok) throw new Error('Failed to fetch recordings');
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('AUTHENTICATION_REQUIRED: Your session has expired. Please log in again to access your recordings.');
+        } else if (response.status === 403) {
+          throw new Error('ACCESS_DENIED: You don\'t have permission to access these recordings.');
+        } else if (response.status === 404) {
+          throw new Error('NOT_FOUND: Student record not found. Please contact support if this issue persists.');
+        } else if (response.status >= 500) {
+          throw new Error('SERVER_ERROR: Our servers are experiencing issues. Please try again in a few minutes.');
+        } else {
+          throw new Error('UNKNOWN_ERROR: Failed to load recordings. Please try again later.');
+        }
+      }
+      
       return response.json() as Promise<MergedRecording[]>;
     },
     enabled: !!student?.id && isAuthenticated,
+    retry: (failureCount, error: any) => {
+      // Don't retry auth errors or client errors (4xx)
+      if (error.message?.includes('AUTHENTICATION_REQUIRED') || 
+          error.message?.includes('ACCESS_DENIED') ||
+          error.message?.includes('NOT_FOUND')) {
+        return false;
+      }
+      // Retry server errors up to 2 times
+      return failureCount < 2;
+    },
   });
 
   const filteredRecordings = recordings?.filter(recording =>
@@ -153,13 +177,62 @@ export default function StudentRecordings() {
   }
 
   if (error) {
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    const isAuthError = errorMessage.includes('AUTHENTICATION_REQUIRED');
+    const isAccessDenied = errorMessage.includes('ACCESS_DENIED');
+    const isServerError = errorMessage.includes('SERVER_ERROR');
+    const isNotFound = errorMessage.includes('NOT_FOUND');
+    
+    // Extract the user-friendly message (after the error code)
+    const displayMessage = errorMessage.split(': ').slice(1).join(': ') || errorMessage;
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6">
-        <div className="max-w-7xl mx-auto">
-          <Alert className="border-red-200 bg-red-50">
+        <div className="max-w-7xl mx-auto space-y-4">
+          <Link href="/">
+            <Button variant="outline" size="sm" data-testid="button-home">
+              <Home className="h-4 w-4 mr-2" />
+              Home
+            </Button>
+          </Link>
+          
+          <Alert className={`${isAuthError || isAccessDenied ? 'border-yellow-200 bg-yellow-50' : 'border-red-200 bg-red-50'}`}>
             <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              Failed to load recordings. Please try again later.
+            <AlertDescription className="flex flex-col gap-3">
+              <div className="font-medium">
+                {isAuthError && 'Authentication Required'}
+                {isAccessDenied && 'Access Denied'}
+                {isServerError && 'Server Error'}
+                {isNotFound && 'Not Found'}
+                {!isAuthError && !isAccessDenied && !isServerError && !isNotFound && 'Error Loading Recordings'}
+              </div>
+              <div className="text-sm">{displayMessage}</div>
+              <div className="flex gap-2 mt-2">
+                {isAuthError && (
+                  <Link href="/login">
+                    <Button size="sm" data-testid="button-login">
+                      Go to Login
+                    </Button>
+                  </Link>
+                )}
+                {(isServerError || (!isAuthError && !isAccessDenied && !isNotFound)) && (
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => refetch()}
+                    data-testid="button-retry"
+                  >
+                    Try Again
+                  </Button>
+                )}
+                {isNotFound && (
+                  <Link href="/help">
+                    <Button size="sm" variant="outline" data-testid="button-contact-support">
+                      Contact Support
+                    </Button>
+                  </Link>
+                )}
+              </div>
             </AlertDescription>
           </Alert>
         </div>
