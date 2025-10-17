@@ -94,7 +94,7 @@ export default function Mentors() {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Find Your Perfect Coding Mentor 🎓</h1>
-          <p className="text-xl text-gray-600">Connect with experienced developers and accelerate your learning journey</p>
+          <p className="text-xl text-gray-600">Connect with experienced mentors and accelerate your learning journey</p>
         </div>
 
         {/* Search and Filter Section */}
