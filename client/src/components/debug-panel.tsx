@@ -213,7 +213,7 @@ export function DebugPanel() {
 
   if (!isOpen) {
     return (
-      <div className="fixed bottom-4 right-4 z-50">
+      <div className="fixed bottom-4 left-4 md:left-auto md:right-4 z-50">
         <Button
           onClick={() => {
             setIsOpen(true);
@@ -246,7 +246,7 @@ export function DebugPanel() {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-[500px] max-h-[600px] overflow-hidden">
+    <div className="fixed bottom-4 left-4 md:left-auto md:right-4 z-50 w-[90vw] md:w-[500px] max-h-[600px] overflow-hidden">
       <Card className="shadow-xl">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
