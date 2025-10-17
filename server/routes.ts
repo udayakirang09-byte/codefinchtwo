@@ -2696,13 +2696,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const student = await storage.getStudentByUserId(req.user.id);
         console.log(`🔐 [SAS AUTH] Student lookup result:`, student ? `ID: ${student.id}` : 'NOT FOUND');
         console.log(`🔐 [SAS AUTH] Booking studentId: ${booking.studentId}`);
-        isAuthorized = student && booking.studentId === student.id;
+        isAuthorized = !!(student && booking.studentId === student.id);
         console.log(`🔐 [SAS AUTH] Student authorized: ${isAuthorized}`);
       } else if (req.user.role === 'mentor' || req.user.role === 'teacher') {
         const mentor = await storage.getMentorByUserId(req.user.id);
         console.log(`🔐 [SAS AUTH] Mentor lookup result:`, mentor ? `ID: ${mentor.id}` : 'NOT FOUND');
         console.log(`🔐 [SAS AUTH] Booking mentorId: ${booking.mentorId}`);
-        isAuthorized = mentor && booking.mentorId === mentor.id;
+        isAuthorized = !!(mentor && booking.mentorId === mentor.id);
         console.log(`🔐 [SAS AUTH] Mentor authorized: ${isAuthorized}`);
       }
 
@@ -6853,10 +6853,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isAuthorized = true;
       } else if (req.user.role === 'student') {
         const student = await storage.getStudentByUserId(req.user.id);
-        isAuthorized = student && booking.studentId === student.id;
+        isAuthorized = !!(student && booking.studentId === student.id);
       } else if (req.user.role === 'teacher' || req.user.role === 'mentor') {
         const mentor = await storage.getMentorByUserId(req.user.id);
-        isAuthorized = mentor && booking.mentorId === mentor.id;
+        isAuthorized = !!(mentor && booking.mentorId === mentor.id);
       }
 
       if (!isAuthorized) {
@@ -6934,7 +6934,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isAuthorized = true;
       } else if (req.user.role === 'student') {
         const student = await storage.getStudentByUserId(req.user.id);
-        isAuthorized = student && student.id === studentId;
+        isAuthorized = !!(student && student.id === studentId);
       }
 
       if (!isAuthorized) {
@@ -7417,11 +7417,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .groupBy(azureMetricsAlerts.severity);
 
       const result = {
-        sev0: summary.find(s => s.severity === 0)?.count || 0,
-        sev1: summary.find(s => s.severity === 1)?.count || 0,
-        sev2: summary.find(s => s.severity === 2)?.count || 0,
-        sev3: summary.find(s => s.severity === 3)?.count || 0,
-        sev4: summary.find(s => s.severity === 4)?.count || 0,
+        sev0: summary.find((s: any) => s.severity === 0)?.count || 0,
+        sev1: summary.find((s: any) => s.severity === 1)?.count || 0,
+        sev2: summary.find((s: any) => s.severity === 2)?.count || 0,
+        sev3: summary.find((s: any) => s.severity === 3)?.count || 0,
+        sev4: summary.find((s: any) => s.severity === 4)?.count || 0,
       };
 
       res.json(result);
