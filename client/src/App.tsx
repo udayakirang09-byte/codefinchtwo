@@ -18,6 +18,7 @@ import ComprehensiveSystemTest from "@/pages/comprehensive-system-test";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import ForgotPassword from "@/pages/forgot-password";
+import Setup2FA from "@/pages/setup-2fa";
 import Mentors from "@/pages/mentors";
 import StudentProgress from "@/pages/student/progress";
 import VideoClass from "@/pages/video-class/[id]";
@@ -128,6 +129,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/signup" component={Signup} />
       <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/setup-2fa" component={Setup2FA} />
       <Route path="/system-test" component={SystemTest} />
       <Route path="/comprehensive-test" component={ComprehensiveSystemTest} />
       <Route path="/simple-test" component={SimpleTest} />

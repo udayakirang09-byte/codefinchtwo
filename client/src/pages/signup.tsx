@@ -413,14 +413,27 @@ export default function Signup() {
         throw new Error(errorData?.message || "Signup failed");
       }
       
+      const responseData = await response.json();
+      
       toast({
         title: "Account Created!",
-        description: "Welcome to CodeConnect! Please sign in to continue.",
+        description: formData.role === "mentor" 
+          ? "Please set up two-factor authentication to secure your account."
+          : "Welcome to CodeConnect! Please sign in to continue.",
         variant: "default",
       });
       
-      // Redirect to login page after successful signup
-      window.location.href = "/login";
+      // Redirect teachers to 2FA setup, students to login
+      if (formData.role === "mentor") {
+        // Store email and setup token for secure 2FA setup
+        localStorage.setItem('setup2fa_email', formData.email);
+        if (responseData.setupToken) {
+          localStorage.setItem('setup2fa_token', responseData.setupToken);
+        }
+        window.location.href = `/setup-2fa?email=${encodeURIComponent(formData.email)}`;
+      } else {
+        window.location.href = "/login";
+      }
     } catch (error: any) {
       toast({
         title: "Signup Failed",

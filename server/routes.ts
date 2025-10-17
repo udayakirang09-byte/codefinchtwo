@@ -103,6 +103,114 @@ if (razorpayKeyId && razorpayKeySecret && razorpayKeyId !== 'NA' && razorpayKeyS
   console.warn('⚠️ Razorpay not configured - UPI payment features disabled');
 }
 
+// Rate limiting for 2FA verification (in-memory store)
+const twoFAAttempts = new Map<string, { count: number; resetAt: number }>();
+const MAX_2FA_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
+// Temporary storage for pending 2FA secrets (server-side only)
+// Format: Map<email, { secret: string, expiresAt: number }>
+const pending2FASecrets = new Map<string, { secret: string; expiresAt: number }>();
+const SECRET_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
+
+// One-time setup tokens for 2FA (prevents unauthenticated access)
+// Format: Map<token, { userId: string, email: string, expiresAt: number }>
+const setupTokens = new Map<string, { userId: string; email: string; expiresAt: number }>();
+const SETUP_TOKEN_EXPIRY_MS = 15 * 60 * 1000; // 15 minutes
+
+function generateSetupToken(userId: string, email: string): string {
+  const crypto = require('crypto');
+  const token = crypto.randomBytes(32).toString('hex');
+  setupTokens.set(token, {
+    userId,
+    email,
+    expiresAt: Date.now() + SETUP_TOKEN_EXPIRY_MS
+  });
+  return token;
+}
+
+function validateSetupToken(token: string, email: string): { valid: boolean; userId?: string } {
+  const setup = setupTokens.get(token);
+  if (!setup) return { valid: false };
+  
+  // Check if expired
+  if (setup.expiresAt < Date.now()) {
+    setupTokens.delete(token);
+    return { valid: false };
+  }
+  
+  // Check if email matches
+  if (setup.email !== email) {
+    return { valid: false };
+  }
+  
+  return { valid: true, userId: setup.userId };
+}
+
+function clearSetupToken(token: string): void {
+  setupTokens.delete(token);
+}
+
+function storePending2FASecret(email: string, secret: string): void {
+  pending2FASecrets.set(email, {
+    secret,
+    expiresAt: Date.now() + SECRET_EXPIRY_MS
+  });
+}
+
+function getPending2FASecret(email: string): string | null {
+  const pending = pending2FASecrets.get(email);
+  if (!pending) return null;
+  
+  // Check if expired
+  if (pending.expiresAt < Date.now()) {
+    pending2FASecrets.delete(email);
+    return null;
+  }
+  
+  return pending.secret;
+}
+
+function clearPending2FASecret(email: string): void {
+  pending2FASecrets.delete(email);
+}
+
+function check2FARateLimit(email: string): { allowed: boolean; remainingAttempts?: number } {
+  const now = Date.now();
+  const userAttempts = twoFAAttempts.get(email);
+  
+  // Clean up expired lockouts
+  if (userAttempts && userAttempts.resetAt < now) {
+    twoFAAttempts.delete(email);
+    return { allowed: true, remainingAttempts: MAX_2FA_ATTEMPTS };
+  }
+  
+  // Check if user is locked out
+  if (userAttempts && userAttempts.count >= MAX_2FA_ATTEMPTS) {
+    return { allowed: false };
+  }
+  
+  return { 
+    allowed: true, 
+    remainingAttempts: MAX_2FA_ATTEMPTS - (userAttempts?.count || 0)
+  };
+}
+
+function recordFailed2FAAttempt(email: string): void {
+  const now = Date.now();
+  const userAttempts = twoFAAttempts.get(email);
+  
+  if (!userAttempts || userAttempts.resetAt < now) {
+    twoFAAttempts.set(email, { count: 1, resetAt: now + LOCKOUT_DURATION_MS });
+  } else {
+    userAttempts.count++;
+  }
+}
+
+function clearFailed2FAAttempts(email: string): void {
+  twoFAAttempts.delete(email);
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // Authentication routes
@@ -205,6 +313,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log('🎉 Signup completed successfully for:', email);
+      
+      // Generate one-time setup token for teachers (for secure 2FA setup)
+      let setupToken: string | undefined;
+      if (role === 'mentor' || role === 'both') {
+        setupToken = generateSetupToken(user.id, user.email);
+        console.log('🔐 Generated 2FA setup token for teacher');
+      }
+      
       res.status(201).json({ 
         success: true, 
         message: "Account created successfully",
@@ -214,7 +330,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           role: user.role,
           firstName: user.firstName,
           lastName: user.lastName
-        } 
+        },
+        setupToken // Only present for teachers
       });
     } catch (error: any) {
       console.error("❌ Signup error:", error);
@@ -236,8 +353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('🔐 [AZURE DEBUG] Login attempt:', {
         email: req.body?.email,
         hasPassword: !!req.body?.password,
-        body: req.body,
-        headers: req.headers,
+        has2FA: !!req.body?.totpToken,
         ip: req.ip,
         nodeEnv: process.env.NODE_ENV,
         hasDatabaseUrl: !!process.env.DATABASE_URL
@@ -265,20 +381,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verify password using multiple methods for compatibility
       let isValidPassword = false;
       
-      console.log('🔐 [AZURE DEBUG] Password verification:', {
-        inputPassword: password?.trim(),
-        storedPassword: user.password,
-        storedLength: user.password?.length,
-        isHashed: user.password?.startsWith('$2'),
-        hasColon: user.password?.includes(':')
-      });
-      
       // Method 1: Try bcrypt (for hashed passwords)
       if (user.password.startsWith('$2')) {
         try {
           const bcrypt = await import('bcrypt');
           isValidPassword = await bcrypt.compare(password.trim(), user.password);
-          console.log('🔐 [AZURE DEBUG] bcrypt verification result:', isValidPassword);
         } catch (bcryptError: any) {
           console.error('❌ bcrypt import/compare failed:', bcryptError);
         }
@@ -290,7 +397,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const [hash, salt] = user.password.split(':');
           const hashVerify = crypto.pbkdf2Sync(password.trim(), salt, 1000, 64, 'sha512').toString('hex');
           isValidPassword = hash === hashVerify;
-          console.log('🔐 [AZURE DEBUG] pbkdf2 verification result:', isValidPassword);
         } catch (cryptoError: any) {
           console.error('❌ pbkdf2 verification failed:', cryptoError);
         }
@@ -299,16 +405,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       else {
         // Direct comparison for plain text passwords (like Azure database)
         isValidPassword = password.trim() === user.password;
-        console.log('🔐 [AZURE DEBUG] Plain text verification result:', isValidPassword);
-        console.log('🔐 [AZURE DEBUG] Plain text comparison:', {
-          input: `"${password.trim()}"`,
-          stored: `"${user.password}"`,
-          match: isValidPassword
-        });
       }
       
       if (!isValidPassword) {
         return res.status(401).json({ message: "Invalid credentials" });
+      }
+      
+      // Check if 2FA is enabled for teachers
+      if (user.role === 'mentor' && user.totpEnabled && user.totpSecret) {
+        const { totpToken }: { totpToken?: string } = req.body;
+        
+        if (!totpToken) {
+          // Return response indicating 2FA is required
+          return res.status(200).json({
+            require2FA: true,
+            message: "2FA verification required",
+            email: user.email
+          });
+        }
+        
+        // Check rate limit before verifying
+        const rateLimit = check2FARateLimit(user.email);
+        if (!rateLimit.allowed) {
+          return res.status(429).json({ 
+            message: "Too many failed 2FA attempts. Please try again in 15 minutes." 
+          });
+        }
+        
+        // Verify TOTP token
+        const { authenticator } = await import('otplib');
+        const isValid2FA = authenticator.verify({
+          token: totpToken.trim(),
+          secret: user.totpSecret
+        });
+        
+        if (!isValid2FA) {
+          recordFailed2FAAttempt(user.email);
+          return res.status(401).json({ 
+            message: "Invalid 2FA code",
+            remainingAttempts: (rateLimit.remainingAttempts || MAX_2FA_ATTEMPTS) - 1
+          });
+        }
+        
+        // Clear failed attempts on successful 2FA
+        clearFailed2FAAttempts(user.email);
       }
       
       // OPTIMIZED: Create student/mentor records if they don't exist
@@ -388,6 +528,143 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Logout error:", error);
       res.status(500).json({ message: "Logout failed" });
+    }
+  });
+
+  // 2FA endpoints for Microsoft Authenticator (TOTP)
+  app.post("/api/auth/2fa/generate", async (req, res) => {
+    try {
+      const { email, setupToken }: { email: string; setupToken: string } = req.body;
+      
+      if (!email || !setupToken) {
+        return res.status(400).json({ message: "Email and setup token are required" });
+      }
+
+      // SECURITY: Validate setup token to prevent unauthenticated access
+      const validation = validateSetupToken(setupToken, email.trim());
+      if (!validation.valid) {
+        return res.status(401).json({ 
+          message: "Invalid or expired setup token. Please sign up again." 
+        });
+      }
+
+      // Get user
+      const user = await storage.getUserByEmail(email.trim());
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Verify the setup token belongs to this user
+      if (validation.userId !== user.id) {
+        return res.status(403).json({ message: "Setup token does not match user" });
+      }
+
+      // Generate TOTP secret
+      const { authenticator } = await import('otplib');
+      const secret = authenticator.generateSecret();
+      
+      // Store secret server-side (expires in 10 minutes)
+      storePending2FASecret(email.trim(), secret);
+      
+      // Generate OTP auth URL for QR code (Microsoft Authenticator compatible)
+      const otpauthUrl = authenticator.keyuri(
+        email,
+        'CodeConnect',
+        secret
+      );
+
+      // Generate QR code data URL
+      const QRCode = await import('qrcode');
+      const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
+
+      res.json({
+        success: true,
+        secret,
+        qrCode: qrCodeDataUrl,
+        otpauthUrl
+      });
+    } catch (error) {
+      console.error("2FA generate error:", error);
+      res.status(500).json({ message: "Failed to generate 2FA setup" });
+    }
+  });
+
+  app.post("/api/auth/2fa/verify", async (req, res) => {
+    try {
+      const { email, token, setupToken }: { email: string; token: string; setupToken: string } = req.body;
+      
+      if (!email || !token || !setupToken) {
+        return res.status(400).json({ message: "Email, token, and setup token are required" });
+      }
+
+      // SECURITY: Validate setup token to prevent unauthenticated access
+      const validation = validateSetupToken(setupToken, email.trim());
+      if (!validation.valid) {
+        return res.status(401).json({ 
+          message: "Invalid or expired setup token. Please sign up again." 
+        });
+      }
+
+      // Check rate limit
+      const rateLimit = check2FARateLimit(email.trim());
+      if (!rateLimit.allowed) {
+        return res.status(429).json({ 
+          message: "Too many failed attempts. Please try again in 15 minutes." 
+        });
+      }
+
+      // Get user
+      const user = await storage.getUserByEmail(email.trim());
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Verify the setup token belongs to this user
+      if (validation.userId !== user.id) {
+        return res.status(403).json({ message: "Setup token does not match user" });
+      }
+
+      // SECURITY: Get secret from server-side storage, NOT from client
+      const secret = getPending2FASecret(email.trim());
+      if (!secret) {
+        return res.status(400).json({ 
+          message: "2FA setup expired or not found. Please restart setup." 
+        });
+      }
+
+      // Verify TOTP token
+      const { authenticator } = await import('otplib');
+      const isValid = authenticator.verify({
+        token: token.trim(),
+        secret: secret
+      });
+
+      if (!isValid) {
+        recordFailed2FAAttempt(email.trim());
+        return res.status(400).json({ 
+          message: "Invalid verification code",
+          remainingAttempts: (rateLimit.remainingAttempts || MAX_2FA_ATTEMPTS) - 1
+        });
+      }
+
+      // Save TOTP secret and enable 2FA
+      await storage.updateUser(user.id, {
+        totpSecret: secret,
+        totpEnabled: true
+      });
+
+      // Clear pending secret, failed attempts, and setup token on success
+      clearPending2FASecret(email.trim());
+      clearFailed2FAAttempts(email.trim());
+      clearSetupToken(setupToken);
+
+      res.json({
+        success: true,
+        message: "2FA enabled successfully"
+      });
+    } catch (error) {
+      console.error("2FA verify error:", error);
+      res.status(500).json({ message: "Failed to verify 2FA code" });
     }
   });
   

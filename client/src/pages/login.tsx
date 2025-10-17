@@ -18,7 +18,9 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  const [require2FA, setRequire2FA] = useState(false);
+  const [totpToken, setTotpToken] = useState("");
+  const { toast} = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,22 +74,30 @@ export default function Login() {
     }
 
     try {
-      console.log('🔐 Login attempt:', { email: trimmedEmail, password: trimmedPassword });
+      // Security: Never log credentials
+      console.log('🔐 Login attempt:', { email: trimmedEmail, has2FA: !!totpToken });
       
       // Call backend login API
+      const requestBody: any = { 
+        email: trimmedEmail, 
+        password: trimmedPassword 
+      };
+      
+      // Include 2FA token if provided
+      if (totpToken) {
+        requestBody.totpToken = totpToken.trim();
+      }
+      
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          email: trimmedEmail, 
-          password: trimmedPassword 
-        })
+        body: JSON.stringify(requestBody)
       });
       
       if (!response.ok) {
         toast({
           title: "Login Failed",
-          description: "Invalid email or password. Please check your credentials and try again.",
+          description: totpToken ? "Invalid 2FA code. Please try again." : "Invalid email or password. Please check your credentials and try again.",
           variant: "destructive",
         });
         setLoading(false);
@@ -95,6 +105,18 @@ export default function Login() {
       }
       
       const userData = await response.json();
+      
+      // Check if 2FA is required
+      if (userData.require2FA) {
+        setRequire2FA(true);
+        setLoading(false);
+        toast({
+          title: "2FA Required",
+          description: "Please enter the 6-digit code from Microsoft Authenticator.",
+          variant: "default",
+        });
+        return;
+      }
       
       // Store authentication state and session token
       localStorage.setItem('isAuthenticated', 'true');
@@ -205,22 +227,46 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="remember"
-                  className="rounded border-gray-300"
-                  data-testid="checkbox-remember"
-                />
-                <Label htmlFor="remember" className="text-sm">
-                  Remember me
+            {require2FA && (
+              <div className="space-y-2 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <Label htmlFor="totpToken" className="text-blue-900 font-semibold">
+                  Two-Factor Authentication Code
                 </Label>
+                <p className="text-sm text-blue-700 mb-2">
+                  Enter the 6-digit code from Microsoft Authenticator
+                </p>
+                <Input
+                  id="totpToken"
+                  type="text"
+                  maxLength={6}
+                  value={totpToken}
+                  onChange={(e) => setTotpToken(e.target.value.replace(/\D/g, ''))}
+                  placeholder="123456"
+                  className="text-center text-2xl tracking-widest"
+                  data-testid="input-2fa-code"
+                  autoFocus
+                />
               </div>
-              <Link href="/forgot-password" className="text-sm text-primary hover:underline" data-testid="link-forgot-password">
-                Forgot password?
-              </Link>
-            </div>
+            )}
+
+            {!require2FA && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="remember"
+                    className="rounded border-gray-300"
+                    data-testid="checkbox-remember"
+                  />
+                  <Label htmlFor="remember" className="text-sm">
+                    Remember me
+                  </Label>
+                </div>
+                <Link href="/forgot-password" className="text-sm text-primary hover:underline" data-testid="link-forgot-password">
+                  Forgot password?
+                </Link>
+              </div>
+            )}
 
             <Button
               type="submit"
