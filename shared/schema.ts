@@ -70,6 +70,15 @@ export const bookings = pgTable("bookings", {
   status: varchar("status").notNull().default("scheduled"), // scheduled, completed, cancelled
   subject: varchar("subject"), // Subject/topic of the session (from teacher's specialties or courses)
   notes: text("notes"),
+  // Demo Session Support
+  sessionType: varchar("session_type").notNull().default("regular"), // demo, regular
+  // Attendance Tracking (for auto-cancellation)
+  attendanceTracking: boolean("attendance_tracking").default(true), // Enable/disable attendance monitoring
+  teacherJoinedAt: timestamp("teacher_joined_at"), // When teacher first joined
+  teacherAbsentPercent: integer("teacher_absent_percent").default(0), // % time teacher was absent
+  autoCancelReason: varchar("auto_cancel_reason"), // e.g., "Teacher absent >25% from start"
+  // Recording Visibility (for demo sessions)
+  recordingVisibilityUnlockedAt: timestamp("recording_visibility_unlocked_at"), // When demo recording becomes visible
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
@@ -125,6 +134,28 @@ export const teacherSubjects = pgTable("teacher_subjects", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Teacher media (profile photos) with AI validation
+export const teacherMedia = pgTable("teacher_media", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  mentorId: varchar("mentor_id").references(() => mentors.id).notNull().unique(), // One photo per mentor
+  blobPath: text("blob_path").notNull(), // Azure blob path: mentors/{mentorId}/profile.jpg
+  blobUrl: text("blob_url"), // Temporary SAS URL for access
+  encryptionKey: varchar("encryption_key"), // AES-256 encryption key reference (encrypted with KeyVault)
+  encryptionIv: varchar("encryption_iv"), // Initialization vector for AES
+  // AI Validation Results
+  faceDetected: boolean("face_detected").default(false), // OpenAI Vision detected human face
+  clarityScore: integer("clarity_score").default(0), // 0-100 score for photo clarity
+  validationStatus: varchar("validation_status").default("pending"), // pending, approved, rejected
+  validationMessage: text("validation_message"), // AI feedback message
+  // Metadata
+  fileSizeBytes: integer("file_size_bytes"),
+  mimeType: varchar("mime_type"),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  mentorIdIdx: index("teacher_media_mentor_id_idx").on(table.mentorId),
+}));
+
 // Success Stories table
 export const successStories = pgTable("success_stories", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -162,6 +193,10 @@ export const mentorsRelations = relations(mentors, ({ one, many }) => ({
   reviews: many(reviews),
   qualifications: many(teacherQualifications),
   subjects: many(teacherSubjects),
+  media: one(teacherMedia, {
+    fields: [mentors.id],
+    references: [teacherMedia.mentorId],
+  }),
 }));
 
 export const studentsRelations = relations(students, ({ one, many }) => ({
@@ -211,6 +246,13 @@ export const teacherQualificationsRelations = relations(teacherQualifications, (
 export const teacherSubjectsRelations = relations(teacherSubjects, ({ one }) => ({
   mentor: one(mentors, {
     fields: [teacherSubjects.mentorId],
+    references: [mentors.id],
+  }),
+}));
+
+export const teacherMediaRelations = relations(teacherMedia, ({ one }) => ({
+  mentor: one(mentors, {
+    fields: [teacherMedia.mentorId],
     references: [mentors.id],
   }),
 }));
@@ -309,6 +351,17 @@ export const videoSessions = pgTable("video_sessions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Booking Attendance Events (track teacher presence for auto-cancellation)
+export const bookingAttendanceEvents = pgTable("booking_attendance_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(), // Teacher user ID
+  eventType: varchar("event_type").notNull(), // joined, left, disconnected
+  eventAt: timestamp("event_at").defaultNow(),
+}, (table) => ({
+  bookingIdIdx: index("booking_attendance_events_booking_id_idx").on(table.bookingId),
+}));
+
 export const classFeedback = pgTable("class_feedback", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
@@ -375,6 +428,17 @@ export const videoSessionsRelations = relations(videoSessions, ({ one }) => ({
   }),
 }));
 
+export const bookingAttendanceEventsRelations = relations(bookingAttendanceEvents, ({ one }) => ({
+  booking: one(bookings, {
+    fields: [bookingAttendanceEvents.bookingId],
+    references: [bookings.id],
+  }),
+  user: one(users, {
+    fields: [bookingAttendanceEvents.userId],
+    references: [users.id],
+  }),
+}));
+
 export const classFeedbackRelations = relations(classFeedback, ({ one }) => ({
   booking: one(bookings, {
     fields: [classFeedback.bookingId],
@@ -411,11 +475,15 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages);
 
 export const insertVideoSessionSchema = createInsertSchema(videoSessions);
 
+export const insertBookingAttendanceEventSchema = createInsertSchema(bookingAttendanceEvents);
+
 export const insertClassFeedbackSchema = createInsertSchema(classFeedback);
 
 export const insertNotificationSchema = createInsertSchema(notifications);
 
 export const insertUserSessionSchema = createInsertSchema(userSessions);
+
+export const insertTeacherMediaSchema = createInsertSchema(teacherMedia);
 
 // Additional Types
 export type ChatSession = typeof chatSessions.$inferSelect;
@@ -435,6 +503,12 @@ export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
 export type UserSession = typeof userSessions.$inferSelect;
 export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
+
+export type TeacherMedia = typeof teacherMedia.$inferSelect;
+export type InsertTeacherMedia = z.infer<typeof insertTeacherMediaSchema>;
+
+export type BookingAttendanceEvent = typeof bookingAttendanceEvents.$inferSelect;
+export type InsertBookingAttendanceEvent = z.infer<typeof insertBookingAttendanceEventSchema>;
 
 // Admin Configuration Table
 export const adminConfig = pgTable("admin_config", {
