@@ -88,17 +88,30 @@ export default function Mentors() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
       <Navigation />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Find Your Perfect Coding Mentor 🎓</h1>
-          <p className="text-xl text-gray-600">Connect with experienced mentors and accelerate your learning journey</p>
+      <div className="space-y-8 p-6 max-w-7xl mx-auto">
+        {/* Ultra Modern Header Section */}
+        <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-8 rounded-3xl shadow-2xl border border-white/20">
+          <div className="absolute inset-0 bg-gradient-to-r from-black/10 to-transparent"></div>
+          <div className="relative z-10">
+            <h1 className="text-4xl font-bold text-white mb-3 tracking-tight">Find Your Perfect Coding Mentor 🎓</h1>
+            <p className="text-purple-100 text-xl font-medium">Connect with experienced mentors and accelerate your learning journey</p>
+          </div>
+          <div className="absolute -top-6 -right-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+          <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-pink-300/20 rounded-full blur-3xl"></div>
         </div>
 
         {/* Search and Filter Section */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <Search className="h-6 w-6" />
+              Search & Filter Mentors
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
           {/* Search Bar */}
           <div className="relative mb-6">
             <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
@@ -212,7 +225,8 @@ export default function Mentors() {
               </div>
             </div>
           )}
-        </div>
+          </CardContent>
+        </Card>
 
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
