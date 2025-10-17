@@ -588,7 +588,7 @@ export default function StudentDashboard() {
                         <span className="flex items-center font-semibold text-purple-600">⏰ {formatDistanceToNow(upcomingClass.scheduledAt, { addSuffix: true })}</span>
                       </div>
 
-                      <div className="flex gap-4">
+                      <div className="flex flex-col sm:flex-row gap-4">
                         <Button
                           size="lg"
                           variant={videoEnabled ? "default" : "secondary"}

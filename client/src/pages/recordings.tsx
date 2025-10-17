@@ -382,15 +382,6 @@ export default function StudentRecordings() {
                 
                 <div className="mt-4 flex justify-between items-center text-sm text-gray-600">
                   <span>Duration: {formatDuration(selectedRecording.durationSeconds)}</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(selectedRecordingSasUrl, '_blank')}
-                    data-testid="button-download-recording"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download
-                  </Button>
                 </div>
               </div>
             )}
