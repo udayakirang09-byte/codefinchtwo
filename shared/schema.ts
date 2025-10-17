@@ -23,6 +23,9 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   role: varchar("role").notNull().default("student"), // student, mentor, admin
   country: varchar("country").notNull().default("India"), // User's country
+  // 2FA Fields (Microsoft Authenticator / TOTP)
+  totpSecret: text("totp_secret"), // Encrypted TOTP secret for 2FA
+  totpEnabled: boolean("totp_enabled").default(false), // Whether 2FA is active
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -41,12 +44,18 @@ export const mentors = pgTable("mentors", {
   upiId: varchar("upi_id"), // UPI ID for payouts
   isActive: boolean("is_active").default(true),
   availableSlots: jsonb("available_slots").$type<{ day: string; times: string[] }[]>().default([]),
+  // Admin Approval Workflow
+  approvalStatus: varchar("approval_status").default("pending"), // pending, approved, rejected
+  approvedBy: varchar("approved_by"), // Admin user ID who approved
+  approvedAt: timestamp("approved_at"), // When the profile was approved
+  rejectionReason: text("rejection_reason"), // Reason for rejection if rejected
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
   // Index for getMentors() query - speeds up mentor discovery by 90%
   isActiveRatingIdx: index("mentors_is_active_rating_idx").on(table.isActive, table.rating),
   userIdIdx: index("mentors_user_id_idx").on(table.userId),
+  approvalStatusIdx: index("mentors_approval_status_idx").on(table.approvalStatus),
 }));
 
 export const students = pgTable("students", {
@@ -134,22 +143,33 @@ export const teacherSubjects = pgTable("teacher_subjects", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Teacher media (profile photos) with AI validation
+// Teacher media (profile photos and intro video) with privacy-preserving validation
 export const teacherMedia = pgTable("teacher_media", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   mentorId: varchar("mentor_id").references(() => mentors.id).notNull().unique(), // One photo per mentor
-  blobPath: text("blob_path").notNull(), // Azure blob path: mentors/{mentorId}/profile.jpg
-  blobUrl: text("blob_url"), // Temporary SAS URL for access
-  encryptionKey: varchar("encryption_key"), // AES-256 encryption key reference (encrypted with KeyVault)
-  encryptionIv: varchar("encryption_iv"), // Initialization vector for AES
-  // AI Validation Results
-  faceDetected: boolean("face_detected").default(false), // OpenAI Vision detected human face
-  clarityScore: integer("clarity_score").default(0), // 0-100 score for photo clarity
-  validationStatus: varchar("validation_status").default("pending"), // pending, approved, rejected
-  validationMessage: text("validation_message"), // AI feedback message
-  // Metadata
-  fileSizeBytes: integer("file_size_bytes"),
-  mimeType: varchar("mime_type"),
+  // Photo fields
+  photoBlobPath: text("photo_blob_path").notNull(), // Azure blob path: mentors/{mentorId}/profile.jpg
+  photoBlobUrl: text("photo_blob_url"), // Temporary SAS URL for access
+  photoEncryptionKey: varchar("photo_encryption_key"), // AES-256 encryption key reference
+  photoEncryptionIv: varchar("photo_encryption_iv"), // Initialization vector for AES
+  photoFaceDetected: boolean("photo_face_detected").default(false), // face-api.js detected human face
+  photoClarityScore: integer("photo_clarity_score").default(0), // 0-100 score (sharp library)
+  photoValidationStatus: varchar("photo_validation_status").default("pending"), // pending, approved, rejected
+  photoValidationMessage: text("photo_validation_message"), // Validation feedback message
+  photoFileSizeBytes: integer("photo_file_size_bytes"),
+  photoMimeType: varchar("photo_mime_type"),
+  // Intro Video fields (optional)
+  videoBlobPath: text("video_blob_path"), // Azure blob path: mentors/{mentorId}/intro.mp4
+  videoBlobUrl: text("video_blob_url"), // Temporary SAS URL for access
+  videoEncryptionKey: varchar("video_encryption_key"), // AES-256 encryption key
+  videoEncryptionIv: varchar("video_encryption_iv"), // Initialization vector
+  videoDurationSeconds: integer("video_duration_seconds"), // Duration in seconds
+  videoClarityScore: integer("video_clarity_score").default(0), // 0-100 score for video quality
+  videoValidationStatus: varchar("video_validation_status").default("pending"), // pending, approved, rejected
+  videoValidationMessage: text("video_validation_message"), // Validation feedback
+  videoFileSizeBytes: integer("video_file_size_bytes"),
+  videoMimeType: varchar("video_mime_type"),
+  // Timestamps
   uploadedAt: timestamp("uploaded_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
