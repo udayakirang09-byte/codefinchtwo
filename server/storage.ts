@@ -461,6 +461,16 @@ export class DatabaseStorage implements IStorage {
 
   // Mentor operations
   async getMentors(): Promise<MentorWithUser[]> {
+    // Try cache first - mentors data changes rarely
+    const cacheKey = 'mentors:list';
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      console.log('✅ Cache hit: mentors list');
+      return cached;
+    }
+
+    console.log('❌ Cache miss: mentors list - fetching from DB');
+
     const result = await db
       .select()
       .from(mentors)
@@ -498,7 +508,7 @@ export class DatabaseStorage implements IStorage {
     // Get all teacher profiles to fetch signup subjects
     const allTeacherProfiles = await db.select().from(teacherProfiles);
 
-    return result.map(({ mentors: mentor, users: user }: any) => {
+    const mentorsData = result.map(({ mentors: mentor, users: user }: any) => {
       // Calculate actual unique students for this mentor
       const mentorBookings = allBookings.filter((b: any) => b.mentorId === mentor.id);
       const uniqueStudentIds = new Set(mentorBookings.map((b: any) => b.studentId));
@@ -550,6 +560,11 @@ export class DatabaseStorage implements IStorage {
         user: user!,
       };
     });
+
+    // Cache for 5 minutes (mentors list changes rarely)
+    await cache.set(cacheKey, mentorsData, 300);
+
+    return mentorsData;
   }
 
   async getMentor(id: string): Promise<MentorWithUser | undefined> {
@@ -625,6 +640,10 @@ export class DatabaseStorage implements IStorage {
       availableSlots: data.availableSlots ? Array.from(data.availableSlots as any[]) : []
     };
     const [mentor] = await db.insert(mentors).values([processedData]).returning();
+    
+    // Invalidate mentor list cache (new mentor added)
+    await cache.del('mentors:list');
+    
     return mentor;
   }
 
@@ -633,6 +652,9 @@ export class DatabaseStorage implements IStorage {
       .update(mentors)
       .set({ rating: rating.toString() })
       .where(eq(mentors.id, mentorId));
+    
+    // Invalidate mentor list cache (ratings changed)
+    await cache.del('mentors:list');
   }
 
   async updateMentorHourlyRate(mentorId: string, hourlyRate: string): Promise<void> {
@@ -640,6 +662,9 @@ export class DatabaseStorage implements IStorage {
       .update(mentors)
       .set({ hourlyRate: hourlyRate })
       .where(eq(mentors.id, mentorId));
+    
+    // Invalidate mentor list cache (pricing changed)
+    await cache.del('mentors:list');
   }
 
   async updateMentorUpiId(mentorId: string, upiId: string): Promise<void> {
@@ -647,6 +672,9 @@ export class DatabaseStorage implements IStorage {
       .update(mentors)
       .set({ upiId: upiId })
       .where(eq(mentors.id, mentorId));
+    
+    // Invalidate mentor list cache
+    await cache.del('mentors:list');
   }
 
   async getMentorReviews(mentorId: string): Promise<ReviewWithDetails[]> {
@@ -777,6 +805,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBookingsByStudent(studentId: string): Promise<BookingWithDetails[]> {
+    // Try cache first
+    const cacheKey = `bookings:student:${studentId}`;
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      console.log(`✅ Cache hit: bookings for student ${studentId}`);
+      return cached;
+    }
+
+    console.log(`❌ Cache miss: bookings for student ${studentId} - fetching from DB`);
+
     const studentUsers = alias(users, 'studentUsers');
     const mentorUsers = alias(users, 'mentorUsers');
     
@@ -796,14 +834,29 @@ export class DatabaseStorage implements IStorage {
       console.log('📊 [DEBUG] Mentor user:', result[0].mentorUsers);
     }
 
-    return result.map((row: any) => ({
+    const bookingsData = result.map((row: any) => ({
       ...row.bookings,
       student: { ...row.students!, user: row.studentUsers! },
       mentor: { ...row.mentors!, user: row.mentorUsers! },
     }));
+
+    // Cache for 2 minutes (bookings change more frequently)
+    await cache.set(cacheKey, bookingsData, 120);
+
+    return bookingsData;
   }
 
   async getBookingsByMentor(mentorId: string): Promise<BookingWithDetails[]> {
+    // Try cache first
+    const cacheKey = `bookings:mentor:${mentorId}`;
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      console.log(`✅ Cache hit: bookings for mentor ${mentorId}`);
+      return cached;
+    }
+
+    console.log(`❌ Cache miss: bookings for mentor ${mentorId} - fetching from DB`);
+
     const studentUsers = alias(users, 'studentUsers');
     const mentorUsers = alias(users, 'mentorUsers');
     
@@ -817,37 +870,77 @@ export class DatabaseStorage implements IStorage {
       .where(eq(bookings.mentorId, mentorId))
       .orderBy(desc(bookings.scheduledAt));
 
-    return result.map((row: any) => ({
+    const bookingsData = result.map((row: any) => ({
       ...row.bookings,
       student: { ...row.students!, user: row.studentUsers! },
       mentor: { ...row.mentors!, user: row.mentorUsers! },
     }));
+
+    // Cache for 2 minutes
+    await cache.set(cacheKey, bookingsData, 120);
+
+    return bookingsData;
   }
 
   async createBooking(bookingData: InsertBooking): Promise<Booking> {
     const [booking] = await db.insert(bookings).values(bookingData).returning();
+    
+    // Invalidate cache for student bookings and mentor list
+    await cache.del(`bookings:student:${booking.studentId}`);
+    await cache.del(`bookings:mentor:${booking.mentorId}`);
+    await cache.del('mentors:list'); // Mentor stats may change
+    
     return booking;
   }
 
   async updateBookingStatus(id: string, status: string): Promise<void> {
+    // Get booking to know which caches to invalidate
+    const [booking] = await db.select().from(bookings).where(eq(bookings.id, id));
+    
     await db
       .update(bookings)
       .set({ status, updatedAt: new Date() })
       .where(eq(bookings.id, id));
+    
+    // Invalidate cache
+    if (booking) {
+      await cache.del(`bookings:student:${booking.studentId}`);
+      await cache.del(`bookings:mentor:${booking.mentorId}`);
+      await cache.del('mentors:list');
+    }
   }
 
   async rescheduleBooking(id: string, newScheduledAt: Date): Promise<void> {
+    // Get booking to know which caches to invalidate
+    const [booking] = await db.select().from(bookings).where(eq(bookings.id, id));
+    
     await db
       .update(bookings)
       .set({ scheduledAt: newScheduledAt, updatedAt: new Date() })
       .where(eq(bookings.id, id));
+    
+    // Invalidate cache
+    if (booking) {
+      await cache.del(`bookings:student:${booking.studentId}`);
+      await cache.del(`bookings:mentor:${booking.mentorId}`);
+    }
   }
 
   async cancelBooking(id: string): Promise<void> {
+    // Get booking to know which caches to invalidate
+    const [booking] = await db.select().from(bookings).where(eq(bookings.id, id));
+    
     await db
       .update(bookings)
       .set({ status: 'cancelled', updatedAt: new Date() })
       .where(eq(bookings.id, id));
+    
+    // Invalidate cache
+    if (booking) {
+      await cache.del(`bookings:student:${booking.studentId}`);
+      await cache.del(`bookings:mentor:${booking.mentorId}`);
+      await cache.del('mentors:list');
+    }
   }
 
   // Course operations
@@ -1039,6 +1132,9 @@ export class DatabaseStorage implements IStorage {
     const mentorReviews = await this.getReviewsByMentor(data.mentorId);
     const averageRating = mentorReviews.reduce((sum, r) => sum + r.rating, 0) / mentorReviews.length;
     await this.updateMentorRating(data.mentorId, averageRating);
+    
+    // Invalidate mentor list cache (ratings changed)
+    await cache.del('mentors:list');
     
     return review;
   }
