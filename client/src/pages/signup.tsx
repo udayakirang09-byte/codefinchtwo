@@ -530,13 +530,6 @@ export default function Signup() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="India">India</SelectItem>
-                  <SelectItem value="USA">United States</SelectItem>
-                  <SelectItem value="UK">United Kingdom</SelectItem>
-                  <SelectItem value="Canada">Canada</SelectItem>
-                  <SelectItem value="Australia">Australia</SelectItem>
-                  <SelectItem value="Germany">Germany</SelectItem>
-                  <SelectItem value="France">France</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -552,6 +545,14 @@ export default function Signup() {
                     Profile Photo <span className="text-red-500">*</span>
                   </Label>
                   <p className="text-sm text-gray-600">Upload a clear photo of your face for verification (JPEG, PNG, or WebP, max 5MB)</p>
+                  <div className="flex items-start space-x-2 bg-blue-50 border border-blue-200 rounded-md p-3">
+                    <svg className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-sm text-blue-800">
+                      <strong>Important:</strong> Your photo will be displayed to students when they search for teachers. This helps students identify their teacher before booking a session.
+                    </p>
+                  </div>
                   
                   {!photoPreview ? (
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-500 transition-colors cursor-pointer"
