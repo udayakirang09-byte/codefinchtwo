@@ -1,5 +1,5 @@
 import { sql, relations } from "drizzle-orm";
-import { pgTable, varchar, text, timestamp, integer, decimal, boolean, jsonb, } from "drizzle-orm/pg-core";
+import { pgTable, varchar, text, timestamp, integer, decimal, boolean, jsonb, unique, index, } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 export const users = pgTable("users", {
     id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
@@ -9,6 +9,7 @@ export const users = pgTable("users", {
     lastName: varchar("last_name"),
     profileImageUrl: varchar("profile_image_url"),
     role: varchar("role").notNull().default("student"),
+    country: varchar("country").notNull().default("India"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -22,11 +23,16 @@ export const mentors = pgTable("mentors", {
     rating: decimal("rating", { precision: 3, scale: 2 }).default("0.00"),
     totalStudents: integer("total_students").default(0),
     hourlyRate: decimal("hourly_rate", { precision: 10, scale: 2 }),
+    country: varchar("country").notNull().default("NA-Country"),
+    upiId: varchar("upi_id"),
     isActive: boolean("is_active").default(true),
     availableSlots: jsonb("available_slots").$type().default([]),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+    isActiveRatingIdx: index("mentors_is_active_rating_idx").on(table.isActive, table.rating),
+    userIdIdx: index("mentors_user_id_idx").on(table.userId),
+}));
 export const students = pgTable("students", {
     id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
     userId: varchar("user_id").references(() => users.id).notNull(),
@@ -41,13 +47,20 @@ export const bookings = pgTable("bookings", {
     id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
     studentId: varchar("student_id").references(() => students.id).notNull(),
     mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
+    courseId: varchar("course_id").references(() => courses.id),
     scheduledAt: timestamp("scheduled_at").notNull(),
     duration: integer("duration").notNull(),
     status: varchar("status").notNull().default("scheduled"),
+    subject: varchar("subject"),
     notes: text("notes"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+    studentIdScheduledIdx: index("bookings_student_id_scheduled_at_idx").on(table.studentId, table.scheduledAt),
+    mentorIdScheduledIdx: index("bookings_mentor_id_scheduled_at_idx").on(table.mentorId, table.scheduledAt),
+    statusIdx: index("bookings_status_idx").on(table.status),
+    scheduledAtIdx: index("bookings_scheduled_at_idx").on(table.scheduledAt),
+}));
 export const achievements = pgTable("achievements", {
     id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
     studentId: varchar("student_id").references(() => students.id).notNull(),
@@ -64,7 +77,10 @@ export const reviews = pgTable("reviews", {
     rating: integer("rating").notNull(),
     comment: text("comment"),
     createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+    mentorIdIdx: index("reviews_mentor_id_idx").on(table.mentorId),
+    studentIdIdx: index("reviews_student_id_idx").on(table.studentId),
+}));
 export const teacherQualifications = pgTable("teacher_qualifications", {
     id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
     mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
@@ -79,6 +95,7 @@ export const teacherSubjects = pgTable("teacher_subjects", {
     mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
     subject: varchar("subject").notNull(),
     experience: varchar("experience").notNull(),
+    classFee: decimal("class_fee", { precision: 10, scale: 2 }).default("500.00"),
     priority: integer("priority").notNull().default(1),
     createdAt: timestamp("created_at").defaultNow(),
 });
@@ -94,7 +111,7 @@ export const successStories = pgTable("success_stories", {
     featured: boolean("featured").default(false),
     createdAt: timestamp("created_at").defaultNow(),
 });
-export const usersRelations = relations(users, ({ one }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
     mentor: one(mentors, {
         fields: [users.id],
         references: [mentors.userId],
@@ -103,6 +120,8 @@ export const usersRelations = relations(users, ({ one }) => ({
         fields: [users.id],
         references: [students.userId],
     }),
+    sessions: many(userSessions),
+    notifications: many(notifications),
 }));
 export const mentorsRelations = relations(mentors, ({ one, many }) => ({
     user: one(users, {
@@ -166,48 +185,32 @@ export const achievementsRelations = relations(achievements, ({ one }) => ({
         references: [students.id],
     }),
 }));
-export const insertUserSchema = createInsertSchema(users).omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-});
-export const insertMentorSchema = createInsertSchema(mentors).omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    rating: true,
-    totalStudents: true,
-});
-export const insertStudentSchema = createInsertSchema(students).omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-});
-export const insertBookingSchema = createInsertSchema(bookings).omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-});
-export const insertReviewSchema = createInsertSchema(reviews).omit({
-    id: true,
-    createdAt: true,
-});
-export const insertAchievementSchema = createInsertSchema(achievements).omit({
-    id: true,
-    earnedAt: true,
-});
+export const insertUserSchema = createInsertSchema(users);
+export const insertMentorSchema = createInsertSchema(mentors);
+export const insertStudentSchema = createInsertSchema(students);
+export const insertBookingSchema = createInsertSchema(bookings);
+export const insertReviewSchema = createInsertSchema(reviews);
+export const insertAchievementSchema = createInsertSchema(achievements);
 export const chatSessions = pgTable("chat_sessions", {
     id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
     bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
+    studentId: varchar("student_id").references(() => users.id).notNull(),
+    mentorId: varchar("mentor_id").references(() => users.id).notNull(),
     isActive: boolean("is_active").default(true),
+    archiveAt: timestamp("archive_at"),
     startedAt: timestamp("started_at").defaultNow(),
     endedAt: timestamp("ended_at"),
 });
 export const chatMessages = pgTable("chat_messages", {
     id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
-    chatSessionId: varchar("chat_session_id").references(() => chatSessions.id).notNull(),
-    senderId: varchar("sender_id").references(() => users.id).notNull(),
+    bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
+    senderId: varchar("sender_id").notNull(),
+    senderName: varchar("sender_name").notNull(),
     message: text("message").notNull(),
+    fileUrl: varchar("file_url"),
+    fileName: varchar("file_name"),
+    fileType: varchar("file_type"),
+    readBy: varchar("read_by").array().default(sql `ARRAY[]::varchar[]`),
     sentAt: timestamp("sent_at").defaultNow(),
 });
 export const videoSessions = pgTable("video_sessions", {
@@ -244,6 +247,18 @@ export const notifications = pgTable("notifications", {
     relatedId: varchar("related_id"),
     createdAt: timestamp("created_at").defaultNow(),
 });
+export const userSessions = pgTable("user_sessions", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    userId: varchar("user_id").references(() => users.id).notNull(),
+    sessionToken: varchar("session_token").notNull().unique(),
+    deviceInfo: varchar("device_info"),
+    ipAddress: varchar("ip_address"),
+    userAgent: text("user_agent"),
+    isActive: boolean("is_active").default(true),
+    lastActivity: timestamp("last_activity").defaultNow(),
+    createdAt: timestamp("created_at").defaultNow(),
+    expiresAt: timestamp("expires_at"),
+});
 export const chatSessionsRelations = relations(chatSessions, ({ one, many }) => ({
     booking: one(bookings, {
         fields: [chatSessions.bookingId],
@@ -252,9 +267,9 @@ export const chatSessionsRelations = relations(chatSessions, ({ one, many }) => 
     messages: many(chatMessages),
 }));
 export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
-    chatSession: one(chatSessions, {
-        fields: [chatMessages.chatSessionId],
-        references: [chatSessions.id],
+    booking: one(bookings, {
+        fields: [chatMessages.bookingId],
+        references: [bookings.id],
     }),
     sender: one(users, {
         fields: [chatMessages.senderId],
@@ -287,32 +302,32 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
         references: [users.id],
     }),
 }));
-export const insertChatSessionSchema = createInsertSchema(chatSessions).omit({
-    id: true,
-    startedAt: true,
-});
-export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
-    id: true,
-    sentAt: true,
-});
-export const insertVideoSessionSchema = createInsertSchema(videoSessions).omit({
-    id: true,
-    createdAt: true,
-});
-export const insertClassFeedbackSchema = createInsertSchema(classFeedback).omit({
-    id: true,
-    createdAt: true,
-});
-export const insertNotificationSchema = createInsertSchema(notifications).omit({
-    id: true,
-    createdAt: true,
-});
+export const userSessionsRelations = relations(userSessions, ({ one }) => ({
+    user: one(users, {
+        fields: [userSessions.userId],
+        references: [users.id],
+    }),
+}));
+export const insertChatSessionSchema = createInsertSchema(chatSessions);
+export const insertChatMessageSchema = createInsertSchema(chatMessages);
+export const insertVideoSessionSchema = createInsertSchema(videoSessions);
+export const insertClassFeedbackSchema = createInsertSchema(classFeedback);
+export const insertNotificationSchema = createInsertSchema(notifications);
+export const insertUserSessionSchema = createInsertSchema(userSessions);
 export const adminConfig = pgTable("admin_config", {
     id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
     configKey: varchar("config_key").unique().notNull(),
     configValue: text("config_value"),
     description: text("description"),
     isActive: boolean("is_active").default(true),
+    updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const adminPaymentConfig = pgTable("admin_payment_config", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    paymentMode: varchar("payment_mode").notNull().default("dummy"),
+    razorpayMode: varchar("razorpay_mode").notNull().default("upi"),
+    enableRazorpay: boolean("enable_razorpay").default(false),
+    adminUpiId: varchar("admin_upi_id"),
     updatedAt: timestamp("updated_at").defaultNow(),
 });
 export const timeSlots = pgTable("time_slots", {
@@ -339,6 +354,7 @@ export const footerLinks = pgTable("footer_links", {
     updatedAt: timestamp("updated_at").defaultNow(),
 });
 export const adminConfigRelations = relations(adminConfig, ({}) => ({}));
+export const adminPaymentConfigRelations = relations(adminPaymentConfig, ({}) => ({}));
 export const timeSlotsRelations = relations(timeSlots, ({ one }) => ({
     mentor: one(mentors, {
         fields: [timeSlots.mentorId],
@@ -346,20 +362,10 @@ export const timeSlotsRelations = relations(timeSlots, ({ one }) => ({
     }),
 }));
 export const footerLinksRelations = relations(footerLinks, ({}) => ({}));
-export const insertAdminConfigSchema = createInsertSchema(adminConfig).omit({
-    id: true,
-    updatedAt: true,
-});
-export const insertTimeSlotSchema = createInsertSchema(timeSlots).omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-});
-export const insertFooterLinkSchema = createInsertSchema(footerLinks).omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-});
+export const insertAdminConfigSchema = createInsertSchema(adminConfig);
+export const insertAdminPaymentConfigSchema = createInsertSchema(adminPaymentConfig);
+export const insertTimeSlotSchema = createInsertSchema(timeSlots);
+export const insertFooterLinkSchema = createInsertSchema(footerLinks);
 export const courses = pgTable("courses", {
     id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
     mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
@@ -370,6 +376,7 @@ export const courses = pgTable("courses", {
     duration: varchar("duration"),
     price: decimal("price", { precision: 10, scale: 2 }).notNull(),
     maxStudents: integer("max_students").default(10),
+    maxClasses: integer("max_classes").default(8),
     prerequisites: text("prerequisites"),
     tags: jsonb("tags").$type().default([]),
     isActive: boolean("is_active").default(true),
@@ -392,9 +399,39 @@ export const teacherProfiles = pgTable("teacher_profiles", {
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
 });
-export const coursesRelations = relations(courses, ({ one }) => ({
+export const courseEnrollments = pgTable("course_enrollments", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    courseId: varchar("course_id").references(() => courses.id).notNull(),
+    studentId: varchar("student_id").references(() => students.id).notNull(),
+    mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
+    weeklySchedule: jsonb("weekly_schedule").$type().default([]),
+    totalClasses: integer("total_classes").notNull(),
+    completedClasses: integer("completed_classes").default(0),
+    courseFee: decimal("course_fee", { precision: 10, scale: 2 }).notNull(),
+    status: varchar("status").notNull().default("active"),
+    enrolledAt: timestamp("enrolled_at").defaultNow(),
+    completedAt: timestamp("completed_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const coursesRelations = relations(courses, ({ one, many }) => ({
     mentor: one(mentors, {
         fields: [courses.mentorId],
+        references: [mentors.id],
+    }),
+    enrollments: many(courseEnrollments),
+}));
+export const courseEnrollmentsRelations = relations(courseEnrollments, ({ one }) => ({
+    course: one(courses, {
+        fields: [courseEnrollments.courseId],
+        references: [courses.id],
+    }),
+    student: one(students, {
+        fields: [courseEnrollments.studentId],
+        references: [students.id],
+    }),
+    mentor: one(mentors, {
+        fields: [courseEnrollments.mentorId],
         references: [mentors.id],
     }),
 }));
@@ -404,15 +441,101 @@ export const teacherProfilesRelations = relations(teacherProfiles, ({ one }) => 
         references: [users.id],
     }),
 }));
-export const insertCourseSchema = createInsertSchema(courses).omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
+export const insertCourseSchema = createInsertSchema(courses);
+export const insertCourseEnrollmentSchema = createInsertSchema(courseEnrollments);
+export const insertTeacherProfileSchema = createInsertSchema(teacherProfiles);
+export const paymentMethods = pgTable("payment_methods", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    userId: varchar("user_id").references(() => users.id).notNull(),
+    type: varchar("type").notNull(),
+    isActive: boolean("is_active").default(true),
+    upiId: varchar("upi_id"),
+    upiProvider: varchar("upi_provider"),
+    cardToken: varchar("card_token"),
+    cardLast4: varchar("card_last4"),
+    cardBrand: varchar("card_brand"),
+    accountNumber: varchar("account_number"),
+    ifscCode: varchar("ifsc_code"),
+    bankName: varchar("bank_name"),
+    accountHolderName: varchar("account_holder_name"),
+    displayName: varchar("display_name"),
+    isDefault: boolean("is_default").default(false),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
 });
-export const insertTeacherProfileSchema = createInsertSchema(teacherProfiles).omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
+export const transactionFeeConfig = pgTable("transaction_fee_config", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    feePercentage: decimal("fee_percentage", { precision: 5, scale: 2 }).default("2.00"),
+    minimumFee: decimal("minimum_fee", { precision: 10, scale: 2 }).default("0.50"),
+    maximumFee: decimal("maximum_fee", { precision: 10, scale: 2 }),
+    teacherPayoutWaitHours: integer("teacher_payout_wait_hours").default(24),
+    isActive: boolean("is_active").default(true),
+    description: text("description"),
+    updatedBy: varchar("updated_by").references(() => users.id).notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const paymentTransactions = pgTable("payment_transactions", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    bookingId: varchar("booking_id").references(() => bookings.id),
+    courseId: varchar("course_id").references(() => courses.id),
+    transactionType: varchar("transaction_type").notNull(),
+    amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+    transactionFee: decimal("transaction_fee", { precision: 10, scale: 2 }).default("0.00"),
+    netAmount: decimal("net_amount", { precision: 10, scale: 2 }).notNull(),
+    currency: varchar("currency").default("INR"),
+    fromUserId: varchar("from_user_id").references(() => users.id),
+    toUserId: varchar("to_user_id").references(() => users.id),
+    fromPaymentMethod: varchar("from_payment_method").references(() => paymentMethods.id),
+    toPaymentMethod: varchar("to_payment_method").references(() => paymentMethods.id),
+    status: varchar("status").notNull().default("pending"),
+    workflowStage: varchar("workflow_stage").notNull(),
+    scheduledAt: timestamp("scheduled_at"),
+    cancellationDeadline: timestamp("cancellation_deadline"),
+    teacherPayoutEligibleAt: timestamp("teacher_payout_eligible_at"),
+    scheduledRefundAt: timestamp("scheduled_refund_at"),
+    stripePaymentIntentId: varchar("stripe_payment_intent_id"),
+    stripeTransferId: varchar("stripe_transfer_id"),
+    razorpayPaymentId: varchar("razorpay_payment_id"),
+    failureReason: text("failure_reason"),
+    retryCount: integer("retry_count").default(0),
+    maxRetries: integer("max_retries").default(3),
+    notes: text("notes"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+    completedAt: timestamp("completed_at"),
+});
+export const unsettledFinances = pgTable("unsettled_finances", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    transactionId: varchar("transaction_id").references(() => paymentTransactions.id).notNull(),
+    conflictType: varchar("conflict_type").notNull(),
+    conflictAmount: decimal("conflict_amount", { precision: 10, scale: 2 }).notNull(),
+    description: text("description").notNull(),
+    status: varchar("status").notNull().default("open"),
+    priority: varchar("priority").notNull().default("medium"),
+    assignedTo: varchar("assigned_to").references(() => users.id),
+    resolutionAction: varchar("resolution_action"),
+    resolutionAmount: decimal("resolution_amount", { precision: 10, scale: 2 }),
+    resolutionNotes: text("resolution_notes"),
+    resolutionDate: timestamp("resolution_date"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const paymentWorkflows = pgTable("payment_workflows", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    transactionId: varchar("transaction_id").references(() => paymentTransactions.id).notNull(),
+    workflowType: varchar("workflow_type").notNull(),
+    currentStage: varchar("current_stage").notNull(),
+    nextStage: varchar("next_stage"),
+    nextActionAt: timestamp("next_action_at"),
+    lastProcessedAt: timestamp("last_processed_at"),
+    isAutomated: boolean("is_automated").default(true),
+    cancellationWindowHours: integer("cancellation_window_hours").default(5),
+    teacherPayoutDelayHours: integer("teacher_payout_delay_hours").default(24),
+    status: varchar("status").notNull().default("active"),
+    processingErrors: jsonb("processing_errors").$type().default([]),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
 });
 export const analyticsEvents = pgTable("analytics_events", {
     id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
@@ -561,6 +684,104 @@ export const quantumTasks = pgTable("quantum_tasks", {
     createdAt: timestamp("created_at").defaultNow(),
     completedAt: timestamp("completed_at"),
 });
+export const helpTickets = pgTable("help_tickets", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    userId: varchar("user_id").references(() => users.id),
+    subject: varchar("subject").notNull(),
+    description: text("description").notNull(),
+    category: varchar("category").notNull().default("general"),
+    priority: varchar("priority").notNull().default("medium"),
+    status: varchar("status").notNull().default("open"),
+    aiResponse: text("ai_response"),
+    humanResponse: text("human_response"),
+    emailSent: boolean("email_sent").default(false),
+    contactEmail: varchar("contact_email"),
+    satisfactionRating: integer("satisfaction_rating"),
+    resolvedAt: timestamp("resolved_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const helpKnowledgeBase = pgTable("help_knowledge_base", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    title: varchar("title").notNull(),
+    content: text("content").notNull(),
+    category: varchar("category").notNull(),
+    tags: jsonb("tags").$type().default([]),
+    searchKeywords: text("search_keywords"),
+    viewCount: integer("view_count").default(0),
+    isPublic: boolean("is_public").default(true),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const helpTicketMessages = pgTable("help_ticket_messages", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    ticketId: varchar("ticket_id").references(() => helpTickets.id).notNull(),
+    senderId: varchar("sender_id").references(() => users.id),
+    senderType: varchar("sender_type").notNull(),
+    message: text("message").notNull(),
+    isInternal: boolean("is_internal").default(false),
+    createdAt: timestamp("created_at").defaultNow(),
+});
+export const paymentMethodsRelations = relations(paymentMethods, ({ one, many }) => ({
+    user: one(users, {
+        fields: [paymentMethods.userId],
+        references: [users.id],
+    }),
+    fromTransactions: many(paymentTransactions, { relationName: "fromPaymentMethod" }),
+    toTransactions: many(paymentTransactions, { relationName: "toPaymentMethod" }),
+}));
+export const transactionFeeConfigRelations = relations(transactionFeeConfig, ({ one }) => ({
+    updatedByUser: one(users, {
+        fields: [transactionFeeConfig.updatedBy],
+        references: [users.id],
+    }),
+}));
+export const paymentTransactionsRelations = relations(paymentTransactions, ({ one }) => ({
+    booking: one(bookings, {
+        fields: [paymentTransactions.bookingId],
+        references: [bookings.id],
+    }),
+    course: one(courses, {
+        fields: [paymentTransactions.courseId],
+        references: [courses.id],
+    }),
+    fromUser: one(users, {
+        fields: [paymentTransactions.fromUserId],
+        references: [users.id],
+        relationName: "fromUser",
+    }),
+    toUser: one(users, {
+        fields: [paymentTransactions.toUserId],
+        references: [users.id],
+        relationName: "toUser",
+    }),
+    fromPaymentMethod: one(paymentMethods, {
+        fields: [paymentTransactions.fromPaymentMethod],
+        references: [paymentMethods.id],
+        relationName: "fromPaymentMethod",
+    }),
+    toPaymentMethod: one(paymentMethods, {
+        fields: [paymentTransactions.toPaymentMethod],
+        references: [paymentMethods.id],
+        relationName: "toPaymentMethod",
+    }),
+}));
+export const unsettledFinancesRelations = relations(unsettledFinances, ({ one }) => ({
+    transaction: one(paymentTransactions, {
+        fields: [unsettledFinances.transactionId],
+        references: [paymentTransactions.id],
+    }),
+    assignedToUser: one(users, {
+        fields: [unsettledFinances.assignedTo],
+        references: [users.id],
+    }),
+}));
+export const paymentWorkflowsRelations = relations(paymentWorkflows, ({ one }) => ({
+    transaction: one(paymentTransactions, {
+        fields: [paymentWorkflows.transactionId],
+        references: [paymentTransactions.id],
+    }),
+}));
 export const analyticsEventsRelations = relations(analyticsEvents, ({ one }) => ({
     user: one(users, {
         fields: [analyticsEvents.userId],
@@ -586,51 +807,384 @@ export const predictiveModelsRelations = relations(predictiveModels, ({}) => ({}
 export const cloudDeploymentsRelations = relations(cloudDeployments, ({}) => ({}));
 export const technologyStackRelations = relations(technologyStack, ({}) => ({}));
 export const quantumTasksRelations = relations(quantumTasks, ({}) => ({}));
-export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents).omit({
-    id: true,
-    timestamp: true,
+export const helpTicketsRelations = relations(helpTickets, ({ one, many }) => ({
+    user: one(users, {
+        fields: [helpTickets.userId],
+        references: [users.id],
+    }),
+    messages: many(helpTicketMessages),
+}));
+export const helpKnowledgeBaseRelations = relations(helpKnowledgeBase, ({}) => ({}));
+export const helpTicketMessagesRelations = relations(helpTicketMessages, ({ one }) => ({
+    ticket: one(helpTickets, {
+        fields: [helpTicketMessages.ticketId],
+        references: [helpTickets.id],
+    }),
+    sender: one(users, {
+        fields: [helpTicketMessages.senderId],
+        references: [users.id],
+    }),
+}));
+export const insertPaymentMethodSchema = createInsertSchema(paymentMethods);
+export const insertTransactionFeeConfigSchema = createInsertSchema(transactionFeeConfig);
+export const insertPaymentTransactionSchema = createInsertSchema(paymentTransactions);
+export const insertUnsettledFinanceSchema = createInsertSchema(unsettledFinances);
+export const insertPaymentWorkflowSchema = createInsertSchema(paymentWorkflows);
+export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents);
+export const insertAiInsightSchema = createInsertSchema(aiInsights);
+export const insertBusinessMetricSchema = createInsertSchema(businessMetrics);
+export const insertComplianceMonitoringSchema = createInsertSchema(complianceMonitoring);
+export const insertChatAnalyticsSchema = createInsertSchema(chatAnalytics);
+export const insertAudioAnalyticsSchema = createInsertSchema(audioAnalytics);
+export const insertPredictiveModelSchema = createInsertSchema(predictiveModels);
+export const insertCloudDeploymentSchema = createInsertSchema(cloudDeployments);
+export const insertTechnologyStackSchema = createInsertSchema(technologyStack);
+export const insertQuantumTaskSchema = createInsertSchema(quantumTasks);
+export const insertSuccessStorySchema = createInsertSchema(successStories);
+export const insertHelpTicketSchema = createInsertSchema(helpTickets);
+export const insertHelpKnowledgeBaseSchema = createInsertSchema(helpKnowledgeBase);
+export const insertHelpTicketMessageSchema = createInsertSchema(helpTicketMessages);
+export const forumCategories = pgTable("forum_categories", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    name: varchar("name").notNull(),
+    description: text("description"),
+    color: varchar("color").default("#6B73FF"),
+    isActive: boolean("is_active").default(true),
+    displayOrder: integer("display_order").default(0),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
 });
-export const insertAiInsightSchema = createInsertSchema(aiInsights).omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
+export const forumPosts = pgTable("forum_posts", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    categoryId: varchar("category_id").references(() => forumCategories.id).notNull(),
+    authorId: varchar("author_id").references(() => users.id).notNull(),
+    title: varchar("title").notNull(),
+    content: text("content").notNull(),
+    isPinned: boolean("is_pinned").default(false),
+    isLocked: boolean("is_locked").default(false),
+    views: integer("views").default(0),
+    likes: integer("likes").default(0),
+    replies: integer("replies").default(0),
+    tags: jsonb("tags").$type().default([]),
+    lastReplyAt: timestamp("last_reply_at"),
+    lastReplyByUserId: varchar("last_reply_by_user_id").references(() => users.id),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
 });
-export const insertBusinessMetricSchema = createInsertSchema(businessMetrics).omit({
-    id: true,
-    calculatedAt: true,
+export const forumReplies = pgTable("forum_replies", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    postId: varchar("post_id").references(() => forumPosts.id).notNull(),
+    authorId: varchar("author_id").references(() => users.id).notNull(),
+    content: text("content").notNull(),
+    parentReplyId: varchar("parent_reply_id"),
+    likes: integer("likes").default(0),
+    isDeleted: boolean("is_deleted").default(false),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
 });
-export const insertComplianceMonitoringSchema = createInsertSchema(complianceMonitoring).omit({
-    id: true,
-    detectedAt: true,
+export const forumLikes = pgTable("forum_likes", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    userId: varchar("user_id").references(() => users.id).notNull(),
+    postId: varchar("post_id").references(() => forumPosts.id),
+    replyId: varchar("reply_id").references(() => forumReplies.id),
+    createdAt: timestamp("created_at").defaultNow(),
 });
-export const insertChatAnalyticsSchema = createInsertSchema(chatAnalytics).omit({
-    id: true,
-    createdAt: true,
+export const projectCategories = pgTable("project_categories", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    name: varchar("name").notNull(),
+    description: text("description"),
+    color: varchar("color").default("#22C55E"),
+    icon: varchar("icon").default("Folder"),
+    isActive: boolean("is_active").default(true),
+    displayOrder: integer("display_order").default(0),
+    createdAt: timestamp("created_at").defaultNow(),
 });
-export const insertAudioAnalyticsSchema = createInsertSchema(audioAnalytics).omit({
-    id: true,
-    createdAt: true,
+export const projects = pgTable("projects", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    categoryId: varchar("category_id").references(() => projectCategories.id).notNull(),
+    authorId: varchar("author_id").references(() => users.id).notNull(),
+    title: varchar("title").notNull(),
+    description: text("description").notNull(),
+    technologies: jsonb("technologies").$type().default([]),
+    githubUrl: varchar("github_url"),
+    liveUrl: varchar("live_url"),
+    thumbnailUrl: varchar("thumbnail_url"),
+    images: jsonb("images").$type().default([]),
+    difficulty: varchar("difficulty").default("beginner"),
+    views: integer("views").default(0),
+    likes: integer("likes").default(0),
+    comments: integer("comments").default(0),
+    isPublished: boolean("is_published").default(false),
+    isFeatured: boolean("is_featured").default(false),
+    publishedAt: timestamp("published_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
 });
-export const insertPredictiveModelSchema = createInsertSchema(predictiveModels).omit({
-    id: true,
-    lastTrained: true,
-    createdAt: true,
+export const projectComments = pgTable("project_comments", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    projectId: varchar("project_id").references(() => projects.id).notNull(),
+    authorId: varchar("author_id").references(() => users.id).notNull(),
+    content: text("content").notNull(),
+    parentCommentId: varchar("parent_comment_id"),
+    likes: integer("likes").default(0),
+    isDeleted: boolean("is_deleted").default(false),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
 });
-export const insertCloudDeploymentSchema = createInsertSchema(cloudDeployments).omit({
-    id: true,
-    createdAt: true,
+export const projectLikes = pgTable("project_likes", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    userId: varchar("user_id").references(() => users.id).notNull(),
+    projectId: varchar("project_id").references(() => projects.id).notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
 });
-export const insertTechnologyStackSchema = createInsertSchema(technologyStack).omit({
-    id: true,
-    lastChecked: true,
-    updatedAt: true,
+export const eventCategories = pgTable("event_categories", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    name: varchar("name").notNull(),
+    description: text("description"),
+    color: varchar("color").default("#F59E0B"),
+    icon: varchar("icon").default("Calendar"),
+    isActive: boolean("is_active").default(true),
+    displayOrder: integer("display_order").default(0),
+    createdAt: timestamp("created_at").defaultNow(),
 });
-export const insertQuantumTaskSchema = createInsertSchema(quantumTasks).omit({
-    id: true,
-    createdAt: true,
+export const events = pgTable("events", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    categoryId: varchar("category_id").references(() => eventCategories.id).notNull(),
+    organizerId: varchar("organizer_id").references(() => users.id).notNull(),
+    title: varchar("title").notNull(),
+    description: text("description").notNull(),
+    shortDescription: text("short_description"),
+    location: varchar("location"),
+    eventUrl: varchar("event_url"),
+    thumbnailUrl: varchar("thumbnail_url"),
+    maxParticipants: integer("max_participants"),
+    currentParticipants: integer("current_participants").default(0),
+    difficulty: varchar("difficulty").default("all"),
+    tags: jsonb("tags").$type().default([]),
+    prerequisites: text("prerequisites"),
+    agenda: jsonb("agenda").$type().default([]),
+    materials: jsonb("materials").$type().default([]),
+    startDate: timestamp("start_date").notNull(),
+    endDate: timestamp("end_date").notNull(),
+    registrationDeadline: timestamp("registration_deadline"),
+    isPublished: boolean("is_published").default(false),
+    isFeatured: boolean("is_featured").default(false),
+    isFree: boolean("is_free").default(true),
+    price: decimal("price", { precision: 10, scale: 2 }).default("0.00"),
+    isRecurring: boolean("is_recurring").default(false),
+    recurringPattern: jsonb("recurring_pattern").$type(),
+    publishedAt: timestamp("published_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
 });
-export const insertSuccessStorySchema = createInsertSchema(successStories).omit({
-    id: true,
-    createdAt: true,
+export const eventRegistrations = pgTable("event_registrations", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    eventId: varchar("event_id").references(() => events.id).notNull(),
+    userId: varchar("user_id").references(() => users.id).notNull(),
+    status: varchar("status").default("registered"),
+    registrationData: jsonb("registration_data").$type().default({}),
+    attendedAt: timestamp("attended_at"),
+    cancelledAt: timestamp("cancelled_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
 });
+export const eventComments = pgTable("event_comments", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    eventId: varchar("event_id").references(() => events.id).notNull(),
+    authorId: varchar("author_id").references(() => users.id).notNull(),
+    content: text("content").notNull(),
+    parentCommentId: varchar("parent_comment_id"),
+    isDeleted: boolean("is_deleted").default(false),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const qualifications = pgTable("qualifications", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    name: varchar("name").notNull().unique(),
+    description: text("description"),
+    category: varchar("category"),
+    displayOrder: integer("display_order").default(0),
+    isActive: boolean("is_active").default(true),
+    createdAt: timestamp("created_at").defaultNow(),
+});
+export const specializations = pgTable("specializations", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    name: varchar("name").notNull().unique(),
+    description: text("description"),
+    category: varchar("category"),
+    displayOrder: integer("display_order").default(0),
+    isActive: boolean("is_active").default(true),
+    createdAt: timestamp("created_at").defaultNow(),
+});
+export const subjects = pgTable("subjects", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    name: varchar("name").notNull(),
+    description: text("description"),
+    board: varchar("board"),
+    grade: varchar("grade"),
+    category: varchar("category"),
+    displayOrder: integer("display_order").default(0),
+    isActive: boolean("is_active").default(true),
+    createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+    subjectBoardGradeCategoryUnique: unique().on(table.name, table.board, table.grade, table.category),
+}));
+export const insertForumCategorySchema = createInsertSchema(forumCategories);
+export const insertForumPostSchema = createInsertSchema(forumPosts);
+export const insertForumReplySchema = createInsertSchema(forumReplies);
+export const insertForumLikeSchema = createInsertSchema(forumLikes);
+export const insertProjectCategorySchema = createInsertSchema(projectCategories);
+export const insertProjectSchema = createInsertSchema(projects);
+export const insertProjectCommentSchema = createInsertSchema(projectComments);
+export const insertProjectLikeSchema = createInsertSchema(projectLikes);
+export const insertEventCategorySchema = createInsertSchema(eventCategories);
+export const insertEventSchema = createInsertSchema(events);
+export const insertEventRegistrationSchema = createInsertSchema(eventRegistrations);
+export const insertEventCommentSchema = createInsertSchema(eventComments);
+export const insertQualificationSchema = createInsertSchema(qualifications);
+export const insertSpecializationSchema = createInsertSchema(specializations);
+export const insertSubjectSchema = createInsertSchema(subjects);
+export const teacherAudioMetrics = pgTable("teacher_audio_metrics", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
+    bookingId: varchar("booking_id").references(() => bookings.id),
+    encourageInvolvement: integer("encourage_involvement").notNull(),
+    pleasantCommunication: integer("pleasant_communication").notNull(),
+    avoidPersonalDetails: integer("avoid_personal_details").notNull(),
+    studentTalkRatio: integer("student_talk_ratio").notNull(),
+    questionRate: integer("question_rate").notNull(),
+    clarity: integer("clarity").notNull(),
+    adherenceToTopic: integer("adherence_to_topic").notNull(),
+    politeness: integer("politeness").notNull(),
+    overallScore: decimal("overall_score", { precision: 3, scale: 1 }).notNull(),
+    analysisVersion: varchar("analysis_version").default("v1.0"),
+    confidenceScore: decimal("confidence_score", { precision: 3, scale: 2 }),
+    processingNotes: text("processing_notes"),
+    computedAt: timestamp("computed_at").defaultNow(),
+    createdAt: timestamp("created_at").defaultNow(),
+});
+export const homeSectionControls = pgTable("home_section_controls", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    sectionType: varchar("section_type").notNull(),
+    sectionName: varchar("section_name").notNull(),
+    isEnabled: boolean("is_enabled").default(true),
+    displayOrder: integer("display_order").default(0),
+    description: text("description"),
+    updatedAt: timestamp("updated_at").defaultNow(),
+    createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+    uniqueSectionType: unique().on(table.sectionType, table.sectionName)
+}));
+export const azureStorageConfig = pgTable("azure_storage_config", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    storageAccountName: varchar("storage_account_name").notNull().default("kidzaimathstore31320"),
+    containerName: varchar("container_name").notNull().default("replayknowledge"),
+    connectionString: text("connection_string"),
+    retentionMonths: integer("retention_months").notNull().default(6),
+    isActive: boolean("is_active").default(true),
+    updatedBy: varchar("updated_by").references(() => users.id),
+    updatedAt: timestamp("updated_at").defaultNow(),
+    createdAt: timestamp("created_at").defaultNow(),
+});
+export const recordingParts = pgTable("recording_parts", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
+    studentId: varchar("student_id").references(() => students.id).notNull(),
+    partNumber: integer("part_number").notNull(),
+    blobPath: text("blob_path").notNull(),
+    blobUrl: text("blob_url"),
+    fileSizeBytes: integer("file_size_bytes"),
+    durationSeconds: integer("duration_seconds"),
+    recordedAt: timestamp("recorded_at").defaultNow(),
+    uploadedAt: timestamp("uploaded_at").defaultNow(),
+    status: varchar("status").default("uploaded"),
+});
+export const mergedRecordings = pgTable("merged_recordings", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
+    studentId: varchar("student_id").references(() => students.id).notNull(),
+    mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
+    blobPath: text("blob_path").notNull(),
+    blobUrl: text("blob_url"),
+    totalParts: integer("total_parts").notNull(),
+    fileSizeBytes: integer("file_size_bytes"),
+    durationSeconds: integer("duration_seconds"),
+    mergedAt: timestamp("merged_at").defaultNow(),
+    expiresAt: timestamp("expires_at").notNull(),
+    aiAnalyzed: boolean("ai_analyzed").default(false),
+    status: varchar("status").default("active"),
+    createdAt: timestamp("created_at").defaultNow(),
+});
+export const adminUiConfig = pgTable("admin_ui_config", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    footerLinks: jsonb("footer_links").$type().default({
+        studentCommunity: true,
+        mentorCommunity: true,
+        successStories: true,
+        achievementBadges: true,
+        discussionForums: true,
+        projectShowcase: true,
+        communityEvents: true,
+        teacherResources: true,
+        contactUs: true,
+    }),
+    showHelpCenter: boolean("show_help_center").default(false),
+    abusiveLanguageMonitoring: boolean("abusive_language_monitoring").default(false),
+    updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const abusiveLanguageIncidents = pgTable("abusive_language_incidents", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
+    userId: varchar("user_id").references(() => users.id).notNull(),
+    userRole: varchar("user_role").notNull(),
+    userName: varchar("user_name").notNull(),
+    abusiveWords: jsonb("abusive_words").$type().notNull(),
+    messageText: text("message_text").notNull(),
+    detectedAt: timestamp("detected_at").defaultNow(),
+    adminNotified: boolean("admin_notified").default(false),
+    emailSent: boolean("email_sent").default(false),
+});
+export const azureAppInsightsConfig = pgTable("azure_app_insights_config", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    appInsightsName: varchar("app_insights_name").notNull(),
+    instrumentationKey: varchar("instrumentation_key"),
+    appId: varchar("app_id"),
+    apiKey: varchar("api_key"),
+    isEnabled: boolean("is_enabled").default(true),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+});
+export const azureMetricsAlerts = pgTable("azure_metrics_alerts", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    metricName: varchar("metric_name").notNull(),
+    metricCategory: varchar("metric_category").notNull(),
+    severity: integer("severity").notNull(),
+    threshold: decimal("threshold", { precision: 10, scale: 2 }),
+    currentValue: decimal("current_value", { precision: 10, scale: 2 }),
+    unit: varchar("unit"),
+    description: text("description"),
+    hasFix: boolean("has_fix").default(false),
+    fixSolution: text("fix_solution"),
+    fixStatus: varchar("fix_status").default("pending"),
+    isActive: boolean("is_active").default(true),
+    lastChecked: timestamp("last_checked").defaultNow(),
+    createdAt: timestamp("created_at").defaultNow(),
+});
+export const azureMetricsHistory = pgTable("azure_metrics_history", {
+    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
+    metricName: varchar("metric_name").notNull(),
+    value: decimal("value", { precision: 10, scale: 2 }).notNull(),
+    timestamp: timestamp("timestamp").notNull(),
+    metadata: jsonb("metadata").$type(),
+});
+export const insertTeacherAudioMetricsSchema = createInsertSchema(teacherAudioMetrics);
+export const insertHomeSectionControlsSchema = createInsertSchema(homeSectionControls);
+export const insertAzureStorageConfigSchema = createInsertSchema(azureStorageConfig);
+export const insertRecordingPartSchema = createInsertSchema(recordingParts);
+export const insertMergedRecordingSchema = createInsertSchema(mergedRecordings);
+export const insertAdminUiConfigSchema = createInsertSchema(adminUiConfig);
+export const insertAbusiveLanguageIncidentSchema = createInsertSchema(abusiveLanguageIncidents);
+export const insertAzureAppInsightsConfigSchema = createInsertSchema(azureAppInsightsConfig);
+export const insertAzureMetricsAlertSchema = createInsertSchema(azureMetricsAlerts);
+export const insertAzureMetricsHistorySchema = createInsertSchema(azureMetricsHistory);
 //# sourceMappingURL=schema.js.map
