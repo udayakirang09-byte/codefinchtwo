@@ -6,55 +6,39 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, Calendar, Clock, User, Home, MessageCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
+import { format, isPast, addMinutes } from "date-fns";
 
-interface CompletedClass {
+interface TeacherClass {
   id: string;
-  studentName: string;
+  student: {
+    user: {
+      firstName: string;
+      lastName: string;
+    };
+  };
   subject: string;
-  scheduledAt: Date;
+  scheduledAt: string;
   duration: number;
-  earnings: number;
+  status: string;
+  amount: number;
 }
 
 export default function TeacherCompletedClasses() {
   const { user, isAuthenticated } = useAuth();
-  
-  const { data: mentorData, isLoading: mentorLoading } = useQuery({
-    queryKey: ['/api/users', user?.email, 'mentor'],
-    queryFn: async () => {
-      if (!user?.email) throw new Error('No user email');
-      const response = await fetch(`/api/users/${encodeURIComponent(user.email)}/mentor`);
-      if (!response.ok) throw new Error('Failed to fetch mentor data');
-      return response.json();
-    },
-    enabled: !!user?.email && isAuthenticated,
-  });
-  
-  const mentorId = mentorData?.id;
 
-  const { data: completedClassesData, isLoading: classesLoading } = useQuery({
-    queryKey: ['/api/mentors', mentorId, 'completed-bookings'],
-    queryFn: async () => {
-      if (!mentorId) throw new Error('No mentor ID available');
-      const response = await fetch(`/api/mentors/${mentorId}/bookings`);
-      if (!response.ok) throw new Error('Failed to fetch bookings');
-      const bookings = await response.json();
-      
-      // Filter for completed classes ONLY (feedback was submitted)
-      return bookings
-        .filter((booking: any) => booking.status === 'completed')
-        .map((booking: any) => ({
-          id: booking.id,
-          studentName: `${booking.student.user.firstName} ${booking.student.user.lastName}`,
-          subject: booking.subject || booking.notes || 'Programming Session',
-          scheduledAt: new Date(booking.scheduledAt),
-          duration: booking.duration,
-          earnings: booking.amount || 0,
-        }))
-        .sort((a: any, b: any) => b.scheduledAt.getTime() - a.scheduledAt.getTime());
-    },
-    enabled: !!mentorId,
+  // Fetch all teacher classes from unified endpoint
+  const { data: allClasses = [], isLoading } = useQuery<TeacherClass[]>({
+    queryKey: [`/api/teacher/classes?teacherId=${user?.id}`],
+    enabled: !!user?.id && isAuthenticated
   });
+
+  // Filter for COMPLETED classes: class end time is in the past (time-based logic)
+  const completedClasses = allClasses
+    .filter((classItem) => {
+      const classEndTime = addMinutes(new Date(classItem.scheduledAt), classItem.duration);
+      return isPast(classEndTime);
+    })
+    .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime());
 
   if (!isAuthenticated) {
     return (
@@ -72,8 +56,6 @@ export default function TeacherCompletedClasses() {
     );
   }
 
-  const isLoading = mentorLoading || classesLoading;
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
@@ -87,8 +69,6 @@ export default function TeacherCompletedClasses() {
       </div>
     );
   }
-
-  const completedClasses = completedClassesData || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
@@ -126,7 +106,7 @@ export default function TeacherCompletedClasses() {
             <CardContent className="p-6 text-center">
               <Clock className="h-8 w-8 mx-auto mb-2" />
               <div className="text-3xl font-bold">
-                {Math.round(completedClasses.reduce((sum: number, cls: CompletedClass) => sum + cls.duration, 0) / 60)}
+                {Math.round(completedClasses.reduce((sum, cls) => sum + cls.duration, 0) / 60)}
               </div>
               <div className="text-blue-100">Hours Taught</div>
             </CardContent>
@@ -136,7 +116,7 @@ export default function TeacherCompletedClasses() {
             <CardContent className="p-6 text-center">
               <CheckCircle className="h-8 w-8 mx-auto mb-2" />
               <div className="text-3xl font-bold">
-                ₹{completedClasses.reduce((sum: number, cls: CompletedClass) => sum + cls.earnings, 0)}
+                ₹{completedClasses.reduce((sum, cls) => sum + (cls.amount || 0), 0)}
               </div>
               <div className="text-yellow-100">Total Earnings</div>
             </CardContent>
@@ -153,58 +133,70 @@ export default function TeacherCompletedClasses() {
               <div className="text-center py-12">
                 <CheckCircle className="h-16 w-16 mx-auto text-gray-300 mb-4" />
                 <p className="text-xl text-gray-600 mb-2">No completed classes yet</p>
-                <p className="text-gray-500">Your completed classes will appear here after students submit feedback</p>
+                <p className="text-gray-500">Your completed classes will appear here after they finish</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {completedClasses.map((cls: CompletedClass) => (
-                  <Card key={cls.id} className="border-2 hover:border-green-300 transition-colors duration-200" data-testid={`card-completed-class-${cls.id}`}>
-                    <CardContent className="p-6">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-3">
-                            <CheckCircle className="h-6 w-6 text-green-600" />
-                            <h3 className="text-xl font-bold text-gray-900">{cls.subject}</h3>
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+                {completedClasses.map((classItem) => {
+                  const scheduledDate = new Date(classItem.scheduledAt);
+                  
+                  return (
+                    <Card 
+                      key={classItem.id} 
+                      className="border-2 hover:border-green-300 transition-colors duration-200" 
+                      data-testid={`card-completed-class-${classItem.id}`}
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h3 className="font-bold text-xl text-gray-800 mb-1">{classItem.subject}</h3>
+                            <p className="text-green-600 font-medium flex items-center gap-2">
+                              <User className="h-4 w-4" />
+                              {classItem.student.user.firstName} {classItem.student.user.lastName}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 mb-2">
+                              <CheckCircle className="h-3 w-3 mr-1" />
                               Completed
                             </Badge>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-gray-600">
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4" />
-                              <span>{cls.studentName}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4" />
-                              <span>{cls.scheduledAt.toLocaleDateString()}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4" />
-                              <span>{cls.duration} minutes</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-green-600 font-semibold">
-                              ₹{cls.earnings}
+                            <div className="text-sm font-semibold text-gray-700">
+                              Earned: ₹{classItem.amount || 0}
                             </div>
                           </div>
                         </div>
                         
-                        <div className="flex flex-col gap-2 ml-4">
+                        <div className="flex items-center gap-6 mb-4 text-sm flex-wrap">
+                          <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-lg">
+                            <Calendar className="h-4 w-4 text-blue-600" />
+                            <span className="font-medium">{format(scheduledDate, 'PPP')}</span>
+                          </div>
+                          <div className="flex items-center gap-2 bg-purple-50 px-3 py-2 rounded-lg">
+                            <Clock className="h-4 w-4 text-purple-600" />
+                            <span className="font-medium">{format(scheduledDate, 'p')}</span>
+                          </div>
+                          <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-lg">
+                            <Clock className="h-4 w-4 text-green-600" />
+                            <span className="font-medium">{classItem.duration} minutes</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-3">
                           <Button 
                             size="sm" 
                             variant="outline"
                             className="border-blue-300 text-blue-700 hover:bg-blue-50"
-                            onClick={() => window.location.href = `/chat/${cls.id}`}
-                            data-testid={`button-chat-${cls.id}`}
+                            onClick={() => window.location.href = `/chat/${classItem.id}`}
+                            data-testid={`button-chat-${classItem.id}`}
                           >
                             <MessageCircle className="h-4 w-4 mr-1" />
                             Chat
                           </Button>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </CardContent>
