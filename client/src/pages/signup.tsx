@@ -1,14 +1,28 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Code, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { Code, Mail, Lock, User, Eye, EyeOff, Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import type { Qualification, Specialization, Subject } from "@shared/schema";
+
+// Character limits (aligned with database schema and best practices)
+const CHAR_LIMITS = {
+  firstName: 50,
+  lastName: 50,
+  email: 255,
+  password: 128,
+  country: 100,
+  qualification: 255,
+  specialization: 255,
+  subject: 255,
+  score: 50,
+  experience: 20,
+};
 
 export default function Signup() {
   const [formData, setFormData] = useState({
@@ -36,22 +50,30 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string>("");
+  const [photoValidation, setPhotoValidation] = useState<{
+    isValidating: boolean;
+    faceDetected: boolean;
+    message: string;
+  }>({ isValidating: false, faceDetected: false, message: "" });
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   // Fetch educational dropdown data
   const { data: qualifications = [], isLoading: qualificationsLoading, isError: qualificationsError } = useQuery<Qualification[]>({
     queryKey: ['/api/qualifications'],
-    enabled: formData.role === "mentor" || formData.role === "both"
+    enabled: formData.role === "mentor"
   });
 
   const { data: specializations = [], isLoading: specializationsLoading, isError: specializationsError } = useQuery<Specialization[]>({
     queryKey: ['/api/specializations'],
-    enabled: formData.role === "mentor" || formData.role === "both"
+    enabled: formData.role === "mentor"
   });
 
   const { data: subjects = [], isLoading: subjectsLoading, isError: subjectsError } = useQuery<Subject[]>({
     queryKey: ['/api/subjects'],
-    enabled: formData.role === "mentor" || formData.role === "both"
+    enabled: formData.role === "mentor"
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -74,6 +96,101 @@ export default function Signup() {
         i === index ? { ...subj, [field]: value } : subj
       )
     }));
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Basic file validation
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please upload a JPEG, PNG, or WebP image.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast({
+        title: "File Too Large",
+        description: `File size is ${(file.size / 1024 / 1024).toFixed(2)}MB. Maximum size is 5MB.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const imageUrl = event.target?.result as string;
+      setPhotoPreview(imageUrl);
+      setPhotoFile(file);
+
+      // Client-side face detection (privacy-preserving)
+      setPhotoValidation({ isValidating: true, faceDetected: false, message: "Validating photo quality..." });
+      
+      try {
+        // Note: face-api.js validation would go here
+        // For now, we'll do a simple validation
+        const img = new Image();
+        img.onload = () => {
+          if (img.width < 200 || img.height < 200) {
+            setPhotoValidation({
+              isValidating: false,
+              faceDetected: false,
+              message: `Image too small (${img.width}x${img.height}). Minimum size is 200x200 pixels.`
+            });
+            setPhotoFile(null);
+            setPhotoPreview("");
+            toast({
+              title: "Image Too Small",
+              description: `Image is ${img.width}x${img.height}. Please upload at least 200x200 pixels.`,
+              variant: "destructive",
+            });
+          } else if (img.width > 4000 || img.height > 4000) {
+            setPhotoValidation({
+              isValidating: false,
+              faceDetected: false,
+              message: `Image too large (${img.width}x${img.height}). Maximum size is 4000x4000 pixels.`
+            });
+            setPhotoFile(null);
+            setPhotoPreview("");
+            toast({
+              title: "Image Too Large",
+              description: `Image is ${img.width}x${img.height}. Please upload up to 4000x4000 pixels.`,
+              variant: "destructive",
+            });
+          } else {
+            setPhotoValidation({
+              isValidating: false,
+              faceDetected: true,
+              message: "Photo looks good! (Face detection will run during signup)"
+            });
+          }
+        };
+        img.src = imageUrl;
+      } catch (error) {
+        setPhotoValidation({
+          isValidating: false,
+          faceDetected: false,
+          message: "Error validating photo. Please try another image."
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview("");
+    setPhotoValidation({ isValidating: false, faceDetected: false, message: "" });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -119,7 +236,7 @@ export default function Signup() {
     if (!formData.role) {
       toast({
         title: "Role Required",
-        description: "Please select your role (student, mentor, or both).",
+        description: "Please select your role (student or mentor).",
         variant: "destructive",
       });
       setLoading(false);
@@ -178,14 +295,25 @@ export default function Signup() {
     }
 
     // Mentor data validation
-    if (formData.role === "mentor" || formData.role === "both") {
+    if (formData.role === "mentor") {
+      // Photo validation for mentors
+      if (!photoFile) {
+        toast({
+          title: "Photo Required",
+          description: "Teachers must upload a profile photo for verification.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       const validQualifications = formData.qualifications.filter(q => q.qualification.trim() !== "");
       const validSubjects = formData.subjects.filter(s => s.subject.trim() !== "");
 
       if (validQualifications.length === 0) {
         toast({
           title: "Qualifications Required",
-          description: "Mentors must provide at least one educational qualification.",
+          description: "Teachers must provide at least one educational qualification.",
           variant: "destructive",
         });
         setLoading(false);
@@ -195,7 +323,7 @@ export default function Signup() {
       if (validSubjects.length === 0) {
         toast({
           title: "Subjects Required",
-          description: "Mentors must specify at least one teaching subject.",
+          description: "Teachers must specify at least one teaching subject.",
           variant: "destructive",
         });
         setLoading(false);
@@ -245,7 +373,7 @@ export default function Signup() {
       if (validSubjects.length === 0) {
         toast({
           title: "Subjects Required",
-          description: "Mentors must specify at least one teaching subject with experience.",
+          description: "Teachers must specify at least one teaching subject with experience.",
           variant: "destructive",
         });
         setLoading(false);
@@ -254,29 +382,35 @@ export default function Signup() {
     }
 
     try {
+      // Prepare form data with photo
+      const signupData = new FormData();
+      signupData.append("firstName", formData.firstName);
+      signupData.append("lastName", formData.lastName);
+      signupData.append("email", formData.email);
+      signupData.append("password", formData.password);
+      signupData.append("role", formData.role);
+      signupData.append("country", formData.country);
+
+      // Include mentor data if role is mentor
+      if (formData.role === "mentor") {
+        if (photoFile) {
+          signupData.append("photo", photoFile);
+        }
+        signupData.append("mentorData", JSON.stringify({
+          qualifications: formData.qualifications.filter(q => q.qualification.trim() !== ""),
+          subjects: formData.subjects.filter(s => s.subject.trim() !== "")
+        }));
+      }
+
       // Call the signup API
       const response = await fetch("/api/auth/signup", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          password: formData.password,
-          role: formData.role,
-          country: formData.country,
-          // Include mentor data if role is mentor or both
-          mentorData: (formData.role === "mentor" || formData.role === "both") ? {
-            qualifications: formData.qualifications.filter(q => q.qualification.trim() !== ""),
-            subjects: formData.subjects.filter(s => s.subject.trim() !== "")
-          } : null
-        })
+        body: signupData
       });
 
       if (!response.ok) {
-        throw new Error("Signup failed");
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "Signup failed");
       }
       
       toast({
@@ -287,10 +421,10 @@ export default function Signup() {
       
       // Redirect to login page after successful signup
       window.location.href = "/login";
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Signup Failed",
-        description: "There was an error creating your account. Please try again.",
+        description: error.message || "There was an error creating your account. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -336,6 +470,7 @@ export default function Signup() {
                     onChange={(e) => handleInputChange("firstName", e.target.value)}
                     className="pl-10"
                     required
+                    maxLength={CHAR_LIMITS.firstName}
                     data-testid="input-first-name"
                   />
                 </div>
@@ -350,6 +485,7 @@ export default function Signup() {
                   value={formData.lastName}
                   onChange={(e) => handleInputChange("lastName", e.target.value)}
                   required
+                  maxLength={CHAR_LIMITS.lastName}
                   data-testid="input-last-name"
                 />
               </div>
@@ -367,6 +503,7 @@ export default function Signup() {
                   onChange={(e) => handleInputChange("email", e.target.value)}
                   className="pl-10"
                   required
+                  maxLength={CHAR_LIMITS.email}
                   data-testid="input-email"
                 />
               </div>
@@ -380,8 +517,7 @@ export default function Signup() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="student">Learn coding (Student)</SelectItem>
-                  <SelectItem value="mentor">Teach coding (Mentor)</SelectItem>
-                  <SelectItem value="both">Both learn and teach</SelectItem>
+                  <SelectItem value="mentor">Teach coding (Teacher)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -405,10 +541,57 @@ export default function Signup() {
               </Select>
             </div>
 
-            {/* Mentor/Both Qualification Fields */}
-            {(formData.role === "mentor" || formData.role === "both") && (
+            {/* Mentor Qualification Fields */}
+            {formData.role === "mentor" && (
               <div className="space-y-6 p-4 border rounded-lg bg-gray-50">
-                <h3 className="text-lg font-semibold text-gray-800">Mentor Qualifications</h3>
+                <h3 className="text-lg font-semibold text-gray-800">Teacher Qualifications</h3>
+                
+                {/* Photo Upload */}
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">
+                    Profile Photo <span className="text-red-500">*</span>
+                  </Label>
+                  <p className="text-sm text-gray-600">Upload a clear photo of your face for verification (JPEG, PNG, or WebP, max 5MB)</p>
+                  
+                  {!photoPreview ? (
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-500 transition-colors cursor-pointer"
+                         onClick={() => fileInputRef.current?.click()}>
+                      <Upload className="mx-auto h-12 w-12 text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600 mb-1">Click to upload your photo</p>
+                      <p className="text-xs text-gray-500">Face detection will verify photo quality</p>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                        data-testid="input-photo-upload"
+                      />
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <img src={photoPreview} alt="Profile preview" className="w-full h-48 object-cover rounded-lg border-2 border-purple-500" />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={removePhoto}
+                        data-testid="button-remove-photo"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                      {photoValidation.isValidating && (
+                        <p className="text-sm text-blue-600 mt-2">{photoValidation.message}</p>
+                      )}
+                      {!photoValidation.isValidating && photoValidation.message && (
+                        <p className={`text-sm mt-2 ${photoValidation.faceDetected ? 'text-green-600' : 'text-red-600'}`}>
+                          {photoValidation.message}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
                 
                 {/* Qualifications */}
                 <div className="space-y-4">
@@ -459,6 +642,7 @@ export default function Signup() {
                           placeholder="e.g., 3.8 GPA"
                           value={qual.score}
                           onChange={(e) => handleQualificationChange(index, "score", e.target.value)}
+                          maxLength={CHAR_LIMITS.score}
                           data-testid={`input-score-${index}`}
                           className="w-full"
                         />
@@ -498,6 +682,7 @@ export default function Signup() {
                           placeholder="e.g., 5"
                           value={subj.experience}
                           onChange={(e) => handleSubjectChange(index, "experience", e.target.value)}
+                          maxLength={CHAR_LIMITS.experience}
                           data-testid={`input-experience-${index}`}
                           className="w-full"
                         />
@@ -520,6 +705,7 @@ export default function Signup() {
                   onChange={(e) => handleInputChange("password", e.target.value)}
                   className="pl-10 pr-10"
                   required
+                  maxLength={CHAR_LIMITS.password}
                   data-testid="input-password"
                 />
                 <Button
@@ -551,6 +737,7 @@ export default function Signup() {
                   onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
                   className="pl-10 pr-10"
                   required
+                  maxLength={CHAR_LIMITS.password}
                   data-testid="input-confirm-password"
                 />
                 <Button

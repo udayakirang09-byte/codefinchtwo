@@ -7,6 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Code, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+// Character limits (aligned with database schema and best practices)
+const CHAR_LIMITS = {
+  email: 255,
+  password: 128,
+};
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -161,6 +167,7 @@ export default function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
                   required
+                  maxLength={CHAR_LIMITS.email}
                   data-testid="input-email"
                 />
               </div>
@@ -178,6 +185,7 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 pr-10"
                   required
+                  maxLength={CHAR_LIMITS.password}
                   data-testid="input-password"
                 />
                 <Button
