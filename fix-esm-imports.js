@@ -22,6 +22,19 @@ function fixImportsInFile(filePath) {
       }
       return match;
     })
+    // Fix dynamic imports (await import()) for relative paths
+    .replace(/import\(['"](\.\/.+?)['"]\)/g, (match, importPath) => {
+      if (!importPath.endsWith('.js')) {
+        return match.replace(importPath, importPath + '.js');
+      }
+      return match;
+    })
+    .replace(/import\(['"](\.\.\/.+?)['"]\)/g, (match, importPath) => {
+      if (!importPath.endsWith('.js')) {
+        return match.replace(importPath, importPath + '.js');
+      }
+      return match;
+    })
     // Fix @shared/* imports to relative paths
     .replace(/from\s+['"]@shared\/(.+?)['"];/g, (match, importPath) => {
       // Determine if we're in server or shared directory to get correct relative path
@@ -29,6 +42,14 @@ function fixImportsInFile(filePath) {
         return `from "../shared/${importPath}.js";`;
       } else {
         return `from "./${importPath}.js";`;
+      }
+    })
+    // Fix @shared/* dynamic imports
+    .replace(/import\(['"]@shared\/(.+?)['"]\)/g, (match, importPath) => {
+      if (filePath.includes('/server/')) {
+        return `import("../shared/${importPath}.js")`;
+      } else {
+        return `import("./${importPath}.js")`;
       }
     })
     // Fix static file path for production

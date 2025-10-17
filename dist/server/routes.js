@@ -283,7 +283,7 @@ export async function registerRoutes(app) {
             const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
             let sendEmail, generateResetEmail;
             try {
-                const emailModule = await import('./email');
+                const emailModule = await import('./email.js');
                 sendEmail = emailModule.sendEmail;
                 generateResetEmail = emailModule.generateResetEmail;
             }
@@ -1174,7 +1174,7 @@ export async function registerRoutes(app) {
             const mentor = await storage.getMentor(enrollment.mentorId);
             const mentorUser = mentor ? await storage.getUser(mentor.userId) : null;
             if (user && course) {
-                const { sendEmail, generateCourseCancellationEmail } = await import('./email');
+                const { sendEmail, generateCourseCancellationEmail } = await import('./email.js');
                 const studentEmail = generateCourseCancellationEmail(user.email, `${user.firstName} ${user.lastName}`, 'student', course.title, 'student', cancelledCount, bookingsWithin6Hours.length, refundAmount > 0 ? refundAmount.toFixed(2) : undefined);
                 const studentEmailSent = await sendEmail({ to: user.email, ...studentEmail });
                 if (!studentEmailSent) {
@@ -1973,7 +1973,7 @@ export async function registerRoutes(app) {
                         console.log(`✅ Abusive language incident recorded for user ${senderName} (${userRole})`);
                         try {
                             const admins = await db.select().from(users).where(eq(users.role, 'admin'));
-                            const { generateAbusiveLanguageAlertEmail, sendEmail } = await import('./email');
+                            const { generateAbusiveLanguageAlertEmail, sendEmail } = await import('./email.js');
                             for (const admin of admins) {
                                 const emailContent = generateAbusiveLanguageAlertEmail(admin.email, {
                                     userName: senderName,
@@ -4960,7 +4960,7 @@ export async function registerRoutes(app) {
             }
             let aiHelpService;
             try {
-                const aiModule = await import('./ai-help');
+                const aiModule = await import('./ai-help.js');
                 aiHelpService = aiModule.aiHelpService;
             }
             catch (aiError) {
@@ -4994,7 +4994,7 @@ export async function registerRoutes(app) {
             }
             let aiHelpService;
             try {
-                const aiModule = await import('./ai-help');
+                const aiModule = await import('./ai-help.js');
                 aiHelpService = aiModule.aiHelpService;
             }
             catch (aiError) {
@@ -5028,7 +5028,7 @@ export async function registerRoutes(app) {
             const { search, category } = req.query;
             let aiHelpService;
             try {
-                const aiModule = await import('./ai-help');
+                const aiModule = await import('./ai-help.js');
                 aiHelpService = aiModule.aiHelpService;
             }
             catch (aiError) {
@@ -5054,7 +5054,7 @@ export async function registerRoutes(app) {
     console.log('✅ KADB Help System API routes registered successfully!');
     app.get('/api/forum/categories', async (req, res) => {
         try {
-            const { forumCategories } = await import('@shared/schema');
+            const { forumCategories } = await import("../shared/schema.js");
             const categories = await db.select().from(forumCategories).orderBy(forumCategories.displayOrder);
             res.json(categories);
         }
@@ -5065,7 +5065,7 @@ export async function registerRoutes(app) {
     });
     app.get('/api/forum/posts', async (req, res) => {
         try {
-            const { forumPosts } = await import('@shared/schema');
+            const { forumPosts } = await import("../shared/schema.js");
             const posts = await db.select().from(forumPosts).orderBy(desc(forumPosts.createdAt));
             res.json(posts);
         }
@@ -5076,7 +5076,7 @@ export async function registerRoutes(app) {
     });
     app.post('/api/forum/posts', async (req, res) => {
         try {
-            const { forumPosts } = await import('@shared/schema');
+            const { forumPosts } = await import("../shared/schema.js");
             const { title, content, categoryId, authorId, tags = [] } = req.body;
             const [post] = await db.insert(forumPosts).values({
                 title,
@@ -5094,7 +5094,7 @@ export async function registerRoutes(app) {
     });
     app.get('/api/projects/categories', async (req, res) => {
         try {
-            const { projectCategories } = await import('@shared/schema');
+            const { projectCategories } = await import("../shared/schema.js");
             const categories = await db.select().from(projectCategories).orderBy(projectCategories.displayOrder);
             res.json(categories);
         }
@@ -5105,7 +5105,7 @@ export async function registerRoutes(app) {
     });
     app.get('/api/projects', async (req, res) => {
         try {
-            const { projects } = await import('@shared/schema');
+            const { projects } = await import("../shared/schema.js");
             const { published } = req.query;
             if (published === 'true') {
                 const projectList = await db.select().from(projects).where(eq(projects.isPublished, true)).orderBy(desc(projects.createdAt));
@@ -5123,7 +5123,7 @@ export async function registerRoutes(app) {
     });
     app.post('/api/projects', async (req, res) => {
         try {
-            const { projects } = await import('@shared/schema');
+            const { projects } = await import("../shared/schema.js");
             const { title, description, categoryId, authorId, technologies = [], difficulty = 'beginner', githubUrl, liveUrl } = req.body;
             const [project] = await db.insert(projects).values({
                 title,
@@ -5144,7 +5144,7 @@ export async function registerRoutes(app) {
     });
     app.get('/api/events/categories', async (req, res) => {
         try {
-            const { eventCategories } = await import('@shared/schema');
+            const { eventCategories } = await import("../shared/schema.js");
             const categories = await db.select().from(eventCategories).orderBy(eventCategories.displayOrder);
             res.json(categories);
         }
@@ -5155,7 +5155,7 @@ export async function registerRoutes(app) {
     });
     app.get('/api/events', async (req, res) => {
         try {
-            const { events } = await import('@shared/schema');
+            const { events } = await import("../shared/schema.js");
             const { published } = req.query;
             if (published === 'true') {
                 const eventList = await db.select().from(events).where(eq(events.isPublished, true)).orderBy(events.startDate);
@@ -5173,7 +5173,7 @@ export async function registerRoutes(app) {
     });
     app.post('/api/events', async (req, res) => {
         try {
-            const { events } = await import('@shared/schema');
+            const { events } = await import("../shared/schema.js");
             const { title, description, categoryId, organizerId, startDate, endDate, location = 'Online', tags = [], difficulty = 'all' } = req.body;
             const [event] = await db.insert(events).values({
                 title,
@@ -5195,7 +5195,7 @@ export async function registerRoutes(app) {
     });
     app.post('/api/events/:id/register', async (req, res) => {
         try {
-            const { eventRegistrations, insertEventRegistrationSchema } = await import('@shared/schema');
+            const { eventRegistrations, insertEventRegistrationSchema } = await import("../shared/schema.js");
             const { id } = req.params;
             const validatedData = insertEventRegistrationSchema.parse({
                 eventId: id,
@@ -5770,8 +5770,8 @@ export async function registerRoutes(app) {
         }
     });
     console.log('✅ Abusive Language Incidents API routes registered successfully!');
-    const { azureAppInsights } = await import('./azure-app-insights');
-    const { azureAppInsightsConfig, azureMetricsAlerts, azureMetricsHistory } = await import('@shared/schema');
+    const { azureAppInsights } = await import('./azure-app-insights.js');
+    const { azureAppInsightsConfig, azureMetricsAlerts, azureMetricsHistory } = await import("../shared/schema.js");
     app.get('/api/admin/azure-insights/config', authenticateSession, async (req, res) => {
         try {
             if (req.user.role !== 'admin') {
