@@ -101,6 +101,7 @@ export const mentors = pgTable("mentors", {
   country: varchar("country").notNull().default("NA-Country"), // Country field with default
   upiId: varchar("upi_id"), // UPI ID for payouts
   isActive: boolean("is_active").default(true),
+  demoEnabled: boolean("demo_enabled").default(false), // C2: Allow teachers to enable/disable demo bookings
   availableSlots: jsonb("available_slots").$type<{ day: string; times: string[] }[]>().default([]),
   // Admin Approval Workflow
   approvalStatus: varchar("approval_status").default("pending"), // pending, approved, rejected
