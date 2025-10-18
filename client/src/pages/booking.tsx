@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
+import { useScheduleSync } from "@/hooks/useScheduleSync";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 import type { MentorWithUser } from "@shared/schema";
@@ -76,6 +77,9 @@ export default function Booking() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  
+  // C16: Real-time schedule sync - listen for booking/availability changes
+  useScheduleSync(mentorId || undefined);
 
   // Redirect to login if not authenticated
   useEffect(() => {

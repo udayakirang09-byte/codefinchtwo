@@ -1951,6 +1951,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Don't fail the booking if chat creation fails
       }
       
+      // C16: Broadcast real-time schedule change
+      if (global.broadcastScheduleChange) {
+        global.broadcastScheduleChange({
+          type: 'booking-created',
+          mentorId: req.body.mentorId,
+          data: { bookingId: booking.id, scheduledAt: booking.scheduledAt }
+        });
+      }
+      
       res.status(201).json(booking);
     } catch (error: any) {
       console.error("Error creating booking:", error);
@@ -2046,6 +2055,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       await storage.cancelBooking(id);
+      
+      // C16: Broadcast real-time schedule change
+      if (global.broadcastScheduleChange) {
+        global.broadcastScheduleChange({
+          type: 'booking-cancelled',
+          mentorId: booking.mentorId,
+          data: { bookingId: id, scheduledAt: booking.scheduledAt }
+        });
+      }
       
       // If booking is part of a course, check if all course bookings are now cancelled
       if (booking.courseId) {
@@ -5843,6 +5861,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(timeSlots.id, slotId))
         .returning();
       
+      // C16: Broadcast real-time schedule change
+      if (global.broadcastScheduleChange) {
+        global.broadcastScheduleChange({
+          type: 'availability-changed',
+          mentorId: slot[0].mentorId,
+          data: { slotId, updates: updateData }
+        });
+      }
+      
       res.json({ 
         success: true, 
         message: affectedBookings.length > 0 
@@ -5913,6 +5940,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(timeSlots.id, slotId))
         .returning();
       
+      // C16: Broadcast real-time schedule change
+      if (global.broadcastScheduleChange) {
+        global.broadcastScheduleChange({
+          type: 'availability-deleted',
+          mentorId: slot[0].mentorId,
+          data: { slotId }
+        });
+      }
+      
       console.log(`✅ Time slot ${slotId} deleted successfully`);
       res.json({ 
         success: true, 
@@ -5956,6 +5992,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }).returning();
       
       console.log(`✅ Created new time slot with ID ${newSlot[0].id} for mentor ${mentor[0].id}: ${dayOfWeek} ${startTime}-${endTime}`);
+      
+      // C16: Broadcast real-time schedule change
+      if (global.broadcastScheduleChange) {
+        global.broadcastScheduleChange({
+          type: 'availability-changed',
+          mentorId: mentor[0].id,
+          data: { slotId: newSlot[0].id, dayOfWeek, startTime, endTime }
+        });
+      }
       
       res.status(201).json(newSlot[0]);
     } catch (error) {

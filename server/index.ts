@@ -133,6 +133,34 @@ app.use((req, res, next) => {
   // Store active video sessions and their participants
   const videoSessions = new Map<string, Set<any>>();
   
+  // C16: Real-time sync - Global broadcast function for schedule changes
+  global.broadcastScheduleChange = (event: {
+    type: 'booking-created' | 'booking-cancelled' | 'availability-changed' | 'availability-deleted';
+    mentorId: string;
+    data?: any;
+  }) => {
+    const message = JSON.stringify({
+      type: 'schedule-update',
+      event: event.type,
+      mentorId: event.mentorId,
+      data: event.data,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Broadcast to all connected WebSocket clients
+    wss.clients.forEach((client: any) => {
+      if (client.readyState === 1) { // 1 = OPEN
+        try {
+          client.send(message);
+        } catch (error) {
+          log(`Error broadcasting to client: ${error}`);
+        }
+      }
+    });
+    
+    log(`📡 Broadcast ${event.type} for mentor ${event.mentorId}`);
+  };
+  
   wss.on('connection', (ws: any, request: any) => {
     log(`WebSocket connection established from ${request.socket.remoteAddress}`);
     
