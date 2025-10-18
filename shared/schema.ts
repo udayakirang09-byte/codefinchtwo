@@ -144,6 +144,21 @@ export const bookings = pgTable("bookings", {
   teacherJoinedAt: timestamp("teacher_joined_at"), // When teacher first joined
   teacherAbsentPercent: integer("teacher_absent_percent").default(0), // % time teacher was absent
   autoCancelReason: varchar("auto_cancel_reason"), // e.g., "Teacher absent >25% from start"
+  // Comprehensive Cancellation Tracking
+  cancelledBy: varchar("cancelled_by"), // teacher, student, system, admin
+  cancellationType: varchar("cancellation_type"), // teacher_cancelled, student_cancelled, late_join, teacher_no_show, low_presence, connectivity_issue, short_session, admin_manual
+  cancelledAt: timestamp("cancelled_at"), // When the class was cancelled
+  cancelReason: text("cancel_reason"), // Detailed reason for cancellation
+  // Refund Tracking
+  refundStatus: varchar("refund_status"), // pending, approved, rejected, processed, not_applicable
+  refundAmount: decimal("refund_amount", { precision: 10, scale: 2 }), // Amount to refund in INR
+  refundProcessedAt: timestamp("refund_processed_at"), // When refund was completed
+  // AI/System Detection Fields
+  lateJoinDetectedAt: timestamp("late_join_detected_at"), // When late join was detected
+  connectivityIssueDetectedAt: timestamp("connectivity_issue_detected_at"), // When connectivity issue detected
+  lowPresenceDetectedAt: timestamp("low_presence_detected_at"), // When low presence detected
+  shortSessionDetectedAt: timestamp("short_session_detected_at"), // When short session detected
+  actualDuration: integer("actual_duration"), // Actual minutes the class lasted
   // Recording Visibility (for demo sessions)
   recordingVisibilityUnlockedAt: timestamp("recording_visibility_unlocked_at"), // When demo recording becomes visible
   createdAt: timestamp("created_at").defaultNow(),
@@ -154,6 +169,7 @@ export const bookings = pgTable("bookings", {
   mentorIdScheduledIdx: index("bookings_mentor_id_scheduled_at_idx").on(table.mentorId, table.scheduledAt),
   statusIdx: index("bookings_status_idx").on(table.status),
   scheduledAtIdx: index("bookings_scheduled_at_idx").on(table.scheduledAt),
+  cancellationTypeIdx: index("bookings_cancellation_type_idx").on(table.cancellationType),
 }));
 
 export const achievements = pgTable("achievements", {
