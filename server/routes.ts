@@ -67,6 +67,7 @@ import {
   insertClassFeedbackSchema,
   insertNotificationSchema,
   insertCourseSchema,
+  type InsertReview,
 } from "@shared/schema";
 
 // Initialize Stripe with appropriate keys
@@ -107,10 +108,31 @@ if (razorpayKeyId && razorpayKeySecret && razorpayKeyId !== 'NA' && razorpayKeyS
   console.warn('⚠️ Razorpay not configured - UPI payment features disabled');
 }
 
+// Rate limiting for login attempts (in-memory store)
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOGIN_LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
 // Rate limiting for 2FA verification (in-memory store)
 const twoFAAttempts = new Map<string, { count: number; resetAt: number }>();
 const MAX_2FA_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
+// Rate limiting for OTP requests (in-memory store)
+const otpRequestAttempts = new Map<string, { count: number; resetAt: number }>();
+const MAX_OTP_REQUESTS = 3;
+const OTP_REQUEST_LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
+
+// Rate limiting for chat messages (in-memory store)
+// Key format: "userId:bookingId"
+const chatMessageAttempts = new Map<string, { count: number; resetAt: number }>();
+const MAX_CHAT_MESSAGES_PER_MINUTE = 20;
+const CHAT_RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+
+// Rate limiting for booking creation (in-memory store)
+// Key format: "studentId:date" (date is YYYY-MM-DD)
+const bookingCreationAttempts = new Map<string, { count: number; date: string }>();
+const MAX_BOOKINGS_PER_DAY = 10;
 
 // Temporary storage for pending 2FA secrets (server-side only)
 // Format: Map<email, { secret: string, expiresAt: number }>
@@ -212,6 +234,147 @@ function recordFailed2FAAttempt(email: string): void {
 
 function clearFailed2FAAttempts(email: string): void {
   twoFAAttempts.delete(email);
+}
+
+// Login attempt rate limiting functions
+function checkLoginRateLimit(email: string): { allowed: boolean; remainingAttempts?: number; lockoutEndsAt?: number } {
+  const now = Date.now();
+  const userAttempts = loginAttempts.get(email);
+  
+  // Clean up expired lockouts
+  if (userAttempts && userAttempts.resetAt < now) {
+    loginAttempts.delete(email);
+    return { allowed: true, remainingAttempts: MAX_LOGIN_ATTEMPTS };
+  }
+  
+  // Check if user is locked out
+  if (userAttempts && userAttempts.count >= MAX_LOGIN_ATTEMPTS) {
+    return { allowed: false, lockoutEndsAt: userAttempts.resetAt };
+  }
+  
+  return { 
+    allowed: true, 
+    remainingAttempts: MAX_LOGIN_ATTEMPTS - (userAttempts?.count || 0)
+  };
+}
+
+function recordFailedLoginAttempt(email: string): void {
+  const now = Date.now();
+  const userAttempts = loginAttempts.get(email);
+  
+  if (!userAttempts || userAttempts.resetAt < now) {
+    loginAttempts.set(email, { count: 1, resetAt: now + LOGIN_LOCKOUT_DURATION_MS });
+  } else {
+    userAttempts.count++;
+  }
+}
+
+function clearFailedLoginAttempts(email: string): void {
+  loginAttempts.delete(email);
+}
+
+// OTP request rate limiting functions
+function checkOTPRequestRateLimit(email: string): { allowed: boolean; remainingRequests?: number; lockoutEndsAt?: number } {
+  const now = Date.now();
+  const userAttempts = otpRequestAttempts.get(email);
+  
+  // Clean up expired lockouts
+  if (userAttempts && userAttempts.resetAt < now) {
+    otpRequestAttempts.delete(email);
+    return { allowed: true, remainingRequests: MAX_OTP_REQUESTS };
+  }
+  
+  // Check if user is locked out
+  if (userAttempts && userAttempts.count >= MAX_OTP_REQUESTS) {
+    return { allowed: false, lockoutEndsAt: userAttempts.resetAt };
+  }
+  
+  return { 
+    allowed: true, 
+    remainingRequests: MAX_OTP_REQUESTS - (userAttempts?.count || 0)
+  };
+}
+
+function recordOTPRequest(email: string): void {
+  const now = Date.now();
+  const userAttempts = otpRequestAttempts.get(email);
+  
+  if (!userAttempts || userAttempts.resetAt < now) {
+    otpRequestAttempts.set(email, { count: 1, resetAt: now + OTP_REQUEST_LOCKOUT_MS });
+  } else {
+    userAttempts.count++;
+  }
+}
+
+// Chat message rate limiting functions
+function checkChatMessageRateLimit(userId: string, bookingId: string): { allowed: boolean; remainingMessages?: number } {
+  const now = Date.now();
+  const key = `${userId}:${bookingId}`;
+  const userAttempts = chatMessageAttempts.get(key);
+  
+  // Clean up expired windows
+  if (userAttempts && userAttempts.resetAt < now) {
+    chatMessageAttempts.delete(key);
+    return { allowed: true, remainingMessages: MAX_CHAT_MESSAGES_PER_MINUTE };
+  }
+  
+  // Check if user exceeded limit
+  if (userAttempts && userAttempts.count >= MAX_CHAT_MESSAGES_PER_MINUTE) {
+    return { allowed: false };
+  }
+  
+  return { 
+    allowed: true, 
+    remainingMessages: MAX_CHAT_MESSAGES_PER_MINUTE - (userAttempts?.count || 0)
+  };
+}
+
+function recordChatMessage(userId: string, bookingId: string): void {
+  const now = Date.now();
+  const key = `${userId}:${bookingId}`;
+  const userAttempts = chatMessageAttempts.get(key);
+  
+  if (!userAttempts || userAttempts.resetAt < now) {
+    chatMessageAttempts.set(key, { count: 1, resetAt: now + CHAT_RATE_LIMIT_WINDOW_MS });
+  } else {
+    userAttempts.count++;
+  }
+}
+
+// Booking creation rate limiting functions
+function checkBookingCreationRateLimit(studentId: string): { allowed: boolean; remainingBookings?: number; currentCount?: number } {
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const key = `${studentId}:${today}`;
+  const studentAttempts = bookingCreationAttempts.get(key);
+  
+  // Clean up old dates
+  if (studentAttempts && studentAttempts.date !== today) {
+    bookingCreationAttempts.delete(key);
+    return { allowed: true, remainingBookings: MAX_BOOKINGS_PER_DAY, currentCount: 0 };
+  }
+  
+  // Check if student exceeded daily limit
+  if (studentAttempts && studentAttempts.count >= MAX_BOOKINGS_PER_DAY) {
+    return { allowed: false, currentCount: studentAttempts.count };
+  }
+  
+  return { 
+    allowed: true, 
+    remainingBookings: MAX_BOOKINGS_PER_DAY - (studentAttempts?.count || 0),
+    currentCount: studentAttempts?.count || 0
+  };
+}
+
+function recordBookingCreation(studentId: string): void {
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const key = `${studentId}:${today}`;
+  const studentAttempts = bookingCreationAttempts.get(key);
+  
+  if (!studentAttempts || studentAttempts.date !== today) {
+    bookingCreationAttempts.set(key, { count: 1, date: today });
+  } else {
+    studentAttempts.count++;
+  }
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -516,6 +679,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { email, password }: { email: string; password: string } = req.body;
       
+      // Check login rate limit BEFORE expensive database/crypto operations
+      const loginRateLimit = checkLoginRateLimit(email?.trim());
+      if (!loginRateLimit.allowed) {
+        const minutesRemaining = Math.ceil((loginRateLimit.lockoutEndsAt! - Date.now()) / 60000);
+        console.log(`🚫 Login rate limit exceeded for ${email?.trim()}, locked for ${minutesRemaining} more minutes`);
+        return res.status(429).json({ 
+          message: `Too many failed login attempts. Please try again in ${minutesRemaining} minute${minutesRemaining > 1 ? 's' : ''}.`,
+          lockoutEndsAt: loginRateLimit.lockoutEndsAt
+        });
+      }
+      
       // OPTIMIZED: Get user with role data in a single query (reduces 3-4 queries to 1)
       console.log('🔍 [AZURE DEBUG] Looking up user with role data:', email?.trim());
       const userData = await storage.getUserWithRoleDataByEmail(email.trim());
@@ -528,6 +702,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       if (!userData || !userData.user) {
+        // Record failed login attempt for non-existent user too (prevents user enumeration timing attacks)
+        recordFailedLoginAttempt(email?.trim());
+        console.log(`❌ Login failed for ${email?.trim()} - user not found (${loginRateLimit.remainingAttempts! - 1} attempts remaining)`);
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
@@ -563,6 +740,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (!isValidPassword) {
+        // Record failed login attempt
+        recordFailedLoginAttempt(email?.trim());
+        const attemptsRemaining = (loginRateLimit.remainingAttempts || MAX_LOGIN_ATTEMPTS) - 1;
+        console.log(`❌ Login failed for ${email?.trim()} - invalid password (${attemptsRemaining} attempts remaining)`);
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
@@ -641,6 +822,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Clear failed attempts on successful 2FA
         clearFailed2FAAttempts(user.email);
       }
+      
+      // Clear failed login attempts on successful authentication
+      clearFailedLoginAttempts(user.email);
+      console.log(`✅ Login successful for ${user.email}, cleared failed attempts`);
       
       // OPTIMIZED: Create student/mentor records if they don't exist
       // We already have the data from getUserWithRoleDataByEmail, so just check if null
@@ -2087,7 +2272,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/reviews", async (req, res) => {
     try {
       const reviewData = insertReviewSchema.parse(req.body);
-      const review = await storage.createReview(reviewData);
+      const { studentId, bookingId, comment } = reviewData as InsertReview;
+      
+      // SPAM PREVENTION: Check for duplicate review (one review per student per booking)
+      const existingReviews = await db
+        .select()
+        .from(reviews)
+        .where(
+          and(
+            eq(reviews.studentId, studentId),
+            eq(reviews.bookingId, bookingId)
+          )
+        );
+      
+      if (existingReviews.length > 0) {
+        console.log(`🚫 Duplicate review attempt prevented: student ${studentId} already reviewed booking ${bookingId}`);
+        return res.status(409).json({ 
+          message: "You have already submitted a review for this session.",
+          existingReview: existingReviews[0]
+        });
+      }
+      
+      // VALIDATION: Enforce comment length limit (max 2000 characters)
+      if (comment && comment.length > 2000) {
+        return res.status(400).json({ 
+          message: "Review comment must be 2000 characters or less.",
+          currentLength: comment.length
+        });
+      }
+      
+      const review = await storage.createReview(reviewData as InsertReview);
+      console.log(`✅ Review created: ${review.id} for booking ${bookingId}`);
       res.status(201).json(review);
     } catch (error) {
       console.error("Error creating review:", error);
