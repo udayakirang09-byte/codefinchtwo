@@ -38,7 +38,7 @@ export default function AzureMetrics() {
 
   const handleSaveConfig = async () => {
     try {
-      await apiRequest('/api/admin/azure-insights/config', 'POST', {
+      await apiRequest('POST', '/api/admin/azure-insights/config', {
         appInsightsName,
         appId,
         apiKey
