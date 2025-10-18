@@ -123,7 +123,6 @@ const setupTokens = new Map<string, { userId: string; email: string; expiresAt: 
 const SETUP_TOKEN_EXPIRY_MS = 15 * 60 * 1000; // 15 minutes
 
 function generateSetupToken(userId: string, email: string): string {
-  const crypto = require('crypto');
   const token = crypto.randomBytes(32).toString('hex');
   setupTokens.set(token, {
     userId,
