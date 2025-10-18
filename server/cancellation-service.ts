@@ -78,6 +78,11 @@ export class CancellationService {
       throw new Error("Booking not found");
     }
 
+    // CRITICAL: Verify ownership - prevent unauthorized cancellation
+    if (booking.mentorId !== teacherId) {
+      throw new Error("Unauthorized: You can only cancel your own classes");
+    }
+
     const now = new Date();
     const scheduledTime = new Date(booking.scheduledAt);
 
@@ -137,6 +142,11 @@ export class CancellationService {
       throw new Error("Booking not found");
     }
 
+    // CRITICAL: Verify ownership - prevent unauthorized cancellation
+    if (booking.studentId !== studentId) {
+      throw new Error("Unauthorized: You can only cancel your own bookings");
+    }
+
     const now = new Date();
     const scheduledTime = new Date(booking.scheduledAt);
     const sixHoursBeforeClass = new Date(scheduledTime.getTime() - 6 * 60 * 60 * 1000);
@@ -178,8 +188,8 @@ export class CancellationService {
       refundStatus: transaction ? 'pending' : 'not_applicable',
       message: 'Student cancelled class - refund will be initiated',
       dashboardHighlight: {
-        teacher: 'You Cancelled This Demo Class',
-        student: 'Student Cancelled This Demo Class'
+        teacher: 'Class Cancelled by Student',
+        student: 'You Cancelled This Demo Class'
       }
     };
   }
