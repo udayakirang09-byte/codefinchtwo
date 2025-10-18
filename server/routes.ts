@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
+import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
 import { azureStorage } from "./azureStorage";
 import { z } from "zod";
@@ -385,6 +386,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     limits: { fileSize: 5 * 1024 * 1024 } // 5MB max
   });
   
+  // GLOBAL API RATE LIMITING
+  // Protect all API endpoints from abuse with generous limits for legitimate users
+  const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 500, // 500 requests per 15 minutes (very generous for legitimate users)
+    message: 'Too many requests from this IP address. Please try again later.',
+    standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
+    legacyHeaders: false, // Disable `X-RateLimit-*` headers
+    handler: (req, res) => {
+      console.log(`🚫 Global API rate limit exceeded for IP: ${req.ip}`);
+      res.status(429).json({
+        message: 'Too many requests. Please wait 15 minutes and try again.',
+        retryAfter: Math.ceil(15 * 60) // seconds
+      });
+    }
+  });
+  
+  // Apply rate limiting to all /api/* routes
+  app.use('/api', apiLimiter);
+  console.log('✅ Global API rate limiting enabled: 500 requests per 15 minutes per IP');
+  
   // Authentication routes
   // Signup endpoint with file upload support
   app.post("/api/auth/signup", upload.single('photo'), async (req, res) => {
@@ -527,6 +549,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email is required" });
       }
       
+      // RATE LIMITING: Check OTP request rate limit (3 requests per 15 minutes)
+      const otpRateLimit = checkOTPRequestRateLimit(email.trim());
+      if (!otpRateLimit.allowed) {
+        const minutesRemaining = Math.ceil((otpRateLimit.lockoutEndsAt! - Date.now()) / 60000);
+        console.log(`🚫 OTP request rate limit exceeded for ${email.trim()}, ${minutesRemaining} minutes remaining`);
+        return res.status(429).json({ 
+          message: `Too many OTP requests. Please try again in ${minutesRemaining} minute${minutesRemaining > 1 ? 's' : ''}.`,
+          remainingRequests: 0
+        });
+      }
+      
       // For signup purpose, check if user already exists
       if (purpose === 'signup') {
         const existingUser = await storage.getUserByEmail(email.trim());
@@ -534,6 +567,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Email already registered" });
         }
       }
+      
+      // Record OTP request attempt
+      recordOTPRequest(email.trim());
       
       // Generate 6-digit OTP
       const otp = generateEmailOTP();
@@ -1732,6 +1768,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // RATE LIMITING: Check booking creation frequency limit (10 bookings per day)
+      const bookingRateLimit = checkBookingCreationRateLimit(student.id);
+      if (!bookingRateLimit.allowed) {
+        console.log(`🚫 Booking creation rate limit exceeded for student ${student.id}`);
+        return res.status(429).json({ 
+          message: "You have reached the maximum number of bookings for today (10). Please try again tomorrow.",
+          remainingBookings: 0
+        });
+      }
+      
+      // VALIDATION: Check for booking overlap with the same mentor
+      const scheduledStart = new Date(req.body.scheduledAt);
+      const scheduledEnd = new Date(scheduledStart.getTime() + req.body.duration * 60000);
+      
+      // Find all scheduled bookings for this mentor
+      const mentorBookings = await db
+        .select()
+        .from(bookings)
+        .where(
+          and(
+            eq(bookings.mentorId, req.body.mentorId),
+            eq(bookings.status, 'scheduled'),
+            isNull(bookings.cancelledAt) // Exclude cancelled bookings
+          )
+        );
+      
+      // Check for overlaps
+      for (const existingBooking of mentorBookings) {
+        const existingStart = new Date(existingBooking.scheduledAt);
+        const existingEnd = new Date(existingStart.getTime() + existingBooking.duration * 60000);
+        
+        // Check if time ranges overlap
+        const hasOverlap = scheduledStart < existingEnd && scheduledEnd > existingStart;
+        
+        if (hasOverlap) {
+          console.log(`🚫 Booking overlap detected: new booking conflicts with existing booking ${existingBooking.id}`);
+          return res.status(409).json({ 
+            message: "This time slot is already booked. Please choose a different time.",
+            conflictingBooking: {
+              id: existingBooking.id,
+              scheduledAt: existingBooking.scheduledAt,
+              duration: existingBooking.duration
+            }
+          });
+        }
+      }
+      
       const bookingData = {
         studentId: student.id,
         mentorId: req.body.mentorId,
@@ -1741,6 +1824,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subject: req.body.subject || null, // Include subject if provided
         notes: req.body.notes || ''
       };
+      
+      // Record booking creation attempt
+      recordBookingCreation(student.id);
       
       const booking = await storage.createBooking(bookingData);
       
@@ -2271,8 +2357,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/reviews", async (req, res) => {
     try {
-      const reviewData = insertReviewSchema.parse(req.body);
-      const { studentId, bookingId, comment } = reviewData as InsertReview;
+      const reviewData: any = insertReviewSchema.parse(req.body);
       
       // SPAM PREVENTION: Check for duplicate review (one review per student per booking)
       const existingReviews = await db
@@ -2280,13 +2365,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(reviews)
         .where(
           and(
-            eq(reviews.studentId, studentId),
-            eq(reviews.bookingId, bookingId)
+            eq(reviews.studentId, reviewData.studentId),
+            eq(reviews.bookingId, reviewData.bookingId)
           )
         );
       
       if (existingReviews.length > 0) {
-        console.log(`🚫 Duplicate review attempt prevented: student ${studentId} already reviewed booking ${bookingId}`);
+        console.log(`🚫 Duplicate review attempt prevented: student ${reviewData.studentId} already reviewed booking ${reviewData.bookingId}`);
         return res.status(409).json({ 
           message: "You have already submitted a review for this session.",
           existingReview: existingReviews[0]
@@ -2294,15 +2379,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // VALIDATION: Enforce comment length limit (max 2000 characters)
-      if (comment && comment.length > 2000) {
+      if (reviewData.comment && reviewData.comment.length > 2000) {
         return res.status(400).json({ 
           message: "Review comment must be 2000 characters or less.",
-          currentLength: comment.length
+          currentLength: reviewData.comment.length
         });
       }
       
-      const review = await storage.createReview(reviewData as InsertReview);
-      console.log(`✅ Review created: ${review.id} for booking ${bookingId}`);
+      const review = await storage.createReview(reviewData);
+      console.log(`✅ Review created: ${review.id} for booking ${reviewData.bookingId}`);
       res.status(201).json(review);
     } catch (error) {
       console.error("Error creating review:", error);
@@ -3176,6 +3261,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!senderId || !senderName || !message) {
         return res.status(400).json({ message: "senderId, senderName, and message are required" });
       }
+
+      // RATE LIMITING: Check chat message rate limit (20 messages per minute)
+      const chatRateLimit = checkChatMessageRateLimit(senderId, bookingId);
+      if (!chatRateLimit.allowed) {
+        console.log(`🚫 Chat message rate limit exceeded for user ${senderId} in booking ${bookingId}`);
+        return res.status(429).json({ 
+          message: "You're sending messages too quickly. Please slow down.",
+          rateLimitExceeded: true
+        });
+      }
+      
+      // Record chat message attempt
+      recordChatMessage(senderId, bookingId);
 
       const messageData = {
         bookingId,
