@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { Smartphone, CheckCircle, Plus, Trash2, Star, Home } from 'lucide-react';
+import { Smartphone, CheckCircle, Plus, Trash2, Star, Home, Users } from 'lucide-react';
 import { Link } from 'wouter';
 import Navigation from '@/components/navigation';
 
@@ -54,6 +55,44 @@ export default function TeacherPaymentConfig() {
       }
     },
     enabled: !!userId,
+  });
+
+  // Fetch mentor record to get demoEnabled status
+  const { data: mentorData, refetch: refetchMentor } = useQuery({
+    queryKey: ['teacher-mentor-data', userId],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest('GET', `/api/mentors/user/${userId}`);
+        return response as any;
+      } catch (error) {
+        console.error('Failed to fetch mentor data:', error);
+        return null;
+      }
+    },
+    enabled: !!userId,
+  });
+
+  const toggleDemoMutation = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      if (!mentorData?.id) throw new Error('Mentor ID not found');
+      return apiRequest('PATCH', `/api/mentors/${mentorData.id}/demo-toggle`, {
+        demoEnabled: enabled
+      });
+    },
+    onSuccess: (_, enabled) => {
+      toast({
+        title: "Demo Settings Updated",
+        description: `Demo bookings ${enabled ? 'enabled' : 'disabled'} successfully!`,
+      });
+      refetchMentor();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Update",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      });
+    },
   });
 
   const addUpiMutation = useMutation({
@@ -373,6 +412,46 @@ export default function TeacherPaymentConfig() {
             </CardContent>
           </Card>
         </div>
+
+        {/* C2: Demo Booking Settings */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Demo Booking Settings
+            </CardTitle>
+            <CardDescription>
+              Allow students to book free demo sessions with you
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="demo-toggle" className="text-base font-medium">
+                  Enable Demo Bookings
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  When enabled, students can book a free demo session to try your teaching style
+                </p>
+              </div>
+              <Switch
+                id="demo-toggle"
+                checked={mentorData?.demoEnabled || false}
+                onCheckedChange={(checked) => toggleDemoMutation.mutate(checked)}
+                disabled={toggleDemoMutation.isPending}
+                data-testid="switch-demo-enabled"
+              />
+            </div>
+            {mentorData?.demoEnabled && (
+              <Alert className="mt-4">
+                <AlertDescription className="text-sm">
+                  <strong>Demo sessions are active!</strong> Students can now book free demo classes with you.
+                  Demo sessions help attract new students by letting them experience your teaching style risk-free.
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Information Alert */}
         <Alert className="mt-6">

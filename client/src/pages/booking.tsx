@@ -98,6 +98,7 @@ export default function Booking() {
     duration: "60",
     subject: "",
     notes: "",
+    sessionType: "regular", // C3: regular or demo
   });
 
   const { data: mentor, isLoading } = useQuery<MentorWithUser>({
@@ -164,6 +165,11 @@ export default function Booking() {
 
   // Calculate displayed session cost using selected subject's fee
   const calculateSessionCost = (): number => {
+    // C5: Demo sessions are free
+    if (formData.sessionType === 'demo') {
+      return 0;
+    }
+    
     const duration = parseInt(formData.duration) || 60;
     
     // Check if there's a subject-specific fee
@@ -361,12 +367,15 @@ export default function Booking() {
     }
     
     // Calculate session cost based on duration and mentor's rate
-    // Priority: 1. Subject-specific fee (flat per-class), 2. Hourly rate, 3. Default (500)
+    // Priority: 0. Demo sessions (free), 1. Subject-specific fee (flat per-class), 2. Hourly rate, 3. Default (500)
     const duration = parseInt(formData.duration);
     let sessionCost: number;
     
-    // Check if there's a subject-specific fee
-    if (selectedSubjectFee) {
+    // C5: Demo sessions are free
+    if (formData.sessionType === 'demo') {
+      sessionCost = 0;
+      console.log(`✨ Demo session: Free`);
+    } else if (selectedSubjectFee) {
       // Subject fees are flat per-class, regardless of duration
       sessionCost = parseFloat(selectedSubjectFee);
       console.log(`💰 Using subject-specific fee: ₹${sessionCost} for ${formData.subject} (flat per-class)`);
@@ -389,7 +398,8 @@ export default function Booking() {
       studentAge: parseInt(formData.studentAge) || null,
       studentName: formData.studentName,
       parentEmail: formData.parentEmail,
-      sessionCost: sessionCost
+      sessionCost: sessionCost,
+      sessionType: formData.sessionType // C3: Include session type
     };
     
     // Check payment mode to determine flow
@@ -694,6 +704,32 @@ export default function Booking() {
                       <SelectItem value="120">2 hours</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                {/* C3: Session Type Selector */}
+                <div className="space-y-2">
+                  <Label htmlFor="sessionType">Booking Type *</Label>
+                  <Select value={formData.sessionType} onValueChange={(value) => handleInputChange("sessionType", value)} required>
+                    <SelectTrigger data-testid="select-session-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="regular">1:1 Paid Session</SelectItem>
+                      {mentor?.demoEnabled && (
+                        <SelectItem value="demo">Demo Session (Free)</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {formData.sessionType === 'demo' && (
+                    <p className="text-xs text-muted-foreground">
+                      ✨ This is a free demo session to try the teacher's teaching style
+                    </p>
+                  )}
+                  {!mentor?.demoEnabled && formData.sessionType !== 'regular' && (
+                    <p className="text-xs text-muted-foreground">
+                      Demo sessions are not available for this teacher
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
