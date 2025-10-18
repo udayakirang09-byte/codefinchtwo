@@ -227,13 +227,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Signup endpoint with file upload support
   app.post("/api/auth/signup", upload.single('photo'), async (req, res) => {
     try {
-      console.log('🚀 [AZURE DEBUG] Signup request received:', { 
-        body: { ...req.body, password: '[HIDDEN]' },
-        headers: req.headers,
-        ip: req.ip,
-        nodeEnv: process.env.NODE_ENV,
-        hasDatabaseUrl: !!process.env.DATABASE_URL
-      });
+      // Enhanced debugging - show all keys in body
+      console.log('🚀 [AZURE DEBUG] Signup request received');
+      console.log('📋 Body keys:', Object.keys(req.body));
+      console.log('📋 Body data:', { ...req.body, password: req.body.password ? '[HIDDEN]' : undefined });
+      console.log('📸 File:', req.file ? { fieldname: req.file.fieldname, originalname: req.file.originalname, size: req.file.size } : 'No file');
       
       const { firstName, lastName, email, password, role, country, mentorData }: {
         firstName: string;
