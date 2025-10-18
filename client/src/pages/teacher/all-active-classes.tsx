@@ -3,11 +3,13 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, Video, MessageCircle, Home, Users, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, Video, MessageCircle, Home, Users, AlertCircle, XCircle } from 'lucide-react';
 import { Link } from 'wouter';
 import Navigation from '@/components/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { format, isPast, addMinutes, formatDistanceToNow } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 
 interface TeacherClass {
   id: string;
@@ -33,6 +35,7 @@ interface TeacherClass {
 
 export default function AllActiveClasses() {
   const { user } = useAuth();
+  const { toast } = useToast();
 
   // Fetch all teacher classes from unified endpoint
   const { data: allClasses = [], isLoading } = useQuery<TeacherClass[]>({
@@ -49,6 +52,37 @@ export default function AllActiveClasses() {
     const classEndTime = addMinutes(new Date(classItem.scheduledAt), classItem.duration);
     return !isPast(classEndTime);
   });
+
+  // Cancel class mutation
+  const cancelClassMutation = useMutation({
+    mutationFn: async ({ bookingId, reason }: { bookingId: string; reason?: string }) => {
+      return await apiRequest('POST', `/api/bookings/${bookingId}/cancel/teacher`, { reason });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Class Cancelled",
+        description: "Your class has been cancelled successfully. Full refund will be initiated.",
+      });
+      // Invalidate queries to refresh the list
+      queryClient.invalidateQueries({ queryKey: [`/api/teacher/classes?teacherId=${user?.id}`] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Cancellation Failed",
+        description: error.message || "Failed to cancel class. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCancelClass = async (bookingId: string, subject: string) => {
+    if (!confirm(`Are you sure you want to cancel the ${subject} class? The student will receive a full refund.`)) {
+      return;
+    }
+    
+    const reason = prompt("Please provide a reason for cancellation (optional):");
+    cancelClassMutation.mutate({ bookingId, reason: reason || undefined });
+  };
 
   const handleJoinVideo = (classId: string) => {
     window.location.href = `/video/${classId}`;
@@ -199,6 +233,19 @@ export default function AllActiveClasses() {
                             <MessageCircle className="h-5 w-5 mr-2" />
                             {isChatEnabled ? "Chat" : `Chat in ${formatDistanceToNow(scheduledDate)}`}
                           </Button>
+                          {!isPast(scheduledDate) && (
+                            <Button 
+                              size="lg" 
+                              variant="destructive"
+                              onClick={() => handleCancelClass(classItem.id, classItem.subject)}
+                              disabled={cancelClassMutation.isPending}
+                              className="rounded-xl bg-red-600 hover:bg-red-700"
+                              data-testid={`button-cancel-class-${classItem.id}`}
+                            >
+                              <XCircle className="h-5 w-5 mr-2" />
+                              {cancelClassMutation.isPending ? 'Cancelling...' : 'Cancel Class'}
+                            </Button>
+                          )}
                         </div>
                       </CardContent>
                     </Card>

@@ -3,10 +3,11 @@ import Navigation from "@/components/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Calendar, Clock, User, Home, MessageCircle } from "lucide-react";
+import { CheckCircle, Calendar, Clock, User, Home, MessageCircle, XCircle, AlertCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
 import { format, isPast, addMinutes } from "date-fns";
+import { getCancellationHighlight, getCancellationBadgeVariant } from "@/lib/cancellation-utils";
 
 interface TeacherClass {
   id: string;
@@ -21,6 +22,13 @@ interface TeacherClass {
   duration: number;
   status: string;
   amount: number;
+  // Cancellation fields for dashboard highlights
+  cancelledBy?: string | null;
+  cancellationType?: string | null;
+  cancelledAt?: string | null;
+  cancelReason?: string | null;
+  refundStatus?: string | null;
+  refundAmount?: string | null;
 }
 
 export default function TeacherCompletedClasses() {
@@ -139,29 +147,46 @@ export default function TeacherCompletedClasses() {
               <div className="space-y-4">
                 {completedClasses.map((classItem) => {
                   const scheduledDate = new Date(classItem.scheduledAt);
+                  const highlight = getCancellationHighlight(classItem.status, classItem.cancellationType);
+                  const isCancelled = classItem.status === 'cancelled';
                   
                   return (
                     <Card 
                       key={classItem.id} 
-                      className="border-2 hover:border-green-300 transition-colors duration-200" 
+                      className={`border-2 transition-colors duration-200 ${isCancelled ? 'hover:border-red-300' : 'hover:border-green-300'}`}
                       data-testid={`card-completed-class-${classItem.id}`}
                     >
                       <CardContent className="p-6">
                         <div className="flex justify-between items-start mb-4">
                           <div>
                             <h3 className="font-bold text-xl text-gray-800 mb-1">{classItem.subject}</h3>
-                            <p className="text-green-600 font-medium flex items-center gap-2">
+                            <p className={`font-medium flex items-center gap-2 ${isCancelled ? 'text-red-600' : 'text-green-600'}`}>
                               <User className="h-4 w-4" />
                               {classItem.student.user.firstName} {classItem.student.user.lastName}
                             </p>
                           </div>
                           <div className="text-right">
-                            <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 mb-2">
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              Completed
+                            <Badge 
+                              variant={isCancelled ? "destructive" : "outline"} 
+                              className={`mb-2 ${isCancelled ? 'bg-red-100 text-red-700 border-red-300' : 'bg-green-100 text-green-700 border-green-300'}`}
+                            >
+                              {isCancelled ? (
+                                <XCircle className="h-3 w-3 mr-1" />
+                              ) : (
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                              )}
+                              {isCancelled ? 'Cancelled' : 'Completed'}
                             </Badge>
+                            {/* Scenario-specific dashboard highlight */}
+                            <div className={`text-xs font-semibold mb-2 ${isCancelled ? 'text-red-600' : 'text-green-600'}`}>
+                              {highlight.teacher}
+                            </div>
                             <div className="text-sm font-semibold text-gray-700">
-                              Earned: ₹{classItem.amount || 0}
+                              {isCancelled && classItem.refundStatus && classItem.refundStatus !== 'not_applicable' ? (
+                                <>Refund: {classItem.refundStatus === 'pending' ? 'Processing' : classItem.refundStatus}</>
+                              ) : (
+                                <>Earned: ₹{classItem.amount || 0}</>
+                              )}
                             </div>
                           </div>
                         </div>
