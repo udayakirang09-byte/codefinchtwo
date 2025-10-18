@@ -1821,7 +1821,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           )
         );
       
-      // Check for overlaps
+      // Check for overlaps with existing bookings
       for (const existingBooking of mentorBookings) {
         const existingStart = new Date(existingBooking.scheduledAt);
         const existingEnd = new Date(existingStart.getTime() + existingBooking.duration * 60000);
@@ -1839,6 +1839,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
               duration: existingBooking.duration
             }
           });
+        }
+      }
+
+      // C9: Enhanced overlap validation - Check against blocked time slots (isAvailable = false)
+      const blockedSlots = await db
+        .select()
+        .from(timeSlots)
+        .where(
+          and(
+            eq(timeSlots.mentorId, req.body.mentorId),
+            eq(timeSlots.isAvailable, false) // Only blocked slots
+          )
+        );
+      
+      // Check if booking falls within any blocked slot
+      const bookingDay = scheduledStart.toLocaleDateString('en-US', { weekday: 'long' });
+      const bookingStartTime = scheduledStart.toTimeString().slice(0, 5); // HH:MM
+      const bookingEndTime = scheduledEnd.toTimeString().slice(0, 5); // HH:MM
+      
+      for (const blockedSlot of blockedSlots) {
+        // Check if booking is on the same day of week
+        if (blockedSlot.dayOfWeek === bookingDay) {
+          // Check if booking time overlaps with blocked slot time
+          const isStartDuringBlock = bookingStartTime >= blockedSlot.startTime && bookingStartTime < blockedSlot.endTime;
+          const isEndDuringBlock = bookingEndTime > blockedSlot.startTime && bookingEndTime <= blockedSlot.endTime;
+          const isWrappingBlock = bookingStartTime <= blockedSlot.startTime && bookingEndTime >= blockedSlot.endTime;
+          
+          if (isStartDuringBlock || isEndDuringBlock || isWrappingBlock) {
+            console.log(`🚫 Booking conflicts with blocked time slot: ${blockedSlot.dayOfWeek} ${blockedSlot.startTime}-${blockedSlot.endTime}`);
+            return res.status(409).json({ 
+              message: `This teacher has blocked ${bookingDay} from ${blockedSlot.startTime} to ${blockedSlot.endTime}. Please choose a different time.`,
+              error: "BLOCKED_TIME_SLOT"
+            });
+          }
         }
       }
       
