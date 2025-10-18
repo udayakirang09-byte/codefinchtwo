@@ -5,6 +5,7 @@ import {
   courses,
   courseEnrollments,
   bookings,
+  bookingHolds,
   achievements,
   reviews,
   chatSessions,
@@ -31,6 +32,8 @@ import {
   type InsertCourse,
   type Booking,
   type InsertBooking,
+  type SelectBookingHold,
+  type InsertBookingHold,
   type Review,
   type InsertReview,
   type Achievement,
@@ -149,6 +152,14 @@ export interface IStorage {
   updateBookingStatus(id: string, status: string): Promise<void>;
   rescheduleBooking(id: string, newScheduledAt: Date): Promise<void>;
   cancelBooking(id: string): Promise<void>;
+  
+  // C4, C10: Booking hold operations
+  createBookingHold(hold: InsertBookingHold): Promise<SelectBookingHold>;
+  getBookingHold(id: string): Promise<SelectBookingHold | undefined>;
+  getActiveBookingHolds(mentorId: string, scheduledAt: Date): Promise<SelectBookingHold[]>;
+  confirmBookingHold(holdId: string, bookingId: string): Promise<void>;
+  releaseBookingHold(holdId: string): Promise<void>;
+  cleanupExpiredHolds(): Promise<number>;
   
   // Review operations
   getReviewsByMentor(mentorId: string): Promise<ReviewWithDetails[]>;
@@ -947,6 +958,63 @@ export class DatabaseStorage implements IStorage {
       await cache.del(`bookings:mentor:${booking.mentorId}`);
       await cache.del('mentors:list');
     }
+  }
+
+  // C4, C10: Booking hold operations
+  async createBookingHold(hold: InsertBookingHold): Promise<SelectBookingHold> {
+    const [created] = await db.insert(bookingHolds).values(hold).returning();
+    return created;
+  }
+
+  async getBookingHold(id: string): Promise<SelectBookingHold | undefined> {
+    const [hold] = await db.select().from(bookingHolds).where(eq(bookingHolds.id, id));
+    return hold;
+  }
+
+  async getActiveBookingHolds(mentorId: string, scheduledAt: Date): Promise<SelectBookingHold[]> {
+    const holds = await db
+      .select()
+      .from(bookingHolds)
+      .where(
+        and(
+          eq(bookingHolds.mentorId, mentorId),
+          eq(bookingHolds.scheduledAt, scheduledAt),
+          eq(bookingHolds.status, 'active')
+        )
+      );
+    return holds;
+  }
+
+  async confirmBookingHold(holdId: string, bookingId: string): Promise<void> {
+    await db
+      .update(bookingHolds)
+      .set({ 
+        status: 'confirmed',
+        bookingId,
+        confirmedAt: new Date()
+      })
+      .where(eq(bookingHolds.id, holdId));
+  }
+
+  async releaseBookingHold(holdId: string): Promise<void> {
+    await db
+      .update(bookingHolds)
+      .set({ status: 'released' })
+      .where(eq(bookingHolds.id, holdId));
+  }
+
+  async cleanupExpiredHolds(): Promise<number> {
+    const now = new Date();
+    const result = await db
+      .update(bookingHolds)
+      .set({ status: 'expired' })
+      .where(
+        and(
+          eq(bookingHolds.status, 'active'),
+          sql`${bookingHolds.expiresAt} < ${now}`
+        )
+      );
+    return result.rowCount || 0;
   }
 
   // Course operations
