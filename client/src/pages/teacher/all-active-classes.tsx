@@ -22,6 +22,13 @@ interface TeacherClass {
   duration: number;
   status: string;
   amount: number;
+  // Cancellation fields for dashboard highlights
+  cancelledBy?: string | null;
+  cancellationType?: string | null;
+  cancelledAt?: string | null;
+  cancelReason?: string | null;
+  refundStatus?: string | null;
+  refundAmount?: string | null;
 }
 
 export default function AllActiveClasses() {
