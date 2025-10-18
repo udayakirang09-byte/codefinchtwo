@@ -138,39 +138,30 @@ export default function Signup() {
         // For now, we'll do a simple validation
         const img = new Image();
         img.onload = () => {
+          // Show informative message if image will be resized
+          let message = "Photo looks good! (Face detection will run during signup)";
+          
           if (img.width < 200 || img.height < 200) {
-            setPhotoValidation({
-              isValidating: false,
-              faceDetected: false,
-              message: `Image too small (${img.width}x${img.height}). Minimum size is 200x200 pixels.`
-            });
-            setPhotoFile(null);
-            setPhotoPreview("");
+            message = `Image will be auto-resized from ${img.width}x${img.height} to meet minimum requirements.`;
             toast({
-              title: "Image Too Small",
-              description: `Image is ${img.width}x${img.height}. Please upload at least 200x200 pixels.`,
-              variant: "destructive",
+              title: "Image Will Be Resized",
+              description: `Your image (${img.width}x${img.height}) will be automatically resized to meet the 200x200 minimum.`,
+              variant: "default",
             });
           } else if (img.width > 4000 || img.height > 4000) {
-            setPhotoValidation({
-              isValidating: false,
-              faceDetected: false,
-              message: `Image too large (${img.width}x${img.height}). Maximum size is 4000x4000 pixels.`
-            });
-            setPhotoFile(null);
-            setPhotoPreview("");
+            message = `Large image will be optimized from ${img.width}x${img.height} for faster loading.`;
             toast({
-              title: "Image Too Large",
-              description: `Image is ${img.width}x${img.height}. Please upload up to 4000x4000 pixels.`,
-              variant: "destructive",
-            });
-          } else {
-            setPhotoValidation({
-              isValidating: false,
-              faceDetected: true,
-              message: "Photo looks good! (Face detection will run during signup)"
+              title: "Image Will Be Optimized",
+              description: `Your large image (${img.width}x${img.height}) will be automatically optimized.`,
+              variant: "default",
             });
           }
+          
+          setPhotoValidation({
+            isValidating: false,
+            faceDetected: true,
+            message
+          });
         };
         img.src = imageUrl;
       } catch (error) {

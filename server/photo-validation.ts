@@ -17,6 +17,8 @@ export interface PhotoValidationResult {
   clarityScore: number; // 0-100
   validationStatus: "approved" | "rejected" | "pending";
   validationMessage: string;
+  resizedBuffer?: Buffer; // Auto-resized image if needed
+  wasResized?: boolean;
   details?: {
     faceCount?: number;
     blurriness?: string;
@@ -24,6 +26,8 @@ export interface PhotoValidationResult {
     recommendations?: string[];
     width?: number;
     height?: number;
+    originalWidth?: number;
+    originalHeight?: number;
     fileSize?: number;
     clarityScore?: number;
   };
@@ -71,28 +75,46 @@ export async function validateTeacherPhoto(
 
     // Get image metadata
     const metadata = await sharp(imageBuffer).metadata();
-    const width = metadata.width || 0;
-    const height = metadata.height || 0;
+    const originalWidth = metadata.width || 0;
+    const originalHeight = metadata.height || 0;
 
-    // Validate dimensions
-    if (width < 200 || height < 200) {
-      return {
-        faceDetected: false,
-        clarityScore: 0,
-        validationStatus: "rejected",
-        validationMessage: `Image too small (${width}x${height}). Minimum size is 200x200 pixels.`,
-        details: { width, height, fileSize: imageBuffer.length },
-      };
-    }
+    let processedBuffer = imageBuffer;
+    let width = originalWidth;
+    let height = originalHeight;
+    let wasResized = false;
 
-    if (width > 4000 || height > 4000) {
-      return {
-        faceDetected: false,
-        clarityScore: 0,
-        validationStatus: "rejected",
-        validationMessage: `Image too large (${width}x${height}). Maximum size is 4000x4000 pixels.`,
-        details: { width, height, fileSize: imageBuffer.length },
-      };
+    // Auto-resize if dimensions are outside acceptable range
+    if (width < 200 || height < 200 || width > 4000 || height > 4000) {
+      // Calculate target size maintaining aspect ratio
+      let targetWidth = width;
+      let targetHeight = height;
+
+      // If too small, scale up to minimum 200x200
+      if (width < 200 || height < 200) {
+        const scaleFactor = Math.max(200 / width, 200 / height);
+        targetWidth = Math.round(width * scaleFactor);
+        targetHeight = Math.round(height * scaleFactor);
+      }
+
+      // If too large, scale down to maximum 4000x4000
+      if (targetWidth > 4000 || targetHeight > 4000) {
+        const scaleFactor = Math.min(4000 / targetWidth, 4000 / targetHeight);
+        targetWidth = Math.round(targetWidth * scaleFactor);
+        targetHeight = Math.round(targetHeight * scaleFactor);
+      }
+
+      // Resize the image
+      processedBuffer = await sharp(imageBuffer)
+        .resize(targetWidth, targetHeight, {
+          fit: 'contain',
+          background: { r: 255, g: 255, b: 255, alpha: 1 }
+        })
+        .jpeg({ quality: 90 })
+        .toBuffer();
+
+      width = targetWidth;
+      height = targetHeight;
+      wasResized = true;
     }
 
     // Calculate image clarity using variance of Laplacian (blur detection)
@@ -123,17 +145,25 @@ export async function validateTeacherPhoto(
 
     // Server-side validation passed
     // Face detection will be done client-side using face-api.js
+    const message = wasResized 
+      ? `Photo auto-resized from ${originalWidth}x${originalHeight} to ${width}x${height}. Face detection will be verified in browser.`
+      : "Photo meets quality standards. Face detection will be verified in browser.";
+
     return {
       faceDetected: true, // Will be verified client-side
       clarityScore,
       validationStatus: "approved",
-      validationMessage: "Photo meets quality standards. Face detection will be verified in browser.",
+      validationMessage: message,
+      resizedBuffer: wasResized ? processedBuffer : undefined,
+      wasResized,
       details: {
         blurriness: clarityScore >= 60 ? "low" : clarityScore >= 40 ? "medium" : "high",
         lighting: "pending_client_check",
         width,
         height,
-        fileSize: imageBuffer.length,
+        originalWidth: wasResized ? originalWidth : undefined,
+        originalHeight: wasResized ? originalHeight : undefined,
+        fileSize: processedBuffer.length,
       },
     };
   } catch (error: any) {
