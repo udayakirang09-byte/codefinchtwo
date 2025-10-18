@@ -5,7 +5,7 @@ import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
 import { azureStorage } from "./azureStorage";
 import { z } from "zod";
-import { eq, desc, asc, and, gte, lte, or, sql } from "drizzle-orm";
+import { eq, desc, asc, and, gte, lte, or, sql, isNull } from "drizzle-orm";
 import { db } from "./db";
 import { 
   adminConfig, 
