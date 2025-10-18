@@ -1993,6 +1993,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Email OTP operations (for dual 2FA)
+  // TODO: Add automated cleanup job to delete expired emailOtp rows (expiresAt < NOW())
+  // to prevent table bloat and reduce brute-force attack surface
   async sendEmailOTP(email: string): Promise<void> {
     const user = await this.getUserByEmail(email);
     if (!user) {

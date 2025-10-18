@@ -566,6 +566,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
+      // MANDATORY 2FA ENFORCEMENT: Teachers must have 2FA enabled to login
+      if (user.role === 'mentor' && (!user.totpEnabled || !user.totpSecret)) {
+        return res.status(403).json({ 
+          message: "Two-factor authentication is required for all teacher accounts. Please complete your 2FA setup.",
+          requireSetup: true
+        });
+      }
+      
       // Check if 2FA is enabled for teachers
       if (user.role === 'mentor' && user.totpEnabled && user.totpSecret) {
         const { totpToken, emailOtp }: { totpToken?: string; emailOtp?: string } = req.body;

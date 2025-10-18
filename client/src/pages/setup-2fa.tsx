@@ -122,12 +122,6 @@ export default function Setup2FA() {
     }
   };
 
-  const handleSkip = () => {
-    if (window.confirm("Are you sure you want to skip 2FA setup? This is recommended for teachers to secure their accounts.")) {
-      localStorage.removeItem('setup2fa_email');
-      setLocation("/login");
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-100 flex items-center justify-center p-4">
@@ -198,38 +192,30 @@ export default function Setup2FA() {
                     />
                   </div>
 
-                  <div className="flex gap-3">
-                    <Button
-                      type="submit"
-                      disabled={loading || verificationCode.length !== 6}
-                      className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                      data-testid="button-verify-2fa"
-                    >
-                      {loading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Verifying...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="mr-2" size={18} />
-                          Enable 2FA
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                  <Button
+                    type="submit"
+                    disabled={loading || verificationCode.length !== 6}
+                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                    data-testid="button-verify-2fa"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Verifying...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="mr-2" size={18} />
+                        Enable 2FA
+                      </>
+                    )}
+                  </Button>
                 </form>
 
-                <div className="text-center">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={handleSkip}
-                    className="text-gray-500 hover:text-gray-700"
-                    data-testid="button-skip-2fa"
-                  >
-                    Skip for now
-                  </Button>
+                <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-sm text-amber-800 text-center">
+                    <strong>Important:</strong> Two-factor authentication is mandatory for all teacher accounts to ensure platform security.
+                  </p>
                 </div>
               </div>
             </>
