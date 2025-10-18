@@ -2989,6 +2989,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
+        // C8: COURSE START VALIDATION - Check teacher availability matches requested schedule
+        console.log(`🔍 Validating teacher availability for course enrollment...`);
+        const mentorTimeSlots = await db.select()
+          .from(timeSlots)
+          .where(
+            and(
+              eq(timeSlots.mentorId, mentorId),
+              eq(timeSlots.isAvailable, true),
+              eq(timeSlots.isBlocked, false)
+            )
+          );
+        
+        // Validate each requested schedule item has a matching available time slot
+        for (const scheduleItem of schedule) {
+          const dayLower = scheduleItem.day.toLowerCase();
+          const matchingSlot = mentorTimeSlots.find((slot: any) => 
+            slot.dayOfWeek.toLowerCase() === dayLower &&
+            slot.startTime === scheduleItem.time
+          );
+          
+          if (!matchingSlot) {
+            console.log(`❌ No available slot for ${scheduleItem.day} ${scheduleItem.time}`);
+            return res.status(400).json({
+              message: `Teacher does not have availability for ${scheduleItem.day} at ${scheduleItem.time}. Please choose different time slots.`,
+              error: "INSUFFICIENT_AVAILABILITY",
+              conflictingSchedule: scheduleItem
+            });
+          }
+        }
+        
+        console.log(`✅ Teacher availability validated for all ${schedule.length} requested time slots`);
+
         // If payment mode is dummy with UPI, check for teacher's UPI ID in mentors table
         if (adminPaymentConf.paymentMode === 'dummy' && adminPaymentConf.razorpayMode === 'upi') {
           if (!mentor.upiId) {
