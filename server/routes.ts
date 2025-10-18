@@ -1455,6 +1455,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // C2: Toggle demo bookings for mentor
+  app.patch("/api/mentors/:id/demo-toggle", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { demoEnabled } = req.body;
+      
+      if (typeof demoEnabled !== 'boolean') {
+        return res.status(400).json({ message: "Valid demoEnabled boolean is required" });
+      }
+      
+      const updated = await db.update(mentors)
+        .set({ demoEnabled, updatedAt: new Date() })
+        .where(eq(mentors.id, id))
+        .returning();
+      
+      if (updated.length === 0) {
+        return res.status(404).json({ message: "Mentor not found" });
+      }
+      
+      console.log(`🎯 Demo bookings ${demoEnabled ? 'enabled' : 'disabled'} for mentor ${id}`);
+      res.json({ success: true, demoEnabled });
+    } catch (error) {
+      console.error("Error updating demo toggle:", error);
+      res.status(500).json({ message: "Failed to update demo settings" });
+    }
+  });
+
   // Get mentor's available subjects from Class Fee Configuration
   app.get("/api/mentors/:id/subjects", async (req, res) => {
     try {
@@ -1815,6 +1842,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // C3, C5: Handle sessionType (demo vs regular)
+      const sessionType = req.body.sessionType || 'regular';
+      
+      // C5: Validate demo bookings are enabled for this mentor
+      if (sessionType === 'demo') {
+        const mentor = await storage.getMentor(req.body.mentorId);
+        if (!mentor?.demoEnabled) {
+          return res.status(400).json({ 
+            message: "This teacher has not enabled demo bookings.",
+            error: "DEMO_NOT_ENABLED"
+          });
+        }
+      }
+      
       const bookingData = {
         studentId: student.id,
         mentorId: req.body.mentorId,
@@ -1822,7 +1863,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         scheduledAt: req.body.scheduledAt,
         duration: req.body.duration,
         subject: req.body.subject || null, // Include subject if provided
-        notes: req.body.notes || ''
+        notes: req.body.notes || '',
+        sessionType: sessionType // Include session type
       };
       
       // Record booking creation attempt
