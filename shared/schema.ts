@@ -173,6 +173,25 @@ export const bookings = pgTable("bookings", {
   cancellationTypeIdx: index("bookings_cancellation_type_idx").on(table.cancellationType),
 }));
 
+// C4, C10: Booking holds for 10-minute payment window
+export const bookingHolds = pgTable("booking_holds", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  studentId: varchar("student_id").references(() => students.id).notNull(),
+  mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
+  scheduledAt: timestamp("scheduled_at").notNull(),
+  duration: integer("duration").notNull(), // minutes
+  sessionType: varchar("session_type").notNull().default("regular"), // demo, regular
+  status: varchar("status").notNull().default("active"), // active, confirmed, expired, released
+  expiresAt: timestamp("expires_at").notNull(), // 10 minutes from creation
+  confirmedAt: timestamp("confirmed_at"), // When payment was confirmed
+  bookingId: varchar("booking_id").references(() => bookings.id), // Set when confirmed
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  mentorIdScheduledIdx: index("booking_holds_mentor_scheduled_idx").on(table.mentorId, table.scheduledAt),
+  expiresAtIdx: index("booking_holds_expires_at_idx").on(table.expiresAt),
+  statusIdx: index("booking_holds_status_idx").on(table.status),
+}));
+
 export const achievements = pgTable("achievements", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   studentId: varchar("student_id").references(() => students.id).notNull(),
@@ -367,6 +386,9 @@ export const insertMentorSchema = createInsertSchema(mentors);
 export const insertStudentSchema = createInsertSchema(students);
 
 export const insertBookingSchema = createInsertSchema(bookings);
+
+export type InsertBookingHold = typeof bookingHolds.$inferInsert;
+export type SelectBookingHold = typeof bookingHolds.$inferSelect;
 
 export const insertReviewSchema = createInsertSchema(reviews);
 

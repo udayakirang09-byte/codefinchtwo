@@ -1890,6 +1890,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // C1: Enforce session duration requirements
+      const duration = req.body.duration;
+      if (sessionType === 'demo' && duration !== 15) {
+        return res.status(400).json({ 
+          message: "Demo sessions must be exactly 15 minutes.",
+          error: "INVALID_DEMO_DURATION"
+        });
+      }
+      if (sessionType === 'regular' && duration !== 55) {
+        return res.status(400).json({ 
+          message: "Regular 1:1 sessions must be exactly 55 minutes.",
+          error: "INVALID_REGULAR_DURATION"
+        });
+      }
+      
       const bookingData = {
         studentId: student.id,
         mentorId: req.body.mentorId,

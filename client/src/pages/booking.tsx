@@ -95,7 +95,7 @@ export default function Booking() {
     parentEmail: "",
     selectedDate: "",
     selectedTime: "",
-    duration: "60",
+    duration: "55", // C1: 55 min for regular, 15 min for demo
     subject: "",
     notes: "",
     sessionType: "regular", // C3: regular or demo
@@ -162,6 +162,14 @@ export default function Booking() {
       }));
     }
   }, [studentData, user]);
+
+  // C1: Auto-update duration when session type changes
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      duration: prev.sessionType === 'demo' ? '15' : '55'
+    }));
+  }, [formData.sessionType]);
 
   // Calculate displayed session cost using selected subject's fee
   const calculateSessionCost = (): number => {
@@ -693,17 +701,27 @@ export default function Booking() {
 
                 <div className="space-y-2">
                   <Label htmlFor="duration">Session Duration</Label>
-                  <Select value={formData.duration} onValueChange={(value) => handleInputChange("duration", value)}>
+                  <Select 
+                    value={formData.duration} 
+                    onValueChange={(value) => handleInputChange("duration", value)}
+                    disabled={formData.sessionType !== 'regular'}
+                  >
                     <SelectTrigger data-testid="select-session-duration">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="30">30 minutes</SelectItem>
-                      <SelectItem value="60">1 hour</SelectItem>
-                      <SelectItem value="90">1.5 hours</SelectItem>
-                      <SelectItem value="120">2 hours</SelectItem>
+                      {formData.sessionType === 'demo' ? (
+                        <SelectItem value="15">15 minutes (Demo)</SelectItem>
+                      ) : (
+                        <SelectItem value="55">55 minutes (1:1 Session)</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {formData.sessionType === 'demo' 
+                      ? 'Demo sessions are 15 minutes (+5 min buffer)' 
+                      : 'Regular 1:1 sessions are 55 minutes (+5 min buffer)'}
+                  </p>
                 </div>
 
                 {/* C3: Session Type Selector */}
