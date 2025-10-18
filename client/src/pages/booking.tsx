@@ -261,6 +261,17 @@ export default function Booking() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // C1: Validate session duration matches session type
+    const expectedDuration = formData.sessionType === 'demo' ? '15' : '55';
+    if (formData.duration !== expectedDuration) {
+      toast({
+        title: "Invalid Session Duration",
+        description: `${formData.sessionType === 'demo' ? 'Demo' : 'Regular'} sessions must be ${expectedDuration} minutes.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Comprehensive validation
     // Student name validation
     const trimmedStudentName = formData.studentName.trim();
@@ -704,7 +715,7 @@ export default function Booking() {
                   <Select 
                     value={formData.duration} 
                     onValueChange={(value) => handleInputChange("duration", value)}
-                    disabled={formData.sessionType !== 'regular'}
+                    disabled={true}
                   >
                     <SelectTrigger data-testid="select-session-duration">
                       <SelectValue />
