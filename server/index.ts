@@ -12,6 +12,7 @@ import { RecordingScheduler } from "./recordingScheduler";
 import { RetentionScheduler } from "./retentionScheduler";
 import { NoShowScheduler } from "./noShowScheduler";
 import { BookingCompletionScheduler } from "./bookingCompletionScheduler";
+import { BookingHoldScheduler } from "./bookingHoldScheduler";
 import { storage } from "./storage";
 import { initializeRedis } from "./redis";
 
@@ -118,6 +119,10 @@ app.use((req, res, next) => {
   // Start booking completion scheduler
   const bookingCompletionScheduler = new BookingCompletionScheduler(storage);
   bookingCompletionScheduler.start();
+  
+  // Start booking hold cleanup scheduler
+  const bookingHoldScheduler = new BookingHoldScheduler(storage);
+  bookingHoldScheduler.start();
   
   // Setup WebSocket server for video chat signaling on specific path
   const wss = new WebSocketServer({ 

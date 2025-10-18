@@ -1841,6 +1841,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
+      
+      // C4, C10: Check for active booking holds on this time slot
+      const activeHolds = await storage.getActiveBookingHolds(req.body.mentorId, scheduledStart);
+      if (activeHolds.length > 0) {
+        console.log(`🚫 Time slot is currently held by another booking in progress`);
+        return res.status(409).json({ 
+          message: "This time slot is currently reserved by another student completing payment. Please choose a different time or wait a few minutes.",
+          error: "TIME_SLOT_HELD"
+        });
+      }
 
       // C9: Enhanced overlap validation - Check against blocked time slots (isAvailable = false)
       const blockedSlots = await db
@@ -2063,6 +2073,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error cancelling booking:", error);
       res.status(500).json({ message: "Failed to cancel booking" });
+    }
+  });
+
+  // C4, C10: Booking Hold Routes
+  // Create a booking hold (locks time slot for 10 minutes during payment)
+  app.post("/api/booking-holds", async (req, res) => {
+    try {
+      const { studentId, mentorId, scheduledAt, duration, sessionType } = req.body;
+      
+      if (!studentId || !mentorId || !scheduledAt || !duration) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      // Set expiration to 10 minutes from now
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+      
+      const holdData: any = {
+        studentId,
+        mentorId,
+        scheduledAt: new Date(scheduledAt),
+        duration,
+        status: 'active',
+        expiresAt
+      };
+      
+      if (sessionType) {
+        holdData.sessionType = sessionType;
+      }
+      
+      const hold = await storage.createBookingHold(holdData);
+      
+      console.log(`🔒 Created booking hold ${hold.id} - expires at ${expiresAt.toISOString()}`);
+      res.status(201).json(hold);
+    } catch (error) {
+      console.error("Error creating booking hold:", error);
+      res.status(500).json({ message: "Failed to create booking hold" });
+    }
+  });
+
+  // Confirm booking hold (after successful payment)
+  app.post("/api/booking-holds/:id/confirm", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { bookingId } = req.body;
+      
+      if (!bookingId) {
+        return res.status(400).json({ message: "Booking ID is required" });
+      }
+      
+      await storage.confirmBookingHold(id, bookingId);
+      console.log(`✅ Confirmed booking hold ${id} -> booking ${bookingId}`);
+      res.json({ message: "Booking hold confirmed successfully" });
+    } catch (error) {
+      console.error("Error confirming booking hold:", error);
+      res.status(500).json({ message: "Failed to confirm booking hold" });
+    }
+  });
+
+  // Release booking hold (payment failed or cancelled)
+  app.post("/api/booking-holds/:id/release", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.releaseBookingHold(id);
+      console.log(`🔓 Released booking hold ${id}`);
+      res.json({ message: "Booking hold released successfully" });
+    } catch (error) {
+      console.error("Error releasing booking hold:", error);
+      res.status(500).json({ message: "Failed to release booking hold" });
     }
   });
 
