@@ -81,6 +81,7 @@ import {
   teacherQualifications,
   adminPaymentConfig,
   adminUiConfig,
+  adminBookingLimits,
   type TeacherAudioMetrics,
   type InsertTeacherAudioMetrics,
   type HomeSectionControls,
@@ -375,6 +376,10 @@ export interface IStorage {
   // Admin UI Configuration operations
   getAdminUiConfig(): Promise<AdminUiConfig | undefined>;
   updateAdminUiConfig(config: { footerLinks?: any; showHelpCenter?: boolean }): Promise<void>;
+  
+  // Admin Booking Limits Configuration operations
+  getAdminBookingLimits(): Promise<any | undefined>;
+  updateAdminBookingLimits(config: { dailyLimit?: number; weeklyLimit?: number | null; weeklyLimitEnabled?: boolean }): Promise<void>;
   
   // Azure Storage Config operations
   updateAzureStorageConfig(config: { storageAccountName: string; containerName: string; retentionMonths: number }): Promise<any>;
@@ -2745,6 +2750,34 @@ export class DatabaseStorage implements IStorage {
           contactUs: true,
         },
         showHelpCenter: config.showHelpCenter ?? false,
+      });
+    }
+  }
+
+  // Admin Booking Limits Configuration operations
+  async getAdminBookingLimits(): Promise<any | undefined> {
+    const results = await db.select().from(adminBookingLimits).limit(1);
+    return results.length > 0 ? results[0] : undefined;
+  }
+
+  async updateAdminBookingLimits(config: { dailyLimit?: number; weeklyLimit?: number | null; weeklyLimitEnabled?: boolean }): Promise<void> {
+    const existing = await this.getAdminBookingLimits();
+    
+    if (existing) {
+      await db
+        .update(adminBookingLimits)
+        .set({ 
+          ...(config.dailyLimit !== undefined && { dailyLimit: config.dailyLimit }),
+          ...(config.weeklyLimit !== undefined && { weeklyLimit: config.weeklyLimit }),
+          ...(config.weeklyLimitEnabled !== undefined && { weeklyLimitEnabled: config.weeklyLimitEnabled }),
+          updatedAt: new Date() 
+        })
+        .where(eq(adminBookingLimits.id, existing.id));
+    } else {
+      await db.insert(adminBookingLimits).values({
+        dailyLimit: config.dailyLimit ?? 3,
+        weeklyLimit: config.weeklyLimit ?? null,
+        weeklyLimitEnabled: config.weeklyLimitEnabled ?? false,
       });
     }
   }

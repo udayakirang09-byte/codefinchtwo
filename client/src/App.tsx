@@ -59,6 +59,7 @@ import TestManagement from "./pages/admin/test-management";
 import LoadTestingGuide from "./pages/admin/load-testing-guide";
 import PaymentConfig from "./pages/admin/payment-config";
 import UiConfig from "./pages/admin/ui-config";
+import BookingLimitsConfig from "./pages/admin/booking-limits-config";
 import FinanceDashboard from "./pages/admin/finance-dashboard";
 import StorageConfig from "./pages/admin/storage-config";
 import AbusiveIncidentsPage from "./pages/admin/abusive-incidents";
@@ -99,6 +100,7 @@ function Router() {
       <Route path="/admin/analytics" component={AdminAnalytics} />
       <Route path="/admin/payment-config" component={PaymentConfig} />
       <Route path="/admin/ui-config" component={UiConfig} />
+      <Route path="/admin/booking-limits-config" component={BookingLimitsConfig} />
       <Route path="/admin/finance-dashboard" component={FinanceDashboard} />
       <Route path="/admin/storage-config" component={StorageConfig} />
       <Route path="/admin/cloud-deployments" component={CloudDeployments} />

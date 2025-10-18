@@ -438,6 +438,22 @@ function recordBookingCreation(studentId: string): void {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // Load booking limits configuration from database on startup
+  try {
+    const bookingLimitsConfig = await storage.getAdminBookingLimits();
+    if (bookingLimitsConfig) {
+      DEFAULT_DAILY_BOOKING_LIMIT = bookingLimitsConfig.dailyLimit;
+      DEFAULT_WEEKLY_BOOKING_LIMIT = bookingLimitsConfig.weeklyLimit;
+      WEEKLY_LIMIT_ENABLED = bookingLimitsConfig.weeklyLimitEnabled;
+      console.log(`📊 Loaded booking limits from database: Daily=${DEFAULT_DAILY_BOOKING_LIMIT}, Weekly=${DEFAULT_WEEKLY_BOOKING_LIMIT} (enabled: ${WEEKLY_LIMIT_ENABLED})`);
+    } else {
+      console.log(`📊 No booking limits config found in database, using defaults: Daily=${DEFAULT_DAILY_BOOKING_LIMIT}, Weekly=${DEFAULT_WEEKLY_BOOKING_LIMIT} (enabled: ${WEEKLY_LIMIT_ENABLED})`);
+    }
+  } catch (error) {
+    console.error('❌ Error loading booking limits configuration:', error);
+    console.log(`📊 Using default booking limits: Daily=${DEFAULT_DAILY_BOOKING_LIMIT}, Weekly=${DEFAULT_WEEKLY_BOOKING_LIMIT} (enabled: ${WEEKLY_LIMIT_ENABLED})`);
+  }
+  
   // Configure multer for file uploads (memory storage for immediate processing)
   const upload = multer({ 
     storage: multer.memoryStorage(),
@@ -1853,19 +1869,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // RATE LIMITING: Check booking creation frequency limit (10 bookings per day)
+      // RATE LIMITING: Check booking creation frequency limit
       const bookingRateLimit = checkBookingCreationRateLimit(student.id);
       if (!bookingRateLimit.allowed) {
         console.log(`🚫 Booking creation rate limit exceeded for student ${student.id}`);
         return res.status(429).json({ 
-          message: "You have reached the maximum number of bookings for today (10). Please try again tomorrow.",
+          message: `You have reached the maximum number of bookings for today (${DEFAULT_DAILY_BOOKING_LIMIT}). Please try again tomorrow.`,
           remainingBookings: 0
         });
       }
       
-      // VALIDATION: Check for booking overlap with the same mentor
+      // RATE LIMITING: Check weekly booking limit (if enabled)
+      if (WEEKLY_LIMIT_ENABLED) {
+        const weeklyBookingRateLimit = checkWeeklyBookingCreationRateLimit(student.id);
+        if (!weeklyBookingRateLimit.allowed) {
+          console.log(`🚫 Weekly booking creation rate limit exceeded for student ${student.id}`);
+          return res.status(429).json({ 
+            message: `You have reached the maximum number of bookings for this week (${DEFAULT_WEEKLY_BOOKING_LIMIT}). Please try again next week.`,
+            remainingBookings: 0
+          });
+        }
+      }
+      
+      // VALIDATION: Student-side overlap check with 5-minute buffer
       const scheduledStart = new Date(req.body.scheduledAt);
       const scheduledEnd = new Date(scheduledStart.getTime() + req.body.duration * 60000);
+      
+      // Find all scheduled bookings for this student (any mentor)
+      const studentBookings = await db
+        .select()
+        .from(bookings)
+        .where(
+          and(
+            eq(bookings.studentId, student.id),
+            eq(bookings.status, 'scheduled'),
+            isNull(bookings.cancelledAt) // Exclude cancelled bookings
+          )
+        );
+      
+      // Check for overlaps with existing student bookings (with 5-minute buffer)
+      const BUFFER_MINUTES = 5;
+      const bufferMs = BUFFER_MINUTES * 60000;
+      
+      for (const existingBooking of studentBookings) {
+        const existingStart = new Date(existingBooking.scheduledAt);
+        const existingEnd = new Date(existingStart.getTime() + existingBooking.duration * 60000);
+        
+        // Apply 5-minute buffer: new booking should not start within 5 min before existing end
+        // and should not end within 5 min before existing start
+        const newStartWithBuffer = new Date(scheduledStart.getTime() - bufferMs);
+        const newEndWithBuffer = new Date(scheduledEnd.getTime() + bufferMs);
+        const existingStartWithBuffer = new Date(existingStart.getTime() - bufferMs);
+        const existingEndWithBuffer = new Date(existingEnd.getTime() + bufferMs);
+        
+        // Check if time ranges overlap (with buffer)
+        const hasOverlap = newStartWithBuffer < existingEndWithBuffer && newEndWithBuffer > existingStartWithBuffer;
+        
+        if (hasOverlap) {
+          console.log(`🚫 Student booking overlap detected: new booking conflicts with existing booking ${existingBooking.id} (with 5-min buffer)`);
+          
+          // Format times for user-friendly message
+          const existingStartTime = existingStart.toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: true 
+          });
+          const existingEndTime = existingEnd.toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: true 
+          });
+          
+          return res.status(409).json({ 
+            message: `You already have a class scheduled from ${existingStartTime} to ${existingEndTime}. Please choose a time at least 5 minutes before or after your existing class.`,
+            error: "STUDENT_SCHEDULE_CONFLICT",
+            conflictingBooking: {
+              id: existingBooking.id,
+              scheduledAt: existingBooking.scheduledAt,
+              duration: existingBooking.duration
+            }
+          });
+        }
+      }
+      
+      // VALIDATION: Check for booking overlap with the same mentor
+      // (scheduledStart and scheduledEnd already defined above)
       
       // Find all scheduled bookings for this mentor
       const mentorBookings = await db
@@ -8672,6 +8760,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   console.log('✅ Admin UI Configuration API routes registered successfully!');
+
+  // Admin Booking Limits Configuration Routes
+  // Get admin booking limits configuration - PUBLIC (needed for booking forms)
+  app.get('/api/admin/booking-limits', async (req: any, res) => {
+    try {
+      const config = await storage.getAdminBookingLimits();
+      if (!config) {
+        // Default configuration
+        return res.json({ 
+          dailyLimit: DEFAULT_DAILY_BOOKING_LIMIT,
+          weeklyLimit: DEFAULT_WEEKLY_BOOKING_LIMIT,
+          weeklyLimitEnabled: WEEKLY_LIMIT_ENABLED
+        });
+      }
+      res.json(config);
+    } catch (error) {
+      console.error('Error fetching admin booking limits config:', error);
+      res.status(500).json({ message: 'Failed to fetch admin booking limits config' });
+    }
+  });
+
+  // Update admin booking limits configuration - SECURED (admin only)
+  app.put('/api/admin/booking-limits', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      const { dailyLimit, weeklyLimit, weeklyLimitEnabled } = req.body;
+      
+      // Update database
+      await storage.updateAdminBookingLimits({ dailyLimit, weeklyLimit, weeklyLimitEnabled });
+      
+      // Update in-memory variables
+      if (dailyLimit !== undefined) {
+        DEFAULT_DAILY_BOOKING_LIMIT = dailyLimit;
+      }
+      if (weeklyLimit !== undefined) {
+        DEFAULT_WEEKLY_BOOKING_LIMIT = weeklyLimit;
+      }
+      if (weeklyLimitEnabled !== undefined) {
+        WEEKLY_LIMIT_ENABLED = weeklyLimitEnabled;
+      }
+      
+      console.log(`📊 Booking limits updated: Daily=${DEFAULT_DAILY_BOOKING_LIMIT}, Weekly=${DEFAULT_WEEKLY_BOOKING_LIMIT} (enabled: ${WEEKLY_LIMIT_ENABLED})`);
+      res.json({ success: true, message: 'Booking limits configuration updated successfully' });
+    } catch (error) {
+      console.error('Error updating admin booking limits config:', error);
+      res.status(500).json({ message: 'Failed to update admin booking limits config' });
+    }
+  });
+
+  console.log('✅ Admin Booking Limits Configuration API routes registered successfully!');
 
   // Abusive Language Incidents API Routes
   // Get all abusive language incidents for admin dashboard

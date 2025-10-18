@@ -59,7 +59,8 @@ import {
   TestTube,
   Cog,
   Map,
-  Zap
+  Zap,
+  Calendar
 } from 'lucide-react';
 import { Link } from 'wouter';
 import Navigation from '@/components/navigation';
@@ -414,6 +415,12 @@ export default function AdminHome() {
                   <Button variant="outline" className="w-full" data-testid="button-nav-ui-config">
                     <Settings className="w-4 h-4 mr-2" />
                     🎨 UI Configuration
+                  </Button>
+                </Link>
+                <Link href="/admin/booking-limits-config">
+                  <Button variant="outline" className="w-full" data-testid="button-nav-booking-limits">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    📅 Booking Limits
                   </Button>
                 </Link>
                 <Link href="/admin/finance-dashboard">
