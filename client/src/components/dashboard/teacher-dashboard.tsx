@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, Video, MessageCircle, Users, BookOpen, DollarSign, Bell, TrendingUp, CreditCard, CheckCircle, Save, Edit2, Plus } from "lucide-react";
+import { Calendar, Clock, Video, MessageCircle, Users, BookOpen, DollarSign, Bell, TrendingUp, CreditCard, CheckCircle, Save, Edit2, Plus, User, Shield } from "lucide-react";
 import { formatDistanceToNow, addHours, addMinutes } from "date-fns";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -1276,6 +1276,26 @@ export default function TeacherDashboard() {
                 <Calendar className="h-10 w-10 mb-3 text-teal-600 group-hover:scale-110 transition-transform duration-200" />
                 <span className="font-bold text-lg">All Active Classes</span>
                 <span className="text-xs text-gray-500 mt-1 text-center">Manage your schedule</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-32 p-6 flex-col hover:bg-rose-50 hover:border-rose-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                data-testid="button-edit-personal-info"
+                onClick={() => window.location.href = '/teacher/edit-personal-info'}
+              >
+                <User className="h-10 w-10 mb-3 text-rose-600 group-hover:scale-110 transition-transform duration-200" />
+                <span className="font-bold text-lg">Edit Personal Info</span>
+                <span className="text-xs text-gray-500 mt-1 text-center">Update your profile</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-32 p-6 flex-col hover:bg-amber-50 hover:border-amber-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                data-testid="button-manage-2fa"
+                onClick={() => window.location.href = '/teacher/manage-2fa'}
+              >
+                <Shield className="h-10 w-10 mb-3 text-amber-600 group-hover:scale-110 transition-transform duration-200" />
+                <span className="font-bold text-lg">Manage 2FA</span>
+                <span className="text-xs text-gray-500 mt-1 text-center">Security settings</span>
               </Button>
             </div>
           </CardContent>

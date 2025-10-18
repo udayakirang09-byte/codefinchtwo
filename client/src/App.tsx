@@ -41,6 +41,8 @@ import ViewCourse from "./pages/teacher/view-course";
 import TeacherAllActiveClasses from "./pages/teacher/all-active-classes";
 import TeacherCompletedClasses from "./pages/teacher/completed-classes";
 import ManageSchedule from "./pages/teacher/manage-schedule";
+import EditPersonalInfo from "./pages/teacher/edit-personal-info";
+import Manage2FA from "./pages/teacher/manage-2fa";
 import Terms from "./pages/terms";
 import Privacy from "./pages/privacy";
 import AutomatedTest from "./pages/automated-test";
@@ -120,6 +122,8 @@ function Router() {
       <Route path="/teacher/all-active-classes" component={TeacherAllActiveClasses} />
       <Route path="/teacher/completed-classes" component={TeacherCompletedClasses} />
       <Route path="/teacher/manage-schedule" component={ManageSchedule} />
+      <Route path="/teacher/edit-personal-info" component={EditPersonalInfo} />
+      <Route path="/teacher/manage-2fa" component={Manage2FA} />
       <Route path="/student/progress" component={StudentProgress} />
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
