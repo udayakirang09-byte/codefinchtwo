@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,15 @@ interface ActiveClass {
 
 export default function ActiveClasses() {
   const { user } = useAuth();
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // C12: Update current time every minute to reflect join button availability
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, []);
 
   const { data: classes = [], isLoading } = useQuery({
     queryKey: ['student-active-classes', user?.id],
@@ -30,6 +39,28 @@ export default function ActiveClasses() {
     },
     enabled: !!user?.id
   });
+
+  // C12: Helper function to check if join button should be enabled
+  const canJoinSession = (scheduledAt: Date, _duration: string): { canJoin: boolean; message: string } => {
+    const sessionStart = new Date(scheduledAt);
+    // C12: Use safe default of 60 minutes since duration field represents number of sessions, not minutes
+    const sessionDurationMinutes = 60;
+    const sessionEnd = new Date(sessionStart.getTime() + sessionDurationMinutes * 60000);
+    
+    const tenMinutesBefore = new Date(sessionStart.getTime() - 10 * 60000);
+    const fiveMinutesAfter = new Date(sessionEnd.getTime() + 5 * 60000);
+    
+    if (currentTime < tenMinutesBefore) {
+      const minutesUntil = Math.floor((tenMinutesBefore.getTime() - currentTime.getTime()) / 60000);
+      return { canJoin: false, message: `Available in ${minutesUntil} minutes` };
+    }
+    
+    if (currentTime > fiveMinutesAfter) {
+      return { canJoin: false, message: 'Session ended' };
+    }
+    
+    return { canJoin: true, message: 'Join Now' };
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -101,18 +132,33 @@ export default function ActiveClasses() {
                   </div>
                   
                   <div className="flex gap-3">
-                    <Button size="sm" data-testid={`button-join-video-${classItem.id}`}>
-                      <Video className="w-4 h-4 mr-2" />
-                      Join Session
-                    </Button>
-                    <Button size="sm" variant="outline" data-testid={`button-chat-${classItem.id}`}>
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      Chat
-                    </Button>
-                    <Button size="sm" variant="outline" data-testid={`button-schedule-${classItem.id}`}>
-                      <Calendar className="w-4 h-4 mr-2" />
-                      Schedule
-                    </Button>
+                    {(() => {
+                      // C12: Use nextSession timing if available, otherwise use scheduledAt
+                      const sessionTime = classItem.nextSession || classItem.scheduledAt;
+                      const joinStatus = canJoinSession(sessionTime, classItem.duration);
+                      
+                      return (
+                        <>
+                          <Button 
+                            size="sm" 
+                            disabled={!joinStatus.canJoin}
+                            data-testid={`button-join-video-${classItem.id}`}
+                            title={!joinStatus.canJoin ? joinStatus.message : ''}
+                          >
+                            <Video className="w-4 h-4 mr-2" />
+                            {joinStatus.message}
+                          </Button>
+                          <Button size="sm" variant="outline" data-testid={`button-chat-${classItem.id}`}>
+                            <MessageCircle className="w-4 h-4 mr-2" />
+                            Chat
+                          </Button>
+                          <Button size="sm" variant="outline" data-testid={`button-schedule-${classItem.id}`}>
+                            <Calendar className="w-4 h-4 mr-2" />
+                            Schedule
+                          </Button>
+                        </>
+                      );
+                    })()}
                   </div>
                 </CardContent>
               </Card>
