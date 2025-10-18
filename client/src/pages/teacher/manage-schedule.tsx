@@ -63,7 +63,10 @@ export default function ManageSchedule() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       });
-      if (!response.ok) throw new Error('Failed to update slot');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || errorData.error || 'Failed to update slot');
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -71,6 +74,13 @@ export default function ManageSchedule() {
       toast({
         title: "Success",
         description: "Schedule updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Cannot Edit Time Slot",
+        description: error.message,
+        variant: "destructive",
       });
     }
   });
@@ -88,7 +98,10 @@ export default function ManageSchedule() {
       const response = await fetch(`/api/teacher/schedule/${slotId}`, {
         method: 'DELETE'
       });
-      if (!response.ok) throw new Error('Failed to delete slot');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || errorData.error || 'Failed to delete slot');
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -98,10 +111,10 @@ export default function ManageSchedule() {
         description: "Time slot deleted successfully",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: "Failed to delete time slot",
+        title: "Cannot Delete Time Slot",
+        description: error.message,
         variant: "destructive",
       });
     }
@@ -118,7 +131,7 @@ export default function ManageSchedule() {
     setIsEditDialogOpen(true);
   };
 
-  const handleEditSlot = () => {
+  const handleEditSlot = async () => {
     if (!editingSlot) return;
 
     // Validate required fields
@@ -165,17 +178,21 @@ export default function ManageSchedule() {
       return;
     }
     
-    updateSlotMutation.mutate({
-      slotId: editingSlot.id,
-      updates: {
-        dayOfWeek: editingSlot.dayOfWeek,
-        startTime: editingSlot.startTime,
-        endTime: editingSlot.endTime,
-        isRecurring: editingSlot.isRecurring
-      }
-    });
-    setIsEditDialogOpen(false);
-    setEditingSlot(null);
+    try {
+      await updateSlotMutation.mutateAsync({
+        slotId: editingSlot.id,
+        updates: {
+          dayOfWeek: editingSlot.dayOfWeek,
+          startTime: editingSlot.startTime,
+          endTime: editingSlot.endTime,
+          isRecurring: editingSlot.isRecurring
+        }
+      });
+      setIsEditDialogOpen(false);
+      setEditingSlot(null);
+    } catch (error) {
+      // Error already handled by mutation onError
+    }
   };
 
   const createSlotMutation = useMutation({

@@ -5517,27 +5517,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/teacher/schedule/:slotId", async (req, res) => {
     try {
       const { slotId } = req.params;
-      const { isAvailable } = req.body;
+      const updates = req.body;
       
-      console.log(`📅 Updating schedule slot ${slotId}: available = ${isAvailable}`);
+      console.log(`📅 Updating schedule slot ${slotId}`, updates);
       
-      // Update database
-      const updated = await db.update(timeSlots)
-        .set({ 
-          isAvailable: isAvailable,
-          isBlocked: !isAvailable,
-          updatedAt: new Date()
-        })
+      // Get existing slot
+      const slot = await db
+        .select()
+        .from(timeSlots)
         .where(eq(timeSlots.id, slotId))
-        .returning();
+        .limit(1);
       
-      if (updated.length === 0) {
+      if (slot.length === 0) {
         return res.status(404).json({ error: "Time slot not found" });
       }
       
+      // AT EDIT LOCK (C14): Check if editing time range (not just toggling availability)
+      const isTimeRangeEdit = updates.startTime || updates.endTime || updates.dayOfWeek;
+      
+      if (isTimeRangeEdit) {
+        // Check for future bookings that match this time slot
+        const now = new Date();
+        const futureBookings = await db
+          .select()
+          .from(bookings)
+          .where(
+            and(
+              eq(bookings.mentorId, slot[0].mentorId),
+              eq(bookings.status, 'scheduled'),
+              gte(bookings.scheduledAt, now),
+              isNull(bookings.cancelledAt)
+            )
+          );
+        
+        // Check if any booking falls within this time slot
+        const hasConflictingBookings = futureBookings.some(booking => {
+          const bookingDate = new Date(booking.scheduledAt);
+          const bookingDay = bookingDate.toLocaleDateString('en-US', { weekday: 'long' });
+          const bookingTime = bookingDate.toTimeString().slice(0, 5); // HH:MM format
+          
+          return bookingDay === slot[0].dayOfWeek && 
+                 bookingTime >= slot[0].startTime && 
+                 bookingTime < slot[0].endTime;
+        });
+        
+        if (hasConflictingBookings) {
+          console.log(`🔒 Cannot edit slot ${slotId}: has existing future bookings`);
+          return res.status(409).json({ 
+            error: "Cannot edit time slot with existing bookings",
+            message: "This time slot has confirmed bookings. You can only toggle availability, not change the time.",
+            locked: true
+          });
+        }
+      }
+      
+      // Build update object
+      const updateData: any = { updatedAt: new Date() };
+      if (updates.isAvailable !== undefined) {
+        updateData.isAvailable = updates.isAvailable;
+        updateData.isBlocked = !updates.isAvailable;
+      }
+      if (updates.startTime) updateData.startTime = updates.startTime;
+      if (updates.endTime) updateData.endTime = updates.endTime;
+      if (updates.dayOfWeek) updateData.dayOfWeek = updates.dayOfWeek;
+      if (updates.isRecurring !== undefined) updateData.isRecurring = updates.isRecurring;
+      
+      // Update database
+      const updated = await db.update(timeSlots)
+        .set(updateData)
+        .where(eq(timeSlots.id, slotId))
+        .returning();
+      
       res.json({ 
         success: true, 
-        message: `Time slot ${slotId} ${isAvailable ? 'unblocked' : 'blocked'} successfully` 
+        message: 'Time slot updated successfully',
+        slot: updated[0]
       });
     } catch (error) {
       console.error("Error updating schedule:", error);
@@ -5549,20 +5603,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { slotId } = req.params;
       
-      console.log(`🗑️ Deleting schedule slot ${slotId}`);
+      console.log(`🗑️ Attempting to delete schedule slot ${slotId}`);
+      
+      // AT EDIT LOCK (C14): Check if slot has existing future bookings
+      const slot = await db
+        .select()
+        .from(timeSlots)
+        .where(eq(timeSlots.id, slotId))
+        .limit(1);
+      
+      if (slot.length === 0) {
+        return res.status(404).json({ error: "Time slot not found" });
+      }
+      
+      // Check for future bookings that match this time slot
+      const now = new Date();
+      const futureBookings = await db
+        .select()
+        .from(bookings)
+        .where(
+          and(
+            eq(bookings.mentorId, slot[0].mentorId),
+            eq(bookings.status, 'scheduled'),
+            gte(bookings.scheduledAt, now),
+            isNull(bookings.cancelledAt)
+          )
+        );
+      
+      // Check if any booking falls within this time slot
+      const hasConflictingBookings = futureBookings.some(booking => {
+        const bookingDate = new Date(booking.scheduledAt);
+        const bookingDay = bookingDate.toLocaleDateString('en-US', { weekday: 'long' });
+        const bookingTime = bookingDate.toTimeString().slice(0, 5); // HH:MM format
+        
+        return bookingDay === slot[0].dayOfWeek && 
+               bookingTime >= slot[0].startTime && 
+               bookingTime < slot[0].endTime;
+      });
+      
+      if (hasConflictingBookings) {
+        console.log(`🔒 Cannot delete slot ${slotId}: has existing future bookings`);
+        return res.status(409).json({ 
+          error: "Cannot delete time slot with existing bookings",
+          message: "This time slot has confirmed bookings. Please cancel those bookings first.",
+          locked: true
+        });
+      }
       
       // Delete from database
       const deleted = await db.delete(timeSlots)
         .where(eq(timeSlots.id, slotId))
         .returning();
       
-      if (deleted.length === 0) {
-        return res.status(404).json({ error: "Time slot not found" });
-      }
-      
+      console.log(`✅ Time slot ${slotId} deleted successfully`);
       res.json({ 
         success: true, 
-        message: `Time slot ${slotId} deleted successfully` 
+        message: `Time slot deleted successfully` 
       });
     } catch (error) {
       console.error("Error deleting schedule slot:", error);
