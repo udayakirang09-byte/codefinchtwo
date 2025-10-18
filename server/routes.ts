@@ -53,6 +53,7 @@ import { detectAbusiveLanguage } from "./abusive-language-detector";
 import Stripe from "stripe";
 import Razorpay from "razorpay";
 import crypto from "crypto";
+import multer from "multer";
 import {
   insertUserSchema,
   insertMentorSchema,
@@ -216,9 +217,15 @@ function clearFailed2FAAttempts(email: string): void {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // Configure multer for file uploads (memory storage for immediate processing)
+  const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB max
+  });
+  
   // Authentication routes
-  // Signup endpoint
-  app.post("/api/auth/signup", async (req, res) => {
+  // Signup endpoint with file upload support
+  app.post("/api/auth/signup", upload.single('photo'), async (req, res) => {
     try {
       console.log('🚀 [AZURE DEBUG] Signup request received:', { 
         body: { ...req.body, password: '[HIDDEN]' },
