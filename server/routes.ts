@@ -41,6 +41,8 @@ import {
   abusiveLanguageIncidents,
   adminUiConfig,
   emailOtps,
+  notifications,
+  bookingHolds,
   type InsertAdminConfig, 
   type InsertFooterLink, 
   type InsertTimeSlot, 
@@ -5740,6 +5742,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // C13: RESCHEDULE FROM AT - Detect and notify affected bookings when blocking
+      let affectedBookings = [];
+      if (updates.isAvailable === false && slot[0].isAvailable === true) {
+        // Teacher is blocking a previously available slot
+        console.log(`🚫 Teacher blocking time slot ${slotId}, checking for affected bookings...`);
+        
+        const now = new Date();
+        const futureBookings = await db
+          .select()
+          .from(bookings)
+          .where(
+            and(
+              eq(bookings.mentorId, slot[0].mentorId),
+              eq(bookings.status, 'scheduled'),
+              gte(bookings.scheduledAt, now),
+              isNull(bookings.cancelledAt)
+            )
+          );
+        
+        // Find bookings that fall within this time slot
+        affectedBookings = futureBookings.filter(booking => {
+          const bookingDate = new Date(booking.scheduledAt);
+          const bookingDay = bookingDate.toLocaleDateString('en-US', { weekday: 'long' });
+          const bookingTime = bookingDate.toTimeString().slice(0, 5); // HH:MM format
+          
+          return bookingDay === slot[0].dayOfWeek && 
+                 bookingTime >= slot[0].startTime && 
+                 bookingTime < slot[0].endTime;
+        });
+        
+        if (affectedBookings.length > 0) {
+          console.log(`📢 Found ${affectedBookings.length} affected bookings, creating notifications...`);
+          
+          // Create notifications for affected students
+          for (const booking of affectedBookings) {
+            // Get student info
+            const student = await storage.getStudent(booking.studentId);
+            if (student) {
+              await db.insert(notifications).values({
+                userId: student.userId,
+                title: "Class Rescheduling Required",
+                message: `Your teacher has blocked the ${slot[0].dayOfWeek} ${slot[0].startTime}-${slot[0].endTime} time slot. Please contact your teacher to reschedule your upcoming class on ${new Date(booking.scheduledAt).toLocaleDateString()}.`,
+                type: "schedule_change",
+                relatedId: booking.id
+              });
+            }
+          }
+          
+          console.log(`✅ Created ${affectedBookings.length} notifications for affected students`);
+        }
+      }
+      
       // Build update object
       const updateData: any = { updatedAt: new Date() };
       if (updates.isAvailable !== undefined) {
@@ -5759,8 +5813,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ 
         success: true, 
-        message: 'Time slot updated successfully',
-        slot: updated[0]
+        message: affectedBookings.length > 0 
+          ? `Time slot updated. ${affectedBookings.length} student(s) notified about schedule change.`
+          : 'Time slot updated successfully',
+        slot: updated[0],
+        affectedBookings: affectedBookings.length
       });
     } catch (error) {
       console.error("Error updating schedule:", error);
