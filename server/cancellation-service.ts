@@ -565,10 +565,10 @@ export class CancellationService {
   }
 
   /**
-   * Helper: Schedule refund (48 hours from now)
+   * Helper: Schedule refund (72 hours from now)
    */
   private async scheduleRefund(transactionId: string, amount: number) {
-    const scheduledRefundAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours from now
+    const scheduledRefundAt = new Date(Date.now() + 72 * 60 * 60 * 1000); // 72 hours from now
 
     await db
       .update(paymentTransactions)
@@ -580,7 +580,7 @@ export class CancellationService {
       })
       .where(eq(paymentTransactions.id, transactionId));
 
-    console.log(`✅ Scheduled refund of ₹${amount} for transaction ${transactionId} (48 hours)`);
+    console.log(`✅ Scheduled refund of ₹${amount} for transaction ${transactionId} (72 hours)`);
   }
 
   /**

@@ -964,6 +964,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   };
 
+  // Authorization middleware for admin-only access
+  const requireAdmin = (req: any, res: any, next: any) => {
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    next();
+  };
+
   // Session management routes
   app.post("/api/sessions", async (req, res) => {
     // This route is only used during login - no auth required
@@ -6683,8 +6691,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Update transaction to cancelled with 48-hour refund schedule
-      const scheduledRefundAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours from now
+      // Update transaction to cancelled with 72-hour refund schedule
+      const scheduledRefundAt = new Date(Date.now() + 72 * 60 * 60 * 1000); // 72 hours from now
       await db.update(paymentTransactions)
         .set({ 
           status: 'cancelled', 
@@ -6702,12 +6710,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.updatePaymentWorkflowStage(workflow.id, 'completed', undefined);
       }
       
-      console.log(`✅ Cancelled booking ${bookingId} and initiated 48-hour refund`);
+      console.log(`✅ Cancelled booking ${bookingId} and initiated 72-hour refund`);
       
       res.json({
         message: 'Booking cancelled and refund initiated',
         refundAmount: transaction.amount,
-        refundTime: '48 hours'
+        refundTime: '72 hours'
       });
     } catch (error: any) {
       console.error('❌ Error cancelling booking:', error);
@@ -6716,6 +6724,250 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   console.log('✅ Payment system API routes registered successfully!');
+
+  // =============================================================================
+  // COMPREHENSIVE CANCELLATION & REFUND POLICY SYSTEM
+  // =============================================================================
+  // Import CancellationService dynamically to avoid circular dependencies
+  let CancellationService: any;
+  try {
+    const cancellationModule = await import('./cancellation-service');
+    CancellationService = cancellationModule.CancellationService;
+  } catch (error) {
+    console.error('⚠️  CancellationService not available:', error);
+  }
+
+  // Manual Teacher Cancellation (Before Class Starts)
+  app.post('/api/bookings/:bookingId/cancel/teacher', authenticateSession, requireTeacherOrAdmin, async (req: any, res) => {
+    try {
+      const { bookingId } = req.params;
+      const { reason } = req.body;
+      const teacherId = req.user.mentorId;
+
+      if (!CancellationService) {
+        return res.status(503).json({ message: 'Cancellation service unavailable' });
+      }
+
+      const cancellationService = new CancellationService(storage);
+      const result = await cancellationService.teacherCancelBeforeStart(bookingId, teacherId, reason);
+
+      console.log(`✅ Teacher cancellation: ${result.message}`);
+      res.json(result);
+    } catch (error: any) {
+      console.error('❌ Teacher cancellation error:', error);
+      res.status(error.message.includes('not found') ? 404 : 400).json({ 
+        message: error.message || 'Failed to cancel booking' 
+      });
+    }
+  });
+
+  // Manual Student Cancellation (Before Class Starts, 6-hour restriction)
+  app.post('/api/bookings/:bookingId/cancel/student', authenticateSession, async (req: any, res) => {
+    try {
+      const { bookingId } = req.params;
+      const { reason } = req.body;
+      const studentId = req.user.studentId;
+
+      if (!studentId) {
+        return res.status(403).json({ message: 'Student access required' });
+      }
+
+      if (!CancellationService) {
+        return res.status(503).json({ message: 'Cancellation service unavailable' });
+      }
+
+      const cancellationService = new CancellationService(storage);
+      const result = await cancellationService.studentCancelBeforeStart(bookingId, studentId, reason);
+
+      console.log(`✅ Student cancellation: ${result.message}`);
+      res.json(result);
+    } catch (error: any) {
+      console.error('❌ Student cancellation error:', error);
+      res.status(error.message.includes('6 hours') ? 400 : 404).json({ 
+        message: error.message || 'Failed to cancel booking' 
+      });
+    }
+  });
+
+  // Admin Manual Cancellation (Any time, any reason)
+  app.post('/api/bookings/:bookingId/cancel/admin', authenticateSession, requireAdmin, async (req: any, res) => {
+    try {
+      const { bookingId } = req.params;
+      const { reason } = req.body;
+      const adminId = req.user.id;
+
+      if (!reason) {
+        return res.status(400).json({ message: 'Cancellation reason is required' });
+      }
+
+      if (!CancellationService) {
+        return res.status(503).json({ message: 'Cancellation service unavailable' });
+      }
+
+      const cancellationService = new CancellationService(storage);
+      const result = await cancellationService.adminManualCancellation(bookingId, adminId, reason);
+
+      console.log(`✅ Admin cancellation: ${result.message}`);
+      res.json(result);
+    } catch (error: any) {
+      console.error('❌ Admin cancellation error:', error);
+      res.status(error.message.includes('not found') ? 404 : 500).json({ 
+        message: error.message || 'Failed to cancel booking' 
+      });
+    }
+  });
+
+  // AI/System Detection: Teacher Late Join (>10 min after start + 25% duration)
+  app.post('/api/bookings/:bookingId/detect-late-join', async (req, res) => {
+    try {
+      const { bookingId } = req.params;
+
+      if (!CancellationService) {
+        return res.status(503).json({ message: 'Cancellation service unavailable' });
+      }
+
+      const cancellationService = new CancellationService(storage);
+      const result = await cancellationService.detectAndCancelLateJoin(bookingId);
+
+      if (result.success) {
+        console.log(`🤖 AI detected late join: ${result.message}`);
+      }
+      res.json(result);
+    } catch (error: any) {
+      console.error('❌ Late join detection error:', error);
+      res.status(500).json({ message: error.message || 'Failed to detect late join' });
+    }
+  });
+
+  // AI/System Detection: Teacher No-Show (offline >15 min)
+  app.post('/api/bookings/:bookingId/detect-no-show', async (req, res) => {
+    try {
+      const { bookingId } = req.params;
+      const { offlineDuration } = req.body;
+
+      if (typeof offlineDuration !== 'number') {
+        return res.status(400).json({ message: 'Offline duration (in minutes) is required' });
+      }
+
+      if (!CancellationService) {
+        return res.status(503).json({ message: 'Cancellation service unavailable' });
+      }
+
+      const cancellationService = new CancellationService(storage);
+      const result = await cancellationService.detectAndCancelTeacherNoShow(bookingId, offlineDuration);
+
+      if (result.success) {
+        console.log(`🤖 AI detected teacher no-show: ${result.message}`);
+      }
+      res.json(result);
+    } catch (error: any) {
+      console.error('❌ No-show detection error:', error);
+      res.status(500).json({ message: error.message || 'Failed to detect no-show' });
+    }
+  });
+
+  // AI/System Detection: Low Teacher Presence (inactive >35%)
+  app.post('/api/bookings/:bookingId/detect-low-presence', async (req, res) => {
+    try {
+      const { bookingId } = req.params;
+      const { inactivePercent } = req.body;
+
+      if (typeof inactivePercent !== 'number') {
+        return res.status(400).json({ message: 'Inactive percentage is required' });
+      }
+
+      if (!CancellationService) {
+        return res.status(503).json({ message: 'Cancellation service unavailable' });
+      }
+
+      const cancellationService = new CancellationService(storage);
+      const result = await cancellationService.detectAndCancelLowPresence(bookingId, inactivePercent);
+
+      if (result.success) {
+        console.log(`🤖 AI detected low presence: ${result.message}`);
+      }
+      res.json(result);
+    } catch (error: any) {
+      console.error('❌ Low presence detection error:', error);
+      res.status(500).json({ message: error.message || 'Failed to detect low presence' });
+    }
+  });
+
+  // AI/System Detection: Connectivity Issues (<25% connection loss)
+  app.post('/api/bookings/:bookingId/detect-connectivity-issue', async (req, res) => {
+    try {
+      const { bookingId } = req.params;
+      const { connectionLossPercent } = req.body;
+
+      if (typeof connectionLossPercent !== 'number') {
+        return res.status(400).json({ message: 'Connection loss percentage is required' });
+      }
+
+      if (!CancellationService) {
+        return res.status(503).json({ message: 'Cancellation service unavailable' });
+      }
+
+      const cancellationService = new CancellationService(storage);
+      const result = await cancellationService.detectAndCancelConnectivityIssue(bookingId, connectionLossPercent);
+
+      if (result.success) {
+        console.log(`🤖 AI detected connectivity issue: ${result.message}`);
+      }
+      res.json(result);
+    } catch (error: any) {
+      console.error('❌ Connectivity issue detection error:', error);
+      res.status(500).json({ message: error.message || 'Failed to detect connectivity issue' });
+    }
+  });
+
+  // AI/System Detection: Short Session (<50% of scheduled duration)
+  app.post('/api/bookings/:bookingId/detect-short-session', async (req, res) => {
+    try {
+      const { bookingId } = req.params;
+      const { actualDuration } = req.body;
+
+      if (typeof actualDuration !== 'number') {
+        return res.status(400).json({ message: 'Actual duration (in minutes) is required' });
+      }
+
+      if (!CancellationService) {
+        return res.status(503).json({ message: 'Cancellation service unavailable' });
+      }
+
+      const cancellationService = new CancellationService(storage);
+      const result = await cancellationService.detectAndCancelShortSession(bookingId, actualDuration);
+
+      if (result.success) {
+        console.log(`🤖 AI detected short session: ${result.message}`);
+      }
+      res.json(result);
+    } catch (error: any) {
+      console.error('❌ Short session detection error:', error);
+      res.status(500).json({ message: error.message || 'Failed to detect short session' });
+    }
+  });
+
+  // Mark class as completed normally (no cancellation)
+  app.post('/api/bookings/:bookingId/complete', async (req, res) => {
+    try {
+      const { bookingId } = req.params;
+
+      if (!CancellationService) {
+        return res.status(503).json({ message: 'Cancellation service unavailable' });
+      }
+
+      const cancellationService = new CancellationService(storage);
+      const result = await cancellationService.markClassCompleted(bookingId);
+
+      console.log(`✅ Class completed: ${result.message}`);
+      res.json(result);
+    } catch (error: any) {
+      console.error('❌ Class completion error:', error);
+      res.status(500).json({ message: error.message || 'Failed to mark class as completed' });
+    }
+  });
+
+  console.log('✅ Comprehensive cancellation & refund policy API routes registered!');
 
   // KADB Help System API Routes
   app.post('/api/ai/help/response', async (req, res) => {
