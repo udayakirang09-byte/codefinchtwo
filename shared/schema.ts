@@ -30,6 +30,49 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Trusted devices for "Remember this device 30 days" functionality
+export const trustedDevices = pgTable("trusted_devices", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  deviceFingerprint: varchar("device_fingerprint").notNull(), // Hashed device identifier
+  deviceName: varchar("device_name"), // e.g., "Chrome on Windows", "Safari on iPhone"
+  ipAddress: varchar("ip_address"),
+  userAgent: text("user_agent"),
+  lastUsedAt: timestamp("last_used_at").defaultNow(),
+  expiresAt: timestamp("expires_at").notNull(), // 30 days from creation
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  userIdIdx: index("trusted_devices_user_id_idx").on(table.userId),
+  deviceFingerprintIdx: index("trusted_devices_fingerprint_idx").on(table.deviceFingerprint),
+}));
+
+// Backup codes for emergency 2FA access
+export const backupCodes = pgTable("backup_codes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  codeHash: varchar("code_hash").notNull(), // Hashed backup code
+  usedAt: timestamp("used_at"), // null = unused, timestamp = used
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  userIdIdx: index("backup_codes_user_id_idx").on(table.userId),
+}));
+
+// Security event logs for audit trail
+export const securityLogs = pgTable("security_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  eventType: varchar("event_type").notNull(), // login, 2fa_setup, 2fa_verify, profile_edit, password_change, etc.
+  eventStatus: varchar("event_status").notNull(), // success, failure, suspicious
+  eventDetails: jsonb("event_details").$type<Record<string, any>>().default({}), // Additional context
+  ipAddress: varchar("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  userIdIdx: index("security_logs_user_id_idx").on(table.userId),
+  eventTypeIdx: index("security_logs_event_type_idx").on(table.eventType),
+  createdAtIdx: index("security_logs_created_at_idx").on(table.createdAt),
+}));
+
 export const mentors = pgTable("mentors", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id).notNull(),
@@ -1775,6 +1818,21 @@ export const insertAzureAppInsightsConfigSchema = createInsertSchema(azureAppIns
 export const insertAzureMetricsAlertSchema = createInsertSchema(azureMetricsAlerts);
 
 export const insertAzureMetricsHistorySchema = createInsertSchema(azureMetricsHistory);
+
+// Insert schemas for security tables
+export const insertTrustedDeviceSchema = createInsertSchema(trustedDevices);
+export const insertBackupCodeSchema = createInsertSchema(backupCodes);
+export const insertSecurityLogSchema = createInsertSchema(securityLogs);
+
+// Types for security tables
+export type TrustedDevice = typeof trustedDevices.$inferSelect;
+export type InsertTrustedDevice = z.infer<typeof insertTrustedDeviceSchema>;
+
+export type BackupCode = typeof backupCodes.$inferSelect;
+export type InsertBackupCode = z.infer<typeof insertBackupCodeSchema>;
+
+export type SecurityLog = typeof securityLogs.$inferSelect;
+export type InsertSecurityLog = z.infer<typeof insertSecurityLogSchema>;
 
 // Types for teacher audio metrics
 export type TeacherAudioMetrics = typeof teacherAudioMetrics.$inferSelect;
