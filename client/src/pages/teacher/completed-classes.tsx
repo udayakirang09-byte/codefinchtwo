@@ -155,7 +155,9 @@ export default function TeacherCompletedClasses() {
               <div className="space-y-4">
                 {completedClasses.map((classItem) => {
                   const scheduledDate = new Date(classItem.scheduledAt);
-                  const highlight = getCancellationHighlight(classItem.status, classItem.cancellationType);
+                  // Determine class type based on amount (demo classes are typically free or low cost)
+                  const classType = (classItem.amount === 0 || classItem.amount === 1) ? 'demo' : 'booked';
+                  const highlight = getCancellationHighlight(classItem.status, classItem.cancellationType, classType);
                   const isCancelled = classItem.status === 'cancelled';
                   
                   return (
