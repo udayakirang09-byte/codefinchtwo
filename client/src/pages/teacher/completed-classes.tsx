@@ -40,13 +40,21 @@ export default function TeacherCompletedClasses() {
     enabled: !!user?.id && isAuthenticated
   });
 
-  // Filter for COMPLETED classes: class end time is in the past (time-based logic)
+  // Filter for COMPLETED classes: Cancelled classes (shown immediately) OR past their end time (time-based logic)
   const completedClasses = allClasses
     .filter((classItem) => {
+      // Include cancelled classes immediately regardless of scheduled time
+      if (classItem.status === 'cancelled') return true;
+      
+      // Time-based check: class end time must be in the past for non-cancelled classes
       const classEndTime = addMinutes(new Date(classItem.scheduledAt), classItem.duration);
       return isPast(classEndTime);
     })
     .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime());
+
+  // Calculate stats excluding cancelled classes (only genuinely completed sessions)
+  const actuallyCompletedClasses = completedClasses.filter(cls => cls.status !== 'cancelled');
+  const cancelledCount = completedClasses.filter(cls => cls.status === 'cancelled').length;
 
   if (!isAuthenticated) {
     return (
@@ -105,7 +113,7 @@ export default function TeacherCompletedClasses() {
           <Card className="bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0">
             <CardContent className="p-6 text-center">
               <CheckCircle className="h-8 w-8 mx-auto mb-2" />
-              <div className="text-3xl font-bold">{completedClasses.length}</div>
+              <div className="text-3xl font-bold">{actuallyCompletedClasses.length}</div>
               <div className="text-green-100">Total Completed</div>
             </CardContent>
           </Card>
@@ -114,7 +122,7 @@ export default function TeacherCompletedClasses() {
             <CardContent className="p-6 text-center">
               <Clock className="h-8 w-8 mx-auto mb-2" />
               <div className="text-3xl font-bold">
-                {Math.round(completedClasses.reduce((sum, cls) => sum + cls.duration, 0) / 60)}
+                {Math.round(actuallyCompletedClasses.reduce((sum, cls) => sum + cls.duration, 0) / 60)}
               </div>
               <div className="text-blue-100">Hours Taught</div>
             </CardContent>
@@ -124,7 +132,7 @@ export default function TeacherCompletedClasses() {
             <CardContent className="p-6 text-center">
               <CheckCircle className="h-8 w-8 mx-auto mb-2" />
               <div className="text-3xl font-bold">
-                ₹{completedClasses.reduce((sum, cls) => sum + (cls.amount || 0), 0)}
+                ₹{actuallyCompletedClasses.reduce((sum, cls) => sum + (cls.amount || 0), 0)}
               </div>
               <div className="text-yellow-100">Total Earnings</div>
             </CardContent>
