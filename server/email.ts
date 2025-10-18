@@ -41,6 +41,82 @@ export function generateResetCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+export function generateEmailOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+export function generateEmailOTPVerificationEmail(email: string, otp: string, purpose: string = 'signup'): { subject: string, html: string, text: string } {
+  const purposeText = purpose === 'signup' ? 'Sign Up' : purpose === 'login' ? 'Login' : 'Account Verification';
+  const subject = `${otp} is your CodeConnect verification code`;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }
+        .otp-code { background: #fff; border: 3px solid #667eea; padding: 20px; text-align: center; font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #667eea; margin: 20px 0; border-radius: 8px; font-family: monospace; }
+        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
+        .info-box { background: #e0e7ff; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0; border-radius: 4px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🔐 Email Verification</h1>
+          <p>CodeConnect - Where Young Minds Meet Coding Mentors</p>
+        </div>
+        <div class="content">
+          <p>Hello,</p>
+          <p>Your verification code for <strong>${purposeText}</strong> is:</p>
+          <div class="otp-code">${otp}</div>
+          <div class="info-box">
+            <p><strong>⚠️ Important Security Information:</strong></p>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+              <li>This code will expire in <strong>10 minutes</strong></li>
+              <li>This is part 1 of 2-step verification (Next: Authenticator App)</li>
+              <li>Never share this code with anyone</li>
+              <li>If you didn't request this code, please ignore this email</li>
+            </ul>
+          </div>
+          <p>After verifying your email, you'll be prompted to set up your Authenticator App (Microsoft Authenticator or Google Authenticator) for enhanced security.</p>
+          <p style="margin-top: 30px;">Need help? Contact our support team at support@codeconnect.com</p>
+        </div>
+        <div class="footer">
+          <p>© 2025 CodeConnect. All rights reserved.</p>
+          <p>This email was sent to ${email}</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+Email Verification Code - CodeConnect
+
+Hello,
+
+Your verification code for ${purposeText} is: ${otp}
+
+Important Security Information:
+- This code will expire in 10 minutes
+- This is part 1 of 2-step verification (Next: Authenticator App)
+- Never share this code with anyone
+- If you didn't request this code, please ignore this email
+
+After verifying your email, you'll be prompted to set up your Authenticator App (Microsoft Authenticator or Google Authenticator) for enhanced security.
+
+Need help? Contact our support team at support@codeconnect.com
+
+© 2025 CodeConnect. All rights reserved.
+  `;
+
+  return { subject, html, text };
+}
+
 export function generateResetEmail(email: string, resetCode: string): { subject: string, html: string, text: string } {
   const subject = 'Password Reset Code - CodeConnect';
   

@@ -73,6 +73,21 @@ export const securityLogs = pgTable("security_logs", {
   createdAtIdx: index("security_logs_created_at_idx").on(table.createdAt),
 }));
 
+// Email OTP verification for signup (dual verification with Authenticator)
+export const emailOtps = pgTable("email_otps", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").notNull(),
+  otpHash: varchar("otp_hash").notNull(), // Hashed OTP code (6 digits)
+  purpose: varchar("purpose").notNull().default("signup"), // signup, login, password_reset
+  verified: boolean("verified").default(false),
+  expiresAt: timestamp("expires_at").notNull(), // 10 minutes from creation
+  attempts: integer("attempts").default(0), // Track failed attempts
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  emailIdx: index("email_otps_email_idx").on(table.email),
+  expiresAtIdx: index("email_otps_expires_at_idx").on(table.expiresAt),
+}));
+
 export const mentors = pgTable("mentors", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id).notNull(),
@@ -1823,6 +1838,7 @@ export const insertAzureMetricsHistorySchema = createInsertSchema(azureMetricsHi
 export const insertTrustedDeviceSchema = createInsertSchema(trustedDevices);
 export const insertBackupCodeSchema = createInsertSchema(backupCodes);
 export const insertSecurityLogSchema = createInsertSchema(securityLogs);
+export const insertEmailOtpSchema = createInsertSchema(emailOtps);
 
 // Types for security tables
 export type TrustedDevice = typeof trustedDevices.$inferSelect;
@@ -1833,6 +1849,9 @@ export type InsertBackupCode = z.infer<typeof insertBackupCodeSchema>;
 
 export type SecurityLog = typeof securityLogs.$inferSelect;
 export type InsertSecurityLog = z.infer<typeof insertSecurityLogSchema>;
+
+export type EmailOtp = typeof emailOtps.$inferSelect;
+export type InsertEmailOtp = z.infer<typeof insertEmailOtpSchema>;
 
 // Types for teacher audio metrics
 export type TeacherAudioMetrics = typeof teacherAudioMetrics.$inferSelect;

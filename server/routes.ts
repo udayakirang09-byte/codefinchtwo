@@ -39,12 +39,15 @@ import {
   teacherSubjects,
   abusiveLanguageIncidents,
   adminUiConfig,
+  emailOtps,
   type InsertAdminConfig, 
   type InsertFooterLink, 
   type InsertTimeSlot, 
   type InsertTeacherProfile, 
-  type InsertCourse
+  type InsertCourse,
+  type EmailOtp
 } from "@shared/schema";
+import { sendEmail, generateEmailOTP, generateEmailOTPVerificationEmail } from "./email";
 import { aiAnalytics } from "./ai-analytics";
 import { detectAbusiveLanguage } from "./abusive-language-detector";
 import Stripe from "stripe";
@@ -343,6 +346,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       res.status(500).json({ 
         message: "Internal server error",
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Please try again'
+      });
+    }
+  });
+
+  // Email OTP - Send verification code
+  app.post("/api/auth/send-email-otp", async (req, res) => {
+    try {
+      const { email, purpose = 'signup' }: { email: string; purpose?: string } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      
+      // For signup purpose, check if user already exists
+      if (purpose === 'signup') {
+        const existingUser = await storage.getUserByEmail(email.trim());
+        if (existingUser) {
+          return res.status(400).json({ message: "Email already registered" });
+        }
+      }
+      
+      // Generate 6-digit OTP
+      const otp = generateEmailOTP();
+      
+      // Hash OTP for storage
+      const bcrypt = await import('bcrypt');
+      const otpHash = await bcrypt.hash(otp, 10);
+      
+      // Store OTP in database with 10-minute expiration
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      
+      // Delete any previous OTPs for this email/purpose
+      await db.delete(emailOtps)
+        .where(and(
+          eq(emailOtps.email, email.trim()),
+          eq(emailOtps.purpose, purpose)
+        ));
+      
+      // Create new OTP record
+      await db.insert(emailOtps).values({
+        email: email.trim(),
+        otpHash,
+        purpose,
+        expiresAt,
+        verified: false,
+        attempts: 0
+      });
+      
+      // Send OTP email
+      const emailContent = generateEmailOTPVerificationEmail(email.trim(), otp, purpose);
+      const emailSent = await sendEmail({
+        to: email.trim(),
+        subject: emailContent.subject,
+        html: emailContent.html,
+        text: emailContent.text
+      });
+      
+      if (!emailSent) {
+        console.log('📧 Email send failed, but OTP stored for testing');
+      }
+      
+      console.log(`📧 Email OTP sent to ${email} for ${purpose}`);
+      
+      res.status(200).json({
+        success: true,
+        message: "Verification code sent to your email",
+        expiresIn: 600 // seconds
+      });
+    } catch (error: any) {
+      console.error("Email OTP send error:", error);
+      res.status(500).json({ 
+        message: "Failed to send verification code",
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Please try again'
+      });
+    }
+  });
+
+  // Email OTP - Verify code
+  app.post("/api/auth/verify-email-otp", async (req, res) => {
+    try {
+      const { email, otp, purpose = 'signup' }: { email: string; otp: string; purpose?: string } = req.body;
+      
+      if (!email || !otp) {
+        return res.status(400).json({ message: "Email and verification code are required" });
+      }
+      
+      // Find latest OTP for this email/purpose
+      const otpRecords = await db.select()
+        .from(emailOtps)
+        .where(and(
+          eq(emailOtps.email, email.trim()),
+          eq(emailOtps.purpose, purpose),
+          eq(emailOtps.verified, false)
+        ))
+        .orderBy(desc(emailOtps.createdAt))
+        .limit(1);
+      
+      if (otpRecords.length === 0) {
+        return res.status(400).json({ message: "No verification code found. Please request a new one." });
+      }
+      
+      const otpRecord = otpRecords[0];
+      
+      // Check if OTP has expired
+      if (new Date() > new Date(otpRecord.expiresAt)) {
+        await db.delete(emailOtps).where(eq(emailOtps.id, otpRecord.id));
+        return res.status(400).json({ message: "Verification code expired. Please request a new one." });
+      }
+      
+      // Check attempts (max 5)
+      if (otpRecord.attempts >= 5) {
+        await db.delete(emailOtps).where(eq(emailOtps.id, otpRecord.id));
+        return res.status(400).json({ message: "Too many failed attempts. Please request a new code." });
+      }
+      
+      // Verify OTP
+      const bcrypt = await import('bcrypt');
+      const isValidOTP = await bcrypt.compare(otp.trim(), otpRecord.otpHash);
+      
+      if (!isValidOTP) {
+        // Increment attempts
+        await db.update(emailOtps)
+          .set({ attempts: otpRecord.attempts + 1 })
+          .where(eq(emailOtps.id, otpRecord.id));
+        
+        const remainingAttempts = 5 - (otpRecord.attempts + 1);
+        return res.status(400).json({ 
+          message: `Invalid verification code. ${remainingAttempts} attempts remaining.`,
+          remainingAttempts
+        });
+      }
+      
+      // Mark OTP as verified
+      await db.update(emailOtps)
+        .set({ verified: true })
+        .where(eq(emailOtps.id, otpRecord.id));
+      
+      console.log(`✅ Email OTP verified for ${email}`);
+      
+      res.status(200).json({
+        success: true,
+        message: "Email verified successfully"
+      });
+    } catch (error: any) {
+      console.error("Email OTP verify error:", error);
+      res.status(500).json({ 
+        message: "Failed to verify code",
         error: process.env.NODE_ENV === 'development' ? error.message : 'Please try again'
       });
     }
