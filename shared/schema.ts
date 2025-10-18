@@ -647,6 +647,15 @@ export const adminPaymentConfig = pgTable("admin_payment_config", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Admin Booking Limits Configuration
+export const adminBookingLimits = pgTable("admin_booking_limits", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  dailyBookingLimit: integer("daily_booking_limit").notNull().default(3), // Max bookings per day per student
+  weeklyBookingLimit: integer("weekly_booking_limit"), // Optional weekly limit (null = disabled)
+  enableWeeklyLimit: boolean("enable_weekly_limit").default(false), // Toggle for weekly cap
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Time Slots Management Table
 export const timeSlots = pgTable("time_slots", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -679,6 +688,8 @@ export const adminConfigRelations = relations(adminConfig, ({ }) => ({}));
 
 export const adminPaymentConfigRelations = relations(adminPaymentConfig, ({ }) => ({}));
 
+export const adminBookingLimitsRelations = relations(adminBookingLimits, ({ }) => ({}));
+
 export const timeSlotsRelations = relations(timeSlots, ({ one }) => ({
   mentor: one(mentors, {
     fields: [timeSlots.mentorId],
@@ -692,6 +703,8 @@ export const footerLinksRelations = relations(footerLinks, ({ }) => ({}));
 export const insertAdminConfigSchema = createInsertSchema(adminConfig);
 
 export const insertAdminPaymentConfigSchema = createInsertSchema(adminPaymentConfig);
+
+export const insertAdminBookingLimitsSchema = createInsertSchema(adminBookingLimits);
 
 export const insertTimeSlotSchema = createInsertSchema(timeSlots);
 
@@ -834,6 +847,9 @@ export type InsertAdminConfig = z.infer<typeof insertAdminConfigSchema>;
 
 export type AdminPaymentConfig = typeof adminPaymentConfig.$inferSelect;
 export type InsertAdminPaymentConfig = z.infer<typeof insertAdminPaymentConfigSchema>;
+
+export type AdminBookingLimits = typeof adminBookingLimits.$inferSelect;
+export type InsertAdminBookingLimits = z.infer<typeof insertAdminBookingLimitsSchema>;
 
 export type TimeSlot = typeof timeSlots.$inferSelect;
 export type InsertTimeSlot = z.infer<typeof insertTimeSlotSchema>;

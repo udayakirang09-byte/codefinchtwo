@@ -135,7 +135,12 @@ const CHAT_RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 // Rate limiting for booking creation (in-memory store)
 // Key format: "studentId:date" (date is YYYY-MM-DD)
 const bookingCreationAttempts = new Map<string, { count: number; date: string }>();
-const MAX_BOOKINGS_PER_DAY = 10;
+const bookingCreationAttemptsWeekly = new Map<string, { count: number; weekStart: string }>();
+
+// Default booking limits (will be overridden by admin config from database)
+let DEFAULT_DAILY_BOOKING_LIMIT = 3; // Updated to 3 as per requirement
+let DEFAULT_WEEKLY_BOOKING_LIMIT: number | null = null;
+let WEEKLY_LIMIT_ENABLED = false;
 
 // Temporary storage for pending 2FA secrets (server-side only)
 // Format: Map<email, { secret: string, expiresAt: number }>
@@ -353,30 +358,81 @@ function checkBookingCreationRateLimit(studentId: string): { allowed: boolean; r
   // Clean up old dates
   if (studentAttempts && studentAttempts.date !== today) {
     bookingCreationAttempts.delete(key);
-    return { allowed: true, remainingBookings: MAX_BOOKINGS_PER_DAY, currentCount: 0 };
+    return { allowed: true, remainingBookings: DEFAULT_DAILY_BOOKING_LIMIT, currentCount: 0 };
   }
   
   // Check if student exceeded daily limit
-  if (studentAttempts && studentAttempts.count >= MAX_BOOKINGS_PER_DAY) {
+  if (studentAttempts && studentAttempts.count >= DEFAULT_DAILY_BOOKING_LIMIT) {
     return { allowed: false, currentCount: studentAttempts.count };
   }
   
   return { 
     allowed: true, 
-    remainingBookings: MAX_BOOKINGS_PER_DAY - (studentAttempts?.count || 0),
+    remainingBookings: DEFAULT_DAILY_BOOKING_LIMIT - (studentAttempts?.count || 0),
+    currentCount: studentAttempts?.count || 0
+  };
+}
+
+// Weekly booking creation rate limiting
+function checkWeeklyBookingCreationRateLimit(studentId: string): { allowed: boolean; remainingBookings?: number; currentCount?: number } {
+  if (!WEEKLY_LIMIT_ENABLED || !DEFAULT_WEEKLY_BOOKING_LIMIT) {
+    return { allowed: true };
+  }
+  
+  const now = new Date();
+  // Get Monday of current week
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
+  const weekStart = monday.toISOString().split('T')[0]; // YYYY-MM-DD
+  
+  const key = `${studentId}:${weekStart}`;
+  const studentAttempts = bookingCreationAttemptsWeekly.get(key);
+  
+  // Clean up old weeks
+  if (studentAttempts && studentAttempts.weekStart !== weekStart) {
+    bookingCreationAttemptsWeekly.delete(key);
+    return { allowed: true, remainingBookings: DEFAULT_WEEKLY_BOOKING_LIMIT, currentCount: 0 };
+  }
+  
+  // Check if student exceeded weekly limit
+  if (studentAttempts && studentAttempts.count >= DEFAULT_WEEKLY_BOOKING_LIMIT) {
+    return { allowed: false, currentCount: studentAttempts.count };
+  }
+  
+  return { 
+    allowed: true, 
+    remainingBookings: DEFAULT_WEEKLY_BOOKING_LIMIT - (studentAttempts?.count || 0),
     currentCount: studentAttempts?.count || 0
   };
 }
 
 function recordBookingCreation(studentId: string): void {
+  // Record daily booking
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-  const key = `${studentId}:${today}`;
-  const studentAttempts = bookingCreationAttempts.get(key);
+  const dailyKey = `${studentId}:${today}`;
+  const dailyAttempts = bookingCreationAttempts.get(dailyKey);
   
-  if (!studentAttempts || studentAttempts.date !== today) {
-    bookingCreationAttempts.set(key, { count: 1, date: today });
+  if (!dailyAttempts || dailyAttempts.date !== today) {
+    bookingCreationAttempts.set(dailyKey, { count: 1, date: today });
   } else {
-    studentAttempts.count++;
+    dailyAttempts.count++;
+  }
+  
+  // Record weekly booking (if weekly limit enabled)
+  if (WEEKLY_LIMIT_ENABLED) {
+    const now = new Date();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
+    const weekStart = monday.toISOString().split('T')[0];
+    
+    const weeklyKey = `${studentId}:${weekStart}`;
+    const weeklyAttempts = bookingCreationAttemptsWeekly.get(weeklyKey);
+    
+    if (!weeklyAttempts || weeklyAttempts.weekStart !== weekStart) {
+      bookingCreationAttemptsWeekly.set(weeklyKey, { count: 1, weekStart });
+    } else {
+      weeklyAttempts.count++;
+    }
   }
 }
 
