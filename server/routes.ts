@@ -3383,7 +3383,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         studentFirstName: users.firstName,
         studentLastName: users.lastName,
         studentEmail: users.email,
-        source: sql<string>`'booking'`
+        source: sql<string>`'booking'`,
+        // Cancellation fields for dashboard highlights
+        cancelledBy: bookings.cancelledBy,
+        cancellationType: bookings.cancellationType,
+        cancelledAt: bookings.cancelledAt,
+        cancelReason: bookings.cancelReason,
+        refundStatus: bookings.refundStatus,
+        refundAmount: bookings.refundAmount
       })
       .from(bookings)
       .leftJoin(students, eq(bookings.studentId, students.id))
@@ -3476,7 +3483,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         scheduledAt: item.scheduledAt,
         duration: item.duration,
         status: item.status,
-        amount: item.amount
+        amount: item.amount,
+        // Cancellation fields for dashboard highlights
+        cancelledBy: item.cancelledBy,
+        cancellationType: item.cancellationType,
+        cancelledAt: item.cancelledAt,
+        cancelReason: item.cancelReason,
+        refundStatus: item.refundStatus,
+        refundAmount: item.refundAmount
       }));
       
       res.json(formattedClasses);
