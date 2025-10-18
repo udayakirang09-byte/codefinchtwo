@@ -167,7 +167,7 @@ export default function Booking() {
   useEffect(() => {
     setFormData(prev => ({
       ...prev,
-      duration: prev.sessionType === 'demo' ? '15' : '55'
+      duration: prev.sessionType === 'demo' ? '40' : '55'
     }));
   }, [formData.sessionType]);
 
@@ -262,7 +262,7 @@ export default function Booking() {
     e.preventDefault();
     
     // C1: Validate session duration matches session type
-    const expectedDuration = formData.sessionType === 'demo' ? '15' : '55';
+    const expectedDuration = formData.sessionType === 'demo' ? '40' : '55';
     if (formData.duration !== expectedDuration) {
       toast({
         title: "Invalid Session Duration",
@@ -726,7 +726,7 @@ export default function Booking() {
                     </SelectTrigger>
                     <SelectContent>
                       {formData.sessionType === 'demo' ? (
-                        <SelectItem value="15">15 minutes (Demo)</SelectItem>
+                        <SelectItem value="40">40 minutes (Demo)</SelectItem>
                       ) : (
                         <SelectItem value="55">55 minutes (1:1 Session)</SelectItem>
                       )}
@@ -734,7 +734,7 @@ export default function Booking() {
                   </Select>
                   <p className="text-xs text-muted-foreground">
                     {formData.sessionType === 'demo' 
-                      ? 'Demo sessions are 15 minutes (+5 min buffer)' 
+                      ? 'Demo sessions are 40 minutes (+5 min buffer)' 
                       : 'Regular 1:1 sessions are 55 minutes (+5 min buffer)'}
                   </p>
                 </div>

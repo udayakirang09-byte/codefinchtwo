@@ -1892,9 +1892,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // C1: Enforce session duration requirements
       const duration = req.body.duration;
-      if (sessionType === 'demo' && duration !== 15) {
+      if (sessionType === 'demo' && duration !== 40) {
         return res.status(400).json({ 
-          message: "Demo sessions must be exactly 15 minutes.",
+          message: "Demo sessions must be exactly 40 minutes.",
           error: "INVALID_DEMO_DURATION"
         });
       }
