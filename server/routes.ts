@@ -568,13 +568,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if 2FA is enabled for teachers
       if (user.role === 'mentor' && user.totpEnabled && user.totpSecret) {
-        const { totpToken }: { totpToken?: string } = req.body;
+        const { totpToken, emailOtp }: { totpToken?: string; emailOtp?: string } = req.body;
         
-        if (!totpToken) {
+        if (!totpToken && !emailOtp) {
+          // Send email OTP to user
+          try {
+            await storage.sendEmailOTP(user.email);
+            console.log(`📧 Email OTP sent to ${user.email}`);
+          } catch (otpError) {
+            console.error('❌ Failed to send email OTP:', otpError);
+          }
+          
           // Return response indicating 2FA is required
           return res.status(200).json({
             require2FA: true,
-            message: "2FA verification required",
+            message: "2FA verification required. Check your email for OTP or use your Authenticator App.",
             email: user.email
           });
         }
@@ -587,12 +595,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
-        // Verify TOTP token
-        const { authenticator } = await import('otplib');
-        const isValid2FA = authenticator.verify({
-          token: totpToken.trim(),
-          secret: user.totpSecret
-        });
+        let isValid2FA = false;
+        
+        // Try Email OTP first if provided
+        if (emailOtp) {
+          try {
+            const otpResult = await storage.verifyEmailOTP(user.email, emailOtp.trim());
+            isValid2FA = otpResult.valid;
+            if (isValid2FA) {
+              console.log('✅ Email OTP verified successfully');
+            }
+          } catch (emailOtpError) {
+            console.error('❌ Email OTP verification failed:', emailOtpError);
+          }
+        }
+        
+        // Try Authenticator TOTP if email OTP didn't work and totpToken is provided
+        if (!isValid2FA && totpToken) {
+          const { authenticator } = await import('otplib');
+          isValid2FA = authenticator.verify({
+            token: totpToken.trim(),
+            secret: user.totpSecret
+          });
+          if (isValid2FA) {
+            console.log('✅ Authenticator TOTP verified successfully');
+          }
+        }
         
         if (!isValid2FA) {
           recordFailed2FAAttempt(user.email);

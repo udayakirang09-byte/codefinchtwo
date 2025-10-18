@@ -13,6 +13,7 @@ import {
   classFeedback,
   notifications,
   userSessions,
+  emailOtps,
   teacherProfiles,
   paymentMethods,
   transactionFeeConfig,
@@ -97,6 +98,7 @@ import { db } from "./db";
 import { eq, desc, and, sql, asc, ne } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { cache } from "./redis";
+import { sendEmail } from "./email";
 
 export interface IStorage {
   // User operations
@@ -195,6 +197,10 @@ export interface IStorage {
   deactivateSession(sessionToken: string): Promise<void>;
   deactivateUserSessions(userId: string): Promise<void>;
   getMultipleLoginUsers(): Promise<{ userId: string; sessionCount: number; user: User }[]>;
+  
+  // Email OTP operations (for dual 2FA)
+  sendEmailOTP(email: string): Promise<void>;
+  verifyEmailOTP(email: string, otp: string): Promise<{ valid: boolean; userId?: string }>;
   
   // Teacher Profile operations
   createTeacherProfile(profile: InsertTeacherProfile): Promise<TeacherProfile>;
@@ -1984,6 +1990,99 @@ export class DatabaseStorage implements IStorage {
       }
     }
     return result;
+  }
+
+  // Email OTP operations (for dual 2FA)
+  async sendEmailOTP(email: string): Promise<void> {
+    const user = await this.getUserByEmail(email);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Hash the OTP before storing
+    const bcrypt = await import('bcrypt');
+    const hashedOtp = await bcrypt.hash(otp, 10);
+    
+    // Store OTP in database with 10-minute expiration
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    await db.insert(emailOtps).values({
+      email: user.email,
+      otpHash: hashedOtp,
+      purpose: 'login',
+      expiresAt,
+      attempts: 0
+    });
+    
+    // Send email with OTP
+    await sendEmail({
+      to: user.email,
+      subject: 'Your CodeConnect Login Code',
+      text: `Your CodeConnect Login Code: ${otp}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this code, please ignore this email.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #4F46E5;">Your Login Code</h2>
+          <p>Enter this code to complete your login:</p>
+          <div style="background: #F3F4F6; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; margin: 20px 0;">
+            ${otp}
+          </div>
+          <p style="color: #6B7280; font-size: 14px;">This code expires in 10 minutes.</p>
+          <p style="color: #6B7280; font-size: 14px;">If you didn't request this code, please ignore this email.</p>
+        </div>
+      `
+    });
+  }
+
+  async verifyEmailOTP(email: string, otp: string): Promise<{ valid: boolean; userId?: string }> {
+    const user = await this.getUserByEmail(email);
+    if (!user) {
+      return { valid: false };
+    }
+
+    // Get the most recent OTP for this user
+    const [otpRecord] = await db.select()
+      .from(emailOtps)
+      .where(and(
+        eq(emailOtps.email, user.email),
+        eq(emailOtps.verified, false)
+      ))
+      .orderBy(desc(emailOtps.createdAt))
+      .limit(1);
+
+    if (!otpRecord) {
+      return { valid: false };
+    }
+
+    // Check if OTP has expired
+    if (new Date() > otpRecord.expiresAt) {
+      return { valid: false };
+    }
+
+    // Check if max attempts exceeded
+    if (otpRecord.attempts >= 5) {
+      return { valid: false };
+    }
+
+    // Verify OTP
+    const bcrypt = await import('bcrypt');
+    const isValid = await bcrypt.compare(otp, otpRecord.otpHash);
+
+    if (!isValid) {
+      // Increment attempts
+      await db.update(emailOtps)
+        .set({ attempts: otpRecord.attempts + 1 })
+        .where(eq(emailOtps.id, otpRecord.id));
+      return { valid: false };
+    }
+
+    // Mark OTP as verified
+    await db.update(emailOtps)
+      .set({ verified: true })
+      .where(eq(emailOtps.id, otpRecord.id));
+
+    return { valid: true, userId: user.id };
   }
 
   // Azure VM Management operations

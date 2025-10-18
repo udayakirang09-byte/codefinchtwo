@@ -20,6 +20,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [require2FA, setRequire2FA] = useState(false);
   const [totpToken, setTotpToken] = useState("");
+  const [emailOtp, setEmailOtp] = useState("");
   const { toast} = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -83,9 +84,12 @@ export default function Login() {
         password: trimmedPassword 
       };
       
-      // Include 2FA token if provided
+      // Include 2FA tokens if provided (either one can be used)
       if (totpToken) {
         requestBody.totpToken = totpToken.trim();
+      }
+      if (emailOtp) {
+        requestBody.emailOtp = emailOtp.trim();
       }
       
       const response = await fetch('/api/auth/login', {
@@ -97,7 +101,7 @@ export default function Login() {
       if (!response.ok) {
         toast({
           title: "Login Failed",
-          description: totpToken ? "Invalid 2FA code. Please try again." : "Invalid email or password. Please check your credentials and try again.",
+          description: (totpToken || emailOtp) ? "Invalid 2FA code. Please try again." : "Invalid email or password. Please check your credentials and try again.",
           variant: "destructive",
         });
         setLoading(false);
@@ -112,7 +116,7 @@ export default function Login() {
         setLoading(false);
         toast({
           title: "2FA Required",
-          description: "Please enter the 6-digit code from Microsoft Authenticator.",
+          description: "Please enter either the code from Microsoft Authenticator or the code sent to your email.",
           variant: "default",
         });
         return;
@@ -228,24 +232,55 @@ export default function Login() {
             </div>
 
             {require2FA && (
-              <div className="space-y-2 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <Label htmlFor="totpToken" className="text-blue-900 font-semibold">
-                  Two-Factor Authentication Code
-                </Label>
-                <p className="text-sm text-blue-700 mb-2">
-                  Enter the 6-digit code from Microsoft Authenticator
-                </p>
-                <Input
-                  id="totpToken"
-                  type="text"
-                  maxLength={6}
-                  value={totpToken}
-                  onChange={(e) => setTotpToken(e.target.value.replace(/\D/g, ''))}
-                  placeholder="123456"
-                  className="text-center text-2xl tracking-widest"
-                  data-testid="input-2fa-code"
-                  autoFocus
-                />
+              <div className="space-y-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="text-center mb-3">
+                  <Label className="text-blue-900 font-semibold text-lg">
+                    Enter 2FA code or OTP
+                  </Label>
+                  <p className="text-sm text-blue-700 mt-1">
+                    Enter either code - first valid one wins
+                  </p>
+                </div>
+
+                {/* Two input boxes side by side */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Authenticator App Code Box */}
+                  <div className="space-y-2 bg-white rounded-lg p-3 border border-blue-300">
+                    <Label htmlFor="totpToken" className="text-blue-900 font-medium text-sm flex items-center gap-1">
+                      <span className="inline-block w-2 h-2 bg-blue-600 rounded-full"></span>
+                      Authenticator App code
+                    </Label>
+                    <Input
+                      id="totpToken"
+                      type="text"
+                      maxLength={6}
+                      value={totpToken}
+                      onChange={(e) => setTotpToken(e.target.value.replace(/\D/g, ''))}
+                      placeholder="123456"
+                      className="text-center text-xl tracking-widest font-mono"
+                      data-testid="input-authenticator-code"
+                      autoFocus
+                    />
+                  </div>
+
+                  {/* Email OTP Box */}
+                  <div className="space-y-2 bg-white rounded-lg p-3 border border-blue-300">
+                    <Label htmlFor="emailOtp" className="text-blue-900 font-medium text-sm flex items-center gap-1">
+                      <span className="inline-block w-2 h-2 bg-blue-600 rounded-full"></span>
+                      Email OTP (if received)
+                    </Label>
+                    <Input
+                      id="emailOtp"
+                      type="text"
+                      maxLength={6}
+                      value={emailOtp}
+                      onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, ''))}
+                      placeholder="123456"
+                      className="text-center text-xl tracking-widest font-mono"
+                      data-testid="input-email-otp"
+                    />
+                  </div>
+                </div>
               </div>
             )}
 
