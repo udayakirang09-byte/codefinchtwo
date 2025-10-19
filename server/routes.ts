@@ -43,6 +43,7 @@ import {
   emailOtps,
   notifications,
   bookingHolds,
+  sessionDossiers,
   type InsertAdminConfig, 
   type InsertFooterLink, 
   type InsertTimeSlot, 
@@ -9679,6 +9680,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   console.log('✅ Azure Application Insights API routes registered successfully!');
+
+  // PC-5, LOG-4, GOV-2: Redacted Media Clips API Routes
+  const { mediaRedaction } = await import('./media-redaction');
+
+  // Get all redacted clips for a session dossier (admin only)
+  app.get('/api/admin/moderation/dossier/:dossierId/clips', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      const { dossierId } = req.params;
+      
+      // Get session ID from dossier
+      const dossier = await db
+        .select()
+        .from(sessionDossiers)
+        .where(eq(sessionDossiers.id, dossierId))
+        .limit(1);
+
+      if (dossier.length === 0) {
+        return res.status(404).json({ message: 'Dossier not found' });
+      }
+
+      const sessionId = dossier[0].sessionId;
+      
+      // Get redacted clips with signed URLs (24-hour expiry)
+      const clips = await mediaRedaction.getRedactedClipsWithUrls(sessionId, dossierId, req.user.id);
+
+      console.log(`📦 Admin ${req.user.id} accessed ${clips.length} redacted clips for dossier ${dossierId}`);
+      
+      res.json({
+        dossierId,
+        sessionId,
+        clips,
+        clipCount: clips.length,
+        expiryNotice: 'Signed URLs expire in 24 hours'
+      });
+
+    } catch (error) {
+      console.error('❌ Error fetching redacted clips:', error);
+      res.status(500).json({ message: 'Failed to fetch redacted clips' });
+    }
+  });
+
+  // Get a specific redacted clip with secure signed URL (admin only)
+  app.get('/api/admin/moderation/clip/:clipId/secure-url', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      const { clipId } = req.params;
+      const { sessionId } = req.query;
+
+      if (!sessionId) {
+        return res.status(400).json({ message: 'sessionId query parameter required' });
+      }
+
+      // Get secure clip URL with 24-hour expiry
+      const result = await mediaRedaction.getSecureClipUrl(clipId, sessionId as string, req.user.id);
+
+      if (!result.clip) {
+        return res.status(404).json({ message: 'Clip not found' });
+      }
+
+      console.log(`🔒 Admin ${req.user.id} accessed secure URL for clip ${clipId}`);
+
+      res.json({
+        clip: result.clip,
+        secureUrl: result.secureUrl,
+        expiresAt: result.expiresAt,
+        warning: 'This URL expires in 24 hours. Do not share externally.'
+      });
+
+    } catch (error) {
+      console.error('❌ Error generating secure clip URL:', error);
+      res.status(500).json({ message: 'Failed to generate secure URL' });
+    }
+  });
+
+  // Get redacted clips metadata for a session (no signed URLs, lighter response)
+  app.get('/api/admin/moderation/session/:sessionId/clips-metadata', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      const { sessionId } = req.params;
+      
+      // Get clips without generating signed URLs (faster for metadata browsing)
+      const clips = await mediaRedaction.getRedactedClipsForSession(sessionId, sessionId);
+
+      res.json({
+        sessionId,
+        clips,
+        clipCount: clips.length,
+        note: 'Use /clips endpoint to get signed URLs for viewing'
+      });
+
+    } catch (error) {
+      console.error('❌ Error fetching clips metadata:', error);
+      res.status(500).json({ message: 'Failed to fetch clips metadata' });
+    }
+  });
+
+  console.log('✅ Redacted Media Clips API routes registered successfully!');
 
   const httpServer = createServer(app);
   return httpServer;
