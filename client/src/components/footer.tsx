@@ -1,8 +1,9 @@
-import { Code, Cookie } from "lucide-react";
+import { Cookie } from "lucide-react";
 import { Link } from "wouter";
 import { CookieSettingsDialog } from "@/components/cookie-policy";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
+import logoImage from "@assets/image_1760912565984.png";
 
 interface UiConfigResponse {
   footerLinks: {
@@ -43,7 +44,11 @@ export default function Footer() {
         <div className="grid md:grid-cols-4 gap-8 mb-12">
           <div>
             <div className="flex items-center text-2xl font-bold text-accent mb-4" data-testid="text-footer-logo">
-              <Code className="mr-2" size={28} />
+              <img 
+                src={logoImage} 
+                alt="CodeConnect Logo" 
+                className="h-10 w-10 object-contain mr-3"
+              />
               CodeConnect
             </div>
             <p className="text-white/80 mb-6" data-testid="text-footer-description">

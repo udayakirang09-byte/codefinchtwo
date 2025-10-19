@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Code, Menu, X, User, LogOut, Home, AlertTriangle } from "lucide-react";
+import { Menu, X, User, LogOut, Home, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
+import logoImage from "@assets/image_1760912565984.png";
 
 export default function Navigation() {
   const [location] = useLocation();
@@ -86,14 +87,18 @@ export default function Navigation() {
         <div className="flex justify-between items-center h-16">
           <Link 
             href="/" 
-            className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 ${
+            className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
               location === '/' || location === '' 
                 ? 'bg-primary/10 border-2 border-primary/20 shadow-sm' 
                 : 'hover:bg-primary/5'
             }`} 
             data-testid="link-logo"
           >
-            <Code className={`${location === '/' || location === '' ? 'text-primary' : 'text-primary'}`} size={28} />
+            <img 
+              src={logoImage} 
+              alt="CodeConnect Logo" 
+              className="h-10 w-10 object-contain"
+            />
             <span className={`text-2xl font-bold text-gradient ${
               location === '/' || location === '' ? 'drop-shadow-sm' : ''
             }`}>
