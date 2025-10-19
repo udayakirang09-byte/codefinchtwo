@@ -481,3 +481,160 @@ View all incidents at: ${process.env.REPLIT_DEV_DOMAIN || 'https://codeconnect.c
 
   return { subject, html, text };
 }
+
+export function generateTeacherRestrictionEmail(
+  teacherEmail: string,
+  teacherName: string,
+  restrictionType: 'warned' | 'suspended' | 'banned',
+  violationCount: number,
+  restrictionReason?: string
+): { subject: string, html: string, text: string } {
+  const restrictionTitles = {
+    warned: '⚠️ Account Warning',
+    suspended: '🚫 Account Suspended',
+    banned: '❌ Account Permanently Banned'
+  };
+  
+  const restrictionColors = {
+    warned: '#ffc107',
+    suspended: '#f97316',
+    banned: '#ef4444'
+  };
+
+  const restrictionMessages = {
+    warned: {
+      title: 'Your Account Has Been Warned',
+      description: 'Our AI moderation system has detected violations of our community guidelines during your teaching sessions.',
+      impact: 'You can continue using your account, but please be aware that additional violations may lead to suspension or permanent ban.',
+      nextThreshold: 5,
+      nextAction: 'account suspension'
+    },
+    suspended: {
+      title: 'Your Account Has Been Suspended',
+      description: 'Due to repeated violations of our community guidelines, your teaching account has been temporarily suspended.',
+      impact: 'You are unable to conduct sessions or access student materials. This suspension will be reviewed by our moderation team.',
+      nextThreshold: 10,
+      nextAction: 'permanent ban'
+    },
+    banned: {
+      title: 'Your Account Has Been Permanently Banned',
+      description: 'Your teaching account has been permanently banned due to severe or repeated violations of our community guidelines.',
+      impact: 'You will no longer be able to access the platform, conduct sessions, or interact with students.',
+      nextThreshold: null,
+      nextAction: null
+    }
+  };
+
+  const info = restrictionMessages[restrictionType];
+  const subject = `${restrictionTitles[restrictionType]} - CodeConnect`;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, ${restrictionColors[restrictionType]} 0%, ${restrictionColors[restrictionType]}dd 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }
+        .alert-box { background: #fff; border-left: 4px solid ${restrictionColors[restrictionType]}; padding: 15px; margin: 20px 0; }
+        .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+        .info-box { background: #e0e7ff; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0; }
+        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
+        .button { display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 6px; margin-top: 10px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>${restrictionTitles[restrictionType]}</h1>
+          <p>CodeConnect Moderation Team</p>
+        </div>
+        <div class="content">
+          <p>Dear ${teacherName},</p>
+          <p>${info.description}</p>
+          
+          <div class="alert-box">
+            <h3>Restriction Details:</h3>
+            <ul>
+              <li><strong>Status:</strong> ${restrictionType.charAt(0).toUpperCase() + restrictionType.slice(1)}</li>
+              <li><strong>Total Violations:</strong> ${violationCount}</li>
+              ${restrictionReason ? `<li><strong>Reason:</strong> ${restrictionReason}</li>` : ''}
+            </ul>
+          </div>
+
+          <div class="warning-box">
+            <h3>Impact on Your Account:</h3>
+            <p>${info.impact}</p>
+          </div>
+
+          ${info.nextThreshold ? `
+          <div class="info-box">
+            <h3>⚠️ Important Warning:</h3>
+            <p>If your violation count reaches <strong>${info.nextThreshold}</strong>, your account will be subject to <strong>${info.nextAction}</strong>.</p>
+            <p>Please review our community guidelines and ensure all future sessions comply with our safety standards.</p>
+          </div>
+          ` : ''}
+
+          ${restrictionType !== 'banned' ? `
+          <div class="info-box">
+            <h3>📋 What You Can Do:</h3>
+            <ul>
+              <li>Review your moderation status in the teacher dashboard</li>
+              <li>View detailed violation history and AI moderation logs</li>
+              ${restrictionType === 'suspended' ? '<li>Submit an appeal if you believe this decision was made in error</li>' : ''}
+              <li>Read our community guidelines and safety policies</li>
+            </ul>
+            <a href="${process.env.REPLIT_DEV_DOMAIN || 'https://codeconnect.com'}/teacher/moderation-status" class="button">View Moderation Status</a>
+          </div>
+          ` : ''}
+
+          <p style="margin-top: 30px;">If you have questions or believe this decision was made in error, please contact our moderation team at moderation@codeconnect.com</p>
+        </div>
+        <div class="footer">
+          <p>© 2025 CodeConnect. All rights reserved.</p>
+          <p>This email was sent to ${teacherEmail}</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+${restrictionTitles[restrictionType]} - CodeConnect
+
+Dear ${teacherName},
+
+${info.description}
+
+Restriction Details:
+- Status: ${restrictionType.charAt(0).toUpperCase() + restrictionType.slice(1)}
+- Total Violations: ${violationCount}
+${restrictionReason ? `- Reason: ${restrictionReason}` : ''}
+
+Impact on Your Account:
+${info.impact}
+
+${info.nextThreshold ? `
+⚠️ Important Warning:
+If your violation count reaches ${info.nextThreshold}, your account will be subject to ${info.nextAction}.
+Please review our community guidelines and ensure all future sessions comply with our safety standards.
+` : ''}
+
+${restrictionType !== 'banned' ? `
+What You Can Do:
+- Review your moderation status in the teacher dashboard
+- View detailed violation history and AI moderation logs
+${restrictionType === 'suspended' ? '- Submit an appeal if you believe this decision was made in error' : ''}
+- Read our community guidelines and safety policies
+
+View your moderation status: ${process.env.REPLIT_DEV_DOMAIN || 'https://codeconnect.com'}/teacher/moderation-status
+` : ''}
+
+If you have questions or believe this decision was made in error, please contact our moderation team at moderation@codeconnect.com
+
+© 2025 CodeConnect. All rights reserved.
+  `;
+
+  return { subject, html, text };
+}

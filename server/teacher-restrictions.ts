@@ -1,6 +1,7 @@
 import { db } from "./db";
-import { mentors, aiModerationLogs, sessionDossiers } from "@shared/schema";
+import { mentors, aiModerationLogs, sessionDossiers, users } from "@shared/schema";
 import { eq, and, gte, desc, count } from "drizzle-orm";
+import { sendEmail, generateTeacherRestrictionEmail } from "./email";
 
 export interface RestrictionPolicy {
   warningThreshold: number; // Number of violations before warning
@@ -25,6 +26,28 @@ export async function updateTeacherRestrictionStatus(
   policy: RestrictionPolicy = defaultPolicy
 ): Promise<void> {
   try {
+    // Get current mentor data to check for changes
+    const currentMentor = await db.query.mentors.findFirst({
+      where: eq(mentors.id, teacherId),
+      columns: {
+        accountRestriction: true,
+        userId: true
+      }
+    });
+
+    if (!currentMentor) {
+      throw new Error(`Teacher ${teacherId} not found`);
+    }
+
+    // Get user data for email notification
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, currentMentor.userId),
+      columns: {
+        email: true,
+        username: true
+      }
+    });
+
     // Count total critical and high-priority violations for this teacher
     const recentViolations = await db
       .select({ count: count() })
@@ -66,6 +89,31 @@ export async function updateTeacherRestrictionStatus(
       .where(eq(mentors.id, teacherId));
 
     console.log(`✅ Updated teacher ${teacherId} restriction status: ${restrictionLevel} (${violationCount} violations)`);
+
+    // Send email notification if restriction level changed and user exists
+    if (user && restrictionLevel !== 'none' && currentMentor.accountRestriction !== restrictionLevel) {
+      try {
+        const emailContent = generateTeacherRestrictionEmail(
+          user.email,
+          user.username || 'Teacher',
+          restrictionLevel,
+          violationCount,
+          restrictionReason || undefined
+        );
+
+        await sendEmail({
+          to: user.email,
+          subject: emailContent.subject,
+          text: emailContent.text,
+          html: emailContent.html
+        });
+
+        console.log(`📧 Restriction notification email sent to ${user.email} (${restrictionLevel})`);
+      } catch (emailError) {
+        console.error(`📧 Failed to send restriction email to ${user.email}:`, emailError);
+        // Don't throw - email failure shouldn't block restriction update
+      }
+    }
 
   } catch (error) {
     console.error(`❌ Error updating teacher restriction status for ${teacherId}:`, error);
