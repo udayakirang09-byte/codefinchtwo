@@ -1,4 +1,5 @@
 import type { IStorage } from './storage';
+import { processSessionAfterClass } from './post-class-processor.js';
 
 export class BookingCompletionScheduler {
   private storage: IStorage;
@@ -54,6 +55,10 @@ export class BookingCompletionScheduler {
         try {
           await this.storage.updateBookingStatus(booking.id, 'completed');
           console.log(`✅ Marked booking ${booking.id} as completed`);
+          
+          // Generate session dossier with CRS scoring
+          const sessionId = booking.id; // Using booking ID as session ID
+          await processSessionAfterClass(booking.id, sessionId);
         } catch (error) {
           console.error(`❌ Failed to complete booking ${booking.id}:`, error);
         }

@@ -8771,6 +8771,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   console.log('✅ Admin UI Configuration API routes registered successfully!');
 
+  // AI Moderation Review Queue Routes
+  const { getAdminReviewQueue, markSessionReviewed } = await import('./post-class-processor.js');
+  
+  // Get admin review queue - SECURED (admin only)
+  app.get('/api/admin/moderation/review-queue', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      const { priority } = req.query;
+      const validPriorities = ['low', 'medium', 'high', 'critical'];
+      
+      if (priority && !validPriorities.includes(priority as string)) {
+        return res.status(400).json({ message: 'Invalid priority. Must be one of: low, medium, high, critical' });
+      }
+
+      const queue = await getAdminReviewQueue(priority as 'low' | 'medium' | 'high' | 'critical' | undefined);
+      res.json(queue);
+    } catch (error) {
+      console.error('❌ Error fetching review queue:', error);
+      res.status(500).json({ message: 'Failed to fetch review queue' });
+    }
+  });
+
+  // Mark session dossier as reviewed - SECURED (admin only)
+  app.post('/api/admin/moderation/review/:dossierId', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      const { dossierId } = req.params;
+      const { reviewNotes, actionTaken } = req.body;
+
+      const success = await markSessionReviewed(
+        dossierId,
+        req.user.id,
+        reviewNotes,
+        actionTaken
+      );
+
+      if (success) {
+        res.json({ success: true, message: 'Session dossier marked as reviewed' });
+      } else {
+        res.status(500).json({ message: 'Failed to mark session as reviewed' });
+      }
+    } catch (error) {
+      console.error('❌ Error marking session as reviewed:', error);
+      res.status(500).json({ message: 'Failed to mark session as reviewed' });
+    }
+  });
+
+  console.log('✅ AI Moderation Review Queue API routes registered successfully!');
+
   // Admin Booking Limits Configuration Routes
   // Get admin booking limits configuration - PUBLIC (needed for booking forms)
   app.get('/api/admin/booking-limits', async (req: any, res) => {
