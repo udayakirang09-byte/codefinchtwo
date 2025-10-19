@@ -442,9 +442,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   try {
     const bookingLimitsConfig = await storage.getAdminBookingLimits();
     if (bookingLimitsConfig) {
-      DEFAULT_DAILY_BOOKING_LIMIT = bookingLimitsConfig.dailyLimit;
-      DEFAULT_WEEKLY_BOOKING_LIMIT = bookingLimitsConfig.weeklyLimit;
-      WEEKLY_LIMIT_ENABLED = bookingLimitsConfig.weeklyLimitEnabled;
+      DEFAULT_DAILY_BOOKING_LIMIT = bookingLimitsConfig.dailyBookingLimit;
+      DEFAULT_WEEKLY_BOOKING_LIMIT = bookingLimitsConfig.weeklyBookingLimit;
+      WEEKLY_LIMIT_ENABLED = bookingLimitsConfig.enableWeeklyLimit;
       console.log(`📊 Loaded booking limits from database: Daily=${DEFAULT_DAILY_BOOKING_LIMIT}, Weekly=${DEFAULT_WEEKLY_BOOKING_LIMIT} (enabled: ${WEEKLY_LIMIT_ENABLED})`);
     } else {
       console.log(`📊 No booking limits config found in database, using defaults: Daily=${DEFAULT_DAILY_BOOKING_LIMIT}, Weekly=${DEFAULT_WEEKLY_BOOKING_LIMIT} (enabled: ${WEEKLY_LIMIT_ENABLED})`);
@@ -8788,20 +8788,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Admin access required' });
       }
 
-      const { dailyLimit, weeklyLimit, weeklyLimitEnabled } = req.body;
+      const { dailyBookingLimit, weeklyBookingLimit, enableWeeklyLimit } = req.body;
       
       // Update database
-      await storage.updateAdminBookingLimits({ dailyLimit, weeklyLimit, weeklyLimitEnabled });
+      await storage.updateAdminBookingLimits({ dailyBookingLimit, weeklyBookingLimit, enableWeeklyLimit });
       
       // Update in-memory variables
-      if (dailyLimit !== undefined) {
-        DEFAULT_DAILY_BOOKING_LIMIT = dailyLimit;
+      if (dailyBookingLimit !== undefined) {
+        DEFAULT_DAILY_BOOKING_LIMIT = dailyBookingLimit;
       }
-      if (weeklyLimit !== undefined) {
-        DEFAULT_WEEKLY_BOOKING_LIMIT = weeklyLimit;
+      if (weeklyBookingLimit !== undefined) {
+        DEFAULT_WEEKLY_BOOKING_LIMIT = weeklyBookingLimit;
       }
-      if (weeklyLimitEnabled !== undefined) {
-        WEEKLY_LIMIT_ENABLED = weeklyLimitEnabled;
+      if (enableWeeklyLimit !== undefined) {
+        WEEKLY_LIMIT_ENABLED = enableWeeklyLimit;
       }
       
       console.log(`📊 Booking limits updated: Daily=${DEFAULT_DAILY_BOOKING_LIMIT}, Weekly=${DEFAULT_WEEKLY_BOOKING_LIMIT} (enabled: ${WEEKLY_LIMIT_ENABLED})`);

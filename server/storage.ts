@@ -379,7 +379,7 @@ export interface IStorage {
   
   // Admin Booking Limits Configuration operations
   getAdminBookingLimits(): Promise<any | undefined>;
-  updateAdminBookingLimits(config: { dailyLimit?: number; weeklyLimit?: number | null; weeklyLimitEnabled?: boolean }): Promise<void>;
+  updateAdminBookingLimits(config: { dailyBookingLimit?: number; weeklyBookingLimit?: number | null; enableWeeklyLimit?: boolean }): Promise<void>;
   
   // Azure Storage Config operations
   updateAzureStorageConfig(config: { storageAccountName: string; containerName: string; retentionMonths: number }): Promise<any>;
@@ -2760,24 +2760,24 @@ export class DatabaseStorage implements IStorage {
     return results.length > 0 ? results[0] : undefined;
   }
 
-  async updateAdminBookingLimits(config: { dailyLimit?: number; weeklyLimit?: number | null; weeklyLimitEnabled?: boolean }): Promise<void> {
+  async updateAdminBookingLimits(config: { dailyBookingLimit?: number; weeklyBookingLimit?: number | null; enableWeeklyLimit?: boolean }): Promise<void> {
     const existing = await this.getAdminBookingLimits();
     
     if (existing) {
       await db
         .update(adminBookingLimits)
         .set({ 
-          ...(config.dailyLimit !== undefined && { dailyLimit: config.dailyLimit }),
-          ...(config.weeklyLimit !== undefined && { weeklyLimit: config.weeklyLimit }),
-          ...(config.weeklyLimitEnabled !== undefined && { weeklyLimitEnabled: config.weeklyLimitEnabled }),
+          ...(config.dailyBookingLimit !== undefined && { dailyBookingLimit: config.dailyBookingLimit }),
+          ...(config.weeklyBookingLimit !== undefined && { weeklyBookingLimit: config.weeklyBookingLimit }),
+          ...(config.enableWeeklyLimit !== undefined && { enableWeeklyLimit: config.enableWeeklyLimit }),
           updatedAt: new Date() 
         })
         .where(eq(adminBookingLimits.id, existing.id));
     } else {
       await db.insert(adminBookingLimits).values({
-        dailyLimit: config.dailyLimit ?? 3,
-        weeklyLimit: config.weeklyLimit ?? null,
-        weeklyLimitEnabled: config.weeklyLimitEnabled ?? false,
+        dailyBookingLimit: config.dailyBookingLimit ?? 3,
+        weeklyBookingLimit: config.weeklyBookingLimit ?? null,
+        enableWeeklyLimit: config.enableWeeklyLimit ?? false,
       });
     }
   }

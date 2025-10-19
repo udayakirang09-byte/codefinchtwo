@@ -20,9 +20,9 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
 interface BookingLimitsConfig {
-  dailyLimit: number;
-  weeklyLimit: number;
-  weeklyLimitEnabled: boolean;
+  dailyBookingLimit: number;
+  weeklyBookingLimit: number;
+  enableWeeklyLimit: boolean;
 }
 
 export default function AdminBookingLimitsConfig() {
@@ -35,7 +35,7 @@ export default function AdminBookingLimitsConfig() {
   const [weeklyLimitEnabled, setWeeklyLimitEnabled] = useState(false);
 
   // Fetch current booking limits configuration
-  const { data: config, isLoading, error } = useQuery<BookingLimitsConfig>({
+  const { data: config, isLoading, error} = useQuery<BookingLimitsConfig>({
     queryKey: ['/api/admin/booking-limits'],
     queryFn: async () => {
       const result = await apiRequest('GET', '/api/admin/booking-limits');
@@ -47,9 +47,9 @@ export default function AdminBookingLimitsConfig() {
   // Sync state when config loads
   useEffect(() => {
     if (config) {
-      setDailyLimit(config.dailyLimit);
-      setWeeklyLimit(config.weeklyLimit);
-      setWeeklyLimitEnabled(config.weeklyLimitEnabled);
+      setDailyLimit(config.dailyBookingLimit);
+      setWeeklyLimit(config.weeklyBookingLimit);
+      setWeeklyLimitEnabled(config.enableWeeklyLimit);
       setHasChanges(false);
     }
   }, [config]);
@@ -99,14 +99,14 @@ export default function AdminBookingLimitsConfig() {
   };
 
   const handleSave = () => {
-    updateConfigMutation.mutate({ dailyLimit, weeklyLimit, weeklyLimitEnabled });
+    updateConfigMutation.mutate({ dailyBookingLimit: dailyLimit, weeklyBookingLimit: weeklyLimit, enableWeeklyLimit: weeklyLimitEnabled });
   };
 
   const handleReset = () => {
     if (config) {
-      setDailyLimit(config.dailyLimit);
-      setWeeklyLimit(config.weeklyLimit);
-      setWeeklyLimitEnabled(config.weeklyLimitEnabled);
+      setDailyLimit(config.dailyBookingLimit);
+      setWeeklyLimit(config.weeklyBookingLimit);
+      setWeeklyLimitEnabled(config.enableWeeklyLimit);
       setHasChanges(false);
     }
   };
