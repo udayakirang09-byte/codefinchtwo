@@ -8616,8 +8616,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const recordings = await storage.getMergedRecordingsForStudent(studentId);
-      console.log(`📹 [RECORDINGS] Returning ${recordings.length} recordings for student ${studentId}`);
-      res.json(recordings);
+      
+      // Feature Gap #2: Demo Recording Visibility Logic
+      // Lock demo recordings until student completes ≥1 paid class with the same teacher
+      const recordingsWithLockStatus = await Promise.all(recordings.map(async (recording: any) => {
+        let isLocked = false;
+        
+        if (recording.isDemoRecording) {
+          // Check if student has completed at least 1 paid class with this teacher
+          const paidClassesWithTeacher = await db
+            .select()
+            .from(bookings)
+            .where(
+              and(
+                eq(bookings.studentId, studentId),
+                eq(bookings.mentorId, recording.mentorId),
+                eq(bookings.status, 'completed'),
+                eq(bookings.sessionType, 'regular') // Regular sessions are paid
+              )
+            );
+          
+          isLocked = paidClassesWithTeacher.length === 0;
+        }
+        
+        return {
+          ...recording,
+          isLocked
+        };
+      }));
+      
+      console.log(`📹 [RECORDINGS] Returning ${recordingsWithLockStatus.length} recordings for student ${studentId}`);
+      res.json(recordingsWithLockStatus);
     } catch (error) {
       console.error('Error fetching merged recordings:', error);
       res.status(500).json({ message: 'Failed to fetch merged recordings' });

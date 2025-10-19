@@ -61,7 +61,7 @@ export class RecordingScheduler {
 
   private async mergeBookingRecording(booking: any) {
     const startTime = Date.now();
-    const { id: bookingId, studentId, mentorId, scheduledAt } = booking;
+    const { id: bookingId, studentId, mentorId, scheduledAt, sessionType } = booking;
     
     const parts = await this.storage.getRecordingPartsByBooking(bookingId);
 
@@ -115,10 +115,12 @@ export class RecordingScheduler {
       const expiresAt = new Date(classDate);
       expiresAt.setMonth(expiresAt.getMonth() + retentionMonths);
 
+      // Feature Gap #2: Set isDemoRecording flag for demo sessions
       await this.storage.createMergedRecording({
         bookingId,
         studentId,
         mentorId,
+        isDemoRecording: sessionType === 'demo', // Lock demo recordings until student completes ≥1 paid class
         blobPath: mergeResult.blobPath,
         blobUrl: mergeResult.url,
         fileSizeBytes: totalSize,
