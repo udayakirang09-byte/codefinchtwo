@@ -208,6 +208,14 @@ export const reviews = pgTable("reviews", {
   mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
   rating: integer("rating").notNull(), // 1-5 stars
   comment: text("comment"),
+  // FB-4: Extended feedback fields
+  thoughts: text("thoughts"),
+  whatWorked: text("what_worked"),
+  improvements: text("improvements"),
+  recommend: boolean("recommend").default(true),
+  // LOG-1: AI feedback analysis
+  aiFlagged: boolean("ai_flagged").default(false),
+  sentiment: decimal("sentiment", { precision: 3, scale: 2 }), // -1 to +1
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
   // Index for getReviewsByMentor() query
@@ -1147,6 +1155,64 @@ export const quantumTasks = pgTable("quantum_tasks", {
   completedAt: timestamp("completed_at"),
 });
 
+// AI Moderation & Safety System Tables (34 Requirements)
+
+// SA-8 & LOG-2: AI Moderation Logs
+export const aiModerationLogs = pgTable("ai_moderation_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull(),
+  bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
+  teacherName: varchar("teacher_name").notNull(),
+  studentName: varchar("student_name").notNull(),
+  sessionName: varchar("session_name").notNull(),
+  subjectName: varchar("subject_name").notNull(),
+  modality: varchar("modality").notNull(), // text, audio, video, chat, screen
+  aiConfidence: decimal("ai_confidence", { precision: 3, scale: 2 }).notNull(), // 0-1
+  sentiment: decimal("sentiment", { precision: 3, scale: 2 }), // -1 to +1
+  detectedTerm: text("detected_term"),
+  aiVerdict: varchar("ai_verdict").notNull(), // safe, alert, hard_violation
+  mediaRefs: jsonb("media_refs").$type<string[]>().default([]), // Redacted media URLs
+  tsStart: timestamp("ts_start").notNull(),
+  tsEnd: timestamp("ts_end").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  sessionIdIdx: index("ai_moderation_logs_session_id_idx").on(table.sessionId),
+  bookingIdIdx: index("ai_moderation_logs_booking_id_idx").on(table.bookingId),
+  verdictIdx: index("ai_moderation_logs_verdict_idx").on(table.aiVerdict),
+}));
+
+// PC-1 & LOG-3: Session Dossiers (Post-class summary)
+export const sessionDossiers = pgTable("session_dossiers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull().unique(),
+  bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
+  safetyScore: decimal("safety_score", { precision: 5, scale: 2 }).notNull(), // PC-2: 0-100
+  feedbackScore: decimal("feedback_score", { precision: 5, scale: 2 }), // PC-3: 0-100
+  crs: decimal("crs", { precision: 5, scale: 2 }).notNull(), // PC-4: Correlation Risk Score
+  crsJson: jsonb("crs_json").$type<Record<string, any>>().default({}), // GOV-4: Explainability
+  reviewStatus: varchar("review_status").notNull().default("passed"), // PC-6: passed, queued, reviewed, cleared
+  adminNotes: text("admin_notes"),
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  sessionIdIdx: index("session_dossiers_session_id_idx").on(table.sessionId),
+  reviewStatusIdx: index("session_dossiers_review_status_idx").on(table.reviewStatus),
+  crsIdx: index("session_dossiers_crs_idx").on(table.crs),
+}));
+
+// GOV-1 & FB-2: Support Configuration (Admin toggles)
+export const supportConfig = pgTable("support_config", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  enableEmailSupport: boolean("enable_email_support").default(false),
+  enableChatSupport: boolean("enable_chat_support").default(false),
+  enablePhoneSupport: boolean("enable_phone_support").default(false),
+  supportEmail: varchar("support_email").default("support@codeconnect.com"),
+  supportPhone: varchar("support_phone"),
+  updatedBy: varchar("updated_by").references(() => users.id),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // KADB Help System Tables
 export const helpTickets = pgTable("help_tickets", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -1354,6 +1420,13 @@ export const insertHelpKnowledgeBaseSchema = createInsertSchema(helpKnowledgeBas
 
 export const insertHelpTicketMessageSchema = createInsertSchema(helpTicketMessages);
 
+// AI Moderation & Safety System Insert Schemas
+export const insertAiModerationLogSchema = createInsertSchema(aiModerationLogs);
+
+export const insertSessionDossierSchema = createInsertSchema(sessionDossiers);
+
+export const insertSupportConfigSchema = createInsertSchema(supportConfig);
+
 // Payment System Types
 export type PaymentMethod = typeof paymentMethods.$inferSelect;
 export type InsertPaymentMethod = z.infer<typeof insertPaymentMethodSchema>;
@@ -1413,6 +1486,16 @@ export type InsertHelpKnowledgeBase = z.infer<typeof insertHelpKnowledgeBaseSche
 
 export type HelpTicketMessage = typeof helpTicketMessages.$inferSelect;
 export type InsertHelpTicketMessage = z.infer<typeof insertHelpTicketMessageSchema>;
+
+// AI Moderation & Safety System Types
+export type AiModerationLog = typeof aiModerationLogs.$inferSelect;
+export type InsertAiModerationLog = z.infer<typeof insertAiModerationLogSchema>;
+
+export type SessionDossier = typeof sessionDossiers.$inferSelect;
+export type InsertSessionDossier = z.infer<typeof insertSessionDossierSchema>;
+
+export type SupportConfig = typeof supportConfig.$inferSelect;
+export type InsertSupportConfig = z.infer<typeof insertSupportConfigSchema>;
 
 // Forum System Tables
 export const forumCategories = pgTable("forum_categories", {

@@ -14,6 +14,8 @@
     "typecheck:watch": "tsc --noEmit -w"
   },
   "dependencies": {
+    "@azure-rest/ai-content-safety": "^1.0.1",
+    "@azure/core-auth": "^1.10.1",
     "@azure/storage-blob": "^12.28.0",
     "@hookform/resolvers": "^3.10.0",
     "@jridgewell/trace-mapping": "^0.3.25",
