@@ -103,6 +103,11 @@ export const mentors = pgTable("mentors", {
   isActive: boolean("is_active").default(true),
   demoEnabled: boolean("demo_enabled").default(false), // C2: Allow teachers to enable/disable demo bookings
   availableSlots: jsonb("available_slots").$type<{ day: string; times: string[] }[]>().default([]),
+  // AI Moderation & Account Restrictions
+  accountRestriction: varchar("account_restriction").default("none"), // none, warned, suspended, banned
+  moderationViolations: integer("moderation_violations").default(0), // Total violation count
+  lastViolationAt: timestamp("last_violation_at"), // Last violation timestamp
+  restrictionReason: text("restriction_reason"), // Reason for restriction if any
   // Admin Approval Workflow
   approvalStatus: varchar("approval_status").default("pending"), // pending, approved, rejected
   approvedBy: varchar("approved_by"), // Admin user ID who approved
@@ -1162,6 +1167,8 @@ export const aiModerationLogs = pgTable("ai_moderation_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   sessionId: varchar("session_id").notNull(),
   bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
+  teacherId: varchar("teacher_id").references(() => mentors.id).notNull(), // Added for restriction tracking
+  studentId: varchar("student_id").references(() => students.id).notNull(), // Added for tracking
   teacherName: varchar("teacher_name").notNull(),
   studentName: varchar("student_name").notNull(),
   sessionName: varchar("session_name").notNull(),
