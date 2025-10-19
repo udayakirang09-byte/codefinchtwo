@@ -344,6 +344,12 @@ export default function AdminHome() {
                     Mentor Approval
                   </Button>
                 </Link>
+                <Link href="/admin/moderation-review">
+                  <Button variant="outline" className="w-full bg-orange-50 hover:bg-orange-100 border-orange-300" data-testid="button-moderation-review">
+                    <AlertTriangle className="w-4 h-4 mr-2 text-orange-600" />
+                    AI Moderation Review
+                  </Button>
+                </Link>
                 <Link href="/admin/payment-config">
                   <Button variant="outline" className="w-full" data-testid="button-payment-config">
                     <DollarSign className="w-4 h-4 mr-2" />
