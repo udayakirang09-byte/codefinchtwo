@@ -350,6 +350,12 @@ export default function AdminHome() {
                     AI Moderation Review
                   </Button>
                 </Link>
+                <Link href="/admin/whitelist-management">
+                  <Button variant="outline" className="w-full bg-green-50 hover:bg-green-100 border-green-300" data-testid="button-whitelist-management">
+                    <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                    Whitelist Management
+                  </Button>
+                </Link>
                 <Link href="/admin/payment-config">
                   <Button variant="outline" className="w-full" data-testid="button-payment-config">
                     <DollarSign className="w-4 h-4 mr-2" />
