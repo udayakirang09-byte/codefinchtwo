@@ -8457,12 +8457,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use studentId from booking (server-side source of truth) instead of request params
       const studentId = booking.studentId;
 
+      // Extract metadata for proper naming convention
+      const studentName = `${booking.student.user.firstName}${booking.student.user.lastName}`.replace(/[^a-zA-Z0-9]/g, '');
+      const teacherName = `${booking.mentor.user.firstName}${booking.mentor.user.lastName}`.replace(/[^a-zA-Z0-9]/g, '');
+      const subject = (booking.subject || 'General').replace(/[^a-zA-Z0-9]/g, '');
+      const dateTime = new Date(booking.scheduledAt).toISOString().replace(/[:.]/g, '-').split('T')[0] + '_' + new Date(booking.scheduledAt).toISOString().replace(/[:.]/g, '-').split('T')[1].substring(0, 8);
+
       const uploadResult = await azureStorage.uploadRecordingPart({
         studentId,
         classId: bookingId,
         partNumber,
         buffer: req.body,
         contentType: 'video/webm',
+        studentName,
+        teacherName,
+        subject,
+        dateTime,
       });
 
       const recordingPart = await storage.createRecordingPart({

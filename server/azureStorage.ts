@@ -42,6 +42,10 @@ export interface RecordingPartUpload {
   partNumber: number;
   buffer: Buffer;
   contentType: string;
+  studentName: string;
+  teacherName: string;
+  subject: string;
+  dateTime: string;
 }
 
 export interface RecordingPartInfo {
@@ -69,7 +73,8 @@ export class AzureStorageService {
   }
 
   async uploadRecordingPart(upload: RecordingPartUpload): Promise<RecordingPartInfo> {
-    const blobPath = `${upload.studentId}_${upload.classId}_${upload.partNumber}.webm`;
+    // New naming convention: StudentName-TeacherName-Subject-DateTime-PartNumber.webm
+    const blobPath = `${upload.studentName}-${upload.teacherName}-${upload.subject}-${upload.dateTime}-Part${upload.partNumber}.webm`;
     const blockBlobClient = this.getContainer().getBlockBlobClient(blobPath);
 
     await blockBlobClient.uploadData(upload.buffer, {
@@ -89,38 +94,73 @@ export class AzureStorageService {
   }
 
   async listRecordingParts(studentId: string, classId: string): Promise<RecordingPartInfo[]> {
-    const prefix = `${studentId}_${classId}_`;
     const parts: RecordingPartInfo[] = [];
 
-    for await (const blob of this.getContainer().listBlobsFlat({ prefix })) {
-      if (!blob.name.endsWith('.webm') || blob.name.includes('_merged')) {
+    // List all blobs and filter for this booking
+    for await (const blob of this.getContainer().listBlobsFlat()) {
+      if (!blob.name.endsWith('.webm')) {
         continue;
       }
 
-      const blockBlobClient = this.getContainer().getBlockBlobClient(blob.name);
-      parts.push({
-        blobPath: blob.name,
-        url: blockBlobClient.url,
-        size: blob.properties.contentLength || 0,
-        uploadedAt: blob.properties.lastModified || new Date(),
-      });
+      // Skip merged/final recordings
+      if (blob.name.includes('-Final.webm') || blob.name.includes('_merged.webm')) {
+        continue;
+      }
+
+      // Check if blob belongs to this booking
+      // New format: contains classId in metadata or matches old format
+      const isOldFormat = blob.name.startsWith(`${studentId}_${classId}_`) && !blob.name.includes('_merged');
+      const isNewFormat = blob.name.includes('-Part') && blob.name.includes(classId);
+      
+      if (isOldFormat || isNewFormat) {
+        const blockBlobClient = this.getContainer().getBlockBlobClient(blob.name);
+        parts.push({
+          blobPath: blob.name,
+          url: blockBlobClient.url,
+          size: blob.properties.contentLength || 0,
+          uploadedAt: blob.properties.lastModified || new Date(),
+        });
+      }
     }
 
     return parts.sort((a, b) => {
-      const partNumA = parseInt(a.blobPath.match(/_(\d+)\.webm$/)?.[1] || '0');
-      const partNumB = parseInt(b.blobPath.match(/_(\d+)\.webm$/)?.[1] || '0');
+      // Extract part number from both old and new formats
+      const oldFormatA = a.blobPath.match(/_(\d+)\.webm$/);
+      const newFormatA = a.blobPath.match(/-Part(\d+)\.webm$/);
+      const partNumA = parseInt((newFormatA?.[1] || oldFormatA?.[1]) || '0');
+      
+      const oldFormatB = b.blobPath.match(/_(\d+)\.webm$/);
+      const newFormatB = b.blobPath.match(/-Part(\d+)\.webm$/);
+      const partNumB = parseInt((newFormatB?.[1] || oldFormatB?.[1]) || '0');
+      
       return partNumA - partNumB;
     });
   }
 
-  async mergeRecordingParts(studentId: string, classId: string): Promise<MergedRecordingInfo> {
+  async mergeRecordingParts(studentId: string, classId: string, studentName?: string, teacherName?: string, subject?: string, dateTime?: string): Promise<MergedRecordingInfo> {
     const parts = await this.listRecordingParts(studentId, classId);
 
     if (parts.length === 0) {
       throw new Error(`No recording parts found for ${studentId}_${classId}`);
     }
 
-    const mergedBlobPath = `${studentId}_${classId}_merged.webm`;
+    // Extract metadata from first part if not provided
+    let mergedBlobPath: string;
+    if (studentName && teacherName && subject && dateTime) {
+      // New naming convention: StudentName-TeacherName-Subject-DateTime-Final.webm
+      mergedBlobPath = `${studentName}-${teacherName}-${subject}-${dateTime}-Final.webm`;
+    } else {
+      // Fallback: try to extract from first part's name (new format)
+      const firstPartName = parts[0].blobPath;
+      const match = firstPartName.match(/^(.+)-Part\d+\.webm$/);
+      if (match) {
+        mergedBlobPath = `${match[1]}-Final.webm`;
+      } else {
+        // Old format fallback
+        mergedBlobPath = `${studentId}_${classId}_merged.webm`;
+      }
+    }
+    
     const mergedBlobClient = this.getContainer().getBlockBlobClient(mergedBlobPath);
 
     const buffers: Buffer[] = [];
@@ -201,37 +241,49 @@ export class AzureStorageService {
   }
 
   async getMergedRecording(studentId: string, classId: string): Promise<MergedRecordingInfo | null> {
-    const mergedBlobPath = `${studentId}_${classId}_merged.webm`;
-    const blobClient = this.getContainer().getBlockBlobClient(mergedBlobPath);
-
-    try {
-      const properties = await blobClient.getProperties();
-      return {
-        blobPath: mergedBlobPath,
-        url: blobClient.url,
-        size: properties.contentLength || 0,
-        mergedAt: properties.lastModified || new Date(),
-      };
-    } catch (error: any) {
-      if (error.statusCode === 404) {
-        return null;
+    // Try to find merged recording in both old and new formats
+    const parts: MergedRecordingInfo[] = [];
+    
+    for await (const blob of this.getContainer().listBlobsFlat()) {
+      const isOldFormat = blob.name === `${studentId}_${classId}_merged.webm`;
+      const isNewFormat = blob.name.includes('-Final.webm') && blob.name.includes(classId);
+      
+      if (isOldFormat || isNewFormat) {
+        const blobClient = this.getContainer().getBlockBlobClient(blob.name);
+        parts.push({
+          blobPath: blob.name,
+          url: blobClient.url,
+          size: blob.properties.contentLength || 0,
+          mergedAt: blob.properties.lastModified || new Date(),
+        });
       }
-      throw error;
     }
+    
+    // Return the most recent merged recording (sorted by mergedAt descending)
+    if (parts.length > 0) {
+      return parts.sort((a, b) => b.mergedAt.getTime() - a.mergedAt.getTime())[0];
+    }
+    
+    return null;
   }
 
   async deleteMergedRecording(studentId: string, classId: string): Promise<void> {
-    const mergedBlobPath = `${studentId}_${classId}_merged.webm`;
-    const blobClient = this.getContainer().getBlockBlobClient(mergedBlobPath);
-    
-    try {
-      await blobClient.delete();
-      console.log(`🗑️  Deleted merged recording: ${mergedBlobPath}`);
-    } catch (error: any) {
-      if (error.statusCode === 404) {
-        return;
+    // Find and delete merged recordings in both old and new formats
+    for await (const blob of this.getContainer().listBlobsFlat()) {
+      const isOldFormat = blob.name === `${studentId}_${classId}_merged.webm`;
+      const isNewFormat = blob.name.includes('-Final.webm') && blob.name.includes(classId);
+      
+      if (isOldFormat || isNewFormat) {
+        const blobClient = this.getContainer().getBlockBlobClient(blob.name);
+        try {
+          await blobClient.delete();
+          console.log(`🗑️  Deleted merged recording: ${blob.name}`);
+        } catch (error: any) {
+          if (error.statusCode !== 404) {
+            throw error;
+          }
+        }
       }
-      throw error;
     }
   }
 }
