@@ -1599,8 +1599,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Valid demoEnabled boolean is required" });
       }
       
+      // Feature Gap #1: Track when demo is disabled for 30-day banner logic
+      const updateData: any = { 
+        demoEnabled, 
+        updatedAt: new Date() 
+      };
+      
+      if (demoEnabled === false) {
+        // Demo is being disabled - record the timestamp
+        updateData.demoDisabledSince = new Date();
+      } else {
+        // Demo is being enabled - clear the timestamp
+        updateData.demoDisabledSince = null;
+      }
+      
       const updated = await db.update(mentors)
-        .set({ demoEnabled, updatedAt: new Date() })
+        .set(updateData)
         .where(eq(mentors.id, id))
         .returning();
       

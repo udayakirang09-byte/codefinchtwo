@@ -172,7 +172,15 @@ export default function TeacherDashboard() {
   });
 
   // Fetch mentor data first
-  const { data: mentorData } = useQuery<{id: string; userId: string; fullName: string; bio?: string; upiId?: string}>({
+  const { data: mentorData } = useQuery<{
+    id: string; 
+    userId: string; 
+    fullName: string; 
+    bio?: string; 
+    upiId?: string; 
+    demoEnabled?: boolean; 
+    demoDisabledSince?: string | null;
+  }>({
     queryKey: [`/api/mentors/by-user/${user?.id}`],
     enabled: !!user?.id
   });
@@ -372,6 +380,54 @@ export default function TeacherDashboard() {
           <div className="absolute -top-6 -right-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
           <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-blue-300/20 rounded-full blur-3xl"></div>
         </div>
+
+        {/* Feature Gap #1: Demo Encouragement Banner (30-day logic) */}
+        {mentorData && 
+         mentorData.demoEnabled === false && 
+         mentorData.demoDisabledSince && 
+         (() => {
+           const disabledDate = new Date(mentorData.demoDisabledSince);
+           const daysSinceDisabled = Math.floor((new Date().getTime() - disabledDate.getTime()) / (1000 * 60 * 60 * 24));
+           return daysSinceDisabled > 30;
+         })() && (
+          <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border-l-4 border-yellow-400 p-6 rounded-xl shadow-md">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <span className="text-4xl">💡</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-yellow-900 mb-2">
+                  Boost Your Student Conversions
+                </h3>
+                <p className="text-yellow-800 mb-4">
+                  Demo classes help identify long-term students. Enable Demo to improve conversions and grow your teaching base.
+                </p>
+                <Button
+                  onClick={() => {
+                    window.location.href = '/teacher/payment-config';
+                  }}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                  data-testid="button-enable-demo"
+                >
+                  Enable Demo Sessions
+                </Button>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  // Dismiss banner by setting a localStorage flag
+                  localStorage.setItem('demoBannerDismissed', 'true');
+                  window.location.reload();
+                }}
+                className="text-yellow-700 hover:text-yellow-900"
+                data-testid="button-dismiss-demo-banner"
+              >
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Teacher Audio Analytics Performance Card */}
         <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
