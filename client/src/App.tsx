@@ -66,6 +66,7 @@ import AbusiveIncidentsPage from "./pages/admin/abusive-incidents";
 import AzureMetrics from "./pages/admin/azure-metrics";
 import AzureMetricsDetail from "./pages/admin/azure-metrics-detail";
 import ModerationReview from "./pages/admin/moderation-review";
+import ReviewAppeals from "./pages/admin/review-appeals";
 import TeacherPaymentConfig from "./pages/teacher/payment-config";
 import TeacherModerationStatus from "./pages/teacher/moderation-status";
 import TeacherAppealRestriction from "./pages/teacher/appeal-restriction";
@@ -112,6 +113,7 @@ function Router() {
       <Route path="/admin/load-testing" component={LoadTestingGuide} />
       <Route path="/admin/abusive-incidents" component={AbusiveIncidentsPage} />
       <Route path="/admin/moderation-review" component={ModerationReview} />
+      <Route path="/admin/review-appeals" component={ReviewAppeals} />
       <Route path="/admin/azure-metrics" component={AzureMetrics} />
       <Route path="/admin/azure-metrics/:severity" component={AzureMetricsDetail} />
       <Route path="/teacher/home" component={TeacherDashboard} />

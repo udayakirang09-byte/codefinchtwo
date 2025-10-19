@@ -8971,8 +8971,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Admin access required' });
       }
       
-      const appeals = await storage.getAllTeacherRestrictionAppeals();
-      res.json(appeals);
+      // Get appeals with teacher information using joins
+      const { teacherRestrictionAppeals, mentors, users } = await import('@shared/schema');
+      const appealsWithTeacherInfo = await db
+        .select({
+          id: teacherRestrictionAppeals.id,
+          teacherId: teacherRestrictionAppeals.teacherId,
+          reason: teacherRestrictionAppeals.appealReason,
+          status: teacherRestrictionAppeals.status,
+          adminReviewNotes: teacherRestrictionAppeals.adminReviewNotes,
+          reviewedBy: teacherRestrictionAppeals.reviewedBy,
+          reviewedAt: teacherRestrictionAppeals.reviewedAt,
+          createdAt: teacherRestrictionAppeals.createdAt,
+          teacherName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+          teacherEmail: users.email,
+          restrictionType: mentors.accountRestriction,
+          restrictionReason: mentors.restrictionReason
+        })
+        .from(teacherRestrictionAppeals)
+        .innerJoin(mentors, eq(mentors.id, teacherRestrictionAppeals.teacherId))
+        .innerJoin(users, eq(users.id, mentors.userId))
+        .orderBy(desc(teacherRestrictionAppeals.createdAt));
+      
+      res.json(appealsWithTeacherInfo);
     } catch (error) {
       console.error('❌ Error fetching all appeals:', error);
       res.status(500).json({ message: 'Failed to fetch appeals' });
