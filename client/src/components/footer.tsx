@@ -198,6 +198,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/cancellation-policy" className="hover:text-white transition-colors" data-testid="link-cancellation-policy">
+                  Cancellation & Refund
+                </Link>
+              </li>
+              <li>
                 <CookieSettingsDialog
                   trigger={
                     <button className="text-white/80 hover:text-white transition-colors text-left" data-testid="button-footer-cookie-settings">
@@ -220,6 +225,9 @@ export default function Footer() {
             </Link>
             <Link href="/privacy" className="hover:text-white transition-colors" data-testid="link-privacy">
               Privacy Policy
+            </Link>
+            <Link href="/cancellation-policy" className="hover:text-white transition-colors" data-testid="link-cancellation">
+              Cancellation & Refund
             </Link>
             <CookieSettingsDialog
               trigger={
