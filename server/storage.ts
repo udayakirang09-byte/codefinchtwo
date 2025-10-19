@@ -1004,15 +1004,73 @@ export class DatabaseStorage implements IStorage {
     return holds;
   }
 
+  // Feature Gap #4: Atomic first-confirm-wins with database locking
   async confirmBookingHold(holdId: string, bookingId: string): Promise<void> {
-    await db
-      .update(bookingHolds)
-      .set({ 
-        status: 'confirmed',
-        bookingId,
-        confirmedAt: new Date()
-      })
-      .where(eq(bookingHolds.id, holdId));
+    // Use transaction with SELECT FOR UPDATE to prevent race conditions
+    await db.transaction(async (tx) => {
+      // Step 1: Lock the hold row exclusively using raw SQL (first-come-first-served)
+      // This ensures only one transaction can proceed at a time for this hold
+      const lockResult = await tx.execute(
+        sql`SELECT * FROM ${bookingHolds} WHERE ${bookingHolds.id} = ${holdId} FOR UPDATE`
+      );
+      
+      const rawHold = lockResult.rows[0] as any;
+      
+      if (!rawHold) {
+        throw new Error('Booking hold not found');
+      }
+      
+      // Map PostgreSQL snake_case to camelCase
+      const hold = {
+        id: rawHold.id,
+        studentId: rawHold.student_id,
+        mentorId: rawHold.mentor_id,
+        scheduledAt: new Date(rawHold.scheduled_at),
+        duration: rawHold.duration,
+        sessionType: rawHold.session_type,
+        status: rawHold.status,
+        expiresAt: new Date(rawHold.expires_at),
+        bookingId: rawHold.booking_id,
+        confirmedAt: rawHold.confirmed_at ? new Date(rawHold.confirmed_at) : null,
+        createdAt: new Date(rawHold.created_at)
+      };
+      
+      // Step 2: Verify hold is still active and not expired
+      if (hold.status !== 'active') {
+        throw new Error(`Cannot confirm hold: status is ${hold.status}`);
+      }
+      
+      const now = new Date();
+      if (hold.expiresAt < now) {
+        throw new Error('Booking hold has expired');
+      }
+      
+      // Step 3: Double-check no other confirmed holds exist for this slot (extra safety)
+      const conflictingHolds = await tx
+        .select()
+        .from(bookingHolds)
+        .where(
+          and(
+            eq(bookingHolds.mentorId, hold.mentorId),
+            eq(bookingHolds.scheduledAt, hold.scheduledAt),
+            eq(bookingHolds.status, 'confirmed')
+          )
+        );
+      
+      if (conflictingHolds.length > 0) {
+        throw new Error('Time slot already confirmed by another student');
+      }
+      
+      // Step 4: Confirm the hold (transaction ensures atomicity)
+      await tx
+        .update(bookingHolds)
+        .set({ 
+          status: 'confirmed',
+          bookingId,
+          confirmedAt: now
+        })
+        .where(eq(bookingHolds.id, holdId));
+    });
   }
 
   async releaseBookingHold(holdId: string): Promise<void> {

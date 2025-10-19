@@ -2350,7 +2350,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Confirm booking hold (after successful payment)
+  // Confirm booking hold (after successful payment) - Feature Gap #4: Atomic first-confirm-wins
   app.post("/api/booking-holds/:id/confirm", async (req, res) => {
     try {
       const { id } = req.params;
@@ -2363,8 +2363,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.confirmBookingHold(id, bookingId);
       console.log(`✅ Confirmed booking hold ${id} -> booking ${bookingId}`);
       res.json({ message: "Booking hold confirmed successfully" });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error confirming booking hold:", error);
+      
+      // Handle specific error cases from atomic locking
+      if (error.message === 'Booking hold not found') {
+        return res.status(404).json({ message: error.message });
+      }
+      if (error.message?.includes('status is')) {
+        return res.status(400).json({ message: error.message });
+      }
+      if (error.message === 'Booking hold has expired') {
+        return res.status(410).json({ message: error.message }); // 410 Gone
+      }
+      if (error.message === 'Time slot already confirmed by another student') {
+        return res.status(409).json({ message: error.message }); // 409 Conflict
+      }
+      
       res.status(500).json({ message: "Failed to confirm booking hold" });
     }
   });
