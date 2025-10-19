@@ -23,6 +23,9 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   role: varchar("role").notNull().default("student"), // student, mentor, admin
   country: varchar("country").notNull().default("India"), // User's country
+  // OAuth Fields for Google/Apple sign-in
+  oauthProvider: varchar("oauth_provider"), // google, apple, null for email/password
+  oauthId: varchar("oauth_id"), // Provider's user ID
   // 2FA Fields (Microsoft Authenticator / TOTP)
   totpSecret: text("totp_secret"), // Encrypted TOTP secret for 2FA
   totpEnabled: boolean("totp_enabled").default(false), // Whether 2FA is active
@@ -102,6 +105,7 @@ export const mentors = pgTable("mentors", {
   upiId: varchar("upi_id"), // UPI ID for payouts
   isActive: boolean("is_active").default(true),
   demoEnabled: boolean("demo_enabled").default(false), // C2: Allow teachers to enable/disable demo bookings
+  introVideoUrl: varchar("intro_video_url"), // Optional 1-minute intro video for teacher profile
   availableSlots: jsonb("available_slots").$type<{ day: string; times: string[] }[]>().default([]),
   // AI Moderation & Account Restrictions
   accountRestriction: varchar("account_restriction").default("none"), // none, warned, suspended, banned
