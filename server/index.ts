@@ -213,6 +213,30 @@ app.use((req, res, next) => {
             const { sessionId, isTeacher } = data;
             const userId = authenticatedUserId;
             
+            // Teacher restriction check (SA-9: Account restrictions)
+            if (isTeacher) {
+              try {
+                // Get booking to find mentor ID
+                const booking = await storage.getBooking(sessionId);
+                if (booking) {
+                  const { canTeacherStartSession } = await import('./teacher-restrictions.js');
+                  const restrictionCheck = await canTeacherStartSession(booking.mentorId);
+                  
+                  if (!restrictionCheck.allowed) {
+                    ws.send(JSON.stringify({
+                      type: 'session-join-blocked',
+                      reason: restrictionCheck.reason || 'Your account is restricted from starting sessions'
+                    }));
+                    log(`❌ Teacher ${userId} blocked from joining session ${sessionId}: ${restrictionCheck.reason}`);
+                    return;
+                  }
+                }
+              } catch (error) {
+                log(`❌ Error checking teacher restrictions: ${error}`);
+                // Fail-safe: allow session on error (log for manual review)
+              }
+            }
+            
             if (!videoSessions.has(sessionId)) {
               videoSessions.set(sessionId, new Set());
             }

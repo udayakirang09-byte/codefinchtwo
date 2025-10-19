@@ -601,6 +601,17 @@ export function useWebRTC({
           case 'webrtc-ice-candidate':
             await handleIceCandidate(data.fromUserId, data.candidate);
             break;
+            
+          case 'session-join-blocked':
+            console.error('❌ Session join blocked:', data.reason);
+            setError(data.reason || 'Unable to join session: Your account is restricted');
+            setConnectionQuality('disconnected');
+            // Close the connection
+            if (wsRef.current) {
+              wsRef.current.close();
+              wsRef.current = null;
+            }
+            break;
         }
       };
       

@@ -82,6 +82,7 @@ import {
   adminPaymentConfig,
   adminUiConfig,
   adminBookingLimits,
+  sessionDossiers,
   type TeacherAudioMetrics,
   type InsertTeacherAudioMetrics,
   type HomeSectionControls,
@@ -380,6 +381,9 @@ export interface IStorage {
   // Admin Booking Limits Configuration operations
   getAdminBookingLimits(): Promise<any | undefined>;
   updateAdminBookingLimits(config: { dailyBookingLimit?: number; weeklyBookingLimit?: number | null; enableWeeklyLimit?: boolean }): Promise<void>;
+  
+  // AI Moderation Session Dossier operations
+  getSessionDossierById(dossierId: string): Promise<any | undefined>;
   
   // Azure Storage Config operations
   updateAzureStorageConfig(config: { storageAccountName: string; containerName: string; retentionMonths: number }): Promise<any>;
@@ -2780,6 +2784,12 @@ export class DatabaseStorage implements IStorage {
         enableWeeklyLimit: config.enableWeeklyLimit ?? false,
       });
     }
+  }
+
+  // AI Moderation Session Dossier operations
+  async getSessionDossierById(dossierId: string): Promise<any | undefined> {
+    const [dossier] = await db.select().from(sessionDossiers).where(eq(sessionDossiers.id, dossierId));
+    return dossier;
   }
 
   // Azure Storage Config operations

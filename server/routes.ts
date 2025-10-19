@@ -8814,6 +8814,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       if (success) {
+        // SA-9: Update teacher restrictions based on admin action
+        if (actionTaken === 'warning_sent' || actionTaken === 'account_suspended') {
+          try {
+            // Get the dossier to find the teacher
+            const dossier = await storage.getSessionDossierById(dossierId);
+            if (dossier) {
+              const { updateTeacherRestrictionStatus } = await import('./teacher-restrictions.js');
+              await updateTeacherRestrictionStatus(dossier.teacherId);
+              console.log(`✅ Teacher restriction status updated for teacher ${dossier.teacherId}`);
+            }
+          } catch (restrictionError) {
+            console.error('❌ Error updating teacher restrictions:', restrictionError);
+            // Continue - don't fail the review if restriction update fails
+          }
+        }
+        
         res.json({ success: true, message: 'Session dossier marked as reviewed' });
       } else {
         res.status(500).json({ message: 'Failed to mark session as reviewed' });
