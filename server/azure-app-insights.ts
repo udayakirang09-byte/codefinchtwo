@@ -87,7 +87,15 @@ export class AzureAppInsightsService {
         { name: 'customEvents/count', display: 'Custom Events', category: 'Concurrent' as const, unit: 'count', threshold: 10000 },
       ];
 
-      const allMetricDefinitions = [...generalMetrics, ...concurrentMetrics];
+      // Database & Storage Metrics (NEW)
+      const databaseMetrics = [
+        { name: 'customMetrics/database_connections_pct', display: 'Database Connections %', category: 'General' as const, unit: '%', threshold: 70 },
+        { name: 'customMetrics/database_cpu_pct', display: 'Database CPU %', category: 'General' as const, unit: '%', threshold: 75 },
+        { name: 'customMetrics/database_storage_gb', display: 'Database Storage', category: 'General' as const, unit: 'GB', threshold: 100 },
+        { name: 'customMetrics/blob_storage_gb', display: 'Blob Storage Usage', category: 'General' as const, unit: 'GB', threshold: 500 },
+      ];
+
+      const allMetricDefinitions = [...generalMetrics, ...concurrentMetrics, ...databaseMetrics];
 
       for (const metricDef of allMetricDefinitions) {
         try {
@@ -147,6 +155,10 @@ export class AzureAppInsightsService {
       'Dependency Response Time': 'Average response time for dependency calls',
       'Dependency Failures': 'Number of failed dependency calls',
       'Custom Events': 'Count of custom telemetry events',
+      'Database Connections %': 'Percentage of database connections currently in use',
+      'Database CPU %': 'PostgreSQL database CPU utilization percentage',
+      'Database Storage': 'Total database storage used in gigabytes',
+      'Blob Storage Usage': 'Azure Blob Storage usage in gigabytes',
     };
     return descriptions[metricName] || 'Metric description not available';
   }
@@ -157,7 +169,11 @@ export class AzureAppInsightsService {
       'CPU Usage',
       'Memory Usage',
       'Failed Requests',
-      'Exception Count'
+      'Exception Count',
+      'Database Connections %',
+      'Database CPU %',
+      'Database Storage',
+      'Blob Storage Usage'
     ];
     return fixableMetrics.includes(metricName);
   }
@@ -168,7 +184,11 @@ export class AzureAppInsightsService {
       'CPU Usage': 'Scale out by adding more instances. Check for CPU-intensive operations and optimize code. Consider upgrading to Premium tier with more CPU cores.',
       'Memory Usage': 'Increase memory by upgrading App Service plan. Check for memory leaks in application code. Implement proper disposal of resources.',
       'Failed Requests': 'Review error logs to identify failure patterns. Implement retry logic with exponential backoff. Add circuit breaker pattern for external dependencies.',
-      'Exception Count': 'Enable Application Insights exception tracking. Add try-catch blocks around critical operations. Implement global exception handlers.'
+      'Exception Count': 'Enable Application Insights exception tracking. Add try-catch blocks around critical operations. Implement global exception handlers.',
+      'Database Connections %': 'Upgrade PostgreSQL Flexible Server to higher vCore tier (2 vCore = 859 connections, 4 vCore = 1,719 connections). Enable connection pooling with PgBouncer. Optimize connection lifecycle in application code.',
+      'Database CPU %': 'Scale up database to higher vCore tier (2, 4, 8, or 16 vCores). Optimize slow queries using Azure Query Performance Insights. Add database indexes for frequently queried columns.',
+      'Database Storage': 'Increase database storage capacity in Azure Portal. Archive old data to blob storage. Implement data retention policies. Use table partitioning for large tables.',
+      'Blob Storage Usage': 'Implement data lifecycle management to move old data to cool/archive tiers. Review and delete unused recordings. Enable blob versioning cleanup. Compress files before upload.'
     };
     return solutions[metricName];
   }
@@ -340,8 +360,69 @@ export class AzureAppInsightsService {
         hasFix: false,
         timestamp: new Date()
       },
+
+      // Database & Storage - SEV 1 (High)
+      {
+        id: this.generateMetricId('Database Connections %', 'General'),
+        name: 'Database Connections %',
+        category: 'General',
+        severity: 1,
+        value: 85,
+        unit: '%',
+        threshold: 70,
+        description: 'Percentage of database connections currently in use',
+        hasFix: true,
+        fixSolution: 'Upgrade PostgreSQL Flexible Server to higher vCore tier (2 vCore = 859 connections, 4 vCore = 1,719 connections). Enable connection pooling with PgBouncer. Optimize connection lifecycle in application code.',
+        timestamp: new Date()
+      },
+
+      // Database & Storage - SEV 2 (Medium)
+      {
+        id: this.generateMetricId('Database CPU %', 'General'),
+        name: 'Database CPU %',
+        category: 'General',
+        severity: 2,
+        value: 78,
+        unit: '%',
+        threshold: 75,
+        description: 'PostgreSQL database CPU utilization percentage',
+        hasFix: true,
+        fixSolution: 'Scale up database to higher vCore tier (2, 4, 8, or 16 vCores). Optimize slow queries using Azure Query Performance Insights. Add database indexes for frequently queried columns.',
+        timestamp: new Date()
+      },
+
+      // Database & Storage - SEV 3 (Low)
+      {
+        id: this.generateMetricId('Database Storage', 'General'),
+        name: 'Database Storage',
+        category: 'General',
+        severity: 3,
+        value: 72,
+        unit: 'GB',
+        threshold: 100,
+        description: 'Total database storage used in gigabytes',
+        hasFix: true,
+        fixSolution: 'Increase database storage capacity in Azure Portal. Archive old data to blob storage. Implement data retention policies. Use table partitioning for large tables.',
+        timestamp: new Date()
+      },
+
+      // Database & Storage - SEV 4 (Info)
+      {
+        id: this.generateMetricId('Blob Storage Usage', 'General'),
+        name: 'Blob Storage Usage',
+        category: 'General',
+        severity: 4,
+        value: 145,
+        unit: 'GB',
+        threshold: 500,
+        description: 'Azure Blob Storage usage in gigabytes',
+        hasFix: true,
+        fixSolution: 'Implement data lifecycle management to move old data to cool/archive tiers. Review and delete unused recordings. Enable blob versioning cleanup. Compress files before upload.',
+        timestamp: new Date()
+      },
     ];
   }
 }
+
 
 export const azureAppInsights = new AzureAppInsightsService();
