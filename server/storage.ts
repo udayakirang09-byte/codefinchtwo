@@ -83,7 +83,10 @@ import {
   adminUiConfig,
   adminBookingLimits,
   sessionDossiers,
+  teacherRestrictionAppeals,
   type TeacherAudioMetrics,
+  type InsertTeacherRestrictionAppeal,
+  type SelectTeacherRestrictionAppeal,
   type InsertTeacherAudioMetrics,
   type HomeSectionControls,
   type InsertHomeSectionControls,
@@ -384,6 +387,13 @@ export interface IStorage {
   
   // AI Moderation Session Dossier operations
   getSessionDossierById(dossierId: string): Promise<any | undefined>;
+  
+  // Teacher Restriction Appeals operations
+  createTeacherRestrictionAppeal(appeal: InsertTeacherRestrictionAppeal): Promise<SelectTeacherRestrictionAppeal>;
+  getTeacherRestrictionAppealsByTeacher(teacherId: string): Promise<SelectTeacherRestrictionAppeal[]>;
+  getAllTeacherRestrictionAppeals(): Promise<SelectTeacherRestrictionAppeal[]>;
+  getTeacherRestrictionAppeal(id: string): Promise<SelectTeacherRestrictionAppeal | undefined>;
+  updateTeacherRestrictionAppealStatus(id: string, status: 'approved' | 'rejected', adminNotes: string, reviewedBy: string): Promise<void>;
   
   // Azure Storage Config operations
   updateAzureStorageConfig(config: { storageAccountName: string; containerName: string; retentionMonths: number }): Promise<any>;
@@ -2790,6 +2800,49 @@ export class DatabaseStorage implements IStorage {
   async getSessionDossierById(dossierId: string): Promise<any | undefined> {
     const [dossier] = await db.select().from(sessionDossiers).where(eq(sessionDossiers.id, dossierId));
     return dossier;
+  }
+
+  // Teacher Restriction Appeals operations
+  async createTeacherRestrictionAppeal(appeal: InsertTeacherRestrictionAppeal): Promise<SelectTeacherRestrictionAppeal> {
+    const [created] = await db.insert(teacherRestrictionAppeals).values(appeal).returning();
+    return created;
+  }
+
+  async getTeacherRestrictionAppealsByTeacher(teacherId: string): Promise<SelectTeacherRestrictionAppeal[]> {
+    return await db.select()
+      .from(teacherRestrictionAppeals)
+      .where(eq(teacherRestrictionAppeals.teacherId, teacherId))
+      .orderBy(desc(teacherRestrictionAppeals.createdAt));
+  }
+
+  async getAllTeacherRestrictionAppeals(): Promise<SelectTeacherRestrictionAppeal[]> {
+    return await db.select()
+      .from(teacherRestrictionAppeals)
+      .orderBy(desc(teacherRestrictionAppeals.createdAt));
+  }
+
+  async getTeacherRestrictionAppeal(id: string): Promise<SelectTeacherRestrictionAppeal | undefined> {
+    const [appeal] = await db.select()
+      .from(teacherRestrictionAppeals)
+      .where(eq(teacherRestrictionAppeals.id, id));
+    return appeal;
+  }
+
+  async updateTeacherRestrictionAppealStatus(
+    id: string, 
+    status: 'approved' | 'rejected', 
+    adminNotes: string, 
+    reviewedBy: string
+  ): Promise<void> {
+    await db.update(teacherRestrictionAppeals)
+      .set({ 
+        status, 
+        adminReviewNotes: adminNotes,
+        reviewedBy,
+        reviewedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(teacherRestrictionAppeals.id, id));
   }
 
   // Azure Storage Config operations

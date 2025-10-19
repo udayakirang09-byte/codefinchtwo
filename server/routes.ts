@@ -8872,6 +8872,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   console.log('✅ Teacher Moderation Status API routes registered successfully!');
 
+  // Teacher Restriction Appeals Routes
+  // Submit a new appeal - SECURED (teacher only)
+  app.post('/api/teachers/appeals', authenticateSession, async (req: any, res) => {
+    try {
+      const requestingUser = req.user;
+      
+      // Only teachers can submit appeals
+      if (requestingUser.role !== 'mentor') {
+        return res.status(403).json({ message: 'Only teachers can submit appeals' });
+      }
+      
+      // Get the mentor record
+      const mentor = await storage.getMentorByUserId(requestingUser.id);
+      if (!mentor) {
+        return res.status(404).json({ message: 'Teacher profile not found' });
+      }
+      
+      // Check if teacher has an active restriction
+      const { getTeacherModerationStatus } = await import('./teacher-restrictions.js');
+      const moderationStatus = await getTeacherModerationStatus(mentor.id);
+      
+      if (!moderationStatus.status || moderationStatus.status === 'active') {
+        return res.status(400).json({ message: 'You do not have any active restrictions to appeal' });
+      }
+      
+      // Check if there's already a pending appeal
+      const existingAppeals = await storage.getTeacherRestrictionAppealsByTeacher(mentor.id);
+      const pendingAppeal = existingAppeals.find(appeal => appeal.status === 'pending');
+      
+      if (pendingAppeal) {
+        return res.status(400).json({ message: 'You already have a pending appeal. Please wait for admin review.' });
+      }
+      
+      // Validate request body
+      const { reason } = req.body;
+      if (!reason || reason.trim().length === 0) {
+        return res.status(400).json({ message: 'Appeal reason is required' });
+      }
+      
+      if (reason.trim().length < 20) {
+        return res.status(400).json({ message: 'Appeal reason must be at least 20 characters' });
+      }
+      
+      if (reason.trim().length > 2000) {
+        return res.status(400).json({ message: 'Appeal reason must not exceed 2000 characters' });
+      }
+      
+      // Create the appeal
+      const appeal = await storage.createTeacherRestrictionAppeal({
+        teacherId: mentor.id,
+        reason: reason.trim(),
+        status: 'pending',
+      });
+      
+      console.log(`📝 Teacher ${mentor.id} submitted appeal ${appeal.id}`);
+      res.status(201).json(appeal);
+    } catch (error) {
+      console.error('❌ Error creating teacher restriction appeal:', error);
+      res.status(500).json({ message: 'Failed to submit appeal' });
+    }
+  });
+
+  // Get teacher's own appeals - SECURED (teacher only)
+  app.get('/api/teachers/appeals', authenticateSession, async (req: any, res) => {
+    try {
+      const requestingUser = req.user;
+      
+      // Only teachers can view their appeals
+      if (requestingUser.role !== 'mentor') {
+        return res.status(403).json({ message: 'Only teachers can view appeals' });
+      }
+      
+      // Get the mentor record
+      const mentor = await storage.getMentorByUserId(requestingUser.id);
+      if (!mentor) {
+        return res.status(404).json({ message: 'Teacher profile not found' });
+      }
+      
+      const appeals = await storage.getTeacherRestrictionAppealsByTeacher(mentor.id);
+      res.json(appeals);
+    } catch (error) {
+      console.error('❌ Error fetching teacher appeals:', error);
+      res.status(500).json({ message: 'Failed to fetch appeals' });
+    }
+  });
+
+  console.log('✅ Teacher Restriction Appeals API routes registered successfully!');
+
   // Admin Booking Limits Configuration Routes
   // Get admin booking limits configuration - PUBLIC (needed for booking forms)
   app.get('/api/admin/booking-limits', async (req: any, res) => {
