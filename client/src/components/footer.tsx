@@ -215,7 +215,7 @@ export default function Footer() {
             © 2024 CodeConnect. All rights reserved.
           </p>
           <div className="flex space-x-6 text-white/60 text-sm items-center">
-            <Link href="/terms-of-service" className="hover:text-white transition-colors" data-testid="link-terms">
+            <Link href="/terms" className="hover:text-white transition-colors" data-testid="link-terms">
               Terms of Service
             </Link>
             <Link href="/privacy" className="hover:text-white transition-colors" data-testid="link-privacy">
