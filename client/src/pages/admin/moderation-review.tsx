@@ -8,7 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, CheckCircle, XCircle, AlertCircle, MessageSquare, Monitor, Mic, Film, Volume2 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { AlertTriangle, CheckCircle, XCircle, AlertCircle, MessageSquare, Monitor, Mic, Film, Volume2, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -22,6 +24,9 @@ interface RedactedMediaClip {
   redactedUrl?: string;
   redactionLevel: 'blur' | 'bleep' | 'mask';
   createdAt: Date;
+  moderationLogId?: string;
+  detectedTerms?: string;
+  subjectName?: string;
 }
 
 interface SessionDossier {
@@ -336,6 +341,12 @@ export default function ModerationReview() {
 }
 
 function MediaClipsSection({ dossierId }: { dossierId: string }) {
+  const { toast } = useToast();
+  const [benignDialogOpen, setBenignDialogOpen] = useState(false);
+  const [selectedClip, setSelectedClip] = useState<RedactedMediaClip | null>(null);
+  const [benignReason, setBenignReason] = useState('');
+  const [contentPattern, setContentPattern] = useState('');
+
   const { data: mediaClips, isLoading: isLoadingClips, isError, error, refetch } = useQuery<RedactedMediaClip[]>({
     queryKey: ['/api/admin/moderation/dossiers', dossierId, 'media-clips'],
     queryFn: async () => {
@@ -346,6 +357,67 @@ function MediaClipsSection({ dossierId }: { dossierId: string }) {
     enabled: !!dossierId,
     retry: 1,
   });
+
+  const markBenignMutation = useMutation({
+    mutationFn: async ({ pattern, modality, subject, logId, reason }: {
+      pattern: string;
+      modality: string;
+      subject: string;
+      logId: string;
+      reason: string;
+    }) => {
+      return apiRequest('/api/admin/moderation-whitelist', 'POST', {
+        contentPattern: pattern,
+        subjectName: subject,
+        modality,
+        originalLogId: logId,
+        reason
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Content Marked as Benign",
+        description: "This content has been added to the whitelist and won't be flagged in future sessions."
+      });
+      setBenignDialogOpen(false);
+      setSelectedClip(null);
+      setBenignReason('');
+      setContentPattern('');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Mark as Benign",
+        description: error.message || "Failed to add content to whitelist. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleMarkBenign = (clip: RedactedMediaClip) => {
+    setSelectedClip(clip);
+    // Pre-fill the content pattern with detected terms if available
+    setContentPattern(clip.detectedTerms || '');
+    setBenignDialogOpen(true);
+  };
+
+  const confirmMarkBenign = () => {
+    if (!selectedClip || !contentPattern.trim()) {
+      toast({
+        title: "Pattern Required",
+        description: "Please provide a content pattern to whitelist.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    markBenignMutation.mutate({
+      pattern: contentPattern.trim(),
+      modality: selectedClip.modality,
+      subject: selectedClip.subjectName || '',
+      logId: selectedClip.moderationLogId || '',
+      reason: benignReason.trim()
+    });
+  };
 
   if (isLoadingClips) {
     return (
@@ -415,9 +487,21 @@ function MediaClipsSection({ dossierId }: { dossierId: string }) {
                   <Badge variant="outline" className="text-xs">
                     {clip.modality} • {clip.duration}s • {clip.redactionLevel}
                   </Badge>
-                  <span className="text-xs text-gray-500">
-                    {format(new Date(clip.startTime * 1000), 'mm:ss')}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">
+                      {format(new Date(clip.startTime * 1000), 'mm:ss')}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleMarkBenign(clip)}
+                      className="h-6 px-2 text-xs"
+                      data-testid={`button-mark-benign-${clip.clipId}`}
+                    >
+                      <ShieldCheck className="w-3 h-3 mr-1" />
+                      Mark Benign
+                    </Button>
+                  </div>
                 </div>
                 {clip.redactedUrl ? (
                   <video 
@@ -456,9 +540,21 @@ function MediaClipsSection({ dossierId }: { dossierId: string }) {
                   <Badge variant="outline" className="text-xs">
                     {clip.modality} • {clip.duration}s • {clip.redactionLevel}
                   </Badge>
-                  <span className="text-xs text-gray-500">
-                    {format(new Date(clip.startTime * 1000), 'mm:ss')}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">
+                      {format(new Date(clip.startTime * 1000), 'mm:ss')}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleMarkBenign(clip)}
+                      className="h-6 px-2 text-xs"
+                      data-testid={`button-mark-benign-${clip.clipId}`}
+                    >
+                      <ShieldCheck className="w-3 h-3 mr-1" />
+                      Mark Benign
+                    </Button>
+                  </div>
                 </div>
                 {clip.redactedUrl ? (
                   <audio 
@@ -497,9 +593,21 @@ function MediaClipsSection({ dossierId }: { dossierId: string }) {
                   <Badge variant="outline" className="text-xs">
                     {clip.modality} • {clip.redactionLevel}
                   </Badge>
-                  <span className="text-xs text-gray-500">
-                    {format(new Date(clip.startTime * 1000), 'mm:ss')}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">
+                      {format(new Date(clip.startTime * 1000), 'mm:ss')}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleMarkBenign(clip)}
+                      className="h-6 px-2 text-xs"
+                      data-testid={`button-mark-benign-${clip.clipId}`}
+                    >
+                      <ShieldCheck className="w-3 h-3 mr-1" />
+                      Mark Benign
+                    </Button>
+                  </div>
                 </div>
                 <div className="bg-gray-100 dark:bg-gray-600 p-4 rounded text-sm font-mono">
                   {clip.blobPath || '[Redacted text content]'}
@@ -509,6 +617,72 @@ function MediaClipsSection({ dossierId }: { dossierId: string }) {
           </div>
         </div>
       )}
+
+      <Dialog open={benignDialogOpen} onOpenChange={setBenignDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Mark Content as Benign</DialogTitle>
+            <DialogDescription>
+              Add this content pattern to the whitelist so it won't be flagged in future sessions.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="content-pattern">Content Pattern *</Label>
+              <Input
+                id="content-pattern"
+                data-testid="input-content-pattern"
+                placeholder="e.g., anatomy, cell division, photosynthesis"
+                value={contentPattern}
+                onChange={(e) => setContentPattern(e.target.value)}
+              />
+              <p className="text-xs text-gray-500">
+                Enter the educational term or phrase that should be whitelisted
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="benign-reason">Reason (Optional)</Label>
+              <Textarea
+                id="benign-reason"
+                data-testid="textarea-benign-reason"
+                placeholder="Explain why this content is appropriate for educational purposes..."
+                value={benignReason}
+                onChange={(e) => setBenignReason(e.target.value)}
+                rows={3}
+              />
+            </div>
+            {selectedClip && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg text-sm">
+                <p className="font-medium mb-1">Subject: {selectedClip.subjectName || 'Unknown'}</p>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Modality: {selectedClip.modality}
+                </p>
+                {selectedClip.detectedTerms && (
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Detected: {selectedClip.detectedTerms}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setBenignDialogOpen(false)}
+              data-testid="button-cancel-benign"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmMarkBenign}
+              disabled={markBenignMutation.isPending}
+              data-testid="button-confirm-benign"
+            >
+              {markBenignMutation.isPending ? 'Adding...' : 'Add to Whitelist'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

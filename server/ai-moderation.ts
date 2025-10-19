@@ -67,7 +67,7 @@ export class AIModerationService {
     try {
       // Use OpenAI Moderation API for text (FREE)
       if (modality === 'text' || modality === 'chat') {
-        const result = await this.analyzeTextWithOpenAI(content, context);
+        const result = await this.analyzeTextWithOpenAI(content, context, modality);
         console.log(`[AI Moderation] Text analyzed in ${Date.now() - startTime}ms`);
         return result;
       }
@@ -80,7 +80,7 @@ export class AIModerationService {
       }
 
       // Default to OpenAI for audio transcripts
-      return await this.analyzeTextWithOpenAI(content, context);
+      return await this.analyzeTextWithOpenAI(content, context, 'audio');
 
     } catch (error) {
       console.error('[AI Moderation] Error:', error);
@@ -103,7 +103,8 @@ export class AIModerationService {
    */
   private async analyzeTextWithOpenAI(
     text: string,
-    context: ModerationContext
+    context: ModerationContext,
+    modality: 'text' | 'audio' | 'chat'
   ): Promise<ModerationResult> {
     // OpenAI Moderation API
     const moderation = await openai.moderations.create({ input: text });
@@ -172,7 +173,7 @@ export class AIModerationService {
         text,
         flaggedCategories,
         context.subjectName,
-        'text'
+        modality
       );
 
       if (isWhitelisted) {
