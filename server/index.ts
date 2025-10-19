@@ -8,6 +8,7 @@ import { WebSocketServer } from "ws";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import cors from "cors";
+import { aiModeration, type ModerationContext } from "./ai-moderation";
 import { RecordingScheduler } from "./recordingScheduler";
 import { RetentionScheduler } from "./retentionScheduler";
 import { NoShowScheduler } from "./noShowScheduler";
@@ -168,7 +169,7 @@ app.use((req, res, next) => {
     let isAuthenticated = false;
     let authenticatedUserId: string | null = null;
     
-    ws.on('message', (message: Buffer) => {
+    ws.on('message', async (message: Buffer) => {
       try {
         const data = JSON.parse(message.toString());
         log(`WebSocket received message type: ${data.type}`);
@@ -341,6 +342,53 @@ app.use((req, res, next) => {
             if (videoSessions.has(msgSessionId)) {
               const sessionParticipants = videoSessions.get(msgSessionId)!;
               
+              // AI-1: Real-time moderation of chat messages
+              const moderationContext: ModerationContext = {
+                sessionId: msgSessionId,
+                bookingId: data.bookingId || msgSessionId,
+                teacherId: data.isTeacher ? msgUserId : '',
+                studentId: data.isTeacher ? '' : msgUserId,
+                teacherName: data.isTeacher ? msgUserName : '',
+                studentName: data.isTeacher ? '' : msgUserName,
+                sessionName: data.sessionName || 'Live Session',
+                subjectName: data.subjectName || 'General'
+              };
+              
+              const moderationResult = await aiModeration.analyzeContent(
+                msgText,
+                'chat',
+                moderationContext
+              );
+              
+              // Log moderation event
+              await aiModeration.logModerationEvent(
+                moderationContext,
+                'chat',
+                moderationResult
+              );
+              
+              // SA-6: Handle moderation results
+              if (moderationResult.aiVerdict === 'hard_violation') {
+                // Block message and notify sender
+                ws.send(JSON.stringify({
+                  type: 'moderation-alert',
+                  severity: 'critical',
+                  message: moderationResult.alertMessage,
+                  action: 'message-blocked'
+                }));
+                log(`🚨 BLOCKED: Chat message from ${msgUserName} - hard violation`);
+                break; // Don't broadcast message
+              } else if (moderationResult.aiVerdict === 'alert') {
+                // Show banner but allow message
+                ws.send(JSON.stringify({
+                  type: 'moderation-warning',
+                  severity: 'moderate',
+                  message: moderationResult.alertMessage,
+                  tai: moderationResult.tai
+                }));
+                log(`⚠️ WARNING: Chat message from ${msgUserName} - TAI: ${moderationResult.tai.toFixed(2)}`);
+              }
+              
               const chatMessage = {
                 type: 'chat-message',
                 id: msgId,
@@ -380,6 +428,113 @@ app.use((req, res, next) => {
               // Clean up empty sessions
               if (sessionParticipants.size === 0) {
                 videoSessions.delete(leaveChatSessionId);
+              }
+            }
+            break;
+            
+          case 'report-screen-content':
+            // AI-1: Monitor screen sharing content (periodic snapshots)
+            const screenSessionId = data.sessionId;
+            const screenUserId = authenticatedUserId;
+            const screenUserName = data.userName;
+            const screenData = data.screenData; // Base64 image or text description
+            
+            if (screenData) {
+              const screenContext: ModerationContext = {
+                sessionId: screenSessionId,
+                bookingId: data.bookingId || screenSessionId,
+                teacherId: data.isTeacher ? screenUserId : '',
+                studentId: data.isTeacher ? '' : screenUserId,
+                teacherName: data.isTeacher ? screenUserName : '',
+                studentName: data.isTeacher ? '' : screenUserName,
+                sessionName: data.sessionName || 'Live Session',
+                subjectName: data.subjectName || 'General'
+              };
+              
+              const screenResult = await aiModeration.analyzeContent(
+                screenData,
+                'screen',
+                screenContext
+              );
+              
+              await aiModeration.logModerationEvent(
+                screenContext,
+                'screen',
+                screenResult,
+                `screen_${Date.now()}`
+              );
+              
+              if (screenResult.aiVerdict === 'hard_violation') {
+                ws.send(JSON.stringify({
+                  type: 'moderation-alert',
+                  severity: 'critical',
+                  message: 'Screen sharing content violates community guidelines. Please discontinue sharing.',
+                  action: 'screen-blocked'
+                }));
+                log(`🚨 SCREEN BLOCKED: ${screenUserName} - hard violation`);
+              } else if (screenResult.aiVerdict === 'alert') {
+                ws.send(JSON.stringify({
+                  type: 'moderation-warning',
+                  severity: 'moderate',
+                  message: 'Please ensure screen content is appropriate for educational context.',
+                  tai: screenResult.tai
+                }));
+              }
+            }
+            break;
+            
+          case 'report-audio-transcript':
+            // AI-1: Monitor live audio transcriptions
+            const audioSessionId = data.sessionId;
+            const audioUserId = authenticatedUserId;
+            const audioUserName = data.userName;
+            const audioTranscript = data.transcript;
+            
+            if (audioTranscript) {
+              const audioContext: ModerationContext = {
+                sessionId: audioSessionId,
+                bookingId: data.bookingId || audioSessionId,
+                teacherId: data.isTeacher ? audioUserId : '',
+                studentId: data.isTeacher ? '' : audioUserId,
+                teacherName: data.isTeacher ? audioUserName : '',
+                studentName: data.isTeacher ? '' : audioUserName,
+                sessionName: data.sessionName || 'Live Session',
+                subjectName: data.subjectName || 'General'
+              };
+              
+              const audioResult = await aiModeration.analyzeContent(
+                audioTranscript,
+                'audio',
+                audioContext
+              );
+              
+              await aiModeration.logModerationEvent(
+                audioContext,
+                'audio',
+                audioResult
+              );
+              
+              if (audioResult.aiVerdict === 'hard_violation') {
+                // Notify both parties in session
+                if (videoSessions.has(audioSessionId)) {
+                  const participants = videoSessions.get(audioSessionId)!;
+                  participants.forEach((p: any) => {
+                    p.ws.send(JSON.stringify({
+                      type: 'moderation-alert',
+                      severity: 'critical',
+                      message: 'Session paused for review due to content policy violation.',
+                      action: 'session-paused'
+                    }));
+                  });
+                }
+                log(`🚨 AUDIO VIOLATION: ${audioUserName} - hard violation detected`);
+              } else if (audioResult.aiVerdict === 'alert') {
+                ws.send(JSON.stringify({
+                  type: 'moderation-warning',
+                  severity: 'moderate',
+                  message: 'Please maintain appropriate language during the session.',
+                  tai: audioResult.tai
+                }));
               }
             }
             break;
