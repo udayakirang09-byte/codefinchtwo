@@ -8842,6 +8842,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   console.log('✅ AI Moderation Review Queue API routes registered successfully!');
 
+  // Teacher Moderation Status Routes (SA-9: Teacher-facing moderation status)
+  // Get teacher's own moderation status - SECURED (teacher only)
+  app.get('/api/teachers/:mentorId/moderation-status', authenticateSession, async (req: any, res) => {
+    try {
+      const { mentorId } = req.params;
+      
+      // Verify the requesting user is the teacher or an admin
+      const requestingUser = req.user;
+      const mentor = await storage.getMentor(mentorId);
+      
+      if (!mentor) {
+        return res.status(404).json({ message: 'Teacher not found' });
+      }
+      
+      if (requestingUser.role !== 'admin' && requestingUser.id !== mentor.userId) {
+        return res.status(403).json({ message: 'You can only view your own moderation status' });
+      }
+      
+      const { getTeacherModerationStatus } = await import('./teacher-restrictions.js');
+      const moderationStatus = await getTeacherModerationStatus(mentorId);
+      
+      res.json(moderationStatus);
+    } catch (error) {
+      console.error('❌ Error fetching teacher moderation status:', error);
+      res.status(500).json({ message: 'Failed to fetch moderation status' });
+    }
+  });
+
+  console.log('✅ Teacher Moderation Status API routes registered successfully!');
+
   // Admin Booking Limits Configuration Routes
   // Get admin booking limits configuration - PUBLIC (needed for booking forms)
   app.get('/api/admin/booking-limits', async (req: any, res) => {
