@@ -10,6 +10,7 @@ import {
   type InsertSessionDossier
 } from "@shared/schema";
 import { eq, and, gte, desc } from "drizzle-orm";
+import { storage } from "./storage";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -165,6 +166,30 @@ export class AIModerationService {
       recommendedAction = 'show_banner';
     }
 
+    // SA-9: Check whitelist before returning flagged result
+    if (result.flagged) {
+      const isWhitelisted = await this.checkWhitelist(
+        text,
+        flaggedCategories,
+        context.subjectName,
+        'text'
+      );
+
+      if (isWhitelisted) {
+        // Override flagged result - this is benign educational content
+        return {
+          isFlagged: false,
+          aiConfidence: 0,
+          sentiment,
+          tai: 0,
+          detectedTerms: [],
+          aiVerdict: 'safe',
+          recommendedAction: 'continue',
+          alertMessage: ''
+        };
+      }
+    }
+
     return {
       isFlagged: result.flagged,
       aiConfidence: maxConfidence,
@@ -239,6 +264,30 @@ export class AIModerationService {
       recommendedAction = 'show_banner';
     }
 
+    // SA-9: Check whitelist before returning flagged result
+    if (flaggedCategories.length > 0) {
+      const isWhitelisted = await this.checkWhitelist(
+        content,
+        flaggedCategories,
+        context.subjectName,
+        'video'
+      );
+
+      if (isWhitelisted) {
+        // Override flagged result - this is benign educational content
+        return {
+          isFlagged: false,
+          aiConfidence: 0,
+          sentiment,
+          tai: 0,
+          detectedTerms: [],
+          aiVerdict: 'safe',
+          recommendedAction: 'continue',
+          alertMessage: ''
+        };
+      }
+    }
+
     return {
       isFlagged: flaggedCategories.length > 0,
       aiConfidence: confidence,
@@ -263,6 +312,55 @@ export class AIModerationService {
     const matchedTerms = contextTerms.filter(term => lowerText.includes(term.toLowerCase()));
     
     return matchedTerms.length / contextTerms.length;
+  }
+
+  /**
+   * SA-9: False Positive Learning System - Check whitelist
+   * Returns true if content matches a whitelisted pattern
+   */
+  private async checkWhitelist(
+    content: string,
+    detectedTerms: string[],
+    subjectName: string,
+    modality: 'text' | 'audio' | 'video' | 'chat' | 'screen'
+  ): Promise<boolean> {
+    try {
+      // Get whitelist entries for this subject and modality
+      const whitelistEntries = await storage.getModerationWhitelistBySubject(subjectName);
+      
+      if (whitelistEntries.length === 0) {
+        return false;
+      }
+
+      const lowerContent = content.toLowerCase();
+      const lowerDetectedTerms = detectedTerms.map(t => t.toLowerCase());
+
+      // Check if any whitelist pattern matches
+      for (const entry of whitelistEntries) {
+        // Only check entries for the same modality
+        if (entry.modality !== modality) continue;
+
+        const pattern = entry.contentPattern.toLowerCase();
+
+        // Check if pattern matches content
+        if (lowerContent.includes(pattern)) {
+          console.log(`[AI Moderation] ✅ Whitelist match: "${pattern}" in ${modality} content for ${subjectName}`);
+          return true;
+        }
+
+        // Check if pattern matches any detected terms
+        if (lowerDetectedTerms.some(term => term.includes(pattern) || pattern.includes(term))) {
+          console.log(`[AI Moderation] ✅ Whitelist match: "${pattern}" matches detected term in ${modality} for ${subjectName}`);
+          return true;
+        }
+      }
+
+      return false;
+    } catch (error) {
+      console.error('[AI Moderation] Error checking whitelist:', error);
+      // On error, return false to allow normal moderation to proceed
+      return false;
+    }
   }
 
   /**
