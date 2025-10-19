@@ -8,9 +8,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, CheckCircle, XCircle, AlertCircle, MessageSquare, Monitor, Mic } from "lucide-react";
+import { AlertTriangle, CheckCircle, XCircle, AlertCircle, MessageSquare, Monitor, Mic, Film, Volume2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+
+interface RedactedMediaClip {
+  clipId: string;
+  sessionId: string;
+  modality: 'video' | 'audio' | 'screen' | 'chat';
+  startTime: number;
+  duration: number;
+  blobPath: string;
+  redactedUrl?: string;
+  redactionLevel: 'blur' | 'bleep' | 'mask';
+  createdAt: Date;
+}
 
 interface SessionDossier {
   id: string;
@@ -242,6 +254,8 @@ export default function ModerationReview() {
                 </div>
               </div>
 
+              <MediaClipsSection dossierId={selectedDossier.id} />
+
               {!selectedDossier.reviewedAt && (
                 <>
                   <div className="space-y-2">
@@ -317,6 +331,184 @@ export default function ModerationReview() {
           </Card>
         )}
       </div>
+    </div>
+  );
+}
+
+function MediaClipsSection({ dossierId }: { dossierId: string }) {
+  const { data: mediaClips, isLoading: isLoadingClips, isError, error, refetch } = useQuery<RedactedMediaClip[]>({
+    queryKey: ['/api/admin/moderation/dossiers', dossierId, 'media-clips'],
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/moderation/dossiers/${dossierId}/media-clips`);
+      if (!response.ok) throw new Error('Failed to fetch media clips');
+      return response.json();
+    },
+    enabled: !!dossierId,
+    retry: 1,
+  });
+
+  if (isLoadingClips) {
+    return (
+      <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+        <h3 className="font-semibold mb-2">Redacted Media Clips</h3>
+        <p className="text-sm text-gray-500">Loading media clips...</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-800">
+        <h3 className="font-semibold text-red-800 dark:text-red-300 mb-2">
+          Error Loading Media Clips
+        </h3>
+        <p className="text-sm text-red-700 dark:text-red-400 mb-3">
+          {error instanceof Error ? error.message : 'Failed to retrieve media clips. This could be due to a network issue or server error.'}
+        </p>
+        <Button 
+          onClick={() => refetch()} 
+          variant="outline" 
+          size="sm"
+          className="bg-white dark:bg-gray-800"
+          data-testid="button-retry-media-clips"
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  if (!mediaClips || mediaClips.length === 0) {
+    return (
+      <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+        <h3 className="font-semibold mb-2">Redacted Media Clips</h3>
+        <p className="text-sm text-gray-500">No flagged media clips for this session</p>
+      </div>
+    );
+  }
+
+  const videoClips = mediaClips.filter(c => c.modality === 'video' || c.modality === 'screen');
+  const audioClips = mediaClips.filter(c => c.modality === 'audio');
+  const chatClips = mediaClips.filter(c => c.modality === 'chat');
+
+  return (
+    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg space-y-4">
+      <h3 className="font-semibold mb-2">Redacted Media Clips ({mediaClips.length})</h3>
+      <p className="text-xs text-gray-500 mb-4">
+        Video and audio clips are automatically redacted (blurred/beeped). Max 30 seconds per clip.
+      </p>
+
+      {videoClips.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Film className="w-4 h-4 text-purple-500" />
+            <span>Video/Screen Clips ({videoClips.length})</span>
+          </div>
+          <div className="grid gap-3">
+            {videoClips.map((clip) => (
+              <div 
+                key={clip.clipId} 
+                className="bg-white dark:bg-gray-700 p-3 rounded border border-gray-200 dark:border-gray-600"
+                data-testid={`media-clip-${clip.clipId}`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <Badge variant="outline" className="text-xs">
+                    {clip.modality} • {clip.duration}s • {clip.redactionLevel}
+                  </Badge>
+                  <span className="text-xs text-gray-500">
+                    {format(new Date(clip.startTime * 1000), 'mm:ss')}
+                  </span>
+                </div>
+                {clip.redactedUrl ? (
+                  <video 
+                    controls 
+                    className="w-full max-w-md rounded"
+                    data-testid={`video-player-${clip.clipId}`}
+                  >
+                    <source src={clip.redactedUrl} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                ) : (
+                  <div className="bg-gray-100 dark:bg-gray-600 p-8 rounded text-center text-sm text-gray-500">
+                    Media clip processing...
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {audioClips.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Volume2 className="w-4 h-4 text-orange-500" />
+            <span>Audio Clips ({audioClips.length})</span>
+          </div>
+          <div className="grid gap-3">
+            {audioClips.map((clip) => (
+              <div 
+                key={clip.clipId} 
+                className="bg-white dark:bg-gray-700 p-3 rounded border border-gray-200 dark:border-gray-600"
+                data-testid={`media-clip-${clip.clipId}`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <Badge variant="outline" className="text-xs">
+                    {clip.modality} • {clip.duration}s • {clip.redactionLevel}
+                  </Badge>
+                  <span className="text-xs text-gray-500">
+                    {format(new Date(clip.startTime * 1000), 'mm:ss')}
+                  </span>
+                </div>
+                {clip.redactedUrl ? (
+                  <audio 
+                    controls 
+                    className="w-full"
+                    data-testid={`audio-player-${clip.clipId}`}
+                  >
+                    <source src={clip.redactedUrl} type="audio/mp3" />
+                    Your browser does not support the audio element.
+                  </audio>
+                ) : (
+                  <div className="bg-gray-100 dark:bg-gray-600 p-4 rounded text-center text-sm text-gray-500">
+                    Audio clip processing...
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {chatClips.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <MessageSquare className="w-4 h-4 text-blue-500" />
+            <span>Chat Clips ({chatClips.length})</span>
+          </div>
+          <div className="grid gap-3">
+            {chatClips.map((clip) => (
+              <div 
+                key={clip.clipId} 
+                className="bg-white dark:bg-gray-700 p-3 rounded border border-gray-200 dark:border-gray-600"
+                data-testid={`media-clip-${clip.clipId}`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <Badge variant="outline" className="text-xs">
+                    {clip.modality} • {clip.redactionLevel}
+                  </Badge>
+                  <span className="text-xs text-gray-500">
+                    {format(new Date(clip.startTime * 1000), 'mm:ss')}
+                  </span>
+                </div>
+                <div className="bg-gray-100 dark:bg-gray-600 p-4 rounded text-sm font-mono">
+                  {clip.blobPath || '[Redacted text content]'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
