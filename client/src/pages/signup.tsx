@@ -58,6 +58,15 @@ export default function Signup() {
     message: string;
   }>({ isValidating: false, faceDetected: false, message: "" });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string>("");
+  const [videoValidation, setVideoValidation] = useState<{
+    isValidating: boolean;
+    isValid: boolean;
+    message: string;
+    duration?: number;
+  }>({ isValidating: false, isValid: false, message: "" });
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   // Fetch educational dropdown data
@@ -181,6 +190,94 @@ export default function Signup() {
     setPhotoValidation({ isValidating: false, faceDetected: false, message: "" });
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
+    }
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // File type validation
+    const validTypes = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-matroska'];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please upload an MP4, WebM, MOV, or MKV video.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // File size validation (50MB max)
+    const maxSize = 50 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast({
+        title: "File Too Large",
+        description: `Video size is ${(file.size / 1024 / 1024).toFixed(2)}MB. Maximum size is 50MB.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setVideoValidation({ isValidating: true, isValid: false, message: "Validating video..." });
+
+    // Create video element to check duration
+    const videoUrl = URL.createObjectURL(file);
+    const videoElement = document.createElement('video');
+    videoElement.preload = 'metadata';
+
+    videoElement.onloadedmetadata = () => {
+      URL.revokeObjectURL(videoUrl);
+      const durationInSeconds = Math.floor(videoElement.duration);
+
+      if (durationInSeconds > 60) {
+        toast({
+          title: "Video Too Long",
+          description: `Video duration is ${durationInSeconds}s. Maximum allowed is 60 seconds (1 minute).`,
+          variant: "destructive",
+        });
+        setVideoValidation({ isValidating: false, isValid: false, message: "" });
+        if (videoInputRef.current) {
+          videoInputRef.current.value = "";
+        }
+        return;
+      }
+
+      setVideoFile(file);
+      setVideoPreview(URL.createObjectURL(file));
+      setVideoValidation({
+        isValidating: false,
+        isValid: true,
+        message: `Video looks good! Duration: ${durationInSeconds}s`,
+        duration: durationInSeconds
+      });
+    };
+
+    videoElement.onerror = () => {
+      URL.revokeObjectURL(videoUrl);
+      toast({
+        title: "Invalid Video",
+        description: "Unable to process video file. Please try another file.",
+        variant: "destructive",
+      });
+      setVideoValidation({ isValidating: false, isValid: false, message: "" });
+      if (videoInputRef.current) {
+        videoInputRef.current.value = "";
+      }
+    };
+
+    videoElement.src = videoUrl;
+  };
+
+  const removeVideo = () => {
+    if (videoPreview) {
+      URL.revokeObjectURL(videoPreview);
+    }
+    setVideoFile(null);
+    setVideoPreview("");
+    setVideoValidation({ isValidating: false, isValid: false, message: "" });
+    if (videoInputRef.current) {
+      videoInputRef.current.value = "";
     }
   };
 
@@ -387,6 +484,9 @@ export default function Signup() {
         if (photoFile) {
           signupData.append("photo", photoFile);
         }
+        if (videoFile) {
+          signupData.append("introVideo", videoFile);
+        }
         signupData.append("mentorData", JSON.stringify({
           qualifications: formData.qualifications.filter(q => q.qualification.trim() !== ""),
           subjects: formData.subjects.filter(s => s.subject.trim() !== "")
@@ -592,6 +692,66 @@ export default function Signup() {
                       {!photoValidation.isValidating && photoValidation.message && (
                         <p className={`text-sm mt-2 ${photoValidation.faceDetected ? 'text-green-600' : 'text-red-600'}`}>
                           {photoValidation.message}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Intro Video Upload (Optional) */}
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">
+                    Introduction Video <span className="text-gray-500 text-sm font-normal">(Optional)</span>
+                  </Label>
+                  <p className="text-sm text-gray-600">Upload a short video (max 1 minute) introducing yourself to students</p>
+                  <div className="flex items-start space-x-2 bg-green-50 border border-green-200 rounded-md p-3">
+                    <svg className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-sm text-green-800">
+                      <strong>Optional:</strong> This video helps students get to know you better and can increase booking rates. Maximum 60 seconds.
+                    </p>
+                  </div>
+                  
+                  {!videoPreview ? (
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-500 transition-colors cursor-pointer"
+                         onClick={() => videoInputRef.current?.click()}>
+                      <Upload className="mx-auto h-12 w-12 text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600 mb-1">Click to upload your intro video</p>
+                      <p className="text-xs text-gray-500">MP4, WebM, MOV (max 1 minute, 50MB)</p>
+                      <input
+                        ref={videoInputRef}
+                        type="file"
+                        accept="video/mp4,video/webm,video/quicktime,video/x-matroska"
+                        onChange={handleVideoUpload}
+                        className="hidden"
+                        data-testid="input-video-upload"
+                      />
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <video 
+                        src={videoPreview} 
+                        controls 
+                        className="w-full rounded-lg border-2 border-green-500"
+                        style={{ maxHeight: '240px' }}
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={removeVideo}
+                        data-testid="button-remove-video"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                      {videoValidation.isValidating && (
+                        <p className="text-sm text-blue-600 mt-2">{videoValidation.message}</p>
+                      )}
+                      {!videoValidation.isValidating && videoValidation.message && (
+                        <p className={`text-sm mt-2 ${videoValidation.isValid ? 'text-green-600' : 'text-red-600'}`}>
+                          {videoValidation.message}
                         </p>
                       )}
                     </div>

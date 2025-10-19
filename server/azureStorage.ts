@@ -72,6 +72,22 @@ export class AzureStorageService {
     return this.container;
   }
 
+  async uploadProfileMedia(userId: string, buffer: Buffer, contentType: string, mediaType: 'photo' | 'video'): Promise<string> {
+    // Create blob path: profile-media/{userId}/{type}-{timestamp}.{ext}
+    const timestamp = Date.now();
+    const extension = mediaType === 'photo' ? 'jpg' : 'mp4';
+    const blobPath = `profile-media/${userId}/${mediaType}-${timestamp}.${extension}`;
+    const blockBlobClient = this.getContainer().getBlockBlobClient(blobPath);
+
+    await blockBlobClient.uploadData(buffer, {
+      blobHTTPHeaders: {
+        blobContentType: contentType,
+      },
+    });
+
+    return blockBlobClient.url;
+  }
+
   async uploadRecordingPart(upload: RecordingPartUpload): Promise<RecordingPartInfo> {
     // New naming convention: StudentName-TeacherName-Subject-DateTime-PartNumber.webm
     const blobPath = `${upload.studentName}-${upload.teacherName}-${upload.subject}-${upload.dateTime}-Part${upload.partNumber}.webm`;

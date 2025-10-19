@@ -482,14 +482,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   console.log('✅ Global API rate limiting enabled: 500 requests per 15 minutes per IP');
   
   // Authentication routes
-  // Signup endpoint with file upload support
-  app.post("/api/auth/signup", upload.single('photo'), async (req, res) => {
+  // Signup endpoint with file upload support (photo and optional intro video)
+  app.post("/api/auth/signup", upload.fields([
+    { name: 'photo', maxCount: 1 },
+    { name: 'introVideo', maxCount: 1 }
+  ]), async (req, res) => {
     try {
       // Enhanced debugging - show all keys in body
       console.log('🚀 [AZURE DEBUG] Signup request received');
       console.log('📋 Body keys:', Object.keys(req.body));
       console.log('📋 Body data:', { ...req.body, password: req.body.password ? '[HIDDEN]' : undefined });
-      console.log('📸 File:', req.file ? { fieldname: req.file.fieldname, originalname: req.file.originalname, size: req.file.size } : 'No file');
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      console.log('📸 Files:', files ? Object.keys(files).map(key => `${key}: ${files[key][0]?.originalname}`) : 'No files');
       
       const { firstName, lastName, email, password, role, country, mentorData }: {
         firstName: string;
@@ -543,6 +547,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('✅ User created successfully');
       
+      // Process file uploads for mentors (photo and optional intro video)
+      let profileImageUrl: string | undefined;
+      let introVideoUrl: string | undefined;
+      
+      if ((role === 'mentor' || role === 'both') && files) {
+        const { azureStorage } = await import('./azureStorage');
+        
+        // Process photo upload (required for mentors)
+        if (files['photo'] && files['photo'][0]) {
+          const photoFile = files['photo'][0];
+          console.log(`📸 Uploading profile photo (${photoFile.size} bytes)...`);
+          try {
+            profileImageUrl = await azureStorage.uploadProfileMedia(
+              user.id,
+              photoFile.buffer,
+              photoFile.mimetype,
+              'photo'
+            );
+            console.log('✅ Photo uploaded successfully');
+            
+            // Update user's profile image URL
+            await storage.updateUser(user.id, { profileImageUrl });
+          } catch (uploadError: any) {
+            console.error('❌ Photo upload failed:', uploadError);
+            // Continue without photo if upload fails
+          }
+        }
+        
+        // Process intro video upload (optional)
+        if (files['introVideo'] && files['introVideo'][0]) {
+          const videoFile = files['introVideo'][0];
+          console.log(`🎥 Uploading intro video (${videoFile.size} bytes)...`);
+          
+          // Server-side video duration validation would require ffprobe/ffmpeg
+          // For now, we trust client-side validation and validate file size only
+          const maxVideoSize = 50 * 1024 * 1024; // 50MB
+          if (videoFile.size > maxVideoSize) {
+            console.warn('⚠️ Video file too large, skipping upload');
+          } else {
+            try {
+              introVideoUrl = await azureStorage.uploadProfileMedia(
+                user.id,
+                videoFile.buffer,
+                videoFile.mimetype,
+                'video'
+              );
+              console.log('✅ Intro video uploaded successfully');
+            } catch (uploadError: any) {
+              console.error('❌ Video upload failed:', uploadError);
+              // Continue without video if upload fails
+            }
+          }
+        }
+      }
+      
       // Create corresponding student/mentor record
       if (role === 'student' || role === 'both') {
         console.log('👨‍🎓 Creating student record...');
@@ -555,7 +614,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (role === 'mentor' || role === 'both') {
         console.log('👨‍🏫 Creating mentor record...');
-        // Create mentor record with educational subjects
+        // Create mentor record with educational subjects and optional intro video
         const mentor = await storage.createMentor({
           userId: user.id,
           title: 'Academic Mentor',
@@ -563,7 +622,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           experience: 5,
           specialties: ['Mathematics', 'Physics', 'Chemistry', 'Computer Science'], // Match educational subjects
           hourlyRate: '35.00',
-          availableSlots: []
+          availableSlots: [],
+          introVideoUrl: introVideoUrl || undefined // Include intro video URL if uploaded
         });
         
         // Create teacher profile with qualification and subject data
