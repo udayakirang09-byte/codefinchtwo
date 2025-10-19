@@ -1244,6 +1244,21 @@ export const supportConfig = pgTable("support_config", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// SA-9: Moderation Whitelist (False positive learning system)
+export const moderationWhitelist = pgTable("moderation_whitelist", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contentPattern: text("content_pattern").notNull(), // The flagged content marked as benign
+  subjectName: varchar("subject_name").notNull(), // Subject context (Biology, Medicine, Art, etc.)
+  modality: varchar("modality").notNull(), // text, audio, video, chat, screen
+  originalLogId: varchar("original_log_id").references(() => aiModerationLogs.id), // Reference to original moderation log
+  addedBy: varchar("added_by").references(() => users.id).notNull(), // Admin who marked as benign
+  reason: text("reason"), // Optional explanation for whitelisting
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  subjectIdx: index("moderation_whitelist_subject_idx").on(table.subjectName),
+  modalityIdx: index("moderation_whitelist_modality_idx").on(table.modality),
+}));
+
 // KADB Help System Tables
 export const helpTickets = pgTable("help_tickets", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -1457,6 +1472,10 @@ export const insertAiModerationLogSchema = createInsertSchema(aiModerationLogs);
 export const insertSessionDossierSchema = createInsertSchema(sessionDossiers);
 
 export const insertTeacherRestrictionAppealSchema = createInsertSchema(teacherRestrictionAppeals);
+
+export const insertModerationWhitelistSchema = createInsertSchema(moderationWhitelist);
+export type InsertModerationWhitelist = z.infer<typeof insertModerationWhitelistSchema>;
+export type SelectModerationWhitelist = typeof moderationWhitelist.$inferSelect;
 
 export type InsertTeacherRestrictionAppeal = z.infer<typeof insertTeacherRestrictionAppealSchema>;
 export type SelectTeacherRestrictionAppeal = typeof teacherRestrictionAppeals.$inferSelect;
