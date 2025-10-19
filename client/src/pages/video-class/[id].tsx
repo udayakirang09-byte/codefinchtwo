@@ -33,6 +33,9 @@ export default function VideoClass() {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading } = useAuth();
   
+  // Ref for moderation alert callback to avoid closure issues
+  const moderationAlertRef = useRef<((message: string, severity?: 'moderate' | 'critical') => void) | null>(null);
+  
   // Query to get booking/class schedule information
   const { data: bookingData } = useQuery<any>({
     queryKey: ['/api/bookings', classId],
@@ -79,6 +82,12 @@ export default function VideoClass() {
     onParticipantLeave: (userId) => {
       if (isTeacher) {
         addTeacherAlert(`Participant ${userId} left the session`);
+      }
+    },
+    onModerationAlert: (message, severity) => {
+      if (isTeacher && moderationAlertRef.current) {
+        // GL-1: Auto-expand guidelines panel on moderation alerts (both moderate and critical)
+        moderationAlertRef.current(message, severity);
       }
     }
   });
@@ -211,15 +220,47 @@ export default function VideoClass() {
   const [isRecording, setIsRecording] = useState(false);
   const [showEndWarning, setShowEndWarning] = useState(false);
 
+  // GL-1: In-class guidelines panel state
+  const [showGuidelines, setShowGuidelines] = useState(false);
+  const [guidelinesAutoExpanded, setGuidelinesAutoExpanded] = useState(false);
+
+  // GL-2: Teacher review notification banner (once per day)
+  const [showReviewNotification, setShowReviewNotification] = useState(false);
+
+  // Check if review notification should be shown (once per day)
+  useEffect(() => {
+    if (!isTeacher) return;
+    
+    const lastShownDate = localStorage.getItem('teacherReviewNotificationLastShown');
+    const today = new Date().toDateString();
+    
+    if (lastShownDate !== today) {
+      setShowReviewNotification(true);
+    }
+  }, [isTeacher]);
+
+  // Dismiss review notification
+  const dismissReviewNotification = useCallback(() => {
+    const today = new Date().toDateString();
+    localStorage.setItem('teacherReviewNotificationLastShown', today);
+    setShowReviewNotification(false);
+  }, []);
+
   // Teacher alert system
-  const addTeacherAlert = useCallback((message: string) => {
+  const addTeacherAlert = useCallback((message: string, moderationSeverity?: 'moderate' | 'critical') => {
     if (isTeacher) {
       setTeacherAlerts(prev => [...prev, message]);
       toast({
         title: "Teacher Alert",
         description: message,
-        variant: "default",
+        variant: moderationSeverity === 'critical' ? "destructive" : "default",
       });
+      
+      // GL-1: Auto-expand guidelines panel on all moderation alerts (both moderate and critical)
+      if (moderationSeverity) {
+        setShowGuidelines(true);
+        setGuidelinesAutoExpanded(true);
+      }
       
       // Auto-remove alert after 10 seconds
       setTimeout(() => {
@@ -227,6 +268,11 @@ export default function VideoClass() {
       }, 10000);
     }
   }, [isTeacher, toast]);
+
+  // Update moderation alert ref when addTeacherAlert changes
+  useEffect(() => {
+    moderationAlertRef.current = addTeacherAlert;
+  }, [addTeacherAlert]);
 
   // Multiple login detection effect with deduplication
   useEffect(() => {
@@ -613,6 +659,41 @@ export default function VideoClass() {
           </div>
         </div>
       )}
+
+      {/* GL-2: Teacher Review Notification Banner (Once per day) */}
+      {isTeacher && showReviewNotification && (
+        <div className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-blue-500 to-blue-600 p-3 shadow-lg border-b-2 border-blue-400">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 flex-1">
+              <Shield className="h-5 w-5 text-blue-900 flex-shrink-0" />
+              <div>
+                <h3 className="text-sm font-bold text-blue-900">Content Guidelines Reminder</h3>
+                <p className="text-blue-800 text-xs">Please review our session content guidelines to ensure a safe learning environment</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => setShowGuidelines(true)}
+                className="bg-white/90 hover:bg-white text-blue-900 border-blue-300 text-xs"
+                data-testid="button-view-guidelines"
+              >
+                View Guidelines
+              </Button>
+              <Button 
+                size="sm" 
+                variant="ghost"
+                onClick={dismissReviewNotification}
+                className="text-blue-900 hover:bg-blue-400/20 h-8 w-8 p-0"
+                data-testid="button-dismiss-review-notification"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Connecting Overlay */}
       {!isConnected && (
@@ -914,6 +995,73 @@ export default function VideoClass() {
                         {alert}
                       </div>
                     ))}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* GL-1: In-Class Guidelines Panel (Auto-expands on moderation alerts) */}
+              {isTeacher && (showGuidelines || guidelinesAutoExpanded) && (
+                <Card className={`border-2 ${guidelinesAutoExpanded ? 'bg-gradient-to-br from-orange-800 to-red-800 border-red-600 animate-pulse' : 'bg-gradient-to-br from-blue-800 to-indigo-800 border-blue-600'}`} data-testid="card-guidelines-panel">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-white text-sm flex items-center" data-testid="title-guidelines-panel">
+                        <Shield className="h-4 w-4 mr-2" />
+                        Content Guidelines
+                        {guidelinesAutoExpanded && (
+                          <Badge className="ml-2 bg-red-500 text-white animate-bounce" data-testid="badge-alert">
+                            Alert
+                          </Badge>
+                        )}
+                      </CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setShowGuidelines(false);
+                          setGuidelinesAutoExpanded(false);
+                        }}
+                        className="text-white hover:bg-white/10 h-6 w-6 p-0"
+                        data-testid="button-close-guidelines"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3" data-testid="content-guidelines">
+                    <div className="text-xs text-white bg-white/10 p-3 rounded" data-testid="text-guidelines-intro">
+                      <p className="font-semibold mb-2">🎓 Educational Session Guidelines</p>
+                      <p className="mb-2">Maintain a safe and productive learning environment by following these guidelines:</p>
+                    </div>
+                    
+                    <div className="space-y-2 text-xs text-white" data-testid="list-guidelines">
+                      <div className="bg-white/10 p-2 rounded" data-testid="guideline-appropriate-content">
+                        <p className="font-semibold">✅ Appropriate Content</p>
+                        <p className="text-white/90">Focus on educational material relevant to the subject</p>
+                      </div>
+                      <div className="bg-white/10 p-2 rounded" data-testid="guideline-professional-language">
+                        <p className="font-semibold">✅ Professional Language</p>
+                        <p className="text-white/90">Use respectful and professional communication</p>
+                      </div>
+                      <div className="bg-white/10 p-2 rounded" data-testid="guideline-safe-environment">
+                        <p className="font-semibold">✅ Safe Environment</p>
+                        <p className="text-white/90">Ensure content is age-appropriate and educational</p>
+                      </div>
+                      <div className="bg-red-900/30 p-2 rounded border border-red-500/30" data-testid="guideline-prohibited">
+                        <p className="font-semibold text-red-200">❌ Prohibited</p>
+                        <p className="text-red-100">Inappropriate, violent, or harmful content</p>
+                      </div>
+                    </div>
+
+                    {guidelinesAutoExpanded && (
+                      <div className="text-xs text-red-100 bg-red-900/50 p-3 rounded border border-red-500" data-testid="text-moderation-alert">
+                        <p className="font-semibold mb-1">⚠️ Moderation Alert Triggered</p>
+                        <p>Content monitoring has flagged potential concerns. Please review these guidelines and ensure your session content is appropriate.</p>
+                      </div>
+                    )}
+
+                    <div className="text-xs text-white/70 bg-white/5 p-2 rounded" data-testid="text-monitoring-notice">
+                      <p>💡 All sessions are monitored by AI to ensure safety and quality.</p>
+                    </div>
                   </CardContent>
                 </Card>
               )}

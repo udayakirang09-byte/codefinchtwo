@@ -13,6 +13,7 @@ interface UseWebRTCProps {
   isTeacher: boolean;
   onParticipantJoin?: (participant: Participant) => void;
   onParticipantLeave?: (userId: string) => void;
+  onModerationAlert?: (message: string, severity: 'moderate' | 'critical') => void;
 }
 
 export function useWebRTC({
@@ -20,7 +21,8 @@ export function useWebRTC({
   userId,
   isTeacher,
   onParticipantJoin,
-  onParticipantLeave
+  onParticipantLeave,
+  onModerationAlert
 }: UseWebRTCProps) {
   const [isConnected, setIsConnected] = useState(false);
   const [participants, setParticipants] = useState<Map<string, Participant>>(new Map());
@@ -611,6 +613,16 @@ export function useWebRTC({
               wsRef.current.close();
               wsRef.current = null;
             }
+            break;
+
+          case 'moderation-alert':
+            console.warn('🚨 AI Moderation Alert:', data.message);
+            onModerationAlert?.(data.message || 'Content policy violation detected', 'critical');
+            break;
+
+          case 'moderation-warning':
+            console.warn('⚠️ AI Moderation Warning:', data.message);
+            onModerationAlert?.(data.message || 'Please ensure content is appropriate', 'moderate');
             break;
         }
       };
