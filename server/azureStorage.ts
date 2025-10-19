@@ -75,7 +75,27 @@ export class AzureStorageService {
   async uploadProfileMedia(userId: string, buffer: Buffer, contentType: string, mediaType: 'photo' | 'video'): Promise<string> {
     // Create blob path: profile-media/{userId}/{type}-{timestamp}.{ext}
     const timestamp = Date.now();
-    const extension = mediaType === 'photo' ? 'jpg' : 'mp4';
+    
+    // Determine file extension from MIME type
+    let extension: string;
+    if (mediaType === 'photo') {
+      const photoExtensions: Record<string, string> = {
+        'image/jpeg': 'jpg',
+        'image/jpg': 'jpg',
+        'image/png': 'png',
+        'image/webp': 'webp'
+      };
+      extension = photoExtensions[contentType] || 'jpg';
+    } else {
+      const videoExtensions: Record<string, string> = {
+        'video/mp4': 'mp4',
+        'video/webm': 'webm',
+        'video/quicktime': 'mov',
+        'video/x-matroska': 'mkv'
+      };
+      extension = videoExtensions[contentType] || 'mp4';
+    }
+    
     const blobPath = `profile-media/${userId}/${mediaType}-${timestamp}.${extension}`;
     const blockBlobClient = this.getContainer().getBlockBlobClient(blobPath);
 
