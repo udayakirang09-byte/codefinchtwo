@@ -68,6 +68,7 @@ import AzureMetricsDetail from "./pages/admin/azure-metrics-detail";
 import ModerationReview from "./pages/admin/moderation-review";
 import TeacherPaymentConfig from "./pages/teacher/payment-config";
 import TeacherModerationStatus from "./pages/teacher/moderation-status";
+import TeacherAppealRestriction from "./pages/teacher/appeal-restriction";
 import Forums from "./pages/forums";
 import Projects from "./pages/projects";
 import Events from "./pages/events";
@@ -116,6 +117,7 @@ function Router() {
       <Route path="/teacher/home" component={TeacherDashboard} />
       <Route path="/teacher/payment-config" component={TeacherPaymentConfig} />
       <Route path="/teacher/moderation-status" component={TeacherModerationStatus} />
+      <Route path="/teacher/appeal-restriction" component={TeacherAppealRestriction} />
       <Route path="/admin/home" component={AdminHome} />
       <Route path="/student/active-classes" component={ActiveClasses} />
       <Route path="/student/all-active-classes" component={AllActiveClasses} />
