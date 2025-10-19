@@ -105,6 +105,7 @@ export const mentors = pgTable("mentors", {
   upiId: varchar("upi_id"), // UPI ID for payouts
   isActive: boolean("is_active").default(true),
   demoEnabled: boolean("demo_enabled").default(false), // C2: Allow teachers to enable/disable demo bookings
+  demoDisabledSince: timestamp("demo_disabled_since"), // Track when demo was last disabled for 30-day banner logic
   introVideoUrl: varchar("intro_video_url"), // Optional 1-minute intro video for teacher profile
   availableSlots: jsonb("available_slots").$type<{ day: string; times: string[] }[]>().default([]),
   // AI Moderation & Account Restrictions
@@ -1892,6 +1893,7 @@ export const mergedRecordings = pgTable("merged_recordings", {
   bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
   studentId: varchar("student_id").references(() => students.id).notNull(),
   mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
+  isDemoRecording: boolean("is_demo_recording").default(false), // Lock demo recordings until student completes ≥1 paid class
   blobPath: text("blob_path").notNull(), // Final merged file path
   blobUrl: text("blob_url"), // Temporary SAS URL
   totalParts: integer("total_parts").notNull(), // How many parts were merged
