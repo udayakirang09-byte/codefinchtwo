@@ -203,6 +203,28 @@ export async function canTeacherStartSession(teacherId: string): Promise<{ allow
 }
 
 /**
+ * Clear a teacher's restriction (used when appeal is approved)
+ */
+export async function clearTeacherRestriction(teacherId: string): Promise<void> {
+  try {
+    await db
+      .update(mentors)
+      .set({
+        accountRestriction: 'none',
+        restrictionReason: null,
+        isActive: true,
+        moderationViolations: 0 // Reset violation count
+      })
+      .where(eq(mentors.id, teacherId));
+
+    console.log(`✅ Restriction cleared for teacher ${teacherId}`);
+  } catch (error) {
+    console.error(`❌ Error clearing restriction for teacher ${teacherId}:`, error);
+    throw error;
+  }
+}
+
+/**
  * Appeal a restriction (admin action)
  */
 export async function appealRestriction(

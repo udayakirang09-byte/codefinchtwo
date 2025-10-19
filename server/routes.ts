@@ -8960,6 +8960,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   console.log('✅ Teacher Restriction Appeals API routes registered successfully!');
 
+  // Admin Appeal Review Routes
+  // Get all appeals for admin review - SECURED (admin only)
+  app.get('/api/admin/appeals', authenticateSession, async (req: any, res) => {
+    try {
+      const requestingUser = req.user;
+      
+      // Only admins can view all appeals
+      if (requestingUser.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
+      const appeals = await storage.getAllTeacherRestrictionAppeals();
+      res.json(appeals);
+    } catch (error) {
+      console.error('❌ Error fetching all appeals:', error);
+      res.status(500).json({ message: 'Failed to fetch appeals' });
+    }
+  });
+
+  // Admin reviews an appeal - SECURED (admin only)
+  app.post('/api/admin/appeals/:id/review', authenticateSession, async (req: any, res) => {
+    try {
+      const requestingUser = req.user;
+      
+      // Only admins can review appeals
+      if (requestingUser.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
+      const { id } = req.params;
+      const { decision, notes } = req.body;
+      
+      // Validate request
+      if (!decision || !['approved', 'rejected'].includes(decision)) {
+        return res.status(400).json({ message: 'Invalid decision. Must be "approved" or "rejected".' });
+      }
+      
+      if (!notes || notes.trim().length === 0) {
+        return res.status(400).json({ message: 'Review notes are required.' });
+      }
+      
+      if (notes.trim().length > 2000) {
+        return res.status(400).json({ message: 'Review notes must not exceed 2000 characters.' });
+      }
+      
+      // Check if appeal exists
+      const appeal = await storage.getTeacherRestrictionAppeal(id);
+      if (!appeal) {
+        return res.status(404).json({ message: 'Appeal not found' });
+      }
+      
+      // Check if appeal is already reviewed
+      if (appeal.status !== 'pending') {
+        return res.status(400).json({ message: 'This appeal has already been reviewed' });
+      }
+      
+      // Update appeal status
+      await storage.updateTeacherRestrictionAppealStatus(id, decision, notes.trim(), requestingUser.id);
+      
+      // If approved, clear the teacher's restriction
+      if (decision === 'approved') {
+        const { clearTeacherRestriction } = await import('./teacher-restrictions.js');
+        await clearTeacherRestriction(appeal.teacherId);
+        console.log(`✅ Teacher ${appeal.teacherId} restriction cleared after appeal approval`);
+      }
+      
+      console.log(`📝 Admin ${requestingUser.id} ${decision} appeal ${id}`);
+      res.json({ success: true, message: `Appeal ${decision} successfully` });
+    } catch (error) {
+      console.error('❌ Error reviewing appeal:', error);
+      res.status(500).json({ message: 'Failed to review appeal' });
+    }
+  });
+
+  console.log('✅ Admin Appeal Review API routes registered successfully!');
+
   // Admin Booking Limits Configuration Routes
   // Get admin booking limits configuration - PUBLIC (needed for booking forms)
   app.get('/api/admin/booking-limits', async (req: any, res) => {
