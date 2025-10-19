@@ -1208,6 +1208,25 @@ export const sessionDossiers = pgTable("session_dossiers", {
   crsIdx: index("session_dossiers_crs_idx").on(table.crs),
 }));
 
+// Teacher Restriction Appeals System
+export const teacherRestrictionAppeals = pgTable("teacher_restriction_appeals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  teacherId: varchar("teacher_id").references(() => mentors.id).notNull(),
+  appealReason: text("appeal_reason").notNull(), // Teacher's explanation for appeal
+  supportingEvidence: text("supporting_evidence"), // Optional additional context
+  restrictionType: varchar("restriction_type").notNull(), // 'warned', 'suspended', 'banned'
+  violationCount: integer("violation_count").notNull(), // Number of violations at time of appeal
+  status: varchar("status").notNull().default("pending"), // pending, approved, rejected
+  adminReviewNotes: text("admin_review_notes"),
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  teacherIdIdx: index("teacher_restriction_appeals_teacher_id_idx").on(table.teacherId),
+  statusIdx: index("teacher_restriction_appeals_status_idx").on(table.status),
+}));
+
 // GOV-1 & FB-2: Support Configuration (Admin toggles)
 export const supportConfig = pgTable("support_config", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -1431,6 +1450,11 @@ export const insertHelpTicketMessageSchema = createInsertSchema(helpTicketMessag
 export const insertAiModerationLogSchema = createInsertSchema(aiModerationLogs);
 
 export const insertSessionDossierSchema = createInsertSchema(sessionDossiers);
+
+export const insertTeacherRestrictionAppealSchema = createInsertSchema(teacherRestrictionAppeals);
+
+export type InsertTeacherRestrictionAppeal = z.infer<typeof insertTeacherRestrictionAppealSchema>;
+export type SelectTeacherRestrictionAppeal = typeof teacherRestrictionAppeals.$inferSelect;
 
 export const insertSupportConfigSchema = createInsertSchema(supportConfig);
 
