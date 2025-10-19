@@ -84,6 +84,7 @@ import {
   adminBookingLimits,
   sessionDossiers,
   teacherRestrictionAppeals,
+  moderationWhitelist,
   type TeacherAudioMetrics,
   type InsertTeacherRestrictionAppeal,
   type SelectTeacherRestrictionAppeal,
@@ -394,6 +395,12 @@ export interface IStorage {
   getAllTeacherRestrictionAppeals(): Promise<SelectTeacherRestrictionAppeal[]>;
   getTeacherRestrictionAppeal(id: string): Promise<SelectTeacherRestrictionAppeal | undefined>;
   updateTeacherRestrictionAppealStatus(id: string, status: 'approved' | 'rejected', adminNotes: string, reviewedBy: string): Promise<void>;
+  
+  // Moderation Whitelist operations
+  createModerationWhitelist(data: { contentPattern: string; subjectName?: string | null; modality: 'video' | 'audio' | 'text'; originalLogId?: string | null; addedBy: string; reason?: string | null }): Promise<any>;
+  getAllModerationWhitelist(): Promise<any[]>;
+  getModerationWhitelistBySubject(subjectName: string, modality?: 'video' | 'audio' | 'text'): Promise<any[]>;
+  deleteModerationWhitelist(id: string): Promise<void>;
   
   // Azure Storage Config operations
   updateAzureStorageConfig(config: { storageAccountName: string; containerName: string; retentionMonths: number }): Promise<any>;
@@ -2901,6 +2908,43 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date()
       })
       .where(eq(teacherRestrictionAppeals.id, id));
+  }
+
+  // Moderation Whitelist operations
+  async createModerationWhitelist(data: { 
+    contentPattern: string; 
+    subjectName?: string | null; 
+    modality: 'video' | 'audio' | 'text'; 
+    originalLogId?: string | null; 
+    addedBy: string; 
+    reason?: string | null 
+  }): Promise<any> {
+    const [created] = await db.insert(moderationWhitelist).values(data).returning();
+    return created;
+  }
+
+  async getAllModerationWhitelist(): Promise<any[]> {
+    return await db.select()
+      .from(moderationWhitelist)
+      .orderBy(desc(moderationWhitelist.createdAt));
+  }
+
+  async getModerationWhitelistBySubject(subjectName: string, modality?: 'video' | 'audio' | 'text'): Promise<any[]> {
+    if (modality) {
+      return await db.select()
+        .from(moderationWhitelist)
+        .where(and(
+          eq(moderationWhitelist.subjectName, subjectName),
+          eq(moderationWhitelist.modality, modality)
+        ));
+    }
+    return await db.select()
+      .from(moderationWhitelist)
+      .where(eq(moderationWhitelist.subjectName, subjectName));
+  }
+
+  async deleteModerationWhitelist(id: string): Promise<void> {
+    await db.delete(moderationWhitelist).where(eq(moderationWhitelist.id, id));
   }
 
   // Azure Storage Config operations
