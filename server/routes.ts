@@ -9192,6 +9192,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   console.log('✅ Admin Appeal Review API routes registered successfully!');
 
+  // Moderation Whitelist Routes (SA-9: False Positive Learning System)
+  // Create a new whitelist entry - SECURED (admin only)
+  app.post('/api/admin/moderation-whitelist', authenticateSession, async (req: any, res) => {
+    try {
+      const requestingUser = req.user;
+      
+      // Only admins can create whitelist entries
+      if (requestingUser.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
+      const { contentPattern, subjectName, modality, originalLogId, reason } = req.body;
+      
+      // Validate required fields
+      if (!contentPattern || !modality) {
+        return res.status(400).json({ message: 'contentPattern and modality are required' });
+      }
+      
+      if (!['video', 'audio', 'text'].includes(modality)) {
+        return res.status(400).json({ message: 'Invalid modality. Must be "video", "audio", or "text".' });
+      }
+      
+      // Create whitelist entry
+      const whitelistEntry = await storage.createModerationWhitelist({
+        contentPattern: contentPattern.trim(),
+        subjectName: subjectName || null,
+        modality,
+        originalLogId: originalLogId || null,
+        addedBy: requestingUser.id,
+        reason: reason?.trim() || null
+      });
+      
+      console.log(`✅ Admin ${requestingUser.id} added whitelist entry for ${modality} content: "${contentPattern}"`);
+      res.json(whitelistEntry);
+    } catch (error) {
+      console.error('❌ Error creating whitelist entry:', error);
+      res.status(500).json({ message: 'Failed to create whitelist entry' });
+    }
+  });
+
+  // Get all whitelist entries - SECURED (admin only)
+  app.get('/api/admin/moderation-whitelist', authenticateSession, async (req: any, res) => {
+    try {
+      const requestingUser = req.user;
+      
+      // Only admins can view whitelist entries
+      if (requestingUser.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
+      const whitelistEntries = await storage.getAllModerationWhitelist();
+      res.json(whitelistEntries);
+    } catch (error) {
+      console.error('❌ Error fetching whitelist entries:', error);
+      res.status(500).json({ message: 'Failed to fetch whitelist entries' });
+    }
+  });
+
+  // Delete a whitelist entry - SECURED (admin only)
+  app.delete('/api/admin/moderation-whitelist/:id', authenticateSession, async (req: any, res) => {
+    try {
+      const requestingUser = req.user;
+      
+      // Only admins can delete whitelist entries
+      if (requestingUser.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
+      const { id } = req.params;
+      
+      // Delete whitelist entry
+      await storage.deleteModerationWhitelist(id);
+      
+      console.log(`✅ Admin ${requestingUser.id} deleted whitelist entry ${id}`);
+      res.json({ success: true, message: 'Whitelist entry deleted successfully' });
+    } catch (error) {
+      console.error('❌ Error deleting whitelist entry:', error);
+      res.status(500).json({ message: 'Failed to delete whitelist entry' });
+    }
+  });
+
+  console.log('✅ Moderation Whitelist API routes registered successfully!');
+
   // Admin Booking Limits Configuration Routes
   // Get admin booking limits configuration - PUBLIC (needed for booking forms)
   app.get('/api/admin/booking-limits', async (req: any, res) => {
