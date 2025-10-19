@@ -1965,100 +1965,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // VALIDATION: Student-side overlap check with 5-minute buffer
-      const scheduledStart = new Date(req.body.scheduledAt);
-      const scheduledEnd = new Date(scheduledStart.getTime() + req.body.duration * 60000);
-      
-      // Find all scheduled bookings for this student (any mentor)
-      const studentBookings = await db
-        .select()
-        .from(bookings)
-        .where(
-          and(
-            eq(bookings.studentId, student.id),
-            eq(bookings.status, 'scheduled'),
-            isNull(bookings.cancelledAt) // Exclude cancelled bookings
-          )
-        );
-      
-      // Check for overlaps with existing student bookings (with 5-minute buffer)
-      const BUFFER_MINUTES = 5;
-      const bufferMs = BUFFER_MINUTES * 60000;
-      
-      for (const existingBooking of studentBookings) {
-        const existingStart = new Date(existingBooking.scheduledAt);
-        const existingEnd = new Date(existingStart.getTime() + existingBooking.duration * 60000);
-        
-        // Apply 5-minute buffer: new booking should not start within 5 min before existing end
-        // and should not end within 5 min before existing start
-        const newStartWithBuffer = new Date(scheduledStart.getTime() - bufferMs);
-        const newEndWithBuffer = new Date(scheduledEnd.getTime() + bufferMs);
-        const existingStartWithBuffer = new Date(existingStart.getTime() - bufferMs);
-        const existingEndWithBuffer = new Date(existingEnd.getTime() + bufferMs);
-        
-        // Check if time ranges overlap (with buffer)
-        const hasOverlap = newStartWithBuffer < existingEndWithBuffer && newEndWithBuffer > existingStartWithBuffer;
-        
-        if (hasOverlap) {
-          console.log(`🚫 Student booking overlap detected: new booking conflicts with existing booking ${existingBooking.id} (with 5-min buffer)`);
-          
-          // Format times for user-friendly message
-          const existingStartTime = existingStart.toLocaleTimeString('en-US', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: true 
-          });
-          const existingEndTime = existingEnd.toLocaleTimeString('en-US', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: true 
-          });
-          
-          return res.status(409).json({ 
-            message: `You already have a class scheduled from ${existingStartTime} to ${existingEndTime}. Please choose a time at least 5 minutes before or after your existing class.`,
-            error: "STUDENT_SCHEDULE_CONFLICT",
-            conflictingBooking: {
-              id: existingBooking.id,
-              scheduledAt: existingBooking.scheduledAt,
-              duration: existingBooking.duration
-            }
-          });
+      // Feature #10: Admin override for overlapping bookings (only allowed for admins)
+      let adminOverride = false;
+      if (req.body.adminOverride === true) {
+        // Verify user is actually an admin
+        if (user.role === 'admin') {
+          adminOverride = true;
+          console.log(`⚠️ Admin override enabled - skipping overlap validation for booking by admin user ${user.id}`);
+        } else {
+          console.log(`🚫 Admin override attempted by non-admin user ${user.id} - ignoring`);
         }
       }
       
-      // VALIDATION: Check for booking overlap with the same mentor
+      // VALIDATION: Student-side overlap check with 5-minute buffer (skip if admin override)
+      const scheduledStart = new Date(req.body.scheduledAt);
+      const scheduledEnd = new Date(scheduledStart.getTime() + req.body.duration * 60000);
+      
+      if (!adminOverride) {
+        // Find all scheduled bookings for this student (any mentor)
+        const studentBookings = await db
+          .select()
+          .from(bookings)
+          .where(
+            and(
+              eq(bookings.studentId, student.id),
+              eq(bookings.status, 'scheduled'),
+              isNull(bookings.cancelledAt) // Exclude cancelled bookings
+            )
+          );
+        
+        // Check for overlaps with existing student bookings (with 5-minute buffer)
+        const BUFFER_MINUTES = 5;
+        const bufferMs = BUFFER_MINUTES * 60000;
+        
+        for (const existingBooking of studentBookings) {
+          const existingStart = new Date(existingBooking.scheduledAt);
+          const existingEnd = new Date(existingStart.getTime() + existingBooking.duration * 60000);
+          
+          // Apply 5-minute buffer: new booking should not start within 5 min before existing end
+          // and should not end within 5 min before existing start
+          const newStartWithBuffer = new Date(scheduledStart.getTime() - bufferMs);
+          const newEndWithBuffer = new Date(scheduledEnd.getTime() + bufferMs);
+          const existingStartWithBuffer = new Date(existingStart.getTime() - bufferMs);
+          const existingEndWithBuffer = new Date(existingEnd.getTime() + bufferMs);
+          
+          // Check if time ranges overlap (with buffer)
+          const hasOverlap = newStartWithBuffer < existingEndWithBuffer && newEndWithBuffer > existingStartWithBuffer;
+          
+          if (hasOverlap) {
+            console.log(`🚫 Student booking overlap detected: new booking conflicts with existing booking ${existingBooking.id} (with 5-min buffer)`);
+            
+            // Format times for user-friendly message
+            const existingStartTime = existingStart.toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit',
+              hour12: true 
+            });
+            const existingEndTime = existingEnd.toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit',
+              hour12: true 
+            });
+            
+            return res.status(409).json({ 
+              message: `You already have a class scheduled from ${existingStartTime} to ${existingEndTime}. Please choose a time at least 5 minutes before or after your existing class.`,
+              error: "STUDENT_SCHEDULE_CONFLICT",
+              conflictingBooking: {
+                id: existingBooking.id,
+                scheduledAt: existingBooking.scheduledAt,
+                duration: existingBooking.duration
+              }
+            });
+          }
+        }
+      }
+      
+      // VALIDATION: Check for booking overlap with the same mentor (skip if admin override)
       // (scheduledStart and scheduledEnd already defined above)
       
-      // Find all scheduled bookings for this mentor
-      const mentorBookings = await db
-        .select()
-        .from(bookings)
-        .where(
-          and(
-            eq(bookings.mentorId, req.body.mentorId),
-            eq(bookings.status, 'scheduled'),
-            isNull(bookings.cancelledAt) // Exclude cancelled bookings
-          )
-        );
-      
-      // Check for overlaps with existing bookings
-      for (const existingBooking of mentorBookings) {
-        const existingStart = new Date(existingBooking.scheduledAt);
-        const existingEnd = new Date(existingStart.getTime() + existingBooking.duration * 60000);
+      if (!adminOverride) {
+        // Find all scheduled bookings for this mentor
+        const mentorBookings = await db
+          .select()
+          .from(bookings)
+          .where(
+            and(
+              eq(bookings.mentorId, req.body.mentorId),
+              eq(bookings.status, 'scheduled'),
+              isNull(bookings.cancelledAt) // Exclude cancelled bookings
+            )
+          );
         
-        // Check if time ranges overlap
-        const hasOverlap = scheduledStart < existingEnd && scheduledEnd > existingStart;
-        
-        if (hasOverlap) {
-          console.log(`🚫 Booking overlap detected: new booking conflicts with existing booking ${existingBooking.id}`);
-          return res.status(409).json({ 
-            message: "This time slot is already booked. Please choose a different time.",
-            conflictingBooking: {
-              id: existingBooking.id,
-              scheduledAt: existingBooking.scheduledAt,
-              duration: existingBooking.duration
-            }
-          });
+        // Check for overlaps with existing bookings
+        for (const existingBooking of mentorBookings) {
+          const existingStart = new Date(existingBooking.scheduledAt);
+          const existingEnd = new Date(existingStart.getTime() + existingBooking.duration * 60000);
+          
+          // Check if time ranges overlap
+          const hasOverlap = scheduledStart < existingEnd && scheduledEnd > existingStart;
+          
+          if (hasOverlap) {
+            console.log(`🚫 Booking overlap detected: new booking conflicts with existing booking ${existingBooking.id}`);
+            return res.status(409).json({ 
+              message: "This time slot is already booked. Please choose a different time.",
+              conflictingBooking: {
+                id: existingBooking.id,
+                scheduledAt: existingBooking.scheduledAt,
+                duration: existingBooking.duration
+              }
+            });
+          }
         }
       }
       
