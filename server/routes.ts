@@ -9244,6 +9244,180 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   console.log('✅ Admin Booking Limits Configuration API routes registered successfully!');
 
+  // Feature #14: Demo-to-Paid Conversion Metrics API Routes
+  // Get conversion metrics for a specific teacher
+  app.get('/api/teachers/:mentorId/demo-conversion-metrics', async (req, res) => {
+    try {
+      const { mentorId } = req.params;
+      
+      // Verify mentor exists
+      const mentor = await storage.getMentor(mentorId);
+      if (!mentor) {
+        return res.status(404).json({ message: 'Teacher not found' });
+      }
+      
+      // Get all completed demos for this teacher
+      const completedDemos = await db
+        .select()
+        .from(bookings)
+        .where(
+          and(
+            eq(bookings.mentorId, mentorId),
+            eq(bookings.status, 'completed'),
+            eq(bookings.sessionType, 'demo'),
+            isNull(bookings.cancelledAt)
+          )
+        );
+      
+      const totalDemosCompleted = completedDemos.length;
+      
+      // Get unique student IDs who completed demos
+      const demoStudentIds = new Set(completedDemos.map(b => b.studentId));
+      
+      // For each student, check if they also completed at least 1 paid class
+      let convertedStudents = 0;
+      const studentConversionDetails: Array<{studentId: string, studentName: string, paidClassesCompleted: number}> = [];
+      
+      for (const studentId of Array.from(demoStudentIds)) {
+        const studentIdStr = String(studentId);
+        const paidBookings = await db
+          .select()
+          .from(bookings)
+          .where(
+            and(
+              eq(bookings.studentId, studentIdStr),
+              eq(bookings.mentorId, mentorId),
+              eq(bookings.status, 'completed'),
+              eq(bookings.sessionType, 'paid'),
+              isNull(bookings.cancelledAt)
+            )
+          );
+        
+        if (paidBookings.length > 0) {
+          convertedStudents++;
+          
+          // Get student details
+          const student = await storage.getStudent(studentIdStr);
+          if (student) {
+            studentConversionDetails.push({
+              studentId: studentIdStr,
+              studentName: `${student.user.firstName} ${student.user.lastName}`,
+              paidClassesCompleted: paidBookings.length
+            });
+          }
+        }
+      }
+      
+      // Calculate conversion rate
+      const conversionRate = totalDemosCompleted > 0 
+        ? ((convertedStudents / demoStudentIds.size) * 100).toFixed(2) 
+        : '0.00';
+      
+      const metrics = {
+        totalDemosCompleted,
+        uniqueStudentsWithDemos: demoStudentIds.size,
+        convertedStudents,
+        conversionRate: `${conversionRate}%`,
+        conversionRateNumeric: parseFloat(conversionRate),
+        convertedStudentDetails: studentConversionDetails
+      };
+      
+      console.log(`📊 Demo conversion metrics for teacher ${mentorId}:`, metrics);
+      res.json(metrics);
+    } catch (error) {
+      console.error('Error fetching demo conversion metrics:', error);
+      res.status(500).json({ message: 'Failed to fetch demo conversion metrics' });
+    }
+  });
+
+  // Get conversion metrics for all teachers (admin view)
+  app.get('/api/admin/demo-conversion-metrics', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
+      // Get all mentors
+      const mentors = await storage.getMentors();
+      
+      const metricsPerTeacher = [];
+      
+      for (const mentor of mentors) {
+        // Get all completed demos for this teacher
+        const completedDemos = await db
+          .select()
+          .from(bookings)
+          .where(
+            and(
+              eq(bookings.mentorId, mentor.id),
+              eq(bookings.status, 'completed'),
+              eq(bookings.sessionType, 'demo'),
+              isNull(bookings.cancelledAt)
+            )
+          );
+        
+        const totalDemosCompleted = completedDemos.length;
+        
+        // Skip teachers with no demos
+        if (totalDemosCompleted === 0) {
+          continue;
+        }
+        
+        // Get unique student IDs who completed demos
+        const demoStudentIds = new Set(completedDemos.map(b => b.studentId));
+        
+        // For each student, check if they also completed at least 1 paid class
+        let convertedStudents = 0;
+        
+        for (const studentId of Array.from(demoStudentIds)) {
+          const studentIdStr = String(studentId);
+          const paidBookings = await db
+            .select()
+            .from(bookings)
+            .where(
+              and(
+                eq(bookings.studentId, studentIdStr),
+                eq(bookings.mentorId, mentor.id),
+                eq(bookings.status, 'completed'),
+                eq(bookings.sessionType, 'paid'),
+                isNull(bookings.cancelledAt)
+              )
+            );
+          
+          if (paidBookings.length > 0) {
+            convertedStudents++;
+          }
+        }
+        
+        // Calculate conversion rate
+        const conversionRate = totalDemosCompleted > 0 
+          ? ((convertedStudents / demoStudentIds.size) * 100).toFixed(2) 
+          : '0.00';
+        
+        metricsPerTeacher.push({
+          mentorId: mentor.id,
+          mentorName: `${mentor.user.firstName} ${mentor.user.lastName}`,
+          totalDemosCompleted,
+          uniqueStudentsWithDemos: demoStudentIds.size,
+          convertedStudents,
+          conversionRate: `${conversionRate}%`,
+          conversionRateNumeric: parseFloat(conversionRate)
+        });
+      }
+      
+      // Sort by conversion rate descending
+      metricsPerTeacher.sort((a, b) => b.conversionRateNumeric - a.conversionRateNumeric);
+      
+      console.log(`📊 Admin view: Demo conversion metrics for ${metricsPerTeacher.length} teachers`);
+      res.json({ teachers: metricsPerTeacher });
+    } catch (error) {
+      console.error('Error fetching admin demo conversion metrics:', error);
+      res.status(500).json({ message: 'Failed to fetch demo conversion metrics' });
+    }
+  });
+
+  console.log('✅ Demo-to-Paid Conversion Metrics API routes registered successfully!');
+
   // Abusive Language Incidents API Routes
   // Get all abusive language incidents for admin dashboard
   app.get('/api/admin/abusive-incidents', authenticateSession, async (req: any, res) => {
