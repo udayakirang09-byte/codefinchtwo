@@ -234,11 +234,11 @@ const BookingCheckoutForm = ({ bookingDetails, hasStripe, paymentIntentId }: { b
         
         toast({
           title: "Bulk Package Purchased!",
-          description: `Successfully purchased ${bookingDetails.totalClasses} classes with ${bookingDetails.mentorName}! Schedule them from your dashboard.`,
+          description: `Successfully purchased ${bookingDetails.totalClasses} classes with ${bookingDetails.mentorName}! Schedule them from your packages page.`,
         });
 
-        // Redirect to student dashboard
-        navigate(`/student-dashboard`);
+        // Redirect to My Packages page
+        navigate(`/student/my-packages`);
       } else {
         // Create regular single booking
         const bookingData = {
