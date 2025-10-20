@@ -8904,12 +8904,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
             teacherResources: true,
             contactUs: true,
           },
-          showHelpCenter: false 
+          showHelpCenter: false,
+          abusiveLanguageMonitoring: false,
+          studentDashboardLinks: {
+            browseCourses: true,
+          },
+          teacherDashboardLinks: {
+            createCourse: true,
+            courseDetails: true,
+          }
         });
       }
       res.json({ 
         footerLinks: config.footerLinks,
-        showHelpCenter: config.showHelpCenter 
+        showHelpCenter: config.showHelpCenter,
+        abusiveLanguageMonitoring: config.abusiveLanguageMonitoring || false,
+        studentDashboardLinks: config.studentDashboardLinks || { browseCourses: true },
+        teacherDashboardLinks: config.teacherDashboardLinks || { createCourse: true, courseDetails: true }
       });
     } catch (error) {
       console.error('Error fetching admin UI config:', error);
@@ -8924,8 +8935,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Admin access required' });
       }
 
-      const { footerLinks, showHelpCenter } = req.body;
-      await storage.updateAdminUiConfig({ footerLinks, showHelpCenter });
+      const { footerLinks, showHelpCenter, abusiveLanguageMonitoring, studentDashboardLinks, teacherDashboardLinks } = req.body;
+      await storage.updateAdminUiConfig({ 
+        footerLinks, 
+        showHelpCenter, 
+        abusiveLanguageMonitoring,
+        studentDashboardLinks,
+        teacherDashboardLinks
+      });
       res.json({ success: true, message: 'UI configuration updated successfully' });
     } catch (error) {
       console.error('Error updating admin UI config:', error);

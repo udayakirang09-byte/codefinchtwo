@@ -266,10 +266,54 @@ export default function CreateCourse() {
         return;
       }
 
-      if (maxStudentsValue > 1000) {
+      if (maxStudentsValue > 8) {
         toast({
           title: "Max Students Too High",
-          description: "Maximum students cannot exceed 1000.",
+          description: "Maximum students cannot exceed 8.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    // Number of classes validation
+    if (formData.maxClasses && formData.maxClasses.trim()) {
+      const maxClassesValue = parseInt(formData.maxClasses);
+      if (isNaN(maxClassesValue)) {
+        toast({
+          title: "Invalid Number of Classes",
+          description: "Please enter a valid number for classes.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (maxClassesValue < 1) {
+        toast({
+          title: "Invalid Number of Classes",
+          description: "Number of classes must be at least 1.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (maxClassesValue > 8) {
+        toast({
+          title: "Too Many Classes",
+          description: "Maximum number of classes cannot exceed 8.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    // Start Time validation - must be on the hour (HH:00)
+    if (formData.startTime && formData.startTime.trim()) {
+      const [hours, minutes] = formData.startTime.split(':');
+      if (minutes !== '00') {
+        toast({
+          title: "Invalid Start Time",
+          description: "Start time must be on the hour (e.g., 09:00, 10:00). Minutes must be :00.",
           variant: "destructive",
         });
         return;
@@ -279,8 +323,9 @@ export default function CreateCourse() {
     createCourseMutation.mutate({
       ...formData,
       price: formData.price || "0",
-      maxStudents: parseInt(formData.maxStudents) || 10,
-      maxClasses: parseInt(formData.maxClasses) || 8
+      maxStudents: parseInt(formData.maxStudents) || 8,
+      maxClasses: parseInt(formData.maxClasses) || 8,
+      sessionDuration: parseInt(formData.sessionDuration) || 55
     });
   };
 
@@ -455,7 +500,9 @@ export default function CreateCourse() {
                   <Input
                     id="maxStudents"
                     type="number"
-                    placeholder="10"
+                    placeholder="8"
+                    min="1"
+                    max="8"
                     value={formData.maxStudents}
                     onChange={(e) => setFormData({ ...formData, maxStudents: e.target.value })}
                     data-testid="input-max-students"
@@ -524,6 +571,8 @@ export default function CreateCourse() {
                       id="maxClasses"
                       type="number"
                       placeholder="8"
+                      min="1"
+                      max="8"
                       value={formData.maxClasses}
                       onChange={(e) => setFormData({ ...formData, maxClasses: e.target.value })}
                       data-testid="input-max-classes"
