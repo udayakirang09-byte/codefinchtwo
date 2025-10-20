@@ -4916,7 +4916,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: validatedData.description,
         mentorId: mentor.id,
         category: validatedData.category,
-        difficulty: validatedData.difficulty,
+        difficulty: validatedData.difficulty || 'intermediate', // Default to intermediate if not provided
         price: validatedData.price,
         duration: validatedData.duration,
         maxStudents: validatedData.maxStudents,

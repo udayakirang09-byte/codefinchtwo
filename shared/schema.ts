@@ -740,7 +740,7 @@ export const courses = pgTable("courses", {
   title: varchar("title").notNull(),
   description: text("description").notNull(),
   category: varchar("category").notNull(), // programming, web-development, mobile-development, etc.
-  difficulty: varchar("difficulty").notNull(), // beginner, intermediate, advanced
+  difficulty: varchar("difficulty").default("intermediate"), // beginner, intermediate, advanced - defaults to intermediate if not provided
   duration: varchar("duration"), // e.g., "2 hours", "1 week", etc.
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   maxStudents: integer("max_students").default(10),

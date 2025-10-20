@@ -349,7 +349,7 @@ export default function CreateCourse() {
       title: trimmedTitle,
       description: trimmedDescription,
       category: formData.category,
-      price: feeValue,
+      price: feeValue.toString(),
       maxStudents: 8, // Fixed at 8
       maxClasses: maxClassesValue,
       sessionDuration: parseInt(formData.sessionDuration) || 55,
