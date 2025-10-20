@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { CookieSettingsDialog } from "@/components/cookie-policy";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import logoImage from "@assets/image_1760912565984.png";
+import logoImage from "@assets/image_1760956041351.png";
 
 interface UiConfigResponse {
   footerLinks: {
@@ -51,13 +51,12 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-4 gap-8 mb-12">
           <div>
-            <div className="flex items-center text-2xl font-bold text-accent mb-4" data-testid="text-footer-logo">
+            <div className="mb-4" data-testid="text-footer-logo">
               <img 
                 src={logoImage} 
-                alt="CodeConnect Logo" 
-                className="h-10 w-10 object-contain mr-3"
+                alt="Techlearnorbit Logo" 
+                className="h-16 w-auto object-contain"
               />
-              CodeConnect
             </div>
             <p className="text-white/80 mb-6" data-testid="text-footer-description">
               Connecting you with passionate mentors across world.
@@ -225,7 +224,7 @@ export default function Footer() {
         
         <div className="border-t border-white/20 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-white/60 mb-4 md:mb-0" data-testid="text-copyright">
-            © 2024 CodeConnect. All rights reserved.
+            © 2024 Techlearnorbit. All rights reserved.
           </p>
           <div className="flex space-x-6 text-white/60 text-sm items-center">
             <Link href="/terms" className="hover:text-white transition-colors" data-testid="link-terms">

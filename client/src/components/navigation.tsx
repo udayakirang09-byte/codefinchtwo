@@ -4,7 +4,7 @@ import { Menu, X, User, LogOut, Home, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
-import logoImage from "@assets/image_1760912565984.png";
+import logoImage from "@assets/image_1760956041351.png";
 
 export default function Navigation() {
   const [location] = useLocation();
@@ -87,23 +87,14 @@ export default function Navigation() {
         <div className="flex justify-between items-center h-16">
           <Link 
             href="/" 
-            className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
-              location === '/' || location === '' 
-                ? 'bg-primary/10 border-2 border-primary/20 shadow-sm' 
-                : 'hover:bg-primary/5'
-            }`} 
+            className="flex items-center space-x-3 transition-all duration-200 hover:opacity-90" 
             data-testid="link-logo"
           >
             <img 
               src={logoImage} 
-              alt="CodeConnect Logo" 
-              className="h-10 w-10 object-contain"
+              alt="Techlearnorbit Logo" 
+              className="h-16 w-auto object-contain"
             />
-            <span className={`text-2xl font-bold text-gradient ${
-              location === '/' || location === '' ? 'drop-shadow-sm' : ''
-            }`}>
-              CodeConnect
-            </span>
           </Link>
           
 
