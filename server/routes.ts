@@ -8915,13 +8915,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
       }
-      res.json({ 
+      const response = { 
         footerLinks: config.footerLinks,
         showHelpCenter: config.showHelpCenter,
-        abusiveLanguageMonitoring: config.abusiveLanguageMonitoring || false,
-        studentDashboardLinks: config.studentDashboardLinks || { browseCourses: true },
-        teacherDashboardLinks: config.teacherDashboardLinks || { createCourse: true, courseDetails: true }
-      });
+        abusiveLanguageMonitoring: config.abusiveLanguageMonitoring ?? false,
+        studentDashboardLinks: config.studentDashboardLinks ?? { browseCourses: true },
+        teacherDashboardLinks: config.teacherDashboardLinks ?? { createCourse: true, courseDetails: true }
+      };
+      console.log('📊 [UI CONFIG] GET Response:', JSON.stringify(response, null, 2));
+      res.json(response);
     } catch (error) {
       console.error('Error fetching admin UI config:', error);
       res.status(500).json({ message: 'Failed to fetch admin UI config' });

@@ -91,11 +91,12 @@ export default function AdminUiConfig() {
   // Sync state when config loads
   useEffect(() => {
     if (uiConfig) {
+      console.log('📊 [UI CONFIG] Frontend received:', JSON.stringify(uiConfig, null, 2));
       setFooterLinks(uiConfig.footerLinks);
       setShowHelpCenter(uiConfig.showHelpCenter);
-      setAbusiveLanguageMonitoring(uiConfig.abusiveLanguageMonitoring || false);
-      setStudentDashboardLinks(uiConfig.studentDashboardLinks || { browseCourses: true });
-      setTeacherDashboardLinks(uiConfig.teacherDashboardLinks || { createCourse: true, courseDetails: true });
+      setAbusiveLanguageMonitoring(uiConfig.abusiveLanguageMonitoring ?? false);
+      setStudentDashboardLinks(uiConfig.studentDashboardLinks ?? { browseCourses: true });
+      setTeacherDashboardLinks(uiConfig.teacherDashboardLinks ?? { createCourse: true, courseDetails: true });
       setHasChanges(false);
     }
   }, [uiConfig]);
@@ -177,9 +178,9 @@ export default function AdminUiConfig() {
     if (uiConfig) {
       setFooterLinks(uiConfig.footerLinks);
       setShowHelpCenter(uiConfig.showHelpCenter);
-      setAbusiveLanguageMonitoring(uiConfig.abusiveLanguageMonitoring || false);
-      setStudentDashboardLinks(uiConfig.studentDashboardLinks || { browseCourses: true });
-      setTeacherDashboardLinks(uiConfig.teacherDashboardLinks || { createCourse: true, courseDetails: true });
+      setAbusiveLanguageMonitoring(uiConfig.abusiveLanguageMonitoring ?? false);
+      setStudentDashboardLinks(uiConfig.studentDashboardLinks ?? { browseCourses: true });
+      setTeacherDashboardLinks(uiConfig.teacherDashboardLinks ?? { createCourse: true, courseDetails: true });
       setHasChanges(false);
     }
   };
