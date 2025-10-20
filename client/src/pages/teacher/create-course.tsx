@@ -12,58 +12,89 @@ import { Link } from 'wouter';
 import Navigation from '@/components/navigation';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
+
+interface TimeSlot {
+  id: string;
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+  isBlocked: boolean;
+}
 
 export default function CreateCourse() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [showCreateForm, setShowCreateForm] = useState(true);
   const [editingCourse, setEditingCourse] = useState<any>(null);
   const [viewingStudents, setViewingStudents] = useState<any>(null);
   
-  // Get logged-in user email from localStorage
-  const userEmail = localStorage.getItem('userEmail') || '';
-  
   // Fetch existing courses
   const { data: existingCourses = [], isLoading } = useQuery<any[]>({
-    queryKey: [`/api/teacher/courses`, userEmail],
-    queryFn: () => fetch(`/api/teacher/courses?teacherId=${userEmail}`).then(res => res.json()),
-    enabled: !!userEmail,
+    queryKey: [`/api/teacher/courses`],
+    enabled: !!user?.id,
+  });
+
+  // Fetch teacher's mentor ID
+  const { data: mentorData } = useQuery<{id: string}>({
+    queryKey: [`/api/mentors/by-user/${user?.id}`],
+    enabled: !!user?.id
+  });
+
+  // Fetch teacher's availability schedule with real-time sync
+  const { data: teacherSchedule = [] } = useQuery<TimeSlot[]>({
+    queryKey: [`/api/teacher/schedule`],
+    enabled: !!user?.id,
+    refetchInterval: 5000, // Real-time sync every 5 seconds
   });
 
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     category: '',
-    duration: '',
-    price: '',
-    difficulty: '',
-    maxStudents: '',
+    feePerClass: '',
     maxClasses: '',
     prerequisites: '',
-    // Track Definition Fields (CC6)
     track: '',
     startTime: '',
     startDate: '',
     sessionDuration: '55'
   });
 
-  // Load course configuration defaults from admin
-  useEffect(() => {
-    fetch('/api/admin/course-config')
-      .then(res => res.json())
-      .then(config => {
-        setFormData(prev => ({
-          ...prev,
-          maxStudents: config.maxStudentsPerCourse.toString(),
-          maxClasses: config.maxClassesPerCourse.toString()
-        }));
-      })
-      .catch(err => console.error('Failed to load course config:', err));
-  }, []);
+  // Filter available time slots based on track selection
+  const getAvailableTimeSlots = () => {
+    if (!formData.track || !teacherSchedule.length) return [];
+    
+    const trackDays = formData.track === 'weekday' 
+      ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+      : ['Saturday', 'Sunday'];
+    
+    return teacherSchedule
+      .filter(slot => 
+        trackDays.includes(slot.dayOfWeek) && 
+        slot.isAvailable && 
+        !slot.isBlocked
+      )
+      .map(slot => slot.startTime)
+      .filter((time, index, self) => self.indexOf(time) === index) // Unique times
+      .sort();
+  };
+
+  // Get minimum future date (tomorrow)
+  const getMinDate = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  };
+
+  const availableTimes = getAvailableTimeSlots();
 
   const createCourseMutation = useMutation({
     mutationFn: async (courseData: any) => {
-      return apiRequest('POST', `/api/teacher/courses?teacherId=${userEmail}`, courseData);
+      const response = await apiRequest('POST', `/api/teacher/courses`, courseData);
+      return await response.json();
     },
     onSuccess: async (data) => {
       console.log('✅ Course creation successful:', data);
@@ -71,34 +102,27 @@ export default function CreateCourse() {
         title: "Success",
         description: "Course created successfully!",
       });
-      // Invalidate the query cache to refresh the courses list
-      queryClient.invalidateQueries({ queryKey: [`/api/teacher/courses`, userEmail] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teacher/courses`] });
       
-      // Reset form with admin defaults
-      try {
-        const configResponse = await fetch('/api/admin/course-config');
-        const config = await configResponse.json();
-        setFormData({
-          title: '', description: '', category: '', duration: '', 
-          price: '', difficulty: '', maxStudents: config.maxStudentsPerCourse.toString(), 
-          maxClasses: config.maxClassesPerCourse.toString(), prerequisites: '',
-          track: '', startTime: '', startDate: '', sessionDuration: '55'
-        });
-      } catch (err) {
-        // Fallback to empty if config fetch fails
-        setFormData({
-          title: '', description: '', category: '', duration: '', 
-          price: '', difficulty: '', maxStudents: '', maxClasses: '', prerequisites: '',
-          track: '', startTime: '', startDate: '', sessionDuration: '55'
-        });
-      }
-      console.log('✅ Toast triggered and form reset');
+      // Reset form
+      setFormData({
+        title: '', 
+        description: '', 
+        category: '', 
+        feePerClass: '',
+        maxClasses: '', 
+        prerequisites: '',
+        track: '', 
+        startTime: '', 
+        startDate: '', 
+        sessionDuration: '55'
+      });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('❌ Course creation failed:', error);
       toast({
         title: "Error",
-        description: "Failed to create course. Please try again.",
+        description: error.message || "Failed to create course. Please try again.",
         variant: "destructive",
       });
     }
@@ -106,21 +130,22 @@ export default function CreateCourse() {
 
   const updateCourseMutation = useMutation({
     mutationFn: async ({ courseId, courseData }: { courseId: string; courseData: any }) => {
-      return apiRequest('PATCH', `/api/courses/${courseId}`, courseData);
+      const response = await apiRequest('PATCH', `/api/courses/${courseId}`, courseData);
+      return await response.json();
     },
     onSuccess: () => {
       toast({
         title: "Success",
         description: "Course updated successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/teacher/courses`, userEmail] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teacher/courses`] });
       setEditingCourse(null);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('❌ Course update failed:', error);
       toast({
         title: "Error",
-        description: "Failed to update course. Please try again.",
+        description: error.message || "Failed to update course. Please try again.",
         variant: "destructive",
       });
     }
@@ -129,7 +154,6 @@ export default function CreateCourse() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Comprehensive validation
     // Title validation
     const trimmedTitle = formData.title.trim();
     if (!trimmedTitle) {
@@ -189,144 +213,168 @@ export default function CreateCourse() {
       return;
     }
 
-    // Duration validation (optional but must be valid if provided)
-    if (formData.duration && formData.duration.trim()) {
-      const trimmedDuration = formData.duration.trim();
-      // Check if duration contains numbers
-      if (!/\d+/.test(trimmedDuration)) {
-        toast({
-          title: "Invalid Duration",
-          description: "Duration must include a numeric value (e.g., '8 weeks', '20 hours').",
-          variant: "destructive",
-        });
-        return;
-      }
+    // Fee per class validation
+    if (!formData.feePerClass || !formData.feePerClass.trim()) {
+      toast({
+        title: "Fee Required",
+        description: "Please enter a fee per class.",
+        variant: "destructive",
+      });
+      return;
     }
 
-    // Price validation (optional but must be valid if provided)
-    if (formData.price && formData.price.trim()) {
-      const priceValue = parseFloat(formData.price);
-      if (isNaN(priceValue)) {
-        toast({
-          title: "Invalid Price",
-          description: "Please enter a valid price.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (priceValue < 0) {
-        toast({
-          title: "Invalid Price",
-          description: "Price cannot be negative.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (priceValue > 999999) {
-        toast({
-          title: "Price Too High",
-          description: "Price must be less than ₹999,999.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Check for valid decimal places (max 2)
-      const decimalPart = formData.price.split('.')[1];
-      if (decimalPart && decimalPart.length > 2) {
-        toast({
-          title: "Invalid Price Format",
-          description: "Price can have at most 2 decimal places.",
-          variant: "destructive",
-        });
-        return;
-      }
+    const feeValue = parseFloat(formData.feePerClass);
+    if (isNaN(feeValue) || feeValue <= 0) {
+      toast({
+        title: "Invalid Fee",
+        description: "Please enter a valid fee amount greater than 0.",
+        variant: "destructive",
+      });
+      return;
     }
 
-    // Max students validation (optional but must be valid if provided)
-    if (formData.maxStudents && formData.maxStudents.trim()) {
-      const maxStudentsValue = parseInt(formData.maxStudents);
-      if (isNaN(maxStudentsValue)) {
-        toast({
-          title: "Invalid Max Students",
-          description: "Please enter a valid number for max students.",
-          variant: "destructive",
-        });
-        return;
-      }
+    if (feeValue > 999999) {
+      toast({
+        title: "Fee Too High",
+        description: "Fee must be less than ₹999,999.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-      if (maxStudentsValue < 1) {
-        toast({
-          title: "Invalid Max Students",
-          description: "Maximum students must be at least 1.",
-          variant: "destructive",
-        });
-        return;
-      }
+    // Track validation
+    if (!formData.track) {
+      toast({
+        title: "Track Required",
+        description: "Please select when classes will be held (Weekday or Weekend).",
+        variant: "destructive",
+      });
+      return;
+    }
 
-      if (maxStudentsValue > 8) {
-        toast({
-          title: "Max Students Too High",
-          description: "Maximum students cannot exceed 8.",
-          variant: "destructive",
-        });
-        return;
-      }
+    // Start time validation
+    if (!formData.startTime) {
+      toast({
+        title: "Start Time Required",
+        description: "Please select a start time from your available schedule.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Verify start time is in teacher's availability
+    if (!availableTimes.includes(formData.startTime)) {
+      toast({
+        title: "Invalid Start Time",
+        description: "Selected time is not in your available schedule. Please update your availability first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Start date validation
+    if (!formData.startDate) {
+      toast({
+        title: "Start Date Required",
+        description: "Please select a future start date for the first class.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const selectedDate = new Date(formData.startDate);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+
+    if (selectedDate < tomorrow) {
+      toast({
+        title: "Invalid Start Date",
+        description: "Start date must be at least tomorrow or later.",
+        variant: "destructive",
+      });
+      return;
     }
 
     // Number of classes validation
-    if (formData.maxClasses && formData.maxClasses.trim()) {
-      const maxClassesValue = parseInt(formData.maxClasses);
-      if (isNaN(maxClassesValue)) {
-        toast({
-          title: "Invalid Number of Classes",
-          description: "Please enter a valid number for classes.",
-          variant: "destructive",
-        });
-        return;
-      }
+    if (!formData.maxClasses || !formData.maxClasses.trim()) {
+      toast({
+        title: "Number of Classes Required",
+        description: "Please enter the number of classes.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-      if (maxClassesValue < 1) {
-        toast({
-          title: "Invalid Number of Classes",
-          description: "Number of classes must be at least 1.",
-          variant: "destructive",
-        });
-        return;
-      }
+    const maxClassesValue = parseInt(formData.maxClasses);
+    if (isNaN(maxClassesValue)) {
+      toast({
+        title: "Invalid Number of Classes",
+        description: "Please enter a valid number for classes.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-      if (maxClassesValue > 8) {
-        toast({
-          title: "Too Many Classes",
-          description: "Maximum number of classes cannot exceed 8.",
-          variant: "destructive",
-        });
-        return;
-      }
+    if (maxClassesValue < 1) {
+      toast({
+        title: "Invalid Number of Classes",
+        description: "Number of classes must be at least 1.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (maxClassesValue > 8) {
+      toast({
+        title: "Too Many Classes",
+        description: "Maximum number of classes cannot exceed 8.",
+        variant: "destructive",
+      });
+      return;
     }
 
     // Start Time validation - must be on the hour (HH:00)
-    if (formData.startTime && formData.startTime.trim()) {
-      const [hours, minutes] = formData.startTime.split(':');
-      if (minutes !== '00') {
-        toast({
-          title: "Invalid Start Time",
-          description: "Start time must be on the hour (e.g., 09:00, 10:00). Minutes must be :00.",
-          variant: "destructive",
-        });
-        return;
-      }
+    const [hours, minutes] = formData.startTime.split(':');
+    if (minutes !== '00') {
+      toast({
+        title: "Invalid Start Time",
+        description: "Start time must be on the hour (e.g., 09:00, 10:00). Minutes must be :00.",
+        variant: "destructive",
+      });
+      return;
     }
 
     createCourseMutation.mutate({
-      ...formData,
-      price: formData.price || "0",
-      maxStudents: parseInt(formData.maxStudents) || 8,
-      maxClasses: parseInt(formData.maxClasses) || 8,
-      sessionDuration: parseInt(formData.sessionDuration) || 55
+      title: trimmedTitle,
+      description: trimmedDescription,
+      category: formData.category,
+      price: feeValue,
+      maxStudents: 8, // Fixed at 8
+      maxClasses: maxClassesValue,
+      sessionDuration: parseInt(formData.sessionDuration) || 55,
+      prerequisites: formData.prerequisites || '',
+      track: formData.track,
+      startTime: formData.startTime,
+      startDate: formData.startDate,
     });
+  };
+
+  // Handle number of classes input with max 8 validation
+  const handleMaxClassesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const numValue = parseInt(value);
+    
+    if (value === '' || (numValue >= 1 && numValue <= 8)) {
+      setFormData({ ...formData, maxClasses: value });
+    } else if (numValue > 8) {
+      toast({
+        title: "Maximum Limit",
+        description: "Maximum number of classes is 8.",
+        variant: "destructive",
+      });
+      setFormData({ ...formData, maxClasses: '8' });
+    }
   };
 
   return (
@@ -372,8 +420,8 @@ export default function CreateCourse() {
                       </p>
                       <div className="flex gap-4 mt-2 text-sm text-gray-500">
                         <span data-testid={`course-category-${index}`}>Category: {course.category || 'General'}</span>
-                        <span data-testid={`course-price-${index}`}>Price: ₹{course.price || 0}</span>
-                        <span data-testid={`course-duration-${index}`}>Duration: {course.duration || 'N/A'}</span>
+                        <span data-testid={`course-price-${index}`}>Fee: ₹{course.price || 0}/class</span>
+                        <span data-testid={`course-classes-${index}`}>Classes: {course.maxClasses || 'N/A'}</span>
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -433,7 +481,7 @@ export default function CreateCourse() {
                   <Label htmlFor="title">Course Title *</Label>
                   <Input
                     id="title"
-                    placeholder="e.g., Python for Beginners"
+                    placeholder="e.g., JavaScript Fundamentals"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     data-testid="input-course-title"
@@ -459,54 +507,19 @@ export default function CreateCourse() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="difficulty">Difficulty Level</Label>
-                  <Select value={formData.difficulty} onValueChange={(value) => setFormData({ ...formData, difficulty: value })}>
-                    <SelectTrigger data-testid="select-difficulty">
-                      <SelectValue placeholder="Select difficulty" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="beginner">Beginner</SelectItem>
-                      <SelectItem value="intermediate">Intermediate</SelectItem>
-                      <SelectItem value="advanced">Advanced</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="duration">Duration</Label>
+                  <Label htmlFor="feePerClass">Fee per class (₹) *</Label>
                   <Input
-                    id="duration"
-                    placeholder="e.g., 8 weeks, 20 hours"
-                    value={formData.duration}
-                    onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                    data-testid="input-duration"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="price">Price (₹)</Label>
-                  <Input
-                    id="price"
+                    id="feePerClass"
                     type="number"
-                    placeholder="2999"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    data-testid="input-price"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="maxStudents">Max Students</Label>
-                  <Input
-                    id="maxStudents"
-                    type="number"
-                    placeholder="8"
+                    placeholder="500"
                     min="1"
-                    max="8"
-                    value={formData.maxStudents}
-                    onChange={(e) => setFormData({ ...formData, maxStudents: e.target.value })}
-                    data-testid="input-max-students"
+                    step="0.01"
+                    value={formData.feePerClass}
+                    onChange={(e) => setFormData({ ...formData, feePerClass: e.target.value })}
+                    data-testid="input-fee-per-class"
+                    required
                   />
+                  <p className="text-sm text-gray-500">Amount charged per session</p>
                 </div>
               </div>
 
@@ -516,7 +529,7 @@ export default function CreateCourse() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="track">Track *</Label>
-                    <Select value={formData.track} onValueChange={(value) => setFormData({ ...formData, track: value })}>
+                    <Select value={formData.track} onValueChange={(value) => setFormData({ ...formData, track: value, startTime: '' })}>
                       <SelectTrigger data-testid="select-track">
                         <SelectValue placeholder="Select track" />
                       </SelectTrigger>
@@ -530,13 +543,28 @@ export default function CreateCourse() {
 
                   <div className="space-y-2">
                     <Label htmlFor="startTime">Start Time (HH:00) *</Label>
-                    <Input
-                      id="startTime"
-                      type="time"
-                      value={formData.startTime}
-                      onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                      data-testid="input-start-time"
-                    />
+                    <Select 
+                      value={formData.startTime} 
+                      onValueChange={(value) => setFormData({ ...formData, startTime: value })}
+                      disabled={!formData.track}
+                    >
+                      <SelectTrigger data-testid="select-start-time">
+                        <SelectValue placeholder={formData.track ? "Select time" : "Select track first"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableTimes.length === 0 ? (
+                          <div className="p-2 text-sm text-gray-500">
+                            {formData.track 
+                              ? "No available slots. Update your schedule." 
+                              : "Select a track first"}
+                          </div>
+                        ) : (
+                          availableTimes.map(time => (
+                            <SelectItem key={time} value={time}>{time}</SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
                     <p className="text-sm text-gray-500">Must exist in your availability</p>
                   </div>
 
@@ -545,11 +573,13 @@ export default function CreateCourse() {
                     <Input
                       id="startDate"
                       type="date"
+                      min={getMinDate()}
                       value={formData.startDate}
                       onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                       data-testid="input-start-date"
+                      required
                     />
-                    <p className="text-sm text-gray-500">First class date</p>
+                    <p className="text-sm text-gray-500">First class date (must be future)</p>
                   </div>
 
                   <div className="space-y-2">
@@ -558,6 +588,8 @@ export default function CreateCourse() {
                       id="sessionDuration"
                       type="number"
                       placeholder="55"
+                      min="15"
+                      max="120"
                       value={formData.sessionDuration}
                       onChange={(e) => setFormData({ ...formData, sessionDuration: e.target.value })}
                       data-testid="input-session-duration"
@@ -574,10 +606,11 @@ export default function CreateCourse() {
                       min="1"
                       max="8"
                       value={formData.maxClasses}
-                      onChange={(e) => setFormData({ ...formData, maxClasses: e.target.value })}
+                      onChange={handleMaxClassesChange}
                       data-testid="input-max-classes"
+                      required
                     />
-                    <p className="text-sm text-gray-500">Total sessions in this course</p>
+                    <p className="text-sm text-gray-500">Total sessions in this course (max 8)</p>
                   </div>
                 </div>
               </div>
@@ -630,8 +663,8 @@ export default function CreateCourse() {
                   type="button" 
                   variant="outline"
                   onClick={() => setFormData({
-                    title: '', description: '', category: '', duration: '', 
-                    price: '', difficulty: '', maxStudents: '', maxClasses: '', prerequisites: '',
+                    title: '', description: '', category: '', feePerClass: '',
+                    maxClasses: '', prerequisites: '',
                     track: '', startTime: '', startDate: '', sessionDuration: '55'
                   })}
                   data-testid="button-clear-form"
@@ -660,10 +693,7 @@ export default function CreateCourse() {
                     title: editingCourse.title,
                     description: editingCourse.description,
                     category: editingCourse.category,
-                    duration: editingCourse.duration,
                     price: editingCourse.price,
-                    difficulty: editingCourse.difficulty,
-                    maxStudents: editingCourse.maxStudents,
                     maxClasses: editingCourse.maxClasses,
                     prerequisites: editingCourse.prerequisites
                   }
@@ -704,7 +734,7 @@ export default function CreateCourse() {
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="edit-price">Price (₹)</Label>
+                    <Label htmlFor="edit-price">Fee per Class (₹)</Label>
                     <Input
                       id="edit-price"
                       type="number"
