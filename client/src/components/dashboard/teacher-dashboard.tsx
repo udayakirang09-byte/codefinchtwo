@@ -1263,16 +1263,18 @@ export default function TeacherDashboard() {
           </CardHeader>
           <CardContent className="p-8">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-              <Button 
-                variant="outline" 
-                className="h-32 p-6 flex-col hover:bg-green-50 hover:border-green-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
-                data-testid="button-create-course"
-                onClick={() => window.location.href = '/teacher/create-course'}
-              >
-                <BookOpen className="h-10 w-10 mb-3 text-green-600 group-hover:scale-110 transition-transform duration-200" />
-                <span className="font-bold text-lg">Create Course</span>
-                <span className="text-xs text-gray-500 mt-1 text-center">Design new curriculum</span>
-              </Button>
+              {uiConfig?.teacherDashboardLinks?.createCourse !== false && (
+                <Button 
+                  variant="outline" 
+                  className="h-32 p-6 flex-col hover:bg-green-50 hover:border-green-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                  data-testid="button-create-course"
+                  onClick={() => window.location.href = '/teacher/create-course'}
+                >
+                  <BookOpen className="h-10 w-10 mb-3 text-green-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold text-lg">Create Course</span>
+                  <span className="text-xs text-gray-500 mt-1 text-center">Design new curriculum</span>
+                </Button>
+              )}
               <Button 
                 variant="outline" 
                 className="h-32 p-6 flex-col hover:bg-blue-50 hover:border-blue-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 

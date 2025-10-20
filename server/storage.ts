@@ -380,7 +380,13 @@ export interface IStorage {
   
   // Admin UI Configuration operations
   getAdminUiConfig(): Promise<AdminUiConfig | undefined>;
-  updateAdminUiConfig(config: { footerLinks?: any; showHelpCenter?: boolean }): Promise<void>;
+  updateAdminUiConfig(config: { 
+    footerLinks?: any; 
+    showHelpCenter?: boolean; 
+    abusiveLanguageMonitoring?: boolean;
+    studentDashboardLinks?: any;
+    teacherDashboardLinks?: any;
+  }): Promise<void>;
   
   // Admin Booking Limits Configuration operations
   getAdminBookingLimits(): Promise<any | undefined>;
@@ -2804,7 +2810,13 @@ export class DatabaseStorage implements IStorage {
     return results.length > 0 ? results[0] : undefined;
   }
 
-  async updateAdminUiConfig(config: { footerLinks?: any; showHelpCenter?: boolean }): Promise<void> {
+  async updateAdminUiConfig(config: { 
+    footerLinks?: any; 
+    showHelpCenter?: boolean; 
+    abusiveLanguageMonitoring?: boolean;
+    studentDashboardLinks?: any;
+    teacherDashboardLinks?: any;
+  }): Promise<void> {
     const existing = await this.getAdminUiConfig();
     
     if (existing) {
@@ -2813,6 +2825,9 @@ export class DatabaseStorage implements IStorage {
         .set({ 
           ...(config.footerLinks && { footerLinks: config.footerLinks }),
           ...(config.showHelpCenter !== undefined && { showHelpCenter: config.showHelpCenter }),
+          ...(config.abusiveLanguageMonitoring !== undefined && { abusiveLanguageMonitoring: config.abusiveLanguageMonitoring }),
+          ...(config.studentDashboardLinks && { studentDashboardLinks: config.studentDashboardLinks }),
+          ...(config.teacherDashboardLinks && { teacherDashboardLinks: config.teacherDashboardLinks }),
           updatedAt: new Date() 
         })
         .where(eq(adminUiConfig.id, existing.id));
@@ -2829,6 +2844,9 @@ export class DatabaseStorage implements IStorage {
           contactUs: true,
         },
         showHelpCenter: config.showHelpCenter ?? false,
+        abusiveLanguageMonitoring: config.abusiveLanguageMonitoring ?? false,
+        studentDashboardLinks: config.studentDashboardLinks || { browseCourses: true },
+        teacherDashboardLinks: config.teacherDashboardLinks || { createCourse: true, courseDetails: true },
       });
     }
   }

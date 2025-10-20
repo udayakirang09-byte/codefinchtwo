@@ -32,10 +32,21 @@ interface FooterLinks {
   contactUs: boolean;
 }
 
+interface StudentDashboardLinks {
+  browseCourses: boolean;
+}
+
+interface TeacherDashboardLinks {
+  createCourse: boolean;
+  courseDetails: boolean;
+}
+
 interface UiConfig {
   footerLinks: FooterLinks;
   showHelpCenter: boolean;
   abusiveLanguageMonitoring: boolean;
+  studentDashboardLinks: StudentDashboardLinks;
+  teacherDashboardLinks: TeacherDashboardLinks;
 }
 
 export default function AdminUiConfig() {
@@ -57,6 +68,15 @@ export default function AdminUiConfig() {
 
   const [showHelpCenter, setShowHelpCenter] = useState(false);
   const [abusiveLanguageMonitoring, setAbusiveLanguageMonitoring] = useState(false);
+  
+  const [studentDashboardLinks, setStudentDashboardLinks] = useState<StudentDashboardLinks>({
+    browseCourses: true,
+  });
+  
+  const [teacherDashboardLinks, setTeacherDashboardLinks] = useState<TeacherDashboardLinks>({
+    createCourse: true,
+    courseDetails: true,
+  });
 
   // Fetch current UI configuration
   const { data: uiConfig, isLoading, error } = useQuery<UiConfig>({
@@ -74,13 +94,21 @@ export default function AdminUiConfig() {
       setFooterLinks(uiConfig.footerLinks);
       setShowHelpCenter(uiConfig.showHelpCenter);
       setAbusiveLanguageMonitoring(uiConfig.abusiveLanguageMonitoring || false);
+      setStudentDashboardLinks(uiConfig.studentDashboardLinks || { browseCourses: true });
+      setTeacherDashboardLinks(uiConfig.teacherDashboardLinks || { createCourse: true, courseDetails: true });
       setHasChanges(false);
     }
   }, [uiConfig]);
 
   // Update UI config mutation
   const updateConfigMutation = useMutation({
-    mutationFn: async (config: { footerLinks: FooterLinks; showHelpCenter: boolean; abusiveLanguageMonitoring: boolean }) => {
+    mutationFn: async (config: { 
+      footerLinks: FooterLinks; 
+      showHelpCenter: boolean; 
+      abusiveLanguageMonitoring: boolean;
+      studentDashboardLinks: StudentDashboardLinks;
+      teacherDashboardLinks: TeacherDashboardLinks;
+    }) => {
       const response = await apiRequest('PUT', '/api/admin/ui-config', config);
       return response;
     },
@@ -119,8 +147,30 @@ export default function AdminUiConfig() {
     setHasChanges(true);
   };
 
+  const handleStudentDashboardLinkToggle = (key: keyof StudentDashboardLinks) => {
+    setStudentDashboardLinks(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+    setHasChanges(true);
+  };
+
+  const handleTeacherDashboardLinkToggle = (key: keyof TeacherDashboardLinks) => {
+    setTeacherDashboardLinks(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+    setHasChanges(true);
+  };
+
   const handleSave = () => {
-    updateConfigMutation.mutate({ footerLinks, showHelpCenter, abusiveLanguageMonitoring });
+    updateConfigMutation.mutate({ 
+      footerLinks, 
+      showHelpCenter, 
+      abusiveLanguageMonitoring,
+      studentDashboardLinks,
+      teacherDashboardLinks,
+    });
   };
 
   const handleReset = () => {
@@ -128,6 +178,8 @@ export default function AdminUiConfig() {
       setFooterLinks(uiConfig.footerLinks);
       setShowHelpCenter(uiConfig.showHelpCenter);
       setAbusiveLanguageMonitoring(uiConfig.abusiveLanguageMonitoring || false);
+      setStudentDashboardLinks(uiConfig.studentDashboardLinks || { browseCourses: true });
+      setTeacherDashboardLinks(uiConfig.teacherDashboardLinks || { createCourse: true, courseDetails: true });
       setHasChanges(false);
     }
   };
@@ -351,6 +403,88 @@ export default function AdminUiConfig() {
                     onCheckedChange={handleAbusiveLanguageMonitoringToggle}
                     data-testid="switch-abusive-language-monitoring"
                   />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Student Dashboard Links Configuration */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LinkIcon className="h-5 w-5 text-purple-600" />
+                  Student Dashboard Links
+                </CardTitle>
+                <CardDescription>
+                  Control which action buttons appear on the Student Dashboard
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
+                    <div className="flex-1">
+                      <Label htmlFor="student-browse-courses" className="cursor-pointer text-base font-medium">
+                        Browse Courses
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Show or hide the "Browse Courses" button in Student Dashboard Quick Actions
+                      </p>
+                    </div>
+                    <Switch
+                      id="student-browse-courses"
+                      checked={studentDashboardLinks.browseCourses}
+                      onCheckedChange={() => handleStudentDashboardLinkToggle('browseCourses')}
+                      data-testid="switch-student-browse-courses"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Teacher Dashboard Links Configuration */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LinkIcon className="h-5 w-5 text-green-600" />
+                  Teacher Dashboard Links
+                </CardTitle>
+                <CardDescription>
+                  Control which action buttons appear on the Teacher Dashboard
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
+                    <div className="flex-1">
+                      <Label htmlFor="teacher-create-course" className="cursor-pointer text-base font-medium">
+                        Create Course
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Show or hide the "Create Course" button in Teacher Dashboard Quick Actions
+                      </p>
+                    </div>
+                    <Switch
+                      id="teacher-create-course"
+                      checked={teacherDashboardLinks.createCourse}
+                      onCheckedChange={() => handleTeacherDashboardLinkToggle('createCourse')}
+                      data-testid="switch-teacher-create-course"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
+                    <div className="flex-1">
+                      <Label htmlFor="teacher-course-details" className="cursor-pointer text-base font-medium">
+                        Course Details
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Show or hide the "Course Details" button in Teacher Dashboard Quick Actions
+                      </p>
+                    </div>
+                    <Switch
+                      id="teacher-course-details"
+                      checked={teacherDashboardLinks.courseDetails}
+                      onCheckedChange={() => handleTeacherDashboardLinkToggle('courseDetails')}
+                      data-testid="switch-teacher-course-details"
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>

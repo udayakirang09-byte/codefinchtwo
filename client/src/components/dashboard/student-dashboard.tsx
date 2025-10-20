@@ -755,16 +755,18 @@ export default function StudentDashboard() {
                 <span className="font-bold text-lg">My Progress</span>
                 <span className="text-xs text-gray-500 mt-1 text-center">Track your achievements</span>
               </Button>
-              <Button 
-                variant="outline" 
-                className="h-32 p-6 flex-col hover:bg-purple-50 hover:border-purple-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
-                data-testid="button-browse-courses"
-                onClick={handleBrowseCourses}
-              >
-                <Calendar className="h-10 w-10 mb-3 text-purple-600 group-hover:scale-110 transition-transform duration-200" />
-                <span className="font-bold text-lg">Browse Courses</span>
-                <span className="text-xs text-gray-500 mt-1 text-center">Explore new topics</span>
-              </Button>
+              {uiConfig?.studentDashboardLinks?.browseCourses !== false && (
+                <Button 
+                  variant="outline" 
+                  className="h-32 p-6 flex-col hover:bg-purple-50 hover:border-purple-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                  data-testid="button-browse-courses"
+                  onClick={handleBrowseCourses}
+                >
+                  <Calendar className="h-10 w-10 mb-3 text-purple-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold text-lg">Browse Courses</span>
+                  <span className="text-xs text-gray-500 mt-1 text-center">Explore new topics</span>
+                </Button>
+              )}
               {uiConfig?.showHelpCenter && (
                 <Button 
                   variant="outline" 
