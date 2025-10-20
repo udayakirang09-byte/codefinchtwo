@@ -651,7 +651,7 @@ export default function BookingCheckout() {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <Link to={`/booking/${mentorId}`} className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4" data-testid="link-back-booking">
+            <Link to={`/booking/${bookingDetails?.mentorId || mentorId}`} className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4" data-testid="link-back-booking">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Booking
             </Link>

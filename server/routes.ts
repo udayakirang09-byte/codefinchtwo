@@ -2793,8 +2793,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Bulk packages must be either 5 or 10 classes" });
       }
 
+      // Resolve student ID from email if needed
+      let resolvedStudentId = studentId;
+      if (studentId.includes('@')) {
+        const user = await storage.getUserByEmail(studentId);
+        if (!user || user.role !== 'student') {
+          return res.status(404).json({ message: "Student not found" });
+        }
+        const studentRecord = await storage.getStudentByUserId(user.id);
+        if (!studentRecord) {
+          return res.status(404).json({ message: "Student not found" });
+        }
+        resolvedStudentId = studentRecord.id;
+      }
+
       // Verify student and mentor exist
-      const student = await storage.getStudent(studentId);
+      const student = await storage.getStudent(resolvedStudentId);
       if (!student) {
         return res.status(404).json({ message: "Student not found" });
       }
@@ -2809,7 +2823,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create bulk package
       const bulkPackage = await storage.createBulkPackage({
-        studentId,
+        studentId: resolvedStudentId,
         mentorId,
         totalClasses,
         usedClasses: 0,
@@ -2822,7 +2836,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentStatus: 'completed', // Assuming payment is processed separately
       });
 
-      console.log(`✅ Bulk package created: ${totalClasses} classes for student ${studentId} with mentor ${mentorId}`);
+      console.log(`✅ Bulk package created: ${totalClasses} classes for student ${resolvedStudentId} with mentor ${mentorId}`);
 
       res.status(201).json(bulkPackage);
     } catch (error) {
