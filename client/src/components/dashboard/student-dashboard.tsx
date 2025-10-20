@@ -107,6 +107,14 @@ interface UiConfigResponse {
     contactUs: boolean;
   };
   showHelpCenter: boolean;
+  abusiveLanguageMonitoring: boolean;
+  studentDashboardLinks: {
+    browseCourses: boolean;
+  };
+  teacherDashboardLinks: {
+    createCourse: boolean;
+    courseDetails: boolean;
+  };
 }
 
 export default function StudentDashboard() {

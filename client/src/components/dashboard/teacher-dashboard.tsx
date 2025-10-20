@@ -120,6 +120,28 @@ interface TeacherSubject {
   classFee: number;
 }
 
+interface UiConfigResponse {
+  footerLinks: {
+    studentCommunity: boolean;
+    mentorCommunity: boolean;
+    achievementBadges: boolean;
+    discussionForums: boolean;
+    projectShowcase: boolean;
+    communityEvents: boolean;
+    successStories: boolean;
+    contactUs: boolean;
+  };
+  showHelpCenter: boolean;
+  abusiveLanguageMonitoring: boolean;
+  studentDashboardLinks: {
+    browseCourses: boolean;
+  };
+  teacherDashboardLinks: {
+    createCourse: boolean;
+    courseDetails: boolean;
+  };
+}
+
 export default function TeacherDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -169,6 +191,12 @@ export default function TeacherDashboard() {
   const { data: teacherCourses = [], isLoading: coursesLoading } = useQuery<TeacherCourse[]>({
     queryKey: [`/api/teacher/courses?teacherId=${user?.id}`],
     enabled: !!user?.id
+  });
+
+  // Fetch UI config from API
+  const { data: uiConfig } = useQuery<UiConfigResponse>({
+    queryKey: ['/api/admin/ui-config'],
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
   // Fetch mentor data first
