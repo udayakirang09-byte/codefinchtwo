@@ -686,43 +686,50 @@ export default function Booking() {
                   />
                 </div>
 
-                {bookingType === "single" && (
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="selectedDate">Preferred Date *</Label>
-                      <Input
-                        id="selectedDate"
-                        type="date"
-                        value={formData.selectedDate}
-                        onChange={(e) => handleInputChange("selectedDate", e.target.value)}
-                        min={getTodayLocalDate()}
-                        max={getDateNDaysFromNow(5)}
-                        required
-                        data-testid="input-session-date"
-                      />
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="selectedDate">Preferred Date {bookingType === "single" && "*"}</Label>
+                    <Input
+                      id="selectedDate"
+                      type="date"
+                      value={formData.selectedDate}
+                      onChange={(e) => handleInputChange("selectedDate", e.target.value)}
+                      min={getTodayLocalDate()}
+                      max={getDateNDaysFromNow(5)}
+                      required={bookingType === "single"}
+                      disabled={bookingType === "bulk"}
+                      className={bookingType === "bulk" ? "hidden" : ""}
+                      data-testid="input-session-date"
+                    />
+                    {bookingType === "single" && (
                       <p className="text-xs text-muted-foreground">Bookings available for next 5 days only</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="selectedTime">Preferred Time ({getTimezoneAbbreviation()}) *</Label>
-                      <Select value={formData.selectedTime} onValueChange={(value) => handleInputChange("selectedTime", value)} required>
-                        <SelectTrigger data-testid="select-session-time">
-                          <SelectValue placeholder="Select time" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {timeSlots.length > 0 ? (
-                            timeSlots.map((time: string) => (
-                              <SelectItem key={time} value={time}>
-                                {formatTimeAMPM(time)}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <SelectItem value="no-slots" disabled>No time slots available</SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    )}
                   </div>
-                )}
+                  <div className="space-y-2">
+                    <Label htmlFor="selectedTime">Preferred Time ({getTimezoneAbbreviation()}) {bookingType === "single" && "*"}</Label>
+                    <Select 
+                      value={formData.selectedTime} 
+                      onValueChange={(value) => handleInputChange("selectedTime", value)} 
+                      required={bookingType === "single"}
+                      disabled={bookingType === "bulk"}
+                    >
+                      <SelectTrigger data-testid="select-session-time" className={bookingType === "bulk" ? "hidden" : ""}>
+                        <SelectValue placeholder="Select time" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {timeSlots.length > 0 ? (
+                          timeSlots.map((time: string) => (
+                            <SelectItem key={time} value={time}>
+                              {formatTimeAMPM(time)}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-slots" disabled>No time slots available</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 
                 {bookingType === "bulk" && (
                   <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
