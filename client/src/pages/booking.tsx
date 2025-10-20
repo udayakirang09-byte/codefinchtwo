@@ -686,41 +686,54 @@ export default function Booking() {
                   />
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="selectedDate">Preferred Date *</Label>
-                    <Input
-                      id="selectedDate"
-                      type="date"
-                      value={formData.selectedDate}
-                      onChange={(e) => handleInputChange("selectedDate", e.target.value)}
-                      min={getTodayLocalDate()}
-                      max={getDateNDaysFromNow(5)}
-                      required
-                      data-testid="input-session-date"
-                    />
-                    <p className="text-xs text-muted-foreground">Bookings available for next 5 days only</p>
+                {bookingType === "single" && (
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="selectedDate">Preferred Date *</Label>
+                      <Input
+                        id="selectedDate"
+                        type="date"
+                        value={formData.selectedDate}
+                        onChange={(e) => handleInputChange("selectedDate", e.target.value)}
+                        min={getTodayLocalDate()}
+                        max={getDateNDaysFromNow(5)}
+                        required
+                        data-testid="input-session-date"
+                      />
+                      <p className="text-xs text-muted-foreground">Bookings available for next 5 days only</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="selectedTime">Preferred Time ({getTimezoneAbbreviation()}) *</Label>
+                      <Select value={formData.selectedTime} onValueChange={(value) => handleInputChange("selectedTime", value)} required>
+                        <SelectTrigger data-testid="select-session-time">
+                          <SelectValue placeholder="Select time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {timeSlots.length > 0 ? (
+                            timeSlots.map((time: string) => (
+                              <SelectItem key={time} value={time}>
+                                {formatTimeAMPM(time)}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="no-slots" disabled>No time slots available</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="selectedTime">Preferred Time ({getTimezoneAbbreviation()}) *</Label>
-                    <Select value={formData.selectedTime} onValueChange={(value) => handleInputChange("selectedTime", value)} required>
-                      <SelectTrigger data-testid="select-session-time">
-                        <SelectValue placeholder="Select time" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {timeSlots.length > 0 ? (
-                          timeSlots.map((time: string) => (
-                            <SelectItem key={time} value={time}>
-                              {formatTimeAMPM(time)}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="no-slots" disabled>No time slots available</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
+                )}
+                
+                {bookingType === "bulk" && (
+                  <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                    <p className="text-sm text-blue-900 dark:text-blue-100 font-medium mb-2">
+                      📅 No need to schedule now!
+                    </p>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      After purchasing this bulk package, you can schedule individual classes later from your "My Packages" page based on the teacher's available time slots.
+                    </p>
                   </div>
-                </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="duration">Session Duration</Label>
@@ -747,28 +760,47 @@ export default function Booking() {
                   </p>
                 </div>
 
-                {/* C3: Session Type Selector */}
+                {/* Booking Package Type Selector */}
                 <div className="space-y-2">
-                  <Label htmlFor="sessionType">Booking Type *</Label>
-                  <Select value={formData.sessionType} onValueChange={(value) => handleInputChange("sessionType", value)} required>
-                    <SelectTrigger data-testid="select-session-type">
+                  <Label htmlFor="bookingPackage">Booking Package *</Label>
+                  <Select 
+                    value={bookingType === "single" ? formData.sessionType : `bulk-${bulkClassCount}`} 
+                    onValueChange={(value) => {
+                      if (value === "regular" || value === "demo") {
+                        setBookingType("single");
+                        handleInputChange("sessionType", value);
+                      } else if (value === "bulk-5") {
+                        setBookingType("bulk");
+                        setBulkClassCount(5);
+                        handleInputChange("sessionType", "regular");
+                      } else if (value === "bulk-10") {
+                        setBookingType("bulk");
+                        setBulkClassCount(10);
+                        handleInputChange("sessionType", "regular");
+                      }
+                    }} 
+                    required
+                  >
+                    <SelectTrigger data-testid="select-booking-package">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="regular">1:1 Paid Session</SelectItem>
+                      <SelectItem value="regular">Single Session - 1:1 Paid</SelectItem>
                       {mentor?.demoEnabled && (
-                        <SelectItem value="demo">Demo Session (Free)</SelectItem>
+                        <SelectItem value="demo">Single Session - Demo (Free)</SelectItem>
                       )}
+                      <SelectItem value="bulk-5">Bulk Package - 5 Classes</SelectItem>
+                      <SelectItem value="bulk-10">Bulk Package - 10 Classes</SelectItem>
                     </SelectContent>
                   </Select>
-                  {formData.sessionType === 'demo' && (
-                    <p className="text-xs text-muted-foreground">
-                      ✨ This is a free demo session to try the teacher's teaching style
+                  {bookingType === "bulk" && (
+                    <p className="text-xs text-green-600 dark:text-green-400">
+                      💰 Purchase {bulkClassCount} classes upfront. Schedule them later at your convenience!
                     </p>
                   )}
-                  {!mentor?.demoEnabled && formData.sessionType !== 'regular' && (
+                  {bookingType === "single" && formData.sessionType === 'demo' && (
                     <p className="text-xs text-muted-foreground">
-                      Demo sessions are not available for this teacher
+                      ✨ This is a free demo session to try the teacher's teaching style
                     </p>
                   )}
                 </div>
@@ -813,10 +845,20 @@ export default function Booking() {
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-lg font-medium">Total Cost:</span>
                     <span className="text-2xl font-bold text-primary" data-testid="text-total-cost">
-                      ₹{displayedCost.toFixed(2)}
+                      ₹{bookingType === "bulk" ? (displayedCost * bulkClassCount).toFixed(2) : displayedCost.toFixed(2)}
                     </span>
                   </div>
-                  {formData.subject && selectedSubjectFee && (
+                  {bookingType === "bulk" && (
+                    <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-3 mb-4">
+                      <p className="text-sm text-green-900 dark:text-green-100 font-medium">
+                        💰 Bulk Package: {bulkClassCount} classes × ₹{displayedCost.toFixed(2)} per class
+                      </p>
+                      <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+                        Schedule all {bulkClassCount} classes at your convenience from "My Packages"
+                      </p>
+                    </div>
+                  )}
+                  {bookingType === "single" && formData.subject && selectedSubjectFee && (
                     <p className="text-sm text-muted-foreground mb-4">
                       Using subject-specific flat fee for {formData.subject}
                     </p>
@@ -829,7 +871,7 @@ export default function Booking() {
                     disabled={bookingMutation.isPending}
                     data-testid="button-confirm-booking"
                   >
-                    {bookingMutation.isPending ? "Booking..." : "Confirm Booking"}
+                    {bookingMutation.isPending ? "Processing..." : (bookingType === "bulk" ? "Purchase Bulk Package" : "Confirm Booking")}
                   </Button>
                 </div>
               </form>
