@@ -1181,38 +1181,39 @@ export default function TeacherDashboard() {
           </CardContent>
         </Card>
 
-        {/* Teacher Courses */}
-        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-orange-600 to-red-700 text-white">
-            <CardTitle className="flex items-center gap-3 text-xl">
-              <BookOpen className="h-6 w-6" />
-              My Courses
-              <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30">
-                {teacherCourses.length} courses
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              {coursesLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-gray-500">Loading courses...</div>
-                </div>
-              ) : teacherCourses.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="bg-orange-50 rounded-2xl p-8 border border-orange-200">
-                    <BookOpen className="h-16 w-16 text-orange-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-800 mb-2">No Courses Created Yet</h3>
-                    <p className="text-gray-600 mb-4">Start creating courses to teach your expertise to students.</p>
-                    <Button 
-                      onClick={() => window.location.href = '/teacher/create-course'}
-                      className="bg-orange-600 hover:bg-orange-700"
-                    >
-                      Create Your First Course
-                    </Button>
+        {/* Teacher Courses - Conditionally shown based on UI config */}
+        {(uiConfig?.teacherDashboardLinks?.createCourse ?? true) && (
+          <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-orange-600 to-red-700 text-white">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <BookOpen className="h-6 w-6" />
+                My Courses
+                <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30">
+                  {teacherCourses.length} courses
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                {coursesLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-gray-500">Loading courses...</div>
                   </div>
-                </div>
-              ) : (
+                ) : teacherCourses.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="bg-orange-50 rounded-2xl p-8 border border-orange-200">
+                      <BookOpen className="h-16 w-16 text-orange-400 mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold text-gray-800 mb-2">No Courses Created Yet</h3>
+                      <p className="text-gray-600 mb-4">Start creating courses to teach your expertise to students.</p>
+                      <Button 
+                        onClick={() => window.location.href = '/teacher/create-course'}
+                        className="bg-orange-600 hover:bg-orange-700"
+                      >
+                        Create Your First Course
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
                 teacherCourses.map((course: any) => (
                   <div key={course.id} className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
                     <div className="flex justify-between items-start mb-3">
@@ -1280,6 +1281,7 @@ export default function TeacherDashboard() {
             </div>
           </CardContent>
         </Card>
+        )}
 
         {/* Quick Actions */}
         <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
