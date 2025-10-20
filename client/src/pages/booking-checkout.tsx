@@ -215,29 +215,55 @@ const BookingCheckoutForm = ({ bookingDetails, hasStripe, paymentIntentId }: { b
 
   const createBooking = async () => {
     try {
-      // Create the booking after successful payment
-      const bookingData = {
-        userEmail: bookingDetails.userEmail,
-        mentorId: bookingDetails.mentorId,
-        scheduledAt: new Date(bookingDetails.scheduledAt),
-        duration: bookingDetails.duration,
-        subject: bookingDetails.subject || 'General Programming', // Default for backward compatibility
-        notes: bookingDetails.notes,
-        studentAge: bookingDetails.studentAge,
-      };
+      // Check if this is a bulk package purchase
+      if (bookingDetails.isBulkPackage) {
+        // Create bulk package purchase
+        const bulkPackageData = {
+          studentId: bookingDetails.userEmail, // Will be resolved to student ID by backend
+          mentorId: bookingDetails.mentorId,
+          totalClasses: bookingDetails.totalClasses,
+          subject: bookingDetails.subject,
+          pricePerClass: bookingDetails.pricePerClass,
+          duration: bookingDetails.duration
+        };
 
-      await apiRequest("POST", "/api/bookings", bookingData);
-      
-      // Clear the stored booking details
-      sessionStorage.removeItem('pendingBooking');
-      
-      toast({
-        title: "Booking Confirmed!",
-        description: `Your session with ${bookingDetails.mentorName} has been booked successfully.`,
-      });
+        await apiRequest("POST", "/api/bulk-packages", bulkPackageData);
+        
+        // Clear the stored bulk package details
+        sessionStorage.removeItem('pendingBulkPackage');
+        
+        toast({
+          title: "Bulk Package Purchased!",
+          description: `Successfully purchased ${bookingDetails.totalClasses} classes with ${bookingDetails.mentorName}! Schedule them from your dashboard.`,
+        });
 
-      // Redirect to success page
-      navigate(`/booking-success?mentorId=${bookingDetails.mentorId}`);
+        // Redirect to student dashboard
+        navigate(`/student-dashboard`);
+      } else {
+        // Create regular single booking
+        const bookingData = {
+          userEmail: bookingDetails.userEmail,
+          mentorId: bookingDetails.mentorId,
+          scheduledAt: new Date(bookingDetails.scheduledAt),
+          duration: bookingDetails.duration,
+          subject: bookingDetails.subject || 'General Programming', // Default for backward compatibility
+          notes: bookingDetails.notes,
+          studentAge: bookingDetails.studentAge,
+        };
+
+        await apiRequest("POST", "/api/bookings", bookingData);
+        
+        // Clear the stored booking details
+        sessionStorage.removeItem('pendingBooking');
+        
+        toast({
+          title: "Booking Confirmed!",
+          description: `Your session with ${bookingDetails.mentorName} has been booked successfully.`,
+        });
+
+        // Redirect to success page
+        navigate(`/booking-success?mentorId=${bookingDetails.mentorId}`);
+      }
     } catch (error) {
       toast({
         title: "Booking Error",
