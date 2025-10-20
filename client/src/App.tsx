@@ -46,6 +46,7 @@ import Manage2FA from "./pages/teacher/manage-2fa";
 import Terms from "./pages/terms";
 import Privacy from "./pages/privacy";
 import CancellationPolicy from "./pages/cancellation-policy";
+import Shipping from "./pages/shipping";
 import AutomatedTest from "./pages/automated-test";
 import TeacherResources from "./pages/teacher-resources";
 import MentorCommunity from "./pages/mentor-community";
@@ -141,6 +142,7 @@ function Router() {
       <Route path="/terms" component={Terms} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/cancellation-policy" component={CancellationPolicy} />
+      <Route path="/shipping" component={Shipping} />
       <Route path="/video-class/:id" component={VideoClass} />
       <Route path="/chat/:id" component={ChatClass} />
       <Route path="/feedback/:id" component={FeedbackForm} />
