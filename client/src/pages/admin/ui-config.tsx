@@ -83,7 +83,7 @@ export default function AdminUiConfig() {
     queryKey: ['/api/admin/ui-config'],
     queryFn: async () => {
       const result = await apiRequest('GET', '/api/admin/ui-config');
-      return result as unknown as UiConfig;
+      return await result.json() as UiConfig;
     },
     staleTime: 1000 * 60 * 5,
   });

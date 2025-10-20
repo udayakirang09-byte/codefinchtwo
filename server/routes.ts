@@ -8889,6 +8889,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get admin UI configuration - PUBLIC (needed for footer and quick actions)
   app.get('/api/admin/ui-config', async (req: any, res) => {
     try {
+      // Disable caching to ensure fresh data
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
       const config = await storage.getAdminUiConfig();
       if (!config) {
         // Default configuration
