@@ -1951,6 +1951,18 @@ export const adminUiConfig = pgTable("admin_ui_config", {
   }),
   showHelpCenter: boolean("show_help_center").default(false), // Default unchecked
   abusiveLanguageMonitoring: boolean("abusive_language_monitoring").default(false), // Abusive language detection toggle
+  studentDashboardLinks: jsonb("student_dashboard_links").$type<{
+    browseCourses: boolean;
+  }>().default({
+    browseCourses: true,
+  }),
+  teacherDashboardLinks: jsonb("teacher_dashboard_links").$type<{
+    createCourse: boolean;
+    courseDetails: boolean;
+  }>().default({
+    createCourse: true,
+    courseDetails: true,
+  }),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
