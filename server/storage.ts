@@ -2823,11 +2823,11 @@ export class DatabaseStorage implements IStorage {
       await db
         .update(adminUiConfig)
         .set({ 
-          ...(config.footerLinks && { footerLinks: config.footerLinks }),
+          ...(config.footerLinks !== undefined && { footerLinks: config.footerLinks }),
           ...(config.showHelpCenter !== undefined && { showHelpCenter: config.showHelpCenter }),
           ...(config.abusiveLanguageMonitoring !== undefined && { abusiveLanguageMonitoring: config.abusiveLanguageMonitoring }),
-          ...(config.studentDashboardLinks && { studentDashboardLinks: config.studentDashboardLinks }),
-          ...(config.teacherDashboardLinks && { teacherDashboardLinks: config.teacherDashboardLinks }),
+          ...(config.studentDashboardLinks !== undefined && { studentDashboardLinks: config.studentDashboardLinks }),
+          ...(config.teacherDashboardLinks !== undefined && { teacherDashboardLinks: config.teacherDashboardLinks }),
           updatedAt: new Date() 
         })
         .where(eq(adminUiConfig.id, existing.id));
