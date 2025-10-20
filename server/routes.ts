@@ -4818,22 +4818,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Track Definition Validation: If track and startTime are provided, validate against availability table
-      if (validatedData.track && validatedData.startTime) {
-        // Check if the startTime exists in the teacher's availability table
-        const availability = await db
+      if (validatedData.track && validatedData.startTime && validatedData.startDate && validatedData.maxClasses) {
+        console.log(`🔍 [COURSE VALIDATION] Validating teacher availability for entire course duration...`);
+        console.log(`   Track: ${validatedData.track}, Start Time: ${validatedData.startTime}, Start Date: ${validatedData.startDate}, Max Classes: ${validatedData.maxClasses}`);
+        
+        // Define track days based on selection
+        const trackDays = validatedData.track === 'weekday' 
+          ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+          : ['Saturday', 'Sunday'];
+        
+        console.log(`   Track days: ${trackDays.join(', ')}`);
+        
+        // Fetch all teacher's availability slots for this track and start time
+        const teacherAvailability = await db
           .select()
           .from(timeSlots)
           .where(and(
             eq(timeSlots.mentorId, mentor.id),
-            eq(timeSlots.startTime, validatedData.startTime)
-          ))
-          .limit(1);
+            eq(timeSlots.startTime, validatedData.startTime),
+            eq(timeSlots.isAvailable, true),
+            eq(timeSlots.isBlocked, false)
+          ));
         
-        if (availability.length === 0) {
+        console.log(`   Found ${teacherAvailability.length} availability slots for start time ${validatedData.startTime}`);
+        
+        // Filter availability for track days only
+        const trackAvailability = teacherAvailability.filter(slot => trackDays.includes(slot.dayOfWeek));
+        
+        console.log(`   Found ${trackAvailability.length} availability slots matching track days`);
+        
+        if (trackAvailability.length === 0) {
           return res.status(400).json({ 
-            message: `The selected start time (${validatedData.startTime}) does not exist in your availability. Please add this time slot to your availability first.`
+            message: `You don't have availability for ${validatedData.track} track at ${validatedData.startTime}. Please add availability for ${trackDays.join(', ')} at this time in your Teacher Schedule.`
           });
         }
+        
+        // Get the available days from teacher's schedule
+        const availableDays = trackAvailability.map(slot => slot.dayOfWeek);
+        console.log(`   Available days: ${availableDays.join(', ')}`);
+        
+        // Validate that teacher has at least one day available per week for the track
+        const hasMinimumAvailability = trackDays.some(day => availableDays.includes(day));
+        if (!hasMinimumAvailability) {
+          return res.status(400).json({ 
+            message: `Your availability doesn't cover the required ${validatedData.track} schedule. You need at least one day from: ${trackDays.join(', ')}.`
+          });
+        }
+        
+        // Calculate all future class dates based on track and maxClasses
+        const futureClassDates: { date: Date; dayName: string }[] = [];
+        const startDate = new Date(validatedData.startDate);
+        const maxClasses = parseInt(validatedData.maxClasses) || 1;
+        let currentDate = new Date(startDate);
+        let classCount = 0;
+        
+        // Generate up to maxClasses worth of dates
+        while (classCount < maxClasses) {
+          const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][currentDate.getDay()];
+          
+          if (trackDays.includes(dayName)) {
+            futureClassDates.push({ date: new Date(currentDate), dayName });
+            classCount++;
+          }
+          
+          currentDate.setDate(currentDate.getDate() + 1);
+          
+          // Safety: Don't loop forever (max 365 days)
+          if (currentDate > new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)) {
+            break;
+          }
+        }
+        
+        console.log(`   Generated ${futureClassDates.length} future class dates`);
+        
+        // Validate that each future class date has availability
+        const missingAvailability: string[] = [];
+        for (const classDate of futureClassDates) {
+          const hasAvailability = availableDays.includes(classDate.dayName);
+          if (!hasAvailability) {
+            missingAvailability.push(`${classDate.dayName} (${classDate.date.toISOString().split('T')[0]})`);
+          }
+        }
+        
+        if (missingAvailability.length > 0) {
+          console.log(`   ❌ Missing availability for: ${missingAvailability.join(', ')}`);
+          return res.status(400).json({ 
+            message: `Your availability doesn't cover all required class dates. Missing availability for: ${missingAvailability.slice(0, 3).join(', ')}${missingAvailability.length > 3 ? ` and ${missingAvailability.length - 3} more` : ''}. Please update your Teacher Schedule to include ${validatedData.track === 'weekday' ? 'all weekdays' : 'both weekend days'} at ${validatedData.startTime}.`
+          });
+        }
+        
+        console.log(`   ✅ Teacher availability validated for all ${futureClassDates.length} class dates`);
       }
 
       // Create the course

@@ -33,7 +33,7 @@ export default function CreateCourse() {
   
   // Fetch existing courses
   const { data: existingCourses = [], isLoading } = useQuery<any[]>({
-    queryKey: [`/api/teacher/courses`],
+    queryKey: [`/api/teacher/courses?teacherId=${user?.id}`],
     enabled: !!user?.id,
   });
 
@@ -93,7 +93,7 @@ export default function CreateCourse() {
 
   const createCourseMutation = useMutation({
     mutationFn: async (courseData: any) => {
-      const response = await apiRequest('POST', `/api/teacher/courses`, courseData);
+      const response = await apiRequest('POST', `/api/teacher/courses?teacherId=${user?.id}`, courseData);
       return await response.json();
     },
     onSuccess: async (data) => {
@@ -102,7 +102,7 @@ export default function CreateCourse() {
         title: "Success",
         description: "Course created successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/teacher/courses`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teacher/courses?teacherId=${user?.id}`] });
       
       // Reset form
       setFormData({
@@ -138,7 +138,7 @@ export default function CreateCourse() {
         title: "Success",
         description: "Course updated successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/teacher/courses`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teacher/courses?teacherId=${user?.id}`] });
       setEditingCourse(null);
     },
     onError: (error: any) => {
