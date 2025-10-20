@@ -6730,10 +6730,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const paymentConfig = {
         stripeEnabled: configMap['stripe_enabled'] === 'true',
         stripePublishableKey: configMap['stripe_publishable_key'] || '',
-        stripeSecretKey: configMap['stripe_secret_key'] || '',
         razorpayEnabled: configMap['razorpay_enabled'] === 'true',
         razorpayKeyId: configMap['razorpay_key_id'] || '',
-        razorpayKeySecret: configMap['razorpay_key_secret'] || '',
         // Add payment mode configuration
         paymentMode: adminPaymentConfig?.paymentMode || 'dummy',
         razorpayMode: adminPaymentConfig?.razorpayMode || 'upi',
