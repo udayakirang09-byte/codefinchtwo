@@ -748,6 +748,11 @@ export const courses = pgTable("courses", {
   prerequisites: text("prerequisites"),
   tags: jsonb("tags").$type<string[]>().default([]),
   isActive: boolean("is_active").default(true),
+  // Track Definition Fields (CC6: Course Track Scheduling)
+  track: varchar("track"), // "weekday" (Mon-Fri) or "weekend" (Sat/Sun)
+  startTime: varchar("start_time"), // HH:MM format (must exist in teacher's availability)
+  startDate: varchar("start_date"), // YYYY-MM-DD format
+  sessionDuration: integer("session_duration").default(55), // Duration in minutes (default 55m)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

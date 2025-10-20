@@ -4817,6 +4817,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Track Definition Validation: If track and startTime are provided, validate against availability table
+      if (validatedData.track && validatedData.startTime) {
+        // Check if the startTime exists in the teacher's availability table
+        const availability = await db
+          .select()
+          .from(timeSlots)
+          .where(and(
+            eq(timeSlots.mentorId, mentor.id),
+            eq(timeSlots.startTime, validatedData.startTime)
+          ))
+          .limit(1);
+        
+        if (availability.length === 0) {
+          return res.status(400).json({ 
+            message: `The selected start time (${validatedData.startTime}) does not exist in your availability. Please add this time slot to your availability first.`
+          });
+        }
+      }
+
       // Create the course
       const courseRecord = {
         title: validatedData.title,
@@ -4829,7 +4848,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maxStudents: validatedData.maxStudents,
         prerequisites: validatedData.prerequisites,
         tags: validatedData.tags ? Array.from(validatedData.tags as string[]) : [],
-        isActive: validatedData.isActive
+        isActive: validatedData.isActive,
+        // Track Definition Fields (CC6: Course Track Scheduling)
+        track: validatedData.track || null,
+        startTime: validatedData.startTime || null,
+        startDate: validatedData.startDate || null,
+        sessionDuration: validatedData.sessionDuration || 55
       };
       const [newCourse] = await db.insert(courses).values(courseRecord).returning();
       
@@ -4881,6 +4905,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (courseData.prerequisites !== undefined) updateData.prerequisites = courseData.prerequisites;
       if (courseData.tags !== undefined) updateData.tags = Array.isArray(courseData.tags) ? courseData.tags : [];
       if (courseData.isActive !== undefined) updateData.isActive = courseData.isActive;
+      // Track Definition Fields (CC6)
+      if (courseData.track !== undefined) updateData.track = courseData.track;
+      if (courseData.startTime !== undefined) updateData.startTime = courseData.startTime;
+      if (courseData.startDate !== undefined) updateData.startDate = courseData.startDate;
+      if (courseData.sessionDuration !== undefined) updateData.sessionDuration = courseData.sessionDuration;
 
       // Update the course
       await storage.updateCourse(courseId, updateData);

@@ -39,7 +39,12 @@ export default function CreateCourse() {
     difficulty: '',
     maxStudents: '',
     maxClasses: '',
-    prerequisites: ''
+    prerequisites: '',
+    // Track Definition Fields (CC6)
+    track: '',
+    startTime: '',
+    startDate: '',
+    sessionDuration: '55'
   });
 
   // Load course configuration defaults from admin
@@ -76,13 +81,15 @@ export default function CreateCourse() {
         setFormData({
           title: '', description: '', category: '', duration: '', 
           price: '', difficulty: '', maxStudents: config.maxStudentsPerCourse.toString(), 
-          maxClasses: config.maxClassesPerCourse.toString(), prerequisites: ''
+          maxClasses: config.maxClassesPerCourse.toString(), prerequisites: '',
+          track: '', startTime: '', startDate: '', sessionDuration: '55'
         });
       } catch (err) {
         // Fallback to empty if config fetch fails
         setFormData({
           title: '', description: '', category: '', duration: '', 
-          price: '', difficulty: '', maxStudents: '', maxClasses: '', prerequisites: ''
+          price: '', difficulty: '', maxStudents: '', maxClasses: '', prerequisites: '',
+          track: '', startTime: '', startDate: '', sessionDuration: '55'
         });
       }
       console.log('✅ Toast triggered and form reset');
@@ -456,6 +463,76 @@ export default function CreateCourse() {
                 </div>
               </div>
 
+              {/* Track Definition Section */}
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-semibold mb-4">Course Schedule (Track Definition)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="track">Track *</Label>
+                    <Select value={formData.track} onValueChange={(value) => setFormData({ ...formData, track: value })}>
+                      <SelectTrigger data-testid="select-track">
+                        <SelectValue placeholder="Select track" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="weekday">Weekday (Mon-Fri)</SelectItem>
+                        <SelectItem value="weekend">Weekend (Sat/Sun)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-gray-500">Choose when classes will be held</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="startTime">Start Time (HH:00) *</Label>
+                    <Input
+                      id="startTime"
+                      type="time"
+                      value={formData.startTime}
+                      onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                      data-testid="input-start-time"
+                    />
+                    <p className="text-sm text-gray-500">Must exist in your availability</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="startDate">Start Date *</Label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      value={formData.startDate}
+                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                      data-testid="input-start-date"
+                    />
+                    <p className="text-sm text-gray-500">First class date</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="sessionDuration">Session Duration (minutes)</Label>
+                    <Input
+                      id="sessionDuration"
+                      type="number"
+                      placeholder="55"
+                      value={formData.sessionDuration}
+                      onChange={(e) => setFormData({ ...formData, sessionDuration: e.target.value })}
+                      data-testid="input-session-duration"
+                    />
+                    <p className="text-sm text-gray-500">Default: 55 minutes per class</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="maxClasses">Number of Classes *</Label>
+                    <Input
+                      id="maxClasses"
+                      type="number"
+                      placeholder="8"
+                      value={formData.maxClasses}
+                      onChange={(e) => setFormData({ ...formData, maxClasses: e.target.value })}
+                      data-testid="input-max-classes"
+                    />
+                    <p className="text-sm text-gray-500">Total sessions in this course</p>
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="description">Course Description *</Label>
                 <Textarea
@@ -505,7 +582,8 @@ export default function CreateCourse() {
                   variant="outline"
                   onClick={() => setFormData({
                     title: '', description: '', category: '', duration: '', 
-                    price: '', difficulty: '', maxStudents: '', maxClasses: '', prerequisites: ''
+                    price: '', difficulty: '', maxStudents: '', maxClasses: '', prerequisites: '',
+                    track: '', startTime: '', startDate: '', sessionDuration: '55'
                   })}
                   data-testid="button-clear-form"
                 >
