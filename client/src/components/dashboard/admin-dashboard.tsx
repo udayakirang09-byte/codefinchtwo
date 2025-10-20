@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { queryClient } from '@/lib/queryClient';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck, Mail, MessageSquare, Phone, CreditCard, Key, Lock, X, Building, Activity, TestTube, Zap, Monitor, Map, Brain, Cloud } from "lucide-react";
+import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck, Mail, MessageSquare, Phone, CreditCard, Key, Lock, X, Building, Activity, TestTube, Zap, Monitor, Map, Brain, Cloud, Calendar, Cog } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 
@@ -29,6 +31,15 @@ interface Alert {
   title: string;
   message: string;
   timestamp: Date;
+}
+
+interface HomeSectionControl {
+  id: string;
+  sectionType: string;
+  sectionName: string;
+  isEnabled: boolean;
+  displayOrder: number;
+  description?: string;
 }
 
 export default function AdminDashboard() {
@@ -115,6 +126,32 @@ export default function AdminDashboard() {
   const [showUnitTests, setShowUnitTests] = useState(false);
   const [showSystemTests, setShowSystemTests] = useState(false);
   const [showLoadTesting, setShowLoadTesting] = useState(false);
+
+  // Fetch home section controls from API
+  const { data: homeSectionControls = [] as HomeSectionControl[], isLoading: controlsLoading } = useQuery<HomeSectionControl[]>({
+    queryKey: ['admin-home-sections'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/home-sections');
+      if (!response.ok) throw new Error('Failed to fetch home section controls');
+      return response.json();
+    }
+  });
+
+  // Mutation to update home section controls
+  const updateSectionControlMutation = useMutation({
+    mutationFn: async ({ sectionType, sectionName, isEnabled }: { sectionType: string; sectionName: string; isEnabled: boolean }) => {
+      const response = await fetch('/api/admin/home-sections', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sectionType, sectionName, isEnabled })
+      });
+      if (!response.ok) throw new Error('Failed to update section control');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-home-sections'] });
+    }
+  });
 
   useEffect(() => {
     // Load system health data
@@ -1514,6 +1551,166 @@ export default function AdminDashboard() {
               </Button>
             </Link>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Navigation Links */}
+      <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-indigo-600 to-purple-700 text-white">
+          <CardTitle className="flex items-center gap-3 text-xl">
+            <Settings className="h-6 w-6" />
+            Navigation Links
+          </CardTitle>
+          <CardDescription className="text-white/90">
+            Direct access to system pages and utilities
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            <Link href="/admin/analytics">
+              <Button variant="outline" className="w-full" data-testid="button-nav-ai-analytics">
+                <Brain className="w-4 h-4 mr-2" />
+                🤖 AI Analytics
+              </Button>
+            </Link>
+            <Link href="/admin/payment-config">
+              <Button variant="outline" className="w-full" data-testid="button-nav-payment-config">
+                <DollarSign className="w-4 h-4 mr-2" />
+                💰 Payment Config
+              </Button>
+            </Link>
+            <Link href="/admin/ui-config">
+              <Button variant="outline" className="w-full" data-testid="button-nav-ui-config">
+                <Settings className="w-4 h-4 mr-2" />
+                🎨 UI Configuration
+              </Button>
+            </Link>
+            <Link href="/admin/booking-limits-config">
+              <Button variant="outline" className="w-full" data-testid="button-nav-booking-limits">
+                <Calendar className="w-4 h-4 mr-2" />
+                📅 Booking Limits
+              </Button>
+            </Link>
+            <Link href="/admin/finance-dashboard">
+              <Button variant="outline" className="w-full" data-testid="button-nav-finance-analytics">
+                <TrendingUp className="w-4 h-4 mr-2" />
+                📊 Finance Analytics
+              </Button>
+            </Link>
+            <Link href="/admin/cloud-deployments">
+              <Button variant="outline" className="w-full" data-testid="button-nav-cloud-deploy">
+                <Cloud className="w-4 h-4 mr-2" />
+                ☁️ Cloud Deploy
+              </Button>
+            </Link>
+            <Link href="/simple-test">
+              <Button variant="outline" className="w-full" data-testid="button-nav-simple-test">
+                <TestTube className="w-4 h-4 mr-2" />
+                🔧 Simple Test
+              </Button>
+            </Link>
+            <Link href="/system-test">
+              <Button variant="outline" className="w-full" data-testid="button-nav-full-tests">
+                <Cog className="w-4 h-4 mr-2" />
+                🧪 Full Tests
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Dashboard Section Controls */}
+      <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-violet-600 to-fuchsia-700 text-white">
+          <CardTitle className="flex items-center gap-3 text-xl">
+            <Settings className="h-6 w-6" />
+            Dashboard Section Controls
+          </CardTitle>
+          <CardDescription className="text-white/90">
+            Control which sections appear on teacher and student dashboards
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-6">
+          {controlsLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <div className="animate-spin w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full" />
+              <span className="ml-2 text-sm text-gray-600">Loading controls...</span>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Teacher Sections */}
+              <div>
+                <h4 className="font-semibold text-sm text-gray-700 mb-3" data-testid="heading-teacher-sections">
+                  Teacher Dashboard Sections
+                </h4>
+                <div className="space-y-3">
+                  {homeSectionControls
+                    .filter(control => control.sectionType === 'teacher')
+                    .sort((a, b) => a.displayOrder - b.displayOrder)
+                    .map((control) => (
+                      <div key={control.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <label className="text-sm font-medium cursor-pointer" data-testid={`label-${control.sectionType}-${control.sectionName}`}>
+                            {control.sectionName.charAt(0).toUpperCase() + control.sectionName.slice(1).replace(/([A-Z])/g, ' $1')}
+                          </label>
+                          {control.description && (
+                            <p className="text-xs text-gray-500 mt-1">{control.description}</p>
+                          )}
+                        </div>
+                        <Switch
+                          checked={control.isEnabled}
+                          onCheckedChange={(checked) => {
+                            updateSectionControlMutation.mutate({
+                              sectionType: control.sectionType,
+                              sectionName: control.sectionName,
+                              isEnabled: checked
+                            });
+                          }}
+                          disabled={updateSectionControlMutation.isPending}
+                          data-testid={`switch-${control.sectionType}-${control.sectionName}`}
+                        />
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              {/* Student Sections */}
+              <div>
+                <h4 className="font-semibold text-sm text-gray-700 mb-3" data-testid="heading-student-sections">
+                  Student Dashboard Sections
+                </h4>
+                <div className="space-y-3">
+                  {homeSectionControls
+                    .filter(control => control.sectionType === 'student')
+                    .sort((a, b) => a.displayOrder - b.displayOrder)
+                    .map((control) => (
+                      <div key={control.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <label className="text-sm font-medium cursor-pointer" data-testid={`label-${control.sectionType}-${control.sectionName}`}>
+                            {control.sectionName.charAt(0).toUpperCase() + control.sectionName.slice(1).replace(/([A-Z])/g, ' $1')}
+                          </label>
+                          {control.description && (
+                            <p className="text-xs text-gray-500 mt-1">{control.description}</p>
+                          )}
+                        </div>
+                        <Switch
+                          checked={control.isEnabled}
+                          onCheckedChange={(checked) => {
+                            updateSectionControlMutation.mutate({
+                              sectionType: control.sectionType,
+                              sectionName: control.sectionName,
+                              isEnabled: checked
+                            });
+                          }}
+                          disabled={updateSectionControlMutation.isPending}
+                          data-testid={`switch-${control.sectionType}-${control.sectionName}`}
+                        />
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
