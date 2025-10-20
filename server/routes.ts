@@ -5,7 +5,7 @@ import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
 import { azureStorage } from "./azureStorage";
 import { z } from "zod";
-import { eq, desc, asc, and, gte, lte, or, sql, isNull } from "drizzle-orm";
+import { eq, desc, asc, and, gte, lte, or, sql, isNull, ne } from "drizzle-orm";
 import { db } from "./db";
 import { 
   adminConfig, 
@@ -2779,6 +2779,203 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error cancelling course enrollment:", error);
       res.status(500).json({ message: "Failed to cancel course enrollment" });
+    }
+  });
+
+  // Bulk Booking Package routes
+  // POST /api/bulk-packages - Purchase a bulk package (5 or 10 classes)
+  app.post("/api/bulk-packages", async (req, res) => {
+    try {
+      const { studentId, mentorId, totalClasses, pricePerClass, subject, sessionDuration } = req.body;
+
+      // Validate totalClasses is either 5 or 10
+      if (totalClasses !== 5 && totalClasses !== 10) {
+        return res.status(400).json({ message: "Bulk packages must be either 5 or 10 classes" });
+      }
+
+      // Verify student and mentor exist
+      const student = await storage.getStudent(studentId);
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      const mentor = await storage.getMentor(mentorId);
+      if (!mentor) {
+        return res.status(404).json({ message: "Mentor not found" });
+      }
+
+      // Calculate total amount
+      const totalAmount = (parseFloat(pricePerClass) * totalClasses).toFixed(2);
+
+      // Create bulk package
+      const bulkPackage = await storage.createBulkPackage({
+        studentId,
+        mentorId,
+        totalClasses,
+        usedClasses: 0,
+        remainingClasses: totalClasses,
+        pricePerClass,
+        totalAmount,
+        subject,
+        sessionDuration: sessionDuration || 55,
+        status: 'active',
+        paymentStatus: 'completed', // Assuming payment is processed separately
+      });
+
+      console.log(`✅ Bulk package created: ${totalClasses} classes for student ${studentId} with mentor ${mentorId}`);
+
+      res.status(201).json(bulkPackage);
+    } catch (error) {
+      console.error("Error creating bulk package:", error);
+      res.status(500).json({ message: "Failed to create bulk package" });
+    }
+  });
+
+  // GET /api/bulk-packages/student/:studentId - Get all packages for a student
+  app.get("/api/bulk-packages/student/:studentId", async (req, res) => {
+    try {
+      const { studentId } = req.params;
+      
+      const packages = await storage.getBulkPackagesByStudent(studentId);
+      
+      res.json(packages);
+    } catch (error) {
+      console.error("Error fetching bulk packages:", error);
+      res.status(500).json({ message: "Failed to fetch bulk packages" });
+    }
+  });
+
+  // GET /api/bulk-packages/:id - Get details of a specific package
+  app.get("/api/bulk-packages/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const bulkPackage = await storage.getBulkPackage(id);
+      
+      if (!bulkPackage) {
+        return res.status(404).json({ message: "Bulk package not found" });
+      }
+
+      res.json(bulkPackage);
+    } catch (error) {
+      console.error("Error fetching bulk package:", error);
+      res.status(500).json({ message: "Failed to fetch bulk package" });
+    }
+  });
+
+  // POST /api/bulk-packages/:packageId/schedule-class - Schedule one or more classes from a package
+  app.post("/api/bulk-packages/:packageId/schedule-class", async (req, res) => {
+    try {
+      const { packageId } = req.params;
+      const { scheduledSessions } = req.body; // Array of { scheduledAt, notes }
+
+      if (!Array.isArray(scheduledSessions) || scheduledSessions.length === 0) {
+        return res.status(400).json({ message: "scheduledSessions must be a non-empty array" });
+      }
+
+      // Get bulk package
+      const bulkPackage = await storage.getBulkPackage(packageId);
+      if (!bulkPackage) {
+        return res.status(404).json({ message: "Bulk package not found" });
+      }
+
+      // Check if package is active
+      if (bulkPackage.status !== 'active') {
+        return res.status(400).json({ message: "Bulk package is not active" });
+      }
+
+      // Check if enough classes remaining
+      if (bulkPackage.remainingClasses < scheduledSessions.length) {
+        return res.status(400).json({ 
+          message: `Not enough classes remaining. You have ${bulkPackage.remainingClasses} class(es) left.` 
+        });
+      }
+
+      // Validate all sessions against teacher availability
+      const mentor = await storage.getMentor(bulkPackage.mentorId);
+      if (!mentor) {
+        return res.status(404).json({ message: "Mentor not found" });
+      }
+
+      // Get teacher's time slots
+      const teacherTimeSlots = await db
+        .select()
+        .from(timeSlots)
+        .where(eq(timeSlots.mentorId, bulkPackage.mentorId));
+
+      // Validate each session
+      for (const session of scheduledSessions) {
+        const scheduledDate = new Date(session.scheduledAt);
+        const dayOfWeek = scheduledDate.toLocaleDateString('en-US', { weekday: 'long' });
+        const timeString = scheduledDate.toLocaleTimeString('en-US', { 
+          hour: '2-digit', 
+          minute: '2-digit', 
+          hour12: false 
+        });
+
+        // Check if teacher has availability for this day/time
+        const hasAvailability = teacherTimeSlots.some(slot => 
+          slot.dayOfWeek === dayOfWeek && slot.startTime === timeString
+        );
+
+        if (!hasAvailability) {
+          return res.status(400).json({ 
+            message: `Teacher not available on ${dayOfWeek} at ${timeString}. Please check teacher's schedule.` 
+          });
+        }
+
+        // Check for existing bookings or holds at this time
+        const existingBookings = await db
+          .select()
+          .from(bookings)
+          .where(
+            and(
+              eq(bookings.mentorId, bulkPackage.mentorId),
+              eq(bookings.scheduledAt, scheduledDate),
+              ne(bookings.status, 'cancelled')
+            )
+          );
+
+        if (existingBookings.length > 0) {
+          return res.status(409).json({ 
+            message: `Time slot ${dayOfWeek} at ${timeString} is already booked` 
+          });
+        }
+      }
+
+      // Create bookings for all sessions
+      const createdBookings = [];
+      for (const session of scheduledSessions) {
+        const booking = await storage.createBooking({
+          studentId: bulkPackage.studentId,
+          mentorId: bulkPackage.mentorId,
+          bulkPackageId: packageId,
+          scheduledAt: new Date(session.scheduledAt),
+          duration: bulkPackage.sessionDuration || 55,
+          status: 'scheduled',
+          subject: bulkPackage.subject,
+          notes: session.notes || '',
+          sessionType: 'regular',
+        });
+        createdBookings.push(booking);
+      }
+
+      // Update bulk package usage
+      const newUsedClasses = bulkPackage.usedClasses + scheduledSessions.length;
+      const newRemainingClasses = bulkPackage.remainingClasses - scheduledSessions.length;
+      
+      await storage.updateBulkPackageUsage(packageId, newUsedClasses, newRemainingClasses);
+
+      console.log(`✅ Scheduled ${scheduledSessions.length} class(es) from bulk package ${packageId}`);
+
+      res.status(201).json({
+        message: `Successfully scheduled ${scheduledSessions.length} class(es)`,
+        bookings: createdBookings,
+        remainingClasses: newRemainingClasses
+      });
+    } catch (error) {
+      console.error("Error scheduling classes from bulk package:", error);
+      res.status(500).json({ message: "Failed to schedule classes" });
     }
   });
 

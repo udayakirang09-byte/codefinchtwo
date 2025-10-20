@@ -143,6 +143,7 @@ export const bookings = pgTable("bookings", {
   studentId: varchar("student_id").references(() => students.id).notNull(),
   mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
   courseId: varchar("course_id").references(() => courses.id), // Optional: only set for course bookings
+  bulkPackageId: varchar("bulk_package_id"), // Optional: only set for bulk package bookings (references added after table creation to avoid circular dependency)
   scheduledAt: timestamp("scheduled_at").notNull(),
   duration: integer("duration").notNull(), // minutes
   status: varchar("status").notNull().default("scheduled"), // scheduled, completed, cancelled
@@ -205,6 +206,30 @@ export const bookingHolds = pgTable("booking_holds", {
   mentorIdScheduledIdx: index("booking_holds_mentor_scheduled_idx").on(table.mentorId, table.scheduledAt),
   expiresAtIdx: index("booking_holds_expires_at_idx").on(table.expiresAt),
   statusIdx: index("booking_holds_status_idx").on(table.status),
+}));
+
+// Bulk Booking Packages - Students can purchase 5 or 10 classes upfront
+export const bulkBookingPackages = pgTable("bulk_booking_packages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  studentId: varchar("student_id").references(() => students.id).notNull(),
+  mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
+  totalClasses: integer("total_classes").notNull(), // 5 or 10
+  usedClasses: integer("used_classes").default(0), // Number of classes already scheduled
+  remainingClasses: integer("remaining_classes").notNull(), // Classes left to schedule
+  pricePerClass: decimal("price_per_class", { precision: 10, scale: 2 }).notNull(),
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(), // Total paid
+  subject: varchar("subject"), // Subject/topic for the package
+  sessionDuration: integer("session_duration").default(55), // Minutes per session
+  status: varchar("status").notNull().default("active"), // active, completed, expired, cancelled
+  expiryDate: timestamp("expiry_date"), // Optional: packages can expire after X months
+  paymentId: varchar("payment_id"), // Reference to Razorpay payment
+  paymentStatus: varchar("payment_status").default("pending"), // pending, completed, failed
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  studentIdIdx: index("bulk_packages_student_id_idx").on(table.studentId),
+  mentorIdIdx: index("bulk_packages_mentor_id_idx").on(table.mentorId),
+  statusIdx: index("bulk_packages_status_idx").on(table.status),
 }));
 
 export const achievements = pgTable("achievements", {
@@ -355,7 +380,23 @@ export const bookingsRelations = relations(bookings, ({ one, many }) => ({
     fields: [bookings.mentorId],
     references: [mentors.id],
   }),
+  bulkPackage: one(bulkBookingPackages, {
+    fields: [bookings.bulkPackageId],
+    references: [bulkBookingPackages.id],
+  }),
   reviews: many(reviews),
+}));
+
+export const bulkBookingPackagesRelations = relations(bulkBookingPackages, ({ one, many }) => ({
+  student: one(students, {
+    fields: [bulkBookingPackages.studentId],
+    references: [students.id],
+  }),
+  mentor: one(mentors, {
+    fields: [bulkBookingPackages.mentorId],
+    references: [mentors.id],
+  }),
+  bookings: many(bookings),
 }));
 
 export const reviewsRelations = relations(reviews, ({ one }) => ({
@@ -412,6 +453,10 @@ export const insertBookingSchema = createInsertSchema(bookings);
 
 export type InsertBookingHold = typeof bookingHolds.$inferInsert;
 export type SelectBookingHold = typeof bookingHolds.$inferSelect;
+
+export const insertBulkBookingPackageSchema = createInsertSchema(bulkBookingPackages);
+export type InsertBulkBookingPackage = z.infer<typeof insertBulkBookingPackageSchema>;
+export type BulkBookingPackage = typeof bulkBookingPackages.$inferSelect;
 
 export const insertReviewSchema = createInsertSchema(reviews);
 

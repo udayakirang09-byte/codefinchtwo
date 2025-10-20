@@ -6,6 +6,7 @@ import {
   courseEnrollments,
   bookings,
   bookingHolds,
+  bulkBookingPackages,
   achievements,
   reviews,
   chatSessions,
@@ -34,6 +35,8 @@ import {
   type InsertBooking,
   type SelectBookingHold,
   type InsertBookingHold,
+  type BulkBookingPackage,
+  type InsertBulkBookingPackage,
   type Review,
   type InsertReview,
   type Achievement,
@@ -166,6 +169,13 @@ export interface IStorage {
   confirmBookingHold(holdId: string, bookingId: string): Promise<void>;
   releaseBookingHold(holdId: string): Promise<void>;
   cleanupExpiredHolds(): Promise<number>;
+  
+  // Bulk Booking Package operations
+  createBulkPackage(packageData: InsertBulkBookingPackage): Promise<BulkBookingPackage>;
+  getBulkPackage(id: string): Promise<BulkBookingPackage | undefined>;
+  getBulkPackagesByStudent(studentId: string): Promise<BulkBookingPackage[]>;
+  updateBulkPackageUsage(id: string, usedClasses: number, remainingClasses: number): Promise<void>;
+  updateBulkPackageStatus(id: string, status: string): Promise<void>;
   
   // Review operations
   getReviewsByMentor(mentorId: string): Promise<ReviewWithDetails[]>;
@@ -1105,6 +1115,73 @@ export class DatabaseStorage implements IStorage {
         )
       );
     return result.rowCount || 0;
+  }
+
+  // Bulk Booking Package operations
+  async createBulkPackage(packageData: InsertBulkBookingPackage): Promise<BulkBookingPackage> {
+    const [bulkPackage] = await db.insert(bulkBookingPackages).values(packageData).returning();
+    
+    // Invalidate cache for student
+    await cache.del(`bulk-packages:student:${bulkPackage.studentId}`);
+    
+    return bulkPackage;
+  }
+
+  async getBulkPackage(id: string): Promise<BulkBookingPackage | undefined> {
+    const [bulkPackage] = await db.select().from(bulkBookingPackages).where(eq(bulkBookingPackages.id, id));
+    return bulkPackage;
+  }
+
+  async getBulkPackagesByStudent(studentId: string): Promise<BulkBookingPackage[]> {
+    // Try cache first
+    const cacheKey = `bulk-packages:student:${studentId}`;
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      console.log(`✅ Cache hit: bulk packages for student ${studentId}`);
+      return cached;
+    }
+
+    const packages = await db
+      .select()
+      .from(bulkBookingPackages)
+      .where(eq(bulkBookingPackages.studentId, studentId))
+      .orderBy(desc(bulkBookingPackages.createdAt));
+
+    // Cache for 5 minutes
+    await cache.set(cacheKey, packages, 300);
+
+    return packages;
+  }
+
+  async updateBulkPackageUsage(id: string, usedClasses: number, remainingClasses: number): Promise<void> {
+    const [bulkPackage] = await db
+      .update(bulkBookingPackages)
+      .set({ 
+        usedClasses, 
+        remainingClasses,
+        status: remainingClasses === 0 ? 'completed' : 'active',
+        updatedAt: new Date() 
+      })
+      .where(eq(bulkBookingPackages.id, id))
+      .returning();
+    
+    // Invalidate cache
+    if (bulkPackage) {
+      await cache.del(`bulk-packages:student:${bulkPackage.studentId}`);
+    }
+  }
+
+  async updateBulkPackageStatus(id: string, status: string): Promise<void> {
+    const [bulkPackage] = await db
+      .update(bulkBookingPackages)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(bulkBookingPackages.id, id))
+      .returning();
+    
+    // Invalidate cache
+    if (bulkPackage) {
+      await cache.del(`bulk-packages:student:${bulkPackage.studentId}`);
+    }
   }
 
   // Course operations

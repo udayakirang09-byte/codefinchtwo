@@ -93,6 +93,10 @@ export default function Booking() {
     }
   }, [isAuthenticated, authLoading, navigate, toast]);
 
+  // Bulk booking state
+  const [bookingType, setBookingType] = useState<"single" | "bulk">("single");
+  const [bulkClassCount, setBulkClassCount] = useState<5 | 10>(5);
+
   const [formData, setFormData] = useState({
     studentName: "",
     studentAge: "",
