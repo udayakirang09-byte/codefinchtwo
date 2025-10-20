@@ -2796,15 +2796,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Resolve student ID from email if needed
       let resolvedStudentId = studentId;
       if (studentId.includes('@')) {
+        console.log(`📦 Resolving student ID from email: ${studentId}`);
         const user = await storage.getUserByEmail(studentId);
+        console.log(`📦 Found user:`, user ? `${user.id} (${user.role})` : 'null');
         if (!user || user.role !== 'student') {
+          console.log(`❌ User not found or not a student`);
           return res.status(404).json({ message: "Student not found" });
         }
         const studentRecord = await storage.getStudentByUserId(user.id);
+        console.log(`📦 Found student record:`, studentRecord ? studentRecord.id : 'null');
         if (!studentRecord) {
+          console.log(`❌ Student record not found for user ${user.id}`);
           return res.status(404).json({ message: "Student not found" });
         }
         resolvedStudentId = studentRecord.id;
+        console.log(`✅ Resolved student ID: ${resolvedStudentId}`);
       }
 
       // Verify student and mentor exist
