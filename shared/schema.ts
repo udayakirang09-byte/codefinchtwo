@@ -164,6 +164,11 @@ export const bookings = pgTable("bookings", {
   refundStatus: varchar("refund_status"), // pending, approved, rejected, processed, not_applicable
   refundAmount: decimal("refund_amount", { precision: 10, scale: 2 }), // Amount to refund in INR
   refundProcessedAt: timestamp("refund_processed_at"), // When refund was completed
+  // Teacher Payout & Platform Fee Tracking
+  teacherPayoutAmount: decimal("teacher_payout_amount", { precision: 10, scale: 2 }), // Amount to pay teacher (85% or 0%)
+  platformFeeAmount: decimal("platform_fee_amount", { precision: 10, scale: 2 }), // Platform fee retained (15%, 10%, or 0%)
+  teacherPayoutStatus: varchar("teacher_payout_status"), // pending, processed, withheld, not_applicable
+  teacherPayoutProcessedAt: timestamp("teacher_payout_processed_at"), // When teacher payout was completed
   // AI/System Detection Fields
   lateJoinDetectedAt: timestamp("late_join_detected_at"), // When late join was detected
   connectivityIssueDetectedAt: timestamp("connectivity_issue_detected_at"), // When connectivity issue detected
