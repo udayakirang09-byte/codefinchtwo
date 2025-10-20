@@ -274,7 +274,7 @@ export default function AdminUiConfig() {
                             </Label>
                             <Switch
                               id={item.key}
-                              checked={footerLinks[item.key]}
+                              checked={footerLinks?.[item.key] || false}
                               onCheckedChange={() => handleFooterLinkToggle(item.key)}
                               data-testid={`switch-footer-${item.key}`}
                             />
@@ -303,7 +303,7 @@ export default function AdminUiConfig() {
                             </Label>
                             <Switch
                               id={item.key}
-                              checked={footerLinks[item.key]}
+                              checked={footerLinks?.[item.key] || false}
                               onCheckedChange={() => handleFooterLinkToggle(item.key)}
                               data-testid={`switch-footer-${item.key}`}
                             />
@@ -332,7 +332,7 @@ export default function AdminUiConfig() {
                             </Label>
                             <Switch
                               id={item.key}
-                              checked={footerLinks[item.key]}
+                              checked={footerLinks?.[item.key] || false}
                               onCheckedChange={() => handleFooterLinkToggle(item.key)}
                               data-testid={`switch-footer-${item.key}`}
                             />
