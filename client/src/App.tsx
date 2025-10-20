@@ -35,6 +35,7 @@ import ActiveClasses from "./pages/student/active-classes";
 import AllActiveClasses from "./pages/student/all-active-classes";
 import LearningHours from "./pages/student/learning-hours";
 import CompletedClasses from "./pages/student/completed-classes";
+import MyPackages from "./pages/student/my-packages";
 import CreateCourse from "./pages/teacher/create-course";
 import EditCourse from "./pages/teacher/edit-course";
 import ViewCourse from "./pages/teacher/view-course";
@@ -130,6 +131,7 @@ function Router() {
       <Route path="/student/all-active-classes" component={AllActiveClasses} />
       <Route path="/student/learning-hours" component={LearningHours} />
       <Route path="/student/completed-classes" component={CompletedClasses} />
+      <Route path="/student/my-packages" component={MyPackages} />
       <Route path="/recordings" component={Recordings} />
       <Route path="/teacher/create-course" component={CreateCourse} />
       <Route path="/teacher/courses/:id/edit" component={EditCourse} />
