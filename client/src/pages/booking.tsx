@@ -269,17 +269,6 @@ export default function Booking() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // C1: Validate session duration matches session type
-    const expectedDuration = formData.sessionType === 'demo' ? '40' : '55';
-    if (formData.duration !== expectedDuration) {
-      toast({
-        title: "Invalid Session Duration",
-        description: `${formData.sessionType === 'demo' ? 'Demo' : 'Regular'} sessions must be ${expectedDuration} minutes.`,
-        variant: "destructive",
-      });
-      return;
-    }
-    
     // Comprehensive validation
     // Student name validation
     const trimmedStudentName = formData.studentName.trim();
@@ -336,6 +325,84 @@ export default function Booking() {
       return;
     }
 
+    // Subject validation - REQUIRED
+    if (!formData.subject || !formData.subject.trim()) {
+      toast({
+        title: "Subject Required",
+        description: "Please select a subject for the session.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // BULK PACKAGE FLOW - Skip date/time validation
+    if (bookingType === "bulk") {
+      const userEmail = localStorage.getItem('userEmail');
+      if (!userEmail) {
+        toast({
+          title: "Authentication Required",
+          description: "Please login to book a session.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const duration = parseInt(formData.duration);
+      let perClassCost: number;
+      
+      if (selectedSubjectFee) {
+        perClassCost = parseFloat(selectedSubjectFee);
+      } else {
+        const hourlyRate = (typeof mentor.hourlyRate === 'number' ? mentor.hourlyRate : parseInt(String(mentor.hourlyRate))) || 500;
+        perClassCost = Math.round((duration / 60) * hourlyRate);
+      }
+      
+      const totalCost = perClassCost * bulkClassCount;
+      console.log(`📦 Bulk package: ${bulkClassCount} classes × ₹${perClassCost} = ₹${totalCost}`);
+      
+      const bulkPackageDetails = {
+        userEmail: userEmail,
+        mentorId,
+        mentorName: `${mentor.user.firstName} ${mentor.user.lastName}`,
+        totalClasses: bulkClassCount,
+        subject: formData.subject,
+        notes: formData.notes,
+        studentAge: parseInt(formData.studentAge) || null,
+        studentName: formData.studentName,
+        parentEmail: formData.parentEmail,
+        pricePerClass: perClassCost,
+        totalAmount: totalCost,
+        duration: duration
+      };
+      
+      const paymentMode = paymentModeConfig?.paymentMode || 'dummy';
+      
+      if (paymentMode === 'dummy') {
+        console.log('💳 Dummy mode: Creating bulk package directly');
+        toast({
+          title: "Bulk Package Purchase",
+          description: `Successfully purchased ${bulkClassCount} classes! (Dummy mode - no payment required)`,
+        });
+      } else {
+        console.log('💳 Realtime mode: Redirecting to bulk package payment');
+        sessionStorage.setItem('pendingBulkPackage', JSON.stringify(bulkPackageDetails));
+        navigate(`/booking-checkout?mentorId=${mentorId}&amount=${totalCost}&type=bulk&classes=${bulkClassCount}`);
+      }
+      return;
+    }
+
+    // SINGLE SESSION FLOW - Continue with existing validations
+    // C1: Validate session duration matches session type
+    const expectedDuration = formData.sessionType === 'demo' ? '40' : '55';
+    if (formData.duration !== expectedDuration) {
+      toast({
+        title: "Invalid Session Duration",
+        description: `${formData.sessionType === 'demo' ? 'Demo' : 'Regular'} sessions must be ${expectedDuration} minutes.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Date validation
     if (!formData.selectedDate) {
       toast({
@@ -364,16 +431,6 @@ export default function Booking() {
       toast({
         title: "Time Required",
         description: "Please select a session time.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Subject validation - REQUIRED
-    if (!formData.subject || !formData.subject.trim()) {
-      toast({
-        title: "Subject Required",
-        description: "Please select a subject for the session.",
         variant: "destructive",
       });
       return;

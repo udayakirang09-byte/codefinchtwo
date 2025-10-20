@@ -91,7 +91,7 @@ const StripeCardPaymentForm = ({ bookingDetails, onSuccess, paymentIntentId }: {
             Processing Payment...
           </>
         ) : (
-          `Pay ₹${bookingDetails.sessionCost} with Card`
+          `Pay ₹${bookingDetails.isBulkPackage ? bookingDetails.totalAmount : bookingDetails.sessionCost} with Card`
         )}
       </Button>
     </div>
@@ -450,7 +450,7 @@ const BookingCheckoutForm = ({ bookingDetails, hasStripe, paymentIntentId }: { b
               Processing Payment...
             </>
           ) : (
-            `Complete Payment - ₹${bookingDetails.sessionCost}`
+            `Complete Payment - ₹${bookingDetails.isBulkPackage ? bookingDetails.totalAmount : bookingDetails.sessionCost}`
           )}
         </Button>
       )}
@@ -507,9 +507,11 @@ export default function BookingCheckout() {
   }, []);
 
   useEffect(() => {
-    // Get booking details from sessionStorage
+    // Get booking details from sessionStorage (check both single and bulk)
     const storedBooking = sessionStorage.getItem('pendingBooking');
-    if (!storedBooking) {
+    const storedBulkPackage = sessionStorage.getItem('pendingBulkPackage');
+    
+    if (!storedBooking && !storedBulkPackage) {
       toast({
         title: "Booking Error",
         description: "No booking details found. Please start the booking process again.",
@@ -518,7 +520,11 @@ export default function BookingCheckout() {
       return;
     }
 
-    const booking = JSON.parse(storedBooking);
+    const booking = storedBulkPackage ? JSON.parse(storedBulkPackage) : JSON.parse(storedBooking!);
+    const isBulkPackage = !!storedBulkPackage;
+    
+    // Add isBulkPackage flag to booking details for later use
+    booking.isBulkPackage = isBulkPackage;
     setBookingDetails(booking);
 
     // Fetch payment account details for display
@@ -535,10 +541,17 @@ export default function BookingCheckout() {
     
     if (shouldUseStripe) {
       console.log('💳 Creating Stripe PaymentIntent for card payment');
+      const paymentAmount = isBulkPackage ? booking.totalAmount : booking.sessionCost;
+      
       apiRequest("POST", "/api/create-payment-intent", { 
-        amount: booking.sessionCost,
+        amount: paymentAmount,
         mentorId: booking.mentorId,
-        bookingDetails: {
+        bookingDetails: isBulkPackage ? {
+          totalClasses: booking.totalClasses,
+          subject: booking.subject,
+          studentName: booking.studentName,
+          pricePerClass: booking.pricePerClass
+        } : {
           scheduledAt: booking.scheduledAt,
           duration: booking.duration,
           studentName: booking.studentName
@@ -701,7 +714,7 @@ export default function BookingCheckout() {
                   <div className="border-t pt-4">
                     <div className="flex justify-between text-lg font-semibold">
                       <span>Total Amount:</span>
-                      <span className="text-blue-600">₹{bookingDetails.sessionCost}</span>
+                      <span className="text-blue-600">₹{bookingDetails.isBulkPackage ? bookingDetails.totalAmount : bookingDetails.sessionCost}</span>
                     </div>
                     <p className="text-sm text-gray-500 mt-1">Includes all taxes</p>
                   </div>
