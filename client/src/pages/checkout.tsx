@@ -289,7 +289,7 @@ export default function Checkout() {
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mt-6">
                     <h4 className="font-semibold text-blue-800 mb-2">Alternative Enrollment Options:</h4>
                     <div className="space-y-2 text-sm text-blue-700">
-                      <p>📧 Email: support@codeconnect.com</p>
+                      <p>📧 Email: support@techlearnorbit.com</p>
                       <p>📱 WhatsApp: +91 98765 43210</p>
                       <p>🕐 Support Hours: 9 AM - 6 PM (Mon-Fri)</p>
                     </div>

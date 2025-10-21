@@ -37,7 +37,7 @@ interface CookieConsentData {
   version: string;
 }
 
-const COOKIE_CONSENT_KEY = 'codeconnect_cookie_consent';
+const COOKIE_CONSENT_KEY = 'techlearnorbit_cookie_consent';
 const COOKIE_VERSION = '1.0.0';
 
 const defaultPreferences: CookiePreferences = {
@@ -189,7 +189,7 @@ export function CookieConsentBanner() {
     }
     
     // Enable custom analytics
-    (window as any).codeconnectAnalytics = true;
+    (window as any).techlearnorbitAnalytics = true;
   };
 
   const disableAnalytics = () => {
@@ -202,7 +202,7 @@ export function CookieConsentBanner() {
     }
     
     // Disable custom analytics
-    (window as any).codeconnectAnalytics = false;
+    (window as any).techlearnorbitAnalytics = false;
   };
 
   const enableMarketing = () => {
@@ -214,7 +214,7 @@ export function CookieConsentBanner() {
       });
     }
     
-    (window as any).codeconnectMarketing = true;
+    (window as any).techlearnorbitMarketing = true;
   };
 
   const disableMarketing = () => {
@@ -226,23 +226,23 @@ export function CookieConsentBanner() {
       });
     }
     
-    (window as any).codeconnectMarketing = false;
+    (window as any).techlearnorbitMarketing = false;
   };
 
   const enableFunctional = () => {
-    (window as any).codeconnectFunctional = true;
+    (window as any).techlearnorbitFunctional = true;
   };
 
   const disableFunctional = () => {
-    (window as any).codeconnectFunctional = false;
+    (window as any).techlearnorbitFunctional = false;
   };
 
   const enablePreferences = () => {
-    (window as any).codeconnectPreferences = true;
+    (window as any).techlearnorbitPreferences = true;
   };
 
   const disablePreferences = () => {
-    (window as any).codeconnectPreferences = false;
+    (window as any).techlearnorbitPreferences = false;
   };
 
   const saveConsent = (acceptedPreferences: CookiePreferences) => {
@@ -268,7 +268,7 @@ export function CookieConsentBanner() {
       });
 
       // Analytics event for consent
-      if (acceptedPreferences.analytics && (window as any).codeconnectAnalytics) {
+      if (acceptedPreferences.analytics && (window as any).techlearnorbitAnalytics) {
         // Track consent given
         console.log('📊 Consent granted - Analytics enabled');
       }
@@ -537,9 +537,9 @@ export function CookieSettingsDialog({ trigger }: { trigger: React.ReactNode }) 
       
       // Apply preferences immediately
       if (preferences.analytics) {
-        (window as any).codeconnectAnalytics = true;
+        (window as any).techlearnorbitAnalytics = true;
       } else {
-        (window as any).codeconnectAnalytics = false;
+        (window as any).techlearnorbitAnalytics = false;
       }
 
       setIsOpen(false);

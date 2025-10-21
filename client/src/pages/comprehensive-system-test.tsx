@@ -26,8 +26,8 @@ export default function ComprehensiveSystemTest() {
   // Test credentials for different roles
   const testCredentials = {
     student: { email: 'udayakirang09@gmail.com', password: 'Hello111', expectedRole: 'student' },
-    teacher: { email: 'teacher@codeconnect.com', password: 'Hello111', expectedRole: 'mentor' },
-    admin: { email: 'admin@codeconnect.com', password: 'Hello111', expectedRole: 'admin' }
+    teacher: { email: 'teacher@techlearnorbit.com', password: 'Hello111', expectedRole: 'mentor' },
+    admin: { email: 'admin@techlearnorbit.com', password: 'Hello111', expectedRole: 'admin' }
   };
 
   useEffect(() => {

@@ -37,7 +37,7 @@ export default function ManageSchedule() {
   });
   
   // Get authenticated user email from localStorage
-  const userEmail = localStorage.getItem('userEmail') || 'teacher@codeconnect.com';
+  const userEmail = localStorage.getItem('userEmail') || 'teacher@techlearnorbit.com';
 
   // Helper function to format time in AM/PM
   const formatTimeAMPM = (time24: string): string => {

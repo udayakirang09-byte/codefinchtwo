@@ -198,7 +198,7 @@ export default function Privacy() {
                 For privacy-related questions or to exercise your rights, contact us:
               </p>
               <div className="space-y-2 text-gray-700">
-                <p>📧 Privacy Officer: privacy@codeconnect.com</p>
+                <p>📧 Privacy Officer: privacy@techlearnorbit.com</p>
                 <p>📞 Phone: +91-9876543210</p>
                 <p>🏢 Address: Tech Park, Bangalore, Karnataka, India</p>
               </div>

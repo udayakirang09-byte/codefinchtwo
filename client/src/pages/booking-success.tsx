@@ -145,7 +145,7 @@ export default function BookingSuccess() {
                   <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
                     <h4 className="font-semibold text-purple-800 mb-3">Need Help?</h4>
                     <div className="space-y-2 text-sm text-purple-700">
-                      <p>📧 Email: support@codeconnect.com</p>
+                      <p>📧 Email: support@techlearnorbit.com</p>
                       <p>📱 WhatsApp: +91 98765 43210</p>
                       <p>🕐 Support Hours: 9 AM - 6 PM (Mon-Fri)</p>
                     </div>

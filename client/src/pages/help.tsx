@@ -575,7 +575,7 @@ export default function Help() {
                 onClick={() => {
                   if (contactSettings.emailEnabled) {
                     console.log('Email Support clicked');
-                    window.location.href = 'mailto:support@codeconnect.com';
+                    window.location.href = 'mailto:support@techlearnorbit.com';
                   }
                 }}
                 data-testid="button-email-support"

@@ -72,8 +72,8 @@ export default function ContactUs() {
                     <Mail className="h-5 w-5 text-primary mt-1" />
                     <div>
                       <h4 className="font-semibold text-gray-900">Email</h4>
-                      <a href="mailto:support@codeconnect.com" className="text-primary hover:underline">
-                        support@codeconnect.com
+                      <a href="mailto:support@techlearnorbit.com" className="text-primary hover:underline">
+                        support@techlearnorbit.com
                       </a>
                     </div>
                   </div>
