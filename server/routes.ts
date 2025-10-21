@@ -1099,15 +1099,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Get user
+      // Check if user exists OR if there's a pending mentor signup
       const user = await storage.getUserByEmail(email.trim());
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
+      const pendingSignup = pendingSignups.get(email.trim());
+      
+      if (!user && !pendingSignup) {
+        return res.status(404).json({ message: "User or signup session not found" });
       }
       
-      // Verify the setup token belongs to this user
-      if (validation.userId !== user.id) {
+      // For existing users: Verify the setup token belongs to this user
+      if (user && validation.userId !== user.id) {
         return res.status(403).json({ message: "Setup token does not match user" });
+      }
+      
+      // For pending signups: Check if expired
+      if (pendingSignup && pendingSignup.expiresAt < Date.now()) {
+        pendingSignups.delete(email.trim());
+        return res.status(400).json({ 
+          message: "Signup session expired. Please sign up again." 
+        });
       }
 
       // Generate TOTP secret
@@ -1120,7 +1130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate OTP auth URL for QR code (Microsoft Authenticator compatible)
       const otpauthUrl = authenticator.keyuri(
         email,
-        'CodeConnect',
+        'TechLearnOrbit',
         secret
       );
 
