@@ -1,9 +1,14 @@
 import { GraduationCap, Presentation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 
 export default function HeroSection() {
   const [, navigate] = useLocation();
+  
+  const { data: statsConfig } = useQuery<{ isVisible: boolean }>({
+    queryKey: ["/api/hero-stats-visible"],
+  });
   
   return (
     <section className="relative min-h-screen gradient-bg overflow-hidden">
@@ -54,20 +59,22 @@ export default function HeroSection() {
               </Button>
             </div>
             
-            <div className="flex items-center justify-center lg:justify-start space-x-8 mt-12 text-white/80">
-              <div className="text-center" data-testid="stat-students">
-                <div className="text-2xl font-bold">10K+</div>
-                <div className="text-sm">Happy Students</div>
+            {statsConfig?.isVisible && (
+              <div className="flex items-center justify-center lg:justify-start space-x-8 mt-12 text-white/80">
+                <div className="text-center" data-testid="stat-students">
+                  <div className="text-2xl font-bold">10K+</div>
+                  <div className="text-sm">Happy Students</div>
+                </div>
+                <div className="text-center" data-testid="stat-mentors">
+                  <div className="text-2xl font-bold">500+</div>
+                  <div className="text-sm">Expert Mentors</div>
+                </div>
+                <div className="text-center" data-testid="stat-success-rate">
+                  <div className="text-2xl font-bold">95%</div>
+                  <div className="text-sm">Success Rate</div>
+                </div>
               </div>
-              <div className="text-center" data-testid="stat-mentors">
-                <div className="text-2xl font-bold">500+</div>
-                <div className="text-sm">Expert Mentors</div>
-              </div>
-              <div className="text-center" data-testid="stat-success-rate">
-                <div className="text-2xl font-bold">95%</div>
-                <div className="text-sm">Success Rate</div>
-              </div>
-            </div>
+            )}
           </div>
           
           <div className="relative">

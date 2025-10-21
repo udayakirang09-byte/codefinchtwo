@@ -1,9 +1,14 @@
 import { Users, Presentation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 
 export default function CommunitySection() {
   const [, navigate] = useLocation();
+  
+  const { data: statsConfig } = useQuery<{ isVisible: boolean }>({
+    queryKey: ["/api/community-stats-visible"],
+  });
   
   return (
     <section id="community" className="py-20 gradient-bg">
@@ -54,16 +59,18 @@ export default function CommunitySection() {
           </div>
         </div>
         
-        <div className="flex items-center justify-center space-x-12 text-white/80">
-          <div className="text-center" data-testid="stat-community-members">
-            <div className="text-3xl font-bold">2K+</div>
-            <div>Community Members</div>
+        {statsConfig?.isVisible && (
+          <div className="flex items-center justify-center space-x-12 text-white/80">
+            <div className="text-center" data-testid="stat-community-members">
+              <div className="text-3xl font-bold">2K+</div>
+              <div>Community Members</div>
+            </div>
+            <div className="text-center" data-testid="stat-parent-satisfaction">
+              <div className="text-3xl font-bold">99%</div>
+              <div>Parent Satisfaction</div>
+            </div>
           </div>
-          <div className="text-center" data-testid="stat-parent-satisfaction">
-            <div className="text-3xl font-bold">99%</div>
-            <div>Parent Satisfaction</div>
-          </div>
-        </div>
+        )}
       </div>
     </section>
   );

@@ -7442,6 +7442,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public endpoint for checking hero stats visibility
+  app.get("/api/hero-stats-visible", async (req, res) => {
+    try {
+      const config = await db.select().from(adminConfig).where(
+        eq(adminConfig.configKey, 'hero_stats_visible')
+      ).limit(1);
+      
+      res.json({
+        isVisible: config[0]?.configValue === 'true' || false
+      });
+    } catch (error) {
+      console.error("Error checking hero stats visibility:", error);
+      res.json({ isVisible: false });
+    }
+  });
+
+  // Public endpoint for checking success stories section visibility
+  app.get("/api/success-stories-visible", async (req, res) => {
+    try {
+      const config = await db.select().from(adminConfig).where(
+        eq(adminConfig.configKey, 'success_stories_visible')
+      ).limit(1);
+      
+      res.json({
+        isVisible: config[0]?.configValue === 'true' || false
+      });
+    } catch (error) {
+      console.error("Error checking success stories visibility:", error);
+      res.json({ isVisible: false });
+    }
+  });
+
+  // Public endpoint for checking community stats visibility
+  app.get("/api/community-stats-visible", async (req, res) => {
+    try {
+      const config = await db.select().from(adminConfig).where(
+        eq(adminConfig.configKey, 'community_stats_visible')
+      ).limit(1);
+      
+      res.json({
+        isVisible: config[0]?.configValue === 'true' || false
+      });
+    } catch (error) {
+      console.error("Error checking community stats visibility:", error);
+      res.json({ isVisible: false });
+    }
+  });
+
   // AI Analytics & Business Intelligence Routes
   app.get("/api/admin/ai-insights", async (req, res) => {
     try {

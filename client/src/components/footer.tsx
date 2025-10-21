@@ -1,6 +1,5 @@
-import { Cookie, GraduationCap } from "lucide-react";
+import { GraduationCap } from "lucide-react";
 import { Link } from "wouter";
-import { CookieSettingsDialog } from "@/components/cookie-policy";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 
@@ -207,15 +206,6 @@ export default function Footer() {
                   Cancellation & Refund
                 </Link>
               </li>
-              <li>
-                <CookieSettingsDialog
-                  trigger={
-                    <button className="text-white/80 hover:text-white transition-colors text-left" data-testid="button-footer-cookie-settings">
-                      Cookie Preferences
-                    </button>
-                  }
-                />
-              </li>
             </ul>
           </div>
         </div>
@@ -234,14 +224,6 @@ export default function Footer() {
             <Link href="/cancellation-policy" className="hover:text-white transition-colors" data-testid="link-cancellation">
               Cancellation & Refund
             </Link>
-            <CookieSettingsDialog
-              trigger={
-                <button className="flex items-center gap-1 hover:text-white transition-colors" data-testid="button-bottom-cookie-settings">
-                  <Cookie className="h-4 w-4" />
-                  Cookie Settings
-                </button>
-              }
-            />
           </div>
         </div>
       </div>

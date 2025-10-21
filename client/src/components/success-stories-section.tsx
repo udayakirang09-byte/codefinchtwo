@@ -1,6 +1,16 @@
 import { Star } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 export default function SuccessStoriesSection() {
+  const { data: visibilityConfig } = useQuery<{ isVisible: boolean }>({
+    queryKey: ["/api/success-stories-visible"],
+  });
+
+  // Hide section if not visible
+  if (!visibilityConfig?.isVisible) {
+    return null;
+  }
+
   const stories = [
     {
       id: 1,
