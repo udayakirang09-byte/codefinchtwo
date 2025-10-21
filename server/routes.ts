@@ -2933,6 +2933,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Mentor not found" });
       }
 
+      // Get mentor's user to determine timezone
+      const mentorUser = await storage.getUser(mentor.userId);
+      if (!mentorUser) {
+        return res.status(404).json({ message: "Mentor user not found" });
+      }
+
+      // Determine mentor's timezone from country
+      const mentorTimeZone = mentorUser.country === 'India' ? 'Asia/Kolkata' : 'UTC';
+
       // Get teacher's time slots
       const teacherTimeSlots = await db
         .select()
@@ -2942,12 +2951,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate each session
       for (const session of scheduledSessions) {
         const scheduledDate = new Date(session.scheduledAt);
-        const dayOfWeek = scheduledDate.toLocaleDateString('en-US', { weekday: 'long' });
-        const timeString = scheduledDate.toLocaleTimeString('en-US', { 
-          hour: '2-digit', 
-          minute: '2-digit', 
-          hour12: false 
+        
+        // Convert to mentor's timezone for validation
+        const dateFormatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: mentorTimeZone,
+          weekday: 'long'
         });
+        const timeFormatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: mentorTimeZone,
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+          hourCycle: 'h23'
+        });
+
+        const dayOfWeek = dateFormatter.format(scheduledDate);
+        const timeString = timeFormatter.format(scheduledDate);
 
         // Check if teacher has availability for this day/time
         const hasAvailability = teacherTimeSlots.some(slot => 
@@ -2956,7 +2975,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         if (!hasAvailability) {
           return res.status(400).json({ 
-            message: `Teacher not available on ${dayOfWeek} at ${timeString}. Please check teacher's schedule.` 
+            message: `Teacher not available on ${dayOfWeek} at ${timeString} (${mentorTimeZone}). Please check teacher's schedule.` 
           });
         }
 
