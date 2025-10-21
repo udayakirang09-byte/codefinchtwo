@@ -155,6 +155,25 @@ const SECRET_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
 const setupTokens = new Map<string, { userId: string; email: string; expiresAt: number }>();
 const SETUP_TOKEN_EXPIRY_MS = 15 * 60 * 1000; // 15 minutes
 
+// Temporary storage for pending mentor signups (before 2FA completion)
+// Format: Map<token, { signupData, expiresAt }>
+interface PendingSignupData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  hashedPassword: string;
+  role: string;
+  country: string;
+  mentorData?: any;
+  photoBuffer?: Buffer;
+  photoMimetype?: string;
+  videoBuffer?: Buffer;
+  videoMimetype?: string;
+  expiresAt: number;
+}
+const pendingSignups = new Map<string, PendingSignupData>();
+const PENDING_SIGNUP_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes
+
 function generateSetupToken(userId: string, email: string): string {
   const token = crypto.randomBytes(32).toString('hex');
   setupTokens.set(token, {
@@ -550,130 +569,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('⚠️ Using fallback crypto hashing');
       }
       
-      // Create user with hashed password
-      console.log('👤 Creating user record...');
-      const user = await storage.createUser({
-        firstName,
-        lastName,
-        email: email.trim(),
-        password: hashedPassword!, // Store hashed password
-        role,
-        country: country || 'India' // Default to India if not provided
-      });
+      // DIFFERENT FLOW FOR STUDENTS VS MENTORS
+      // Students: Create user immediately (no 2FA required)
+      // Mentors: Store data temporarily until 2FA is verified
       
-      console.log('✅ User created successfully');
-      
-      // Process file uploads for mentors (photo and optional intro video)
-      let profileImageUrl: string | undefined;
-      let introVideoUrl: string | undefined;
-      
-      if ((role === 'mentor' || role === 'both') && files) {
-        const { azureStorage } = await import('./azureStorage');
+      if (role === 'student') {
+        // STUDENT FLOW: Create user immediately
+        console.log('👤 Creating student user record...');
+        const user = await storage.createUser({
+          firstName,
+          lastName,
+          email: email.trim(),
+          password: hashedPassword,
+          role,
+          country: country || 'India'
+        });
         
-        // Process photo upload (required for mentors)
-        if (files['photo'] && files['photo'][0]) {
-          const photoFile = files['photo'][0];
-          console.log(`📸 Uploading profile photo (${photoFile.size} bytes)...`);
-          try {
-            profileImageUrl = await azureStorage.uploadProfileMedia(
-              user.id,
-              photoFile.buffer,
-              photoFile.mimetype,
-              'photo'
-            );
-            console.log('✅ Photo uploaded successfully');
-            
-            // Update user's profile image URL
-            await storage.updateUser(user.id, { profileImageUrl });
-          } catch (uploadError: any) {
-            console.error('❌ Photo upload failed:', uploadError);
-            // Continue without photo if upload fails
-          }
-        }
-        
-        // Process intro video upload (optional)
-        if (files['introVideo'] && files['introVideo'][0]) {
-          const videoFile = files['introVideo'][0];
-          console.log(`🎥 Uploading intro video (${videoFile.size} bytes)...`);
-          
-          // Server-side video duration validation would require ffprobe/ffmpeg
-          // For now, we trust client-side validation and validate file size only
-          const maxVideoSize = 50 * 1024 * 1024; // 50MB
-          if (videoFile.size > maxVideoSize) {
-            console.warn('⚠️ Video file too large, skipping upload');
-          } else {
-            try {
-              introVideoUrl = await azureStorage.uploadProfileMedia(
-                user.id,
-                videoFile.buffer,
-                videoFile.mimetype,
-                'video'
-              );
-              console.log('✅ Intro video uploaded successfully');
-            } catch (uploadError: any) {
-              console.error('❌ Video upload failed:', uploadError);
-              // Continue without video if upload fails
-            }
-          }
-        }
-      }
-      
-      // Create corresponding student/mentor record
-      if (role === 'student' || role === 'both') {
         console.log('👨‍🎓 Creating student record...');
         await storage.createStudent({
           userId: user.id,
           age: 16,
           interests: ['programming']
         });
+        
+        console.log('🎉 Student signup completed successfully for:', email);
+        
+        return res.status(201).json({ 
+          success: true, 
+          message: "Account created successfully",
+          user: { 
+            id: user.id, 
+            email: user.email, 
+            role: user.role,
+            firstName: user.firstName,
+            lastName: user.lastName
+          }
+        });
       }
       
-      if (role === 'mentor' || role === 'both') {
-        console.log('👨‍🏫 Creating mentor record...');
-        // Create mentor record with educational subjects and optional intro video
-        const mentor = await storage.createMentor({
-          userId: user.id,
-          title: 'Academic Mentor',
-          description: 'Experienced academic mentor',
-          experience: 5,
-          specialties: ['Mathematics', 'Physics', 'Chemistry', 'Computer Science'], // Match educational subjects
-          hourlyRate: '35.00',
-          availableSlots: [],
-          introVideoUrl: introVideoUrl || undefined // Include intro video URL if uploaded
-        });
+      // MENTOR FLOW: Store temporarily, create after 2FA verification
+      console.log('🔐 Storing mentor signup data temporarily (pending 2FA)...');
+      
+      // Store file buffers if provided
+      let photoBuffer: Buffer | undefined;
+      let photoMimetype: string | undefined;
+      let videoBuffer: Buffer | undefined;
+      let videoMimetype: string | undefined;
+      
+      if (files) {
+        if (files['photo'] && files['photo'][0]) {
+          photoBuffer = files['photo'][0].buffer;
+          photoMimetype = files['photo'][0].mimetype;
+          console.log(`📸 Photo file stored temporarily (${photoBuffer.length} bytes)`);
+        }
         
-        // Create teacher profile with qualification and subject data
-        if (mentorData) {
-          console.log('📋 Creating teacher profile...');
-          await storage.createTeacherProfile({
-            userId: user.id,
-            qualifications: mentorData.qualifications || [],
-            subjects: mentorData.subjects || [],
-            isProfileComplete: true
-          });
+        if (files['introVideo'] && files['introVideo'][0]) {
+          const videoFile = files['introVideo'][0];
+          const maxVideoSize = 50 * 1024 * 1024; // 50MB
+          if (videoFile.size <= maxVideoSize) {
+            videoBuffer = videoFile.buffer;
+            videoMimetype = videoFile.mimetype;
+            console.log(`🎥 Video file stored temporarily (${videoBuffer.length} bytes)`);
+          } else {
+            console.warn('⚠️ Video file too large, skipping');
+          }
         }
       }
       
-      console.log('🎉 Signup completed successfully for:', email);
+      // Store pending signup data
+      const pendingData: PendingSignupData = {
+        firstName,
+        lastName,
+        email: email.trim(),
+        hashedPassword,
+        role,
+        country: country || 'India',
+        mentorData,
+        photoBuffer,
+        photoMimetype,
+        videoBuffer,
+        videoMimetype,
+        expiresAt: Date.now() + PENDING_SIGNUP_EXPIRY_MS
+      };
       
-      // Generate one-time setup token for teachers (for secure 2FA setup)
-      let setupToken: string | undefined;
-      if (role === 'mentor' || role === 'both') {
-        setupToken = generateSetupToken(user.id, user.email);
-        console.log('🔐 Generated 2FA setup token for teacher');
-      }
+      pendingSignups.set(email.trim(), pendingData);
+      console.log('✅ Mentor signup data stored temporarily');
       
-      res.status(201).json({ 
+      // Generate setup token for 2FA (using "pending" as temporary userId)
+      const setupToken = generateSetupToken("pending-" + email.trim(), email.trim());
+      console.log('🔐 Generated 2FA setup token for pending mentor signup');
+      
+      return res.status(201).json({ 
         success: true, 
-        message: "Account created successfully",
-        user: { 
-          id: user.id, 
-          email: user.email, 
-          role: user.role,
-          firstName: user.firstName,
-          lastName: user.lastName
-        },
-        setupToken // Only present for teachers
+        message: "Please complete 2FA setup to finish registration",
+        setupToken
       });
     } catch (error: any) {
       console.error("❌ Signup error:", error);
@@ -1175,17 +1164,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Get user
-      const user = await storage.getUserByEmail(email.trim());
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      // Verify the setup token belongs to this user
-      if (validation.userId !== user.id) {
-        return res.status(403).json({ message: "Setup token does not match user" });
-      }
-
       // SECURITY: Get secret from server-side storage, NOT from client
       const secret = getPending2FASecret(email.trim());
       if (!secret) {
@@ -1207,6 +1185,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Invalid verification code",
           remainingAttempts: (rateLimit.remainingAttempts || MAX_2FA_ATTEMPTS) - 1
         });
+      }
+
+      // Check if this is a pending mentor signup (user not yet created)
+      const pendingSignup = pendingSignups.get(email.trim());
+      
+      if (pendingSignup) {
+        // PENDING MENTOR SIGNUP FLOW: Create user now that 2FA is verified
+        console.log('🔐 Creating mentor user after successful 2FA verification');
+        
+        // Check if expired
+        if (pendingSignup.expiresAt < Date.now()) {
+          pendingSignups.delete(email.trim());
+          return res.status(400).json({ 
+            message: "Signup session expired. Please sign up again." 
+          });
+        }
+        
+        // Create user with hashed password
+        const user = await storage.createUser({
+          firstName: pendingSignup.firstName,
+          lastName: pendingSignup.lastName,
+          email: pendingSignup.email,
+          password: pendingSignup.hashedPassword,
+          role: pendingSignup.role,
+          country: pendingSignup.country,
+          totpSecret: secret,  // Enable 2FA immediately
+          totpEnabled: true
+        });
+        
+        console.log('✅ Mentor user created successfully with 2FA enabled');
+        
+        // Upload files to Azure if provided
+        let profileImageUrl: string | undefined;
+        let introVideoUrl: string | undefined;
+        
+        if (pendingSignup.photoBuffer || pendingSignup.videoBuffer) {
+          const { azureStorage } = await import('./azureStorage');
+          
+          // Upload photo
+          if (pendingSignup.photoBuffer && pendingSignup.photoMimetype) {
+            try {
+              profileImageUrl = await azureStorage.uploadProfileMedia(
+                user.id,
+                pendingSignup.photoBuffer,
+                pendingSignup.photoMimetype,
+                'photo'
+              );
+              console.log('✅ Profile photo uploaded successfully');
+              
+              // Update user's profile image URL
+              await storage.updateUser(user.id, { profileImageUrl });
+            } catch (uploadError: any) {
+              console.error('❌ Photo upload failed:', uploadError);
+            }
+          }
+          
+          // Upload video
+          if (pendingSignup.videoBuffer && pendingSignup.videoMimetype) {
+            try {
+              introVideoUrl = await azureStorage.uploadProfileMedia(
+                user.id,
+                pendingSignup.videoBuffer,
+                pendingSignup.videoMimetype,
+                'video'
+              );
+              console.log('✅ Intro video uploaded successfully');
+            } catch (uploadError: any) {
+              console.error('❌ Video upload failed:', uploadError);
+            }
+          }
+        }
+        
+        // Create mentor record
+        console.log('👨‍🏫 Creating mentor record...');
+        await storage.createMentor({
+          userId: user.id,
+          title: 'Academic Mentor',
+          description: 'Experienced academic mentor',
+          experience: 5,
+          specialties: ['Mathematics', 'Physics', 'Chemistry', 'Computer Science'],
+          hourlyRate: '35.00',
+          availableSlots: [],
+          introVideoUrl: introVideoUrl || undefined
+        });
+        
+        // Create teacher profile with qualification and subject data
+        if (pendingSignup.mentorData) {
+          console.log('📋 Creating teacher profile...');
+          await storage.createTeacherProfile({
+            userId: user.id,
+            qualifications: pendingSignup.mentorData.qualifications || [],
+            subjects: pendingSignup.mentorData.subjects || [],
+            isProfileComplete: true
+          });
+        }
+        
+        // Clear all temporary data
+        pendingSignups.delete(email.trim());
+        clearPending2FASecret(email.trim());
+        clearFailed2FAAttempts(email.trim());
+        clearSetupToken(setupToken);
+        
+        console.log('🎉 Mentor signup completed successfully:', email);
+        
+        return res.json({
+          success: true,
+          message: "Account created and 2FA enabled successfully"
+        });
+      }
+      
+      // EXISTING USER FLOW: Update existing user with 2FA
+      const user = await storage.getUserByEmail(email.trim());
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Verify the setup token belongs to this user
+      if (validation.userId !== user.id) {
+        return res.status(403).json({ message: "Setup token does not match user" });
       }
 
       // Save TOTP secret and enable 2FA
