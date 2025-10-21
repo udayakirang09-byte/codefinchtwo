@@ -19,8 +19,8 @@ export default function Mentors() {
   const [selectedSpecialty, setSelectedSpecialty] = useState("all");
   const [selectedExperience, setSelectedExperience] = useState("all");
   const [ratingFilter, setRatingFilter] = useState(0);
-  const [priceRange, setPriceRange] = useState([0, 200]);
-  const [showFilters, setShowFilters] = useState(false);
+  const [priceRange, setPriceRange] = useState([0, 5000]);
+  const [showFilters, setShowFilters] = useState(true);
 
   // Extract all unique specialties from mentors
   const allSpecialties = useMemo(() => {
@@ -56,17 +56,13 @@ export default function Mentors() {
         (selectedExperience === "intermediate" && mentorExperience > 2 && mentorExperience <= 5) ||
         (selectedExperience === "expert" && mentorExperience > 5);
 
-      // Rating filter
-      const mentorRating = parseFloat(mentor.rating || "4.5");
-      const matchesRating = mentorRating >= ratingFilter;
-
       // Price range filter
       const mentorRate = mentor.hourlyRate || 50;
       const matchesPrice = mentorRate >= priceRange[0] && mentorRate <= priceRange[1];
 
-      return matchesSearch && matchesSpecialty && matchesExperience && matchesRating && matchesPrice;
+      return matchesSearch && matchesSpecialty && matchesExperience && matchesPrice;
     });
-  }, [mentors, searchQuery, selectedSpecialty, selectedExperience, ratingFilter, priceRange]);
+  }, [mentors, searchQuery, selectedSpecialty, selectedExperience, priceRange]);
 
   // Clear all filters
   const clearFilters = () => {
@@ -74,7 +70,7 @@ export default function Mentors() {
     setSelectedSpecialty("all");
     setSelectedExperience("all");
     setRatingFilter(0);
-    setPriceRange([0, 200]);
+    setPriceRange([0, 5000]);
   };
 
   const handleBookMentor = (mentorId: string) => {
@@ -157,7 +153,7 @@ export default function Mentors() {
 
           {/* Advanced Filters */}
           {showFilters && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-4 bg-gray-50 rounded-xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4 bg-gray-50 rounded-xl">
               {/* Specialty Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Specialty</label>
@@ -192,22 +188,6 @@ export default function Mentors() {
                 </Select>
               </div>
 
-              {/* Rating Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Minimum Rating: {ratingFilter}★
-                </label>
-                <Slider
-                  value={[ratingFilter]}
-                  onValueChange={(value) => setRatingFilter(value[0])}
-                  max={5}
-                  min={0}
-                  step={0.5}
-                  className="w-full"
-                  data-testid="slider-rating"
-                />
-              </div>
-
               {/* Price Range Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -216,9 +196,9 @@ export default function Mentors() {
                 <Slider
                   value={priceRange}
                   onValueChange={setPriceRange}
-                  max={200}
+                  max={5000}
                   min={0}
-                  step={10}
+                  step={100}
                   className="w-full"
                   data-testid="slider-price"
                 />

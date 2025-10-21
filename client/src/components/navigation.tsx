@@ -89,10 +89,14 @@ export default function Navigation() {
             className="flex items-center space-x-3 transition-all duration-200 hover:opacity-90" 
             data-testid="link-logo"
           >
-            <div className="flex items-center space-x-2">
-              <GraduationCap className="h-8 w-8 text-primary" />
-              <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                TechLearnOrbit
+            <div className="flex items-center space-x-3">
+              <img 
+                src="/logo.png" 
+                alt="TechLearnOrbit Logo" 
+                className="h-12 w-12 object-contain"
+              />
+              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Techlearnorbit
               </span>
             </div>
           </Link>
