@@ -390,6 +390,8 @@ export class AIModerationService {
       const log: InsertAiModerationLog = {
         sessionId: context.sessionId,
         bookingId: context.bookingId,
+        teacherId: context.teacherId,
+        studentId: context.studentId,
         teacherName: context.teacherName,
         studentName: context.studentName,
         sessionName: context.sessionName,
@@ -452,7 +454,7 @@ export class AIModerationService {
       calculation: `(0.6 × ${safetyScore.toFixed(1)}) + (0.3 × ${(100 - feedbackScore).toFixed(1)}) + (0.1 × ${riskBoost})`,
       result: crs.toFixed(1),
       events: moderationLogs.length,
-      hardViolations: moderationLogs.filter(log => log.aiVerdict === 'hard_violation').length
+      hardViolations: moderationLogs.filter((log: any) => log.aiVerdict === 'hard_violation').length
     };
 
     // PC-6: Determine review status based on CRS threshold
@@ -531,7 +533,7 @@ export class AIModerationService {
       .orderBy(desc(sessionDossiers.createdAt));
 
     // Filter for this teacher's sessions with CRS >= 70
-    const highRiskSessions = recentDossiers.filter(d => parseFloat(d.crs) >= 70);
+    const highRiskSessions = recentDossiers.filter((d: any) => parseFloat(d.crs) >= 70);
 
     if (highRiskSessions.length >= 3) {
       return {

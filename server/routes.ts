@@ -3027,11 +3027,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timeString = timeString.replace(/\s/g, '');
         
         console.log(`📅 Validation: Looking for ${dayOfWeek} at ${timeString} (from UTC: ${session.scheduledAt})`);
-        console.log(`📅 Available slots:`, teacherTimeSlots.map(s => `${s.dayOfWeek} ${s.startTime}-${s.endTime}`));
+        console.log(`📅 Available slots:`, teacherTimeSlots.map((s: any) => `${s.dayOfWeek} ${s.startTime}-${s.endTime}`));
 
         // Check if teacher has availability for this day/time
         // The selected time must fall within the teacher's available time range
-        const hasAvailability = teacherTimeSlots.some(slot => {
+        const hasAvailability = teacherTimeSlots.some((slot: any) => {
           if (slot.dayOfWeek !== dayOfWeek) return false;
           
           // Parse times for comparison (format: "HH:MM")
@@ -3141,7 +3141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Update bulk package usage
-      const newUsedClasses = bulkPackage.usedClasses + scheduledSessions.length;
+      const newUsedClasses = (bulkPackage.usedClasses || 0) + scheduledSessions.length;
       const newRemainingClasses = bulkPackage.remainingClasses - scheduledSessions.length;
       
       await storage.updateBulkPackageUsage(packageId, newUsedClasses, newRemainingClasses);
@@ -5242,7 +5242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`   Found ${teacherAvailability.length} availability slots for start time ${validatedData.startTime}`);
         
         // Filter availability for track days only
-        const trackAvailability = teacherAvailability.filter(slot => trackDays.includes(slot.dayOfWeek));
+        const trackAvailability = teacherAvailability.filter((slot: any) => trackDays.includes(slot.dayOfWeek));
         
         console.log(`   Found ${trackAvailability.length} availability slots matching track days`);
         
@@ -5253,7 +5253,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // Get the available days from teacher's schedule
-        const availableDays = trackAvailability.map(slot => slot.dayOfWeek);
+        const availableDays = trackAvailability.map((slot: any) => slot.dayOfWeek);
         console.log(`   Available days: ${availableDays.join(', ')}`);
         
         // Validate that teacher has at least one day available per week for the track
@@ -6524,7 +6524,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
         
         // Check if any booking falls within this time slot
-        const hasConflictingBookings = futureBookings.some(booking => {
+        const hasConflictingBookings = futureBookings.some((booking: any) => {
           const bookingDate = new Date(booking.scheduledAt);
           const bookingDay = bookingDate.toLocaleDateString('en-US', { weekday: 'long' });
           const bookingTime = bookingDate.toTimeString().slice(0, 5); // HH:MM format
@@ -6564,7 +6564,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
         
         // Find bookings that fall within this time slot
-        affectedBookings = futureBookings.filter(booking => {
+        affectedBookings = futureBookings.filter((booking: any) => {
           const bookingDate = new Date(booking.scheduledAt);
           const bookingDay = bookingDate.toLocaleDateString('en-US', { weekday: 'long' });
           const bookingTime = bookingDate.toTimeString().slice(0, 5); // HH:MM format
@@ -6668,7 +6668,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
       
       // Check if any booking falls within this time slot
-      const hasConflictingBookings = futureBookings.some(booking => {
+      const hasConflictingBookings = futureBookings.some((booking: any) => {
         const bookingDate = new Date(booking.scheduledAt);
         const bookingDay = bookingDate.toLocaleDateString('en-US', { weekday: 'long' });
         const bookingTime = bookingDate.toTimeString().slice(0, 5); // HH:MM format
@@ -9581,7 +9581,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create the appeal
       const appeal = await storage.createTeacherRestrictionAppeal({
         teacherId: mentor.id,
-        reason: reason.trim(),
+        appealReason: reason.trim(),
+        restrictionType: moderationStatus.status || 'warned',
+        violationCount: moderationStatus.violationCount || 0,
         status: 'pending',
       });
       
@@ -9888,7 +9890,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const totalDemosCompleted = completedDemos.length;
       
       // Get unique student IDs who completed demos
-      const demoStudentIds = new Set(completedDemos.map(b => b.studentId));
+      const demoStudentIds = new Set(completedDemos.map((b: any) => b.studentId));
       
       // For each student, check if they also completed at least 1 paid class
       let convertedStudents = 0;
@@ -9980,7 +9982,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // Get unique student IDs who completed demos
-        const demoStudentIds = new Set(completedDemos.map(b => b.studentId));
+        const demoStudentIds = new Set(completedDemos.map((b: any) => b.studentId));
         
         // For each student, check if they also completed at least 1 paid class
         let convertedStudents = 0;

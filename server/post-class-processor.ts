@@ -121,18 +121,18 @@ export async function processSessionAfterClass(bookingId: string, sessionId: str
     }
 
     // Count incidents by modality
-    const chatIncidents = logs.filter(l => l.modality === 'chat').length;
-    const screenIncidents = logs.filter(l => l.modality === 'screen').length;
-    const audioIncidents = logs.filter(l => l.modality === 'audio').length;
+    const chatIncidents = logs.filter((l: any) => l.modality === 'chat').length;
+    const screenIncidents = logs.filter((l: any) => l.modality === 'screen').length;
+    const audioIncidents = logs.filter((l: any) => l.modality === 'audio').length;
 
     // Count violations by severity
-    const hardViolations = logs.filter(l => l.aiVerdict === 'hard_violation').length;
-    const alertViolations = logs.filter(l => l.aiVerdict === 'alert').length;
+    const hardViolations = logs.filter((l: any) => l.aiVerdict === 'hard_violation').length;
+    const alertViolations = logs.filter((l: any) => l.aiVerdict === 'alert').length;
 
     // Calculate TAI statistics
-    const taiScores = logs.map(l => l.tai || 0);
+    const taiScores = logs.map((l: any) => l.tai || 0);
     const averageTAI = taiScores.length > 0 
-      ? taiScores.reduce((a, b) => a + b, 0) / taiScores.length 
+      ? taiScores.reduce((a: number, b: number) => a + b, 0) / taiScores.length 
       : 0;
     const maxTAI = taiScores.length > 0 ? Math.max(...taiScores) : 0;
 
@@ -221,14 +221,14 @@ export async function getAdminReviewQueue(priority?: 'low' | 'medium' | 'high' |
 
     // Filter by priority if specified (priority is in crsJson)
     if (priority) {
-      return results.filter(r => {
+      return results.filter((r: any) => {
         const crsJson = r.dossier.crsJson as any;
         return crsJson?.reviewPriority === priority;
       });
     }
 
     // Sort by priority (critical first) using crsJson data
-    return results.sort((a, b) => {
+    return results.sort((a: any, b: any) => {
       const aPriority = (a.dossier.crsJson as any)?.reviewPriority || 'low';
       const bPriority = (b.dossier.crsJson as any)?.reviewPriority || 'low';
       

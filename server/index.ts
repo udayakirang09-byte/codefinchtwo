@@ -370,8 +370,8 @@ app.use((req, res, next) => {
               const moderationContext: ModerationContext = {
                 sessionId: msgSessionId,
                 bookingId: data.bookingId || msgSessionId,
-                teacherId: data.isTeacher ? msgUserId : '',
-                studentId: data.isTeacher ? '' : msgUserId,
+                teacherId: data.isTeacher ? (msgUserId || '') : '',
+                studentId: data.isTeacher ? '' : (msgUserId || ''),
                 teacherName: data.isTeacher ? msgUserName : '',
                 studentName: data.isTeacher ? '' : msgUserName,
                 sessionName: data.sessionName || 'Live Session',
@@ -467,8 +467,8 @@ app.use((req, res, next) => {
               const screenContext: ModerationContext = {
                 sessionId: screenSessionId,
                 bookingId: data.bookingId || screenSessionId,
-                teacherId: data.isTeacher ? screenUserId : '',
-                studentId: data.isTeacher ? '' : screenUserId,
+                teacherId: data.isTeacher ? (screenUserId || '') : '',
+                studentId: data.isTeacher ? '' : (screenUserId || ''),
                 teacherName: data.isTeacher ? screenUserName : '',
                 studentName: data.isTeacher ? '' : screenUserName,
                 sessionName: data.sessionName || 'Live Session',
@@ -518,8 +518,8 @@ app.use((req, res, next) => {
               const audioContext: ModerationContext = {
                 sessionId: audioSessionId,
                 bookingId: data.bookingId || audioSessionId,
-                teacherId: data.isTeacher ? audioUserId : '',
-                studentId: data.isTeacher ? '' : audioUserId,
+                teacherId: data.isTeacher ? (audioUserId || '') : '',
+                studentId: data.isTeacher ? '' : (audioUserId || ''),
                 teacherName: data.isTeacher ? audioUserName : '',
                 studentName: data.isTeacher ? '' : audioUserName,
                 sessionName: data.sessionName || 'Live Session',

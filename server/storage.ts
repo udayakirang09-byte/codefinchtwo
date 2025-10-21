@@ -1030,7 +1030,7 @@ export class DatabaseStorage implements IStorage {
   // Feature Gap #4: Atomic first-confirm-wins with database locking
   async confirmBookingHold(holdId: string, bookingId: string): Promise<void> {
     // Use transaction with SELECT FOR UPDATE to prevent race conditions
-    await db.transaction(async (tx) => {
+    await db.transaction(async (tx: any) => {
       // Step 1: Lock the hold row exclusively using raw SQL (first-come-first-served)
       // This ensures only one transaction can proceed at a time for this hold
       const lockResult = await tx.execute(
