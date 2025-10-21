@@ -2,6 +2,7 @@ import { GraduationCap, Presentation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import heroImage from "@assets/image_1761083776356.png";
 
 export default function HeroSection() {
   const [, navigate] = useLocation();
@@ -79,9 +80,10 @@ export default function HeroSection() {
           
           <div className="relative">
             <img 
-              src="/attached_assets/image_1761083776356.png" 
+              src={heroImage}
               alt="Students learning with achievement unlocked" 
-              className="rounded-2xl shadow-2xl hover-lift"
+              className="rounded-2xl shadow-2xl hover-lift w-full h-auto object-cover"
+              style={{ maxWidth: '800px', maxHeight: '600px' }}
               data-testid="img-hero-kids-coding"
             />
             
