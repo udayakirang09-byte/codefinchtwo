@@ -58,44 +58,6 @@ export default function Footer() {
             <p className="text-white/80 mb-6" data-testid="text-footer-description">
               Connecting you with passionate mentors across world.
             </p>
-            <div className="flex space-x-4">
-              <a 
-                href="https://facebook.com" 
-                className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
-                data-testid="link-facebook"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <i className="fab fa-facebook-f"></i>
-              </a>
-              <a 
-                href="https://twitter.com" 
-                className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
-                data-testid="link-twitter"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <i className="fab fa-twitter"></i>
-              </a>
-              <a 
-                href="https://instagram.com" 
-                className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
-                data-testid="link-instagram"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <i className="fab fa-instagram"></i>
-              </a>
-              <a 
-                href="https://linkedin.com" 
-                className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
-                data-testid="link-linkedin"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <i className="fab fa-linkedin-in"></i>
-              </a>
-            </div>
           </div>
           
           <div>
