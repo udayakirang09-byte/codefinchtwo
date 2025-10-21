@@ -1536,7 +1536,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/mentors", async (req, res) => {
     try {
       const mentors = await storage.getMentors();
-      res.json(mentors);
+      
+      // Filter out teachers who don't have both subjects AND time slots
+      // Teachers must complete their profile (Class Fee Configuration + Manage Schedule) to appear in Find Mentors
+      const completeTeachers = [];
+      
+      for (const mentor of mentors) {
+        // Check if teacher has at least one subject configured
+        const hasSubjects = (mentor as any).subjects && (mentor as any).subjects.length > 0;
+        
+        // Check if teacher has at least one time slot configured
+        const mentorTimeSlots = await db.select()
+          .from(timeSlots)
+          .where(eq(timeSlots.mentorId, mentor.id))
+          .limit(1);
+        const hasTimeSlots = mentorTimeSlots.length > 0;
+        
+        // Only include teachers with both subjects and time slots
+        if (hasSubjects && hasTimeSlots) {
+          completeTeachers.push(mentor);
+        } else {
+          console.log(`⚠️ Teacher ${mentor.id} (${mentor.user.firstName} ${mentor.user.lastName}) hidden from Find Mentors - Missing: ${!hasSubjects ? 'subjects' : ''} ${!hasTimeSlots ? 'time slots' : ''}`);
+        }
+      }
+      
+      res.json(completeTeachers);
     } catch (error) {
       console.error("Error fetching mentors:", error);
       res.status(500).json({ message: "Failed to fetch mentors" });
@@ -5058,6 +5082,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating teacher profile:", error);
       res.status(500).json({ message: "Failed to update teacher profile" });
+    }
+  });
+
+  // Check teacher profile completion status
+  app.get("/api/teacher/profile-completion", async (req, res) => {
+    try {
+      const teacherId = req.query.teacherId as string;
+      if (!teacherId) {
+        return res.status(400).json({ message: "Teacher ID required" });
+      }
+      
+      // Get mentor by user ID
+      const mentor = await storage.getMentorByUserId(teacherId);
+      if (!mentor) {
+        return res.status(404).json({ message: "Mentor not found" });
+      }
+      
+      // Check if teacher has at least one subject configured in Class Fee Configuration
+      const subjects = await db.select()
+        .from(teacherSubjects)
+        .where(eq(teacherSubjects.mentorId, mentor.id))
+        .limit(1);
+      const hasSubjects = subjects.length > 0;
+      
+      // Check if teacher has at least one time slot configured in Manage Schedule
+      const slots = await db.select()
+        .from(timeSlots)
+        .where(eq(timeSlots.mentorId, mentor.id))
+        .limit(1);
+      const hasTimeSlots = slots.length > 0;
+      
+      // Profile is complete if both subjects and time slots are configured
+      const isComplete = hasSubjects && hasTimeSlots;
+      
+      res.json({
+        isComplete,
+        hasSubjects,
+        hasTimeSlots,
+        message: !isComplete 
+          ? `Please complete your profile to appear in Find Mentors. Missing: ${!hasSubjects ? 'Class Fee Configuration' : ''}${!hasSubjects && !hasTimeSlots ? ' and ' : ''}${!hasTimeSlots ? 'Manage Schedule' : ''}`
+          : 'Profile complete! You are visible in Find Mentors.'
+      });
+    } catch (error) {
+      console.error("Error checking teacher profile completion:", error);
+      res.status(500).json({ message: "Failed to check profile completion" });
     }
   });
 

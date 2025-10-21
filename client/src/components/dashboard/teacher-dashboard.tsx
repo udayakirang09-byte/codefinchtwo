@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, Video, MessageCircle, Users, BookOpen, DollarSign, Bell, TrendingUp, CreditCard, CheckCircle, Save, Edit2, Plus, User, Shield } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Calendar, Clock, Video, MessageCircle, Users, BookOpen, DollarSign, Bell, TrendingUp, CreditCard, CheckCircle, Save, Edit2, Plus, User, Shield, AlertCircle } from "lucide-react";
 import { formatDistanceToNow, addHours, addMinutes } from "date-fns";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -235,6 +236,18 @@ export default function TeacherDashboard() {
     enabled: !!mentorData?.id
   });
 
+  // Check teacher profile completion status
+  const { data: profileCompletion } = useQuery<{
+    isComplete: boolean;
+    hasSubjects: boolean;
+    hasTimeSlots: boolean;
+    message: string;
+  }>({
+    queryKey: [`/api/teacher/profile-completion?teacherId=${user?.id}`],
+    enabled: !!user?.id,
+    staleTime: 1000 * 60, // Cache for 1 minute
+  });
+
   // Mutation for updating subject fee
   const updateSubjectFeeMutation = useMutation({
     mutationFn: async ({ subjectId, classFee }: { subjectId: string; classFee: number }) => {
@@ -408,6 +421,39 @@ export default function TeacherDashboard() {
           <div className="absolute -top-6 -right-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
           <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-blue-300/20 rounded-full blur-3xl"></div>
         </div>
+
+        {/* Profile Completion Alert - Teachers must complete profile to appear in Find Mentors */}
+        {profileCompletion && !profileCompletion.isComplete && (
+          <Alert className="border-orange-300 bg-orange-50" data-testid="alert-profile-incomplete">
+            <AlertCircle className="h-5 w-5 text-orange-600" />
+            <AlertTitle className="text-orange-900 font-semibold">Complete Your Profile</AlertTitle>
+            <AlertDescription className="text-orange-800">
+              <p className="mb-3">{profileCompletion.message}</p>
+              <div className="flex gap-3 flex-wrap">
+                {!profileCompletion.hasSubjects && (
+                  <Button
+                    onClick={() => window.scrollTo({ top: document.getElementById('class-fee-config')?.offsetTop, behavior: 'smooth' })}
+                    size="sm"
+                    className="bg-orange-600 hover:bg-orange-700"
+                    data-testid="button-goto-subjects"
+                  >
+                    Configure Class Fees
+                  </Button>
+                )}
+                {!profileCompletion.hasTimeSlots && (
+                  <Button
+                    onClick={() => window.location.href = '/teacher-schedule'}
+                    size="sm"
+                    className="bg-orange-600 hover:bg-orange-700"
+                    data-testid="button-goto-schedule"
+                  >
+                    Manage Schedule
+                  </Button>
+                )}
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Feature Gap #1: Demo Encouragement Banner (30-day logic) */}
         {mentorData && 
