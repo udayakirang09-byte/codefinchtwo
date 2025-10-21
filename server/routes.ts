@@ -3027,6 +3027,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/mentors/:id/available-times - Get mentor's available time slots
+  app.get("/api/mentors/:id/available-times", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const availableTimes = await db
+        .select()
+        .from(timeSlots)
+        .where(eq(timeSlots.mentorId, id));
+      
+      res.json(availableTimes);
+    } catch (error) {
+      console.error("Error fetching mentor available times:", error);
+      res.status(500).json({ message: "Failed to fetch available times" });
+    }
+  });
+
   app.post("/api/reviews", async (req, res) => {
     try {
       const reviewData: any = insertReviewSchema.parse(req.body);

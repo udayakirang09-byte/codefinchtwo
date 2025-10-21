@@ -755,6 +755,16 @@ export default function StudentDashboard() {
               </Button>
               <Button 
                 variant="outline" 
+                className="h-32 p-6 flex-col hover:bg-amber-50 hover:border-amber-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                data-testid="button-my-packages"
+                onClick={() => window.location.href = '/student/my-packages'}
+              >
+                <Calendar className="h-10 w-10 mb-3 text-amber-600 group-hover:scale-110 transition-transform duration-200" />
+                <span className="font-bold text-lg">My Packages</span>
+                <span className="text-xs text-gray-500 mt-1 text-center">View class packages</span>
+              </Button>
+              <Button 
+                variant="outline" 
                 className="h-32 p-6 flex-col hover:bg-green-50 hover:border-green-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
                 data-testid="button-my-progress"
                 onClick={handleMyProgress}

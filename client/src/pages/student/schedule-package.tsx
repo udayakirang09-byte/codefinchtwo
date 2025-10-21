@@ -156,7 +156,7 @@ export default function SchedulePackage() {
 
   // Get available time slots for selected date
   const getAvailableTimeSlotsForDate = (date: Date) => {
-    if (!availableTimes) return [];
+    if (!availableTimes || !Array.isArray(availableTimes)) return [];
 
     const dayName = format(date, "EEEE");
     const slots = availableTimes.filter(slot => slot.dayOfWeek === dayName);
