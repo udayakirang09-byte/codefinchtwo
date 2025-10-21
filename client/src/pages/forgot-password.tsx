@@ -141,7 +141,7 @@ export default function ForgotPassword() {
             </Link>
             <div className="flex items-center flex-1 justify-center">
               <Code className="text-primary mr-2" size={32} />
-              <span className="text-2xl font-bold">CodeConnect</span>
+              <span className="text-2xl font-bold">TechLearnOrbit</span>
             </div>
             <div className="w-16"></div>
           </div>

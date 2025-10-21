@@ -32,7 +32,7 @@ export default function Shipping() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-gray-700">
-              CodeConnect is a digital educational platform that provides online coding mentorship and learning sessions. 
+              TechLearnOrbit is a digital educational platform that provides online coding mentorship and learning sessions. 
               As all our services are delivered electronically through our web platform, we do not ship any physical products.
             </p>
             <p className="text-gray-700">

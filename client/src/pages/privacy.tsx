@@ -33,7 +33,7 @@ export default function Privacy() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-700">
-                At CodeConnect, we are committed to protecting your privacy and ensuring the security of your personal information. 
+                At TechLearnOrbit, we are committed to protecting your privacy and ensuring the security of your personal information. 
                 This Privacy Policy explains how we collect, use, and safeguard your data when you use our platform.
               </p>
             </CardContent>
@@ -150,7 +150,7 @@ export default function Privacy() {
                 <li>With your explicit consent</li>
                 <li>To trusted service providers who assist in platform operations</li>
                 <li>When required by law or legal process</li>
-                <li>To protect the rights, property, or safety of CodeConnect or others</li>
+                <li>To protect the rights, property, or safety of TechLearnOrbit or others</li>
                 <li>In connection with business transfers or acquisitions</li>
               </ul>
             </CardContent>
@@ -182,7 +182,7 @@ export default function Privacy() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-700">
-                CodeConnect is designed for educational purposes and serves students of various ages. 
+                TechLearnOrbit is designed for educational purposes and serves students of various ages. 
                 For users under 13, we require parental consent and implement additional privacy protections 
                 in compliance with applicable children's privacy laws.
               </p>

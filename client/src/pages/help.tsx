@@ -274,7 +274,7 @@ export default function Help() {
               <Bot className="h-16 w-16 text-blue-600 mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">Hi! I'm KADB, your AI assistant</h3>
               <p className="text-gray-600 mb-4">
-                I'm here to help with questions about CodeConnect. Ask me anything about:
+                I'm here to help with questions about TechLearnOrbit. Ask me anything about:
               </p>
               <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto text-sm">
                 <Badge variant="outline">Platform Navigation</Badge>

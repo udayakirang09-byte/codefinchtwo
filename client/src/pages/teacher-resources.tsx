@@ -15,7 +15,7 @@ export default function TeacherResources() {
             Teacher Resources
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Everything you need to become a successful coding mentor on CodeConnect
+            Everything you need to become a successful coding mentor on TechLearnOrbit
           </p>
         </div>
 
@@ -53,7 +53,7 @@ export default function TeacherResources() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-600 mb-4">
-                Get certified as a CodeConnect mentor with our training program.
+                Get certified as a TechLearnOrbit mentor with our training program.
               </p>
               <Button data-testid="button-certification">Get Certified</Button>
             </CardContent>

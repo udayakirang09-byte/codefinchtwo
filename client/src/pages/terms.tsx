@@ -33,11 +33,11 @@ export default function Terms() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-gray-700">
-                By accessing and using CodeConnect's platform, you agree to be bound by these Terms of Service. 
+                By accessing and using TechLearnOrbit's platform, you agree to be bound by these Terms of Service. 
                 If you do not agree to these terms, please do not use our services.
               </p>
               <p className="text-gray-700">
-                CodeConnect is a platform that connects young students with coding mentors for personalized learning experiences.
+                TechLearnOrbit is a platform that connects young students with coding mentors for personalized learning experiences.
                 We facilitate educational relationships and provide tools for effective learning.
               </p>
             </CardContent>
@@ -129,12 +129,12 @@ export default function Terms() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-700 mb-4">
-                All content on the CodeConnect platform, including text, graphics, logos, and software, 
-                is owned by CodeConnect or its content suppliers and is protected by copyright and other intellectual property laws.
+                All content on the TechLearnOrbit platform, including text, graphics, logos, and software, 
+                is owned by TechLearnOrbit or its content suppliers and is protected by copyright and other intellectual property laws.
               </p>
               <p className="text-gray-700">
                 Course materials created by mentors remain the intellectual property of the respective mentor, 
-                but mentors grant CodeConnect a license to use such materials on the platform.
+                but mentors grant TechLearnOrbit a license to use such materials on the platform.
               </p>
             </CardContent>
           </Card>
@@ -145,7 +145,7 @@ export default function Terms() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-700 mb-4">
-                CodeConnect serves as a platform connecting students and mentors. We are not responsible for:
+                TechLearnOrbit serves as a platform connecting students and mentors. We are not responsible for:
               </p>
               <ul className="list-disc list-inside space-y-1 text-gray-700 ml-4">
                 <li>The quality of education provided by mentors</li>

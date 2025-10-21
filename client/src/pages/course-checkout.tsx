@@ -124,7 +124,7 @@ export default function CourseCheckout() {
             key: orderResponse.keyId,
             amount: orderResponse.amount,
             currency: orderResponse.currency,
-            name: "CodeConnect",
+            name: "TechLearnOrbit",
             description: `Enrollment for ${enrollmentDetails.courseName}`,
             order_id: orderResponse.orderId,
             prefill: {

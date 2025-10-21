@@ -204,7 +204,7 @@ export default function Manage2FA() {
   };
 
   const downloadBackupCodes = () => {
-    const text = `CodeConnect 2FA Backup Codes
+    const text = `TechLearnOrbit 2FA Backup Codes
 Generated: ${new Date().toLocaleDateString()}
 User: ${user?.email}
 
@@ -217,7 +217,7 @@ ${backupCodes.map((code, i) => `${i + 1}. ${code}`).join('\n')}`;
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'codeconnect-backup-codes.txt';
+    a.download = 'techlearnorbit-backup-codes.txt';
     a.click();
     URL.revokeObjectURL(url);
   };

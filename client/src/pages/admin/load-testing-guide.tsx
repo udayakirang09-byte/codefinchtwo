@@ -223,7 +223,7 @@ export default function() {
               <Zap className="h-8 w-8 text-yellow-600" />
               Load Testing Guide
             </h1>
-            <p className="text-gray-600 mt-2">Comprehensive guide to load test CodeConnect for 3k concurrent users</p>
+            <p className="text-gray-600 mt-2">Comprehensive guide to load test TechLearnOrbit for 3k concurrent users</p>
           </div>
           <Link href="/">
             <Button variant="outline" data-testid="button-home">

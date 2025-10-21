@@ -447,6 +447,23 @@ export default function Signup() {
         return;
       }
 
+      // Check for duplicate Highest Qualification + Specialization combinations
+      const qualificationCombos = validQualifications
+        .map(q => `${q.qualification.trim()}|${q.specialization.trim()}`)
+        .filter(combo => combo !== "|"); // Filter out empty combinations
+      
+      const uniqueCombos = new Set(qualificationCombos);
+      
+      if (qualificationCombos.length !== uniqueCombos.size) {
+        toast({
+          title: "Duplicate Qualification",
+          description: "You cannot have the same combination of Highest Qualification and Specialization multiple times. Please use different combinations.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       // Validate that subjects have experience and vice versa
       for (const subj of formData.subjects) {
         const hasSubject = subj.subject.trim() !== "";
@@ -549,7 +566,7 @@ export default function Signup() {
         title: "Account Created!",
         description: formData.role === "mentor" 
           ? "Please set up two-factor authentication to secure your account."
-          : "Welcome to CodeConnect! Please sign in to continue.",
+          : "Welcome to TechLearnOrbit! Please sign in to continue.",
         variant: "default",
       });
       
@@ -591,7 +608,7 @@ export default function Signup() {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold mb-2" data-testid="title-signup">
-            <span className="text-gradient">Join CodeConnect</span>
+            <span className="text-gradient">Join TechLearnOrbit</span>
           </CardTitle>
           <p className="text-gray-600">
             Start your coding journey with expert mentors

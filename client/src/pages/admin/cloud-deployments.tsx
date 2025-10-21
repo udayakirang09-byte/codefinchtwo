@@ -129,9 +129,9 @@ export default function CloudDeployments() {
   const armTemplates = {
     aws: `{
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "CodeConnect AWS Deployment",
+  "Description": "TechLearnOrbit AWS Deployment",
   "Resources": {
-    "CodeConnectEC2": {
+    "TechLearnOrbitEC2": {
       "Type": "AWS::EC2::Instance",
       "Properties": {
         "ImageId": "ami-0abcdef1234567890",
@@ -143,9 +143,9 @@ export default function CloudDeployments() {
               "#!/bin/bash\\n",
               "yum update -y\\n",
               "yum install -y nodejs npm postgresql\\n",
-              "git clone https://github.com/codeconnect/app.git\\n",
+              "git clone https://github.com/techlearnorbit/app.git\\n",
               "cd app && npm install && npm run build\\n",
-              "pm2 start server/index.js --name codeconnect\\n"
+              "pm2 start server/index.js --name techlearnorbit\\n"
             ]]
           }
         }
@@ -160,7 +160,7 @@ export default function CloudDeployments() {
     {
       "type": "Microsoft.Web/sites",
       "apiVersion": "2021-02-01",
-      "name": "codeconnect-webapp",
+      "name": "techlearnorbit-webapp",
       "location": "[resourceGroup().location]",
       "properties": {
         "siteConfig": {
@@ -178,7 +178,7 @@ export default function CloudDeployments() {
 }`,
     gcp: `resources:
 - type: compute.v1.instance
-  name: codeconnect-vm
+  name: techlearnorbit-vm
   properties:
     zone: us-central1-a
     machineType: zones/us-central1-a/machineTypes/n1-standard-1
@@ -201,10 +201,10 @@ export default function CloudDeployments() {
           #!/bin/bash
           apt-get update
           apt-get install -y nodejs npm postgresql git
-          git clone https://github.com/codeconnect/app.git
+          git clone https://github.com/techlearnorbit/app.git
           cd app && npm install && npm run build
           npm install -g pm2
-          pm2 start server/index.js --name codeconnect`
+          pm2 start server/index.js --name techlearnorbit`
   };
 
   return (
@@ -379,7 +379,7 @@ export default function CloudDeployments() {
                   Create New Deployment
                 </CardTitle>
                 <CardDescription>
-                  Deploy CodeConnect to your preferred cloud provider
+                  Deploy TechLearnOrbit to your preferred cloud provider
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -452,7 +452,7 @@ export default function CloudDeployments() {
                       <Label htmlFor="serviceName">Service Name *</Label>
                       <Input
                         id="serviceName"
-                        placeholder="codeconnect-prod"
+                        placeholder="techlearnorbit-prod"
                         value={deploymentForm.serviceName}
                         onChange={(e) => setDeploymentForm({ ...deploymentForm, serviceName: e.target.value })}
                         data-testid="input-service-name"
@@ -536,7 +536,7 @@ export default function CloudDeployments() {
                   Infrastructure as Code Templates
                 </CardTitle>
                 <CardDescription>
-                  Use these templates to deploy CodeConnect with your existing DevOps workflows
+                  Use these templates to deploy TechLearnOrbit with your existing DevOps workflows
                 </CardDescription>
               </CardHeader>
               <CardContent>

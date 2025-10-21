@@ -134,7 +134,7 @@ export default function Login() {
       
       toast({
         title: "Login Successful",
-        description: `Welcome back to CodeConnect, ${userData.user.firstName}!`,
+        description: `Welcome back to TechLearnOrbit, ${userData.user.firstName}!`,
         variant: "default",
       });
       
@@ -172,7 +172,7 @@ export default function Login() {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold mb-2" data-testid="title-login">
-            <span className="text-gradient">Welcome Back to CodeConnect</span>
+            <span className="text-gradient">Welcome Back to TechLearnOrbit</span>
           </CardTitle>
           <p className="text-gray-600">
             Sign in to continue your coding journey

@@ -33,7 +33,7 @@ export default function CancellationPolicy() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-700">
-                At CodeConnect, we understand that plans can change. This policy outlines our cancellation and refund procedures 
+                At TechLearnOrbit, we understand that plans can change. This policy outlines our cancellation and refund procedures 
                 for both students and teachers to ensure fairness and transparency for all parties involved.
               </p>
             </CardContent>
@@ -93,7 +93,7 @@ export default function CancellationPolicy() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-gray-700 mb-3">
-                CodeConnect's AI-powered monitoring system may automatically cancel classes in the following situations:
+                TechLearnOrbit's AI-powered monitoring system may automatically cancel classes in the following situations:
               </p>
               <div className="space-y-3">
                 <div className="bg-red-50 p-4 rounded-lg">
