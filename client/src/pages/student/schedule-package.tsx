@@ -415,12 +415,6 @@ export default function SchedulePackage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Date:</span>
-                    <span className="font-medium">
-                      {selectedDate ? format(selectedDate, "MMM d, yyyy") : "Multiple dates"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Times selected:</span>
                     <span className="font-medium">{selectedSessions.length}</span>
                   </div>
@@ -428,6 +422,40 @@ export default function SchedulePackage() {
                     <span className="text-muted-foreground">Remaining after:</span>
                     <span className="font-medium">{packageData.remainingClasses - selectedSessions.length}</span>
                   </div>
+                </div>
+
+                {/* Selected Classes List */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-muted-foreground">Selected Classes:</h4>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {[...selectedSessions]
+                      .sort((a, b) => {
+                        const dateCompare = a.date.getTime() - b.date.getTime();
+                        if (dateCompare !== 0) return dateCompare;
+                        return a.time.localeCompare(b.time);
+                      })
+                      .map((session, index) => {
+                        const dateKey = format(session.date, "yyyy-MM-dd");
+                        return (
+                          <Button
+                            key={`${dateKey}-${session.time}-${index}`}
+                            variant="outline"
+                            className="w-full justify-between hover:bg-destructive/10 hover:text-destructive hover:border-destructive transition-colors"
+                            onClick={() => {
+                              setSelectedSessions(prev => prev.filter((_, i) => i !== index));
+                            }}
+                            data-testid={`selected-class-${index}`}
+                          >
+                            <span className="text-left flex-1">
+                              <div className="font-medium">{format(session.date, "EEE, MMM d, yyyy")}</div>
+                              <div className="text-sm text-muted-foreground">{session.time}</div>
+                            </span>
+                            <XCircle className="h-4 w-4 ml-2" />
+                          </Button>
+                        );
+                      })}
+                  </div>
+                  <p className="text-xs text-muted-foreground italic">Click on any class to unselect it</p>
                 </div>
 
                 <Button
