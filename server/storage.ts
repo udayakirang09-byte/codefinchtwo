@@ -400,7 +400,7 @@ export interface IStorage {
   
   // Admin Booking Limits Configuration operations
   getAdminBookingLimits(): Promise<any | undefined>;
-  updateAdminBookingLimits(config: { dailyBookingLimit?: number; weeklyBookingLimit?: number | null; enableWeeklyLimit?: boolean }): Promise<void>;
+  updateAdminBookingLimits(config: { dailyBookingLimit?: number; weeklyBookingLimit?: number | null; enableWeeklyLimit?: boolean; maxPackagesPerStudent?: number; maxMonthlyClasses?: number }): Promise<void>;
   
   // AI Moderation Session Dossier operations
   getSessionDossierById(dossierId: string): Promise<any | undefined>;
@@ -2934,7 +2934,7 @@ export class DatabaseStorage implements IStorage {
     return results.length > 0 ? results[0] : undefined;
   }
 
-  async updateAdminBookingLimits(config: { dailyBookingLimit?: number; weeklyBookingLimit?: number | null; enableWeeklyLimit?: boolean }): Promise<void> {
+  async updateAdminBookingLimits(config: { dailyBookingLimit?: number; weeklyBookingLimit?: number | null; enableWeeklyLimit?: boolean; maxPackagesPerStudent?: number; maxMonthlyClasses?: number }): Promise<void> {
     const existing = await this.getAdminBookingLimits();
     
     if (existing) {
@@ -2944,6 +2944,8 @@ export class DatabaseStorage implements IStorage {
           ...(config.dailyBookingLimit !== undefined && { dailyBookingLimit: config.dailyBookingLimit }),
           ...(config.weeklyBookingLimit !== undefined && { weeklyBookingLimit: config.weeklyBookingLimit }),
           ...(config.enableWeeklyLimit !== undefined && { enableWeeklyLimit: config.enableWeeklyLimit }),
+          ...(config.maxPackagesPerStudent !== undefined && { maxPackagesPerStudent: config.maxPackagesPerStudent }),
+          ...(config.maxMonthlyClasses !== undefined && { maxMonthlyClasses: config.maxMonthlyClasses }),
           updatedAt: new Date() 
         })
         .where(eq(adminBookingLimits.id, existing.id));
@@ -2952,6 +2954,8 @@ export class DatabaseStorage implements IStorage {
         dailyBookingLimit: config.dailyBookingLimit ?? 3,
         weeklyBookingLimit: config.weeklyBookingLimit ?? null,
         enableWeeklyLimit: config.enableWeeklyLimit ?? false,
+        maxPackagesPerStudent: config.maxPackagesPerStudent ?? 2,
+        maxMonthlyClasses: config.maxMonthlyClasses ?? 15,
       });
     }
   }

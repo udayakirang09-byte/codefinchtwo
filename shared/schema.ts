@@ -721,6 +721,8 @@ export const adminBookingLimits = pgTable("admin_booking_limits", {
   dailyBookingLimit: integer("daily_booking_limit").notNull().default(3), // Max bookings per day per student
   weeklyBookingLimit: integer("weekly_booking_limit"), // Optional weekly limit (null = disabled)
   enableWeeklyLimit: boolean("enable_weekly_limit").default(false), // Toggle for weekly cap
+  maxPackagesPerStudent: integer("max_packages_per_student").notNull().default(2), // Max active packages per student
+  maxMonthlyClasses: integer("max_monthly_classes").notNull().default(15), // Max classes per month per student
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 

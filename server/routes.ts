@@ -5,7 +5,7 @@ import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
 import { azureStorage } from "./azureStorage";
 import { z } from "zod";
-import { eq, desc, asc, and, gte, lte, or, sql, isNull, ne } from "drizzle-orm";
+import { eq, desc, asc, and, gte, lte, lt, or, sql, isNull, ne } from "drizzle-orm";
 import { db } from "./db";
 import { 
   adminConfig, 
@@ -142,6 +142,8 @@ const bookingCreationAttemptsWeekly = new Map<string, { count: number; weekStart
 let DEFAULT_DAILY_BOOKING_LIMIT = 3; // Updated to 3 as per requirement
 let DEFAULT_WEEKLY_BOOKING_LIMIT: number | null = null;
 let WEEKLY_LIMIT_ENABLED = false;
+let MAX_PACKAGES_PER_STUDENT = 2; // Max active packages per student
+let MAX_MONTHLY_CLASSES = 15; // Max classes per month per student
 
 // Temporary storage for pending 2FA secrets (server-side only)
 // Format: Map<email, { secret: string, expiresAt: number }>
@@ -446,13 +448,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       DEFAULT_DAILY_BOOKING_LIMIT = bookingLimitsConfig.dailyBookingLimit;
       DEFAULT_WEEKLY_BOOKING_LIMIT = bookingLimitsConfig.weeklyBookingLimit;
       WEEKLY_LIMIT_ENABLED = bookingLimitsConfig.enableWeeklyLimit;
-      console.log(`📊 Loaded booking limits from database: Daily=${DEFAULT_DAILY_BOOKING_LIMIT}, Weekly=${DEFAULT_WEEKLY_BOOKING_LIMIT} (enabled: ${WEEKLY_LIMIT_ENABLED})`);
+      MAX_PACKAGES_PER_STUDENT = bookingLimitsConfig.maxPackagesPerStudent || 2;
+      MAX_MONTHLY_CLASSES = bookingLimitsConfig.maxMonthlyClasses || 15;
+      console.log(`📊 Loaded booking limits from database: Daily=${DEFAULT_DAILY_BOOKING_LIMIT}, Weekly=${DEFAULT_WEEKLY_BOOKING_LIMIT} (enabled: ${WEEKLY_LIMIT_ENABLED}), MaxPackages=${MAX_PACKAGES_PER_STUDENT}, MaxMonthly=${MAX_MONTHLY_CLASSES}`);
     } else {
-      console.log(`📊 No booking limits config found in database, using defaults: Daily=${DEFAULT_DAILY_BOOKING_LIMIT}, Weekly=${DEFAULT_WEEKLY_BOOKING_LIMIT} (enabled: ${WEEKLY_LIMIT_ENABLED})`);
+      console.log(`📊 No booking limits config found in database, using defaults: Daily=${DEFAULT_DAILY_BOOKING_LIMIT}, Weekly=${DEFAULT_WEEKLY_BOOKING_LIMIT} (enabled: ${WEEKLY_LIMIT_ENABLED}), MaxPackages=${MAX_PACKAGES_PER_STUDENT}, MaxMonthly=${MAX_MONTHLY_CLASSES}`);
     }
   } catch (error) {
     console.error('❌ Error loading booking limits configuration:', error);
-    console.log(`📊 Using default booking limits: Daily=${DEFAULT_DAILY_BOOKING_LIMIT}, Weekly=${DEFAULT_WEEKLY_BOOKING_LIMIT} (enabled: ${WEEKLY_LIMIT_ENABLED})`);
+    console.log(`📊 Using default booking limits: Daily=${DEFAULT_DAILY_BOOKING_LIMIT}, Weekly=${DEFAULT_WEEKLY_BOOKING_LIMIT} (enabled: ${WEEKLY_LIMIT_ENABLED}), MaxPackages=${MAX_PACKAGES_PER_STUDENT}, MaxMonthly=${MAX_MONTHLY_CLASSES}`);
   }
   
   // Configure multer for file uploads (memory storage for immediate processing)
@@ -2863,6 +2867,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Mentor not found" });
       }
 
+      // Check if student has reached max packages limit
+      const existingPackages = await storage.getBulkPackagesByStudent(resolvedStudentId);
+      const activePackages = existingPackages.filter(pkg => pkg.status === 'active' && pkg.remainingClasses > 0);
+      
+      if (activePackages.length >= MAX_PACKAGES_PER_STUDENT) {
+        return res.status(400).json({ 
+          message: `Maximum ${MAX_PACKAGES_PER_STUDENT} packages allowed. You can schedule additional single classes until one package is completed.`,
+          maxPackages: MAX_PACKAGES_PER_STUDENT,
+          currentPackages: activePackages.length
+        });
+      }
+
       // Calculate total amount
       const totalAmount = (parseFloat(pricePerClass) * totalClasses).toFixed(2);
 
@@ -3039,6 +3055,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         console.log(`✅ Availability confirmed for ${dayOfWeek} at ${timeString}`);
+
+        // Check student's monthly class limit
+        const now = new Date();
+        const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        
+        const monthlyBookings = await db
+          .select()
+          .from(bookings)
+          .where(
+            and(
+              eq(bookings.studentId, bulkPackage.studentId),
+              gte(bookings.scheduledAt, currentMonthStart),
+              lt(bookings.scheduledAt, nextMonthStart),
+              ne(bookings.status, 'cancelled')
+            )
+          );
+
+        const totalMonthlyClasses = monthlyBookings.length + scheduledSessions.length;
+        
+        if (totalMonthlyClasses > MAX_MONTHLY_CLASSES) {
+          console.log(`❌ Student would exceed monthly class limit: ${totalMonthlyClasses} > ${MAX_MONTHLY_CLASSES}`);
+          return res.status(400).json({ 
+            message: `Maximum ${MAX_MONTHLY_CLASSES} classes allowed per month. You currently have ${monthlyBookings.length} scheduled this month.`,
+            maxMonthlyClasses: MAX_MONTHLY_CLASSES,
+            currentMonthlyClasses: monthlyBookings.length
+          });
+        }
 
         // Check for student's existing bookings at this time (conflict check)
         const studentExistingBookings = await db
@@ -9765,7 +9809,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ 
           dailyLimit: DEFAULT_DAILY_BOOKING_LIMIT,
           weeklyLimit: DEFAULT_WEEKLY_BOOKING_LIMIT,
-          weeklyLimitEnabled: WEEKLY_LIMIT_ENABLED
+          weeklyLimitEnabled: WEEKLY_LIMIT_ENABLED,
+          maxPackagesPerStudent: MAX_PACKAGES_PER_STUDENT,
+          maxMonthlyClasses: MAX_MONTHLY_CLASSES
         });
       }
       res.json(config);
@@ -9782,10 +9828,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Admin access required' });
       }
 
-      const { dailyBookingLimit, weeklyBookingLimit, enableWeeklyLimit } = req.body;
+      const { dailyBookingLimit, weeklyBookingLimit, enableWeeklyLimit, maxPackagesPerStudent, maxMonthlyClasses } = req.body;
       
       // Update database
-      await storage.updateAdminBookingLimits({ dailyBookingLimit, weeklyBookingLimit, enableWeeklyLimit });
+      await storage.updateAdminBookingLimits({ dailyBookingLimit, weeklyBookingLimit, enableWeeklyLimit, maxPackagesPerStudent, maxMonthlyClasses });
       
       // Update in-memory variables
       if (dailyBookingLimit !== undefined) {
@@ -9797,8 +9843,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (enableWeeklyLimit !== undefined) {
         WEEKLY_LIMIT_ENABLED = enableWeeklyLimit;
       }
+      if (maxPackagesPerStudent !== undefined) {
+        MAX_PACKAGES_PER_STUDENT = maxPackagesPerStudent;
+      }
+      if (maxMonthlyClasses !== undefined) {
+        MAX_MONTHLY_CLASSES = maxMonthlyClasses;
+      }
       
-      console.log(`📊 Booking limits updated: Daily=${DEFAULT_DAILY_BOOKING_LIMIT}, Weekly=${DEFAULT_WEEKLY_BOOKING_LIMIT} (enabled: ${WEEKLY_LIMIT_ENABLED})`);
+      console.log(`📊 Booking limits updated: Daily=${DEFAULT_DAILY_BOOKING_LIMIT}, Weekly=${DEFAULT_WEEKLY_BOOKING_LIMIT} (enabled: ${WEEKLY_LIMIT_ENABLED}), MaxPackages=${MAX_PACKAGES_PER_STUDENT}, MaxMonthly=${MAX_MONTHLY_CLASSES}`);
       res.json({ success: true, message: 'Booking limits configuration updated successfully' });
     } catch (error) {
       console.error('Error updating admin booking limits config:', error);

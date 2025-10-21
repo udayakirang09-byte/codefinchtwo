@@ -12,7 +12,9 @@ import {
   Home,
   Calendar,
   CalendarDays,
-  AlertCircle
+  AlertCircle,
+  Package,
+  CalendarClock
 } from 'lucide-react';
 import { Link } from 'wouter';
 import Navigation from '@/components/navigation';
@@ -23,6 +25,8 @@ interface BookingLimitsConfig {
   dailyBookingLimit: number;
   weeklyBookingLimit: number;
   enableWeeklyLimit: boolean;
+  maxPackagesPerStudent: number;
+  maxMonthlyClasses: number;
 }
 
 export default function AdminBookingLimitsConfig() {
@@ -33,6 +37,8 @@ export default function AdminBookingLimitsConfig() {
   const [dailyLimit, setDailyLimit] = useState(3);
   const [weeklyLimit, setWeeklyLimit] = useState(15);
   const [weeklyLimitEnabled, setWeeklyLimitEnabled] = useState(false);
+  const [maxPackages, setMaxPackages] = useState(2);
+  const [maxMonthlyClasses, setMaxMonthlyClasses] = useState(15);
 
   // Fetch current booking limits configuration
   const { data: config, isLoading, error} = useQuery<BookingLimitsConfig>({
@@ -50,6 +56,8 @@ export default function AdminBookingLimitsConfig() {
       setDailyLimit(config.dailyBookingLimit);
       setWeeklyLimit(config.weeklyBookingLimit);
       setWeeklyLimitEnabled(config.enableWeeklyLimit);
+      setMaxPackages(config.maxPackagesPerStudent);
+      setMaxMonthlyClasses(config.maxMonthlyClasses);
       setHasChanges(false);
     }
   }, [config]);
@@ -98,8 +106,30 @@ export default function AdminBookingLimitsConfig() {
     setHasChanges(true);
   };
 
+  const handleMaxPackagesChange = (value: string) => {
+    const numValue = parseInt(value, 10);
+    if (!isNaN(numValue) && numValue > 0) {
+      setMaxPackages(numValue);
+      setHasChanges(true);
+    }
+  };
+
+  const handleMaxMonthlyClassesChange = (value: string) => {
+    const numValue = parseInt(value, 10);
+    if (!isNaN(numValue) && numValue > 0) {
+      setMaxMonthlyClasses(numValue);
+      setHasChanges(true);
+    }
+  };
+
   const handleSave = () => {
-    updateConfigMutation.mutate({ dailyBookingLimit: dailyLimit, weeklyBookingLimit: weeklyLimit, enableWeeklyLimit: weeklyLimitEnabled });
+    updateConfigMutation.mutate({ 
+      dailyBookingLimit: dailyLimit, 
+      weeklyBookingLimit: weeklyLimit, 
+      enableWeeklyLimit: weeklyLimitEnabled,
+      maxPackagesPerStudent: maxPackages,
+      maxMonthlyClasses: maxMonthlyClasses
+    });
   };
 
   const handleReset = () => {
@@ -107,6 +137,8 @@ export default function AdminBookingLimitsConfig() {
       setDailyLimit(config.dailyBookingLimit);
       setWeeklyLimit(config.weeklyBookingLimit);
       setWeeklyLimitEnabled(config.enableWeeklyLimit);
+      setMaxPackages(config.maxPackagesPerStudent);
+      setMaxMonthlyClasses(config.maxMonthlyClasses);
       setHasChanges(false);
     }
   };
@@ -131,7 +163,7 @@ export default function AdminBookingLimitsConfig() {
               Booking Limits Configuration
             </h1>
             <p className="text-muted-foreground">
-              Configure daily and weekly booking limits for students
+              Configure booking limits, package restrictions, and monthly class caps for students
             </p>
           </div>
           {hasChanges && (
@@ -253,6 +285,84 @@ export default function AdminBookingLimitsConfig() {
                       </Alert>
                     </>
                   )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Max Packages Per Student */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Maximum Packages Per Student
+                </CardTitle>
+                <CardDescription>
+                  Maximum number of active packages a student can purchase simultaneously
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <Label htmlFor="max-packages" className="min-w-[120px]">
+                      Max Packages:
+                    </Label>
+                    <Input
+                      id="max-packages"
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={maxPackages}
+                      onChange={(e) => handleMaxPackagesChange(e.target.value)}
+                      className="w-32"
+                      data-testid="input-max-packages"
+                    />
+                    <span className="text-sm text-muted-foreground">active packages</span>
+                  </div>
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Students will be prevented from purchasing more than {maxPackages} packages at once. They can purchase new packages after completing existing ones.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Max Monthly Classes */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarClock className="h-5 w-5" />
+                  Maximum Monthly Classes
+                </CardTitle>
+                <CardDescription>
+                  Maximum number of classes a student can schedule per calendar month
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <Label htmlFor="max-monthly-classes" className="min-w-[120px]">
+                      Monthly Limit:
+                    </Label>
+                    <Input
+                      id="max-monthly-classes"
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={maxMonthlyClasses}
+                      onChange={(e) => handleMaxMonthlyClassesChange(e.target.value)}
+                      className="w-32"
+                      data-testid="input-max-monthly-classes"
+                    />
+                    <span className="text-sm text-muted-foreground">classes per month</span>
+                  </div>
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Students will be prevented from scheduling more than {maxMonthlyClasses} classes in a single calendar month. This limit resets on the 1st of each month.
+                    </AlertDescription>
+                  </Alert>
                 </div>
               </CardContent>
             </Card>
