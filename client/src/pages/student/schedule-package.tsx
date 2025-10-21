@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import Navigation from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, User, ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
@@ -258,33 +259,72 @@ export default function SchedulePackage() {
 
   if (isLoading) {
     return (
-      <div className="container max-w-4xl mx-auto py-8 px-4">
-        <div className="text-center">Loading package details...</div>
-      </div>
+      <>
+        <Navigation />
+        <div className="container max-w-4xl mx-auto py-8 px-4">
+          <div className="text-center">Loading package details...</div>
+        </div>
+      </>
     );
   }
 
   if (!packageData) {
     return (
-      <div className="container max-w-4xl mx-auto py-8 px-4">
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-xl font-semibold mb-2">Package Not Found</p>
-            <p className="text-muted-foreground mb-6">
-              This package doesn't exist or you don't have access to it.
-            </p>
-            <Button onClick={() => setLocation("/student/my-packages")}>
-              Back to My Packages
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <>
+        <Navigation />
+        <div className="container max-w-4xl mx-auto py-8 px-4">
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <p className="text-xl font-semibold mb-2">Package Not Found</p>
+              <p className="text-muted-foreground mb-6">
+                This package doesn't exist or you don't have access to it.
+              </p>
+              <Button onClick={() => setLocation("/student/my-packages")}>
+                Back to My Packages
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </>
     );
   }
 
   if (packageData.remainingClasses === 0) {
     return (
-      <div className="container max-w-4xl mx-auto py-8 px-4">
+      <>
+        <Navigation />
+        <div className="container max-w-4xl mx-auto py-8 px-4">
+          <Button
+            variant="ghost"
+            onClick={() => setLocation("/student/my-packages")}
+            className="mb-6"
+            data-testid="button-back"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to My Packages
+          </Button>
+
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <XCircle className="h-16 w-16 text-muted-foreground mb-4" />
+              <p className="text-xl font-semibold mb-2">No Classes Remaining</p>
+              <p className="text-muted-foreground mb-6">
+                You've used all classes in this package.
+              </p>
+              <Button onClick={() => setLocation("/student/my-packages")}>
+                Back to My Packages
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Navigation />
+      <div className="container max-w-6xl mx-auto py-8 px-4">
         <Button
           variant="ghost"
           onClick={() => setLocation("/student/my-packages")}
@@ -295,53 +335,7 @@ export default function SchedulePackage() {
           Back to My Packages
         </Button>
 
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <XCircle className="h-16 w-16 text-muted-foreground mb-4" />
-            <p className="text-xl font-semibold mb-2">No Classes Remaining</p>
-            <p className="text-muted-foreground mb-6">
-              You've used all classes in this package.
-            </p>
-            <Button onClick={() => setLocation("/student/my-packages")}>
-              Back to My Packages
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="container max-w-6xl mx-auto py-8 px-4">
-      <Button
-        variant="ghost"
-        onClick={() => setLocation("/student/my-packages")}
-        className="mb-6"
-        data-testid="button-back"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to My Packages
-      </Button>
-
-      {/* Student Info Header */}
-      {studentData && (
-        <Card className="mb-6">
-          <CardContent className="py-4">
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <p className="text-sm text-muted-foreground">Student</p>
-                <p className="text-lg font-semibold">{studentData.name || user?.email}</p>
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-muted-foreground">Email</p>
-                <p className="text-lg">{user?.email}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Package Info & Calendar */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
@@ -508,7 +502,8 @@ export default function SchedulePackage() {
             </Card>
           )}
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
