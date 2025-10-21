@@ -603,9 +603,11 @@ export default function Signup() {
       <Card className="w-full max-w-md glassmorphism shadow-2xl border-0 backdrop-blur-xl relative z-10 hover-lift">
         <CardHeader className="text-center pb-4">
           <div className="flex items-center justify-center mb-4">
-            <div className="p-3 bg-gradient-to-br from-purple-600 via-pink-600 to-indigo-600 rounded-2xl shadow-lg">
-              <Code className="text-white mr-0" size={32} />
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="TechLearnOrbit Logo" 
+              className="h-24 w-24 object-contain"
+            />
           </div>
           <CardTitle className="text-2xl font-bold mb-2" data-testid="title-signup">
             <span className="text-gradient">Join TechLearnOrbit</span>
