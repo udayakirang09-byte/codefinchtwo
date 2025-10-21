@@ -323,6 +323,24 @@ export default function SchedulePackage() {
         Back to My Packages
       </Button>
 
+      {/* Student Info Header */}
+      {studentData && (
+        <Card className="mb-6">
+          <CardContent className="py-4">
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground">Student</p>
+                <p className="text-lg font-semibold">{studentData.name || user?.email}</p>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground">Email</p>
+                <p className="text-lg">{user?.email}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Package Info & Calendar */}
         <div className="lg:col-span-2 space-y-6">

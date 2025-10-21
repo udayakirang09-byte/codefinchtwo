@@ -3014,9 +3014,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`📅 Available slots:`, teacherTimeSlots.map(s => `${s.dayOfWeek} ${s.startTime}-${s.endTime}`));
 
         // Check if teacher has availability for this day/time
-        const hasAvailability = teacherTimeSlots.some(slot => 
-          slot.dayOfWeek === dayOfWeek && slot.startTime === timeString
-        );
+        // The selected time must fall within the teacher's available time range
+        const hasAvailability = teacherTimeSlots.some(slot => {
+          if (slot.dayOfWeek !== dayOfWeek) return false;
+          
+          // Parse times for comparison (format: "HH:MM")
+          const [selectedHour, selectedMin] = timeString.split(':').map(Number);
+          const [startHour, startMin] = slot.startTime.split(':').map(Number);
+          const [endHour, endMin] = slot.endTime.split(':').map(Number);
+          
+          const selectedMinutes = selectedHour * 60 + selectedMin;
+          const startMinutes = startHour * 60 + startMin;
+          const endMinutes = endHour * 60 + endMin;
+          
+          // Check if selected time falls within the range (inclusive of start, exclusive of end)
+          return selectedMinutes >= startMinutes && selectedMinutes < endMinutes;
+        });
 
         if (!hasAvailability) {
           console.log(`❌ No availability found for ${dayOfWeek} at ${timeString}`);
