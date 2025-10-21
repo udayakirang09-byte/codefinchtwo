@@ -444,7 +444,7 @@ export class AIModerationService {
     const crs = (0.6 * safetyScore) + (0.3 * (100 - feedbackScore)) + (0.1 * riskBoost);
 
     // Build CRS explanation JSON
-    const crsJson = {
+    const crsJson: Record<string, any> = {
       formula: "0.6×safety + 0.3×(100−feedback) + 0.1×risk_boost",
       components: {
         safetyScore: safetyScore,
