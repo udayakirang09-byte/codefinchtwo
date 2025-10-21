@@ -1989,6 +1989,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // VALIDATION: One demo session per student-teacher pair (only first time)
+      if (req.body.sessionType === 'demo') {
+        console.log(`🎯 Demo session validation: Checking if student ${student.id} has already booked a demo with mentor ${req.body.mentorId}`);
+        
+        // Check if student has EVER booked a demo with this mentor (any status except cancelled)
+        const existingDemoBookings = await db
+          .select()
+          .from(bookings)
+          .where(
+            and(
+              eq(bookings.studentId, student.id),
+              eq(bookings.mentorId, req.body.mentorId),
+              eq(bookings.sessionType, 'demo'),
+              isNull(bookings.cancelledAt) // Exclude cancelled bookings
+            )
+          );
+        
+        if (existingDemoBookings.length > 0) {
+          console.log(`🚫 Demo booking rejected: Student ${student.id} already has ${existingDemoBookings.length} demo booking(s) with mentor ${req.body.mentorId}`);
+          return res.status(400).json({ 
+            message: "You have already booked a demo session with this teacher. Demo sessions are limited to one per student-teacher pair.",
+            error: "DEMO_ALREADY_BOOKED"
+          });
+        }
+        
+        console.log(`✅ Demo validation passed: First demo booking for this student-teacher pair`);
+      }
+      
       // VALIDATION: Student-side overlap check with 5-minute buffer (skip if admin override)
       const scheduledStart = new Date(req.body.scheduledAt);
       const scheduledEnd = new Date(scheduledStart.getTime() + req.body.duration * 60000);
