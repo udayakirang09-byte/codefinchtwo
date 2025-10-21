@@ -79,8 +79,8 @@ export default function HeroSection() {
           
           <div className="relative">
             <img 
-              src="https://images.unsplash.com/photo-1596496050755-c923e73e42e1?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600" 
-              alt="Modern learning environment" 
+              src="/hero-image.png" 
+              alt="Modern learning environment with advanced technology" 
               className="rounded-2xl shadow-2xl hover-lift"
               data-testid="img-hero-kids-coding"
             />
