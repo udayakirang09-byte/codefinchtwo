@@ -496,15 +496,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
       console.log('📸 Files:', files ? Object.keys(files).map(key => `${key}: ${files[key][0]?.originalname}`) : 'No files');
       
-      const { firstName, lastName, email, password, role, country, mentorData }: {
+      const { firstName, lastName, email, password, role, country, mentorData: mentorDataRaw }: {
         firstName: string;
         lastName: string;
         email: string;
         password: string;
         role: string;
         country?: string;
-        mentorData?: any;
+        mentorData?: string;
       } = req.body;
+      
+      // Parse mentorData from JSON string (FormData sends it as string)
+      let mentorData: any = null;
+      if (mentorDataRaw) {
+        try {
+          mentorData = JSON.parse(mentorDataRaw);
+          console.log('📋 Parsed mentorData:', mentorData);
+        } catch (error) {
+          console.error('❌ Failed to parse mentorData JSON:', error);
+        }
+      }
       
       if (!firstName || !lastName || !email || !password || !role) {
         console.error('❌ Missing required fields');
