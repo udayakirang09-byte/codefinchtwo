@@ -41,6 +41,10 @@ interface AvailableTime {
   endTime: string;
 }
 
+interface AvailableTimesResponse {
+  timeSlots: AvailableTime[];
+}
+
 interface ScheduledSession {
   scheduledAt: Date;
   notes?: string;
@@ -91,7 +95,7 @@ export default function SchedulePackage() {
   const packageData = packages?.find(pkg => pkg.id === packageId);
 
   // Fetch mentor's available times
-  const { data: availableTimes } = useQuery<AvailableTime[]>({
+  const { data: availableTimes } = useQuery<AvailableTimesResponse | AvailableTime[]>({
     queryKey: ["/api/mentors", packageData?.mentorId, "available-times"],
     queryFn: async () => {
       if (!packageData?.mentorId) throw new Error('No mentor ID');
@@ -200,15 +204,26 @@ export default function SchedulePackage() {
 
   // Get available time slots for selected date
   const getAvailableTimeSlotsForDate = (date: Date) => {
-    if (!availableTimes || !Array.isArray(availableTimes)) {
-      console.log("📅 [Schedule Package] No availableTimes data:", availableTimes);
+    // Handle the API response structure: { timeSlots: [...] } or just [...]
+    let timeSlotsArray: AvailableTime[];
+    
+    if (!availableTimes) {
+      return [];
+    }
+    
+    // Check if it's the wrapped response format
+    if ('timeSlots' in availableTimes) {
+      timeSlotsArray = availableTimes.timeSlots;
+    } else {
+      timeSlotsArray = availableTimes as AvailableTime[];
+    }
+    
+    if (!Array.isArray(timeSlotsArray)) {
       return [];
     }
 
     const dayName = format(date, "EEEE");
-    console.log(`📅 [Schedule Package] Selected date: ${format(date, "yyyy-MM-dd")}, Day: ${dayName}`);
-    const slots = availableTimes.filter(slot => slot.dayOfWeek === dayName);
-    console.log(`📅 [Schedule Package] Found ${slots.length} slots for ${dayName}:`, slots);
+    const slots = timeSlotsArray.filter(slot => slot.dayOfWeek === dayName);
 
     // Generate time slots from start to end time
     const timeSlots: string[] = [];
@@ -236,12 +251,10 @@ export default function SchedulePackage() {
       }
     });
 
-    console.log(`📅 [Schedule Package] Available time slots for ${dayName}:`, timeSlots.sort());
     return timeSlots.sort();
   };
 
   const availableSlots = selectedDate ? getAvailableTimeSlotsForDate(selectedDate) : [];
-  console.log(`📅 [Schedule Package] Final availableSlots for rendering:`, availableSlots);
 
   if (isLoading) {
     return (
