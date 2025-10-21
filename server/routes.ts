@@ -3065,7 +3065,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(timeSlots)
         .where(eq(timeSlots.mentorId, id));
       
-      res.json(availableTimes);
+      // Return in expected format for frontend
+      res.json({
+        timeSlots: availableTimes,
+        availableSlots: [],
+        rawTimes: []
+      });
     } catch (error) {
       console.error("Error fetching mentor available times:", error);
       res.status(500).json({ message: "Failed to fetch available times" });

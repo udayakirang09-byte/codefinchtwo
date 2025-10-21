@@ -336,23 +336,39 @@ export default function ManageSchedule() {
                   <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="startTime">Start Time</Label>
-                      <Input
-                        id="startTime"
-                        type="time"
+                      <Select
                         value={newSlot.startTime}
-                        onChange={(e) => setNewSlot({ ...newSlot, startTime: e.target.value })}
-                        data-testid="input-start-time"
-                      />
+                        onValueChange={(value) => setNewSlot({ ...newSlot, startTime: value })}
+                      >
+                        <SelectTrigger data-testid="input-start-time">
+                          <SelectValue placeholder="Select start hour" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 14 }, (_, i) => i + 9).map((hour) => (
+                            <SelectItem key={hour} value={`${hour.toString().padStart(2, '0')}:00`}>
+                              {hour}:00
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="endTime">End Time</Label>
-                      <Input
-                        id="endTime"
-                        type="time"
+                      <Select
                         value={newSlot.endTime}
-                        onChange={(e) => setNewSlot({ ...newSlot, endTime: e.target.value })}
-                        data-testid="input-end-time"
-                      />
+                        onValueChange={(value) => setNewSlot({ ...newSlot, endTime: value })}
+                      >
+                        <SelectTrigger data-testid="input-end-time">
+                          <SelectValue placeholder="Select end hour" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 14 }, (_, i) => i + 9).map((hour) => (
+                            <SelectItem key={hour} value={`${hour.toString().padStart(2, '0')}:00`}>
+                              {hour}:00
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -418,23 +434,39 @@ export default function ManageSchedule() {
                     <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
                       <div className="grid gap-2">
                         <Label htmlFor="edit-startTime">Start Time</Label>
-                        <Input
-                          id="edit-startTime"
-                          type="time"
+                        <Select
                           value={editingSlot.startTime}
-                          onChange={(e) => setEditingSlot({ ...editingSlot, startTime: e.target.value })}
-                          data-testid="input-edit-start-time"
-                        />
+                          onValueChange={(value) => setEditingSlot({ ...editingSlot, startTime: value })}
+                        >
+                          <SelectTrigger data-testid="input-edit-start-time">
+                            <SelectValue placeholder="Select start hour" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 14 }, (_, i) => i + 9).map((hour) => (
+                              <SelectItem key={hour} value={`${hour.toString().padStart(2, '0')}:00`}>
+                                {hour}:00
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="edit-endTime">End Time</Label>
-                        <Input
-                          id="edit-endTime"
-                          type="time"
+                        <Select
                           value={editingSlot.endTime}
-                          onChange={(e) => setEditingSlot({ ...editingSlot, endTime: e.target.value })}
-                          data-testid="input-edit-end-time"
-                        />
+                          onValueChange={(value) => setEditingSlot({ ...editingSlot, endTime: value })}
+                        >
+                          <SelectTrigger data-testid="input-edit-end-time">
+                            <SelectValue placeholder="Select end hour" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 14 }, (_, i) => i + 9).map((hour) => (
+                              <SelectItem key={hour} value={`${hour.toString().padStart(2, '0')}:00`}>
+                                {hour}:00
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
