@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, User, ArrowLeft } from "lucide-react";
 
+interface Mentor {
+  id: string;
+  name: string;
+  email: string;
+  profilePhotoUrl?: string;
+}
+
 interface BulkPackage {
   id: string;
   studentId: string;
@@ -19,13 +26,7 @@ interface BulkPackage {
   status: "active" | "depleted" | "expired";
   expiryDate?: string;
   createdAt: string;
-}
-
-interface Mentor {
-  id: string;
-  name: string;
-  username: string;
-  profilePhotoUrl?: string;
+  mentor?: Mentor;
 }
 
 export default function SchedulePackage() {
@@ -56,12 +57,6 @@ export default function SchedulePackage() {
 
   // Find the specific package
   const packageData = packages?.find(pkg => pkg.id === packageId);
-
-  // Fetch mentor details
-  const { data: mentorData } = useQuery<Mentor>({
-    queryKey: ["/api/mentors", packageData?.mentorId],
-    enabled: !!packageData?.mentorId,
-  });
 
   if (isLoading) {
     return (
@@ -129,7 +124,7 @@ export default function SchedulePackage() {
               <User className="h-5 w-5 text-primary" />
               <div>
                 <p className="text-sm text-muted-foreground">Mentor</p>
-                <p className="text-lg font-semibold">{mentorData?.name || 'Loading...'}</p>
+                <p className="text-lg font-semibold">{packageData.mentor?.name || 'Not assigned'}</p>
               </div>
             </div>
           </div>

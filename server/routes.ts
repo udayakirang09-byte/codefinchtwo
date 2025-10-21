@@ -2858,7 +2858,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const packages = await storage.getBulkPackagesByStudent(studentId);
       
-      res.json(packages);
+      // Enhance packages with mentor details
+      const enhancedPackages = await Promise.all(
+        packages.map(async (pkg) => {
+          const mentor = await storage.getMentor(pkg.mentorId);
+          return {
+            ...pkg,
+            mentor: mentor ? {
+              id: mentor.id,
+              name: `${mentor.user.firstName} ${mentor.user.lastName}`.trim(),
+              email: mentor.user.email,
+              profilePhotoUrl: mentor.user.profileImageUrl,
+            } : undefined
+          };
+        })
+      );
+      
+      res.json(enhancedPackages);
     } catch (error) {
       console.error("Error fetching bulk packages:", error);
       res.status(500).json({ message: "Failed to fetch bulk packages" });
