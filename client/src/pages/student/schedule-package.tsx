@@ -155,10 +155,19 @@ export default function SchedulePackage() {
       return;
     }
 
-    const sessions: ScheduledSession[] = selectedSessions.map(session => ({
-      scheduledAt: parse(`${format(session.date, "yyyy-MM-dd")} ${session.time}`, "yyyy-MM-dd HH:mm", new Date()),
-      notes: `Scheduled from ${packageData?.totalClasses} class package`
-    }));
+    const sessions: ScheduledSession[] = selectedSessions.map(session => {
+      // Parse time string (e.g., "14:00")
+      const [hours, minutes] = session.time.split(':').map(Number);
+      
+      // Create a new date with the selected date and time (in local timezone)
+      const scheduledDate = new Date(session.date);
+      scheduledDate.setHours(hours, minutes, 0, 0);
+      
+      return {
+        scheduledAt: scheduledDate,
+        notes: `Scheduled from ${packageData?.totalClasses} class package`
+      };
+    });
 
     scheduleClassesMutation.mutate(sessions);
   };
@@ -337,7 +346,12 @@ export default function SchedulePackage() {
                   mode="single"
                   selected={selectedDate}
                   onSelect={setSelectedDate}
-                  disabled={(date) => date < startOfDay(new Date())}
+                  fromDate={startOfDay(new Date())}
+                  toDate={addDays(startOfDay(new Date()), 30)}
+                  disabled={(date) => 
+                    date < startOfDay(new Date()) || 
+                    date > addDays(startOfDay(new Date()), 30)
+                  }
                   className="rounded-md border"
                   data-testid="calendar-selector"
                 />
