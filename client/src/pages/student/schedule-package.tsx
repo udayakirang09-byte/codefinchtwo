@@ -46,6 +46,11 @@ interface ScheduledSession {
   notes?: string;
 }
 
+interface DateTimeSelection {
+  date: Date;
+  time: string;
+}
+
 export default function SchedulePackage() {
   const params = useParams<{ packageId: string }>();
   const packageId = params.packageId;
@@ -54,12 +59,7 @@ export default function SchedulePackage() {
   const { toast } = useToast();
 
   const [selectedDate, setSelectedDate] = useState<Date>();
-  const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
-
-  // Clear time selections when date changes
-  useEffect(() => {
-    setSelectedTimes([]);
-  }, [selectedDate]);
+  const [selectedSessions, setSelectedSessions] = useState<DateTimeSelection[]>([]);
 
   // Get student ID from the user's email
   const { data: studentData } = useQuery({
@@ -120,10 +120,10 @@ export default function SchedulePackage() {
     onSuccess: () => {
       toast({
         title: "Success!",
-        description: `${selectedTimes.length} class(es) scheduled successfully.`,
+        description: `${selectedSessions.length} class(es) scheduled successfully.`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/bulk-packages/student", studentId] });
-      setSelectedTimes([]);
+      setSelectedSessions([]);
       setSelectedDate(undefined);
       setLocation("/student/my-packages");
     },
@@ -137,7 +137,7 @@ export default function SchedulePackage() {
   });
 
   const handleScheduleClasses = () => {
-    if (!selectedDate || selectedTimes.length === 0) {
+    if (selectedSessions.length === 0) {
       toast({
         title: "No times selected",
         description: "Please select at least one time slot",
@@ -146,7 +146,7 @@ export default function SchedulePackage() {
       return;
     }
 
-    if (selectedTimes.length > (packageData?.remainingClasses || 0)) {
+    if (selectedSessions.length > (packageData?.remainingClasses || 0)) {
       toast({
         title: "Too many classes",
         description: `You only have ${packageData?.remainingClasses} remaining classes`,
@@ -155,8 +155,8 @@ export default function SchedulePackage() {
       return;
     }
 
-    const sessions: ScheduledSession[] = selectedTimes.map(time => ({
-      scheduledAt: parse(`${format(selectedDate, "yyyy-MM-dd")} ${time}`, "yyyy-MM-dd HH:mm", new Date()),
+    const sessions: ScheduledSession[] = selectedSessions.map(session => ({
+      scheduledAt: parse(`${format(session.date, "yyyy-MM-dd")} ${session.time}`, "yyyy-MM-dd HH:mm", new Date()),
       notes: `Scheduled from ${packageData?.totalClasses} class package`
     }));
 
@@ -164,11 +164,20 @@ export default function SchedulePackage() {
   };
 
   const toggleTimeSelection = (time: string) => {
-    setSelectedTimes(prev => 
-      prev.includes(time) 
-        ? prev.filter(t => t !== time)
-        : [...prev, time]
+    if (!selectedDate) return;
+
+    const dateKey = format(selectedDate, "yyyy-MM-dd");
+    const existingIndex = selectedSessions.findIndex(
+      s => format(s.date, "yyyy-MM-dd") === dateKey && s.time === time
     );
+
+    if (existingIndex >= 0) {
+      // Remove this selection
+      setSelectedSessions(prev => prev.filter((_, i) => i !== existingIndex));
+    } else {
+      // Add this selection
+      setSelectedSessions(prev => [...prev, { date: selectedDate, time }]);
+    }
   };
 
   // Get available time slots for selected date
@@ -351,26 +360,31 @@ export default function SchedulePackage() {
                 </p>
               ) : (
                 <div className="space-y-2">
-                  {availableSlots.map((time) => (
-                    <Button
-                      key={time}
-                      variant={selectedTimes.includes(time) ? "default" : "outline"}
-                      className="w-full justify-between"
-                      onClick={() => toggleTimeSelection(time)}
-                      data-testid={`time-slot-${time}`}
-                    >
-                      <span>{time}</span>
-                      {selectedTimes.includes(time) && (
-                        <CheckCircle2 className="h-4 w-4" />
-                      )}
-                    </Button>
-                  ))}
+                  {availableSlots.map((time) => {
+                    const isSelected = selectedDate && selectedSessions.some(
+                      s => format(s.date, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd") && s.time === time
+                    );
+                    return (
+                      <Button
+                        key={time}
+                        variant={isSelected ? "default" : "outline"}
+                        className="w-full justify-between"
+                        onClick={() => toggleTimeSelection(time)}
+                        data-testid={`time-slot-${time}`}
+                      >
+                        <span>{time}</span>
+                        {isSelected && (
+                          <CheckCircle2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {selectedTimes.length > 0 && (
+          {selectedSessions.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Schedule Summary</CardTitle>
@@ -379,15 +393,17 @@ export default function SchedulePackage() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Date:</span>
-                    <span className="font-medium">{selectedDate && format(selectedDate, "MMM d, yyyy")}</span>
+                    <span className="font-medium">
+                      {selectedDate ? format(selectedDate, "MMM d, yyyy") : "Multiple dates"}
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Times selected:</span>
-                    <span className="font-medium">{selectedTimes.length}</span>
+                    <span className="font-medium">{selectedSessions.length}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Remaining after:</span>
-                    <span className="font-medium">{packageData.remainingClasses - selectedTimes.length}</span>
+                    <span className="font-medium">{packageData.remainingClasses - selectedSessions.length}</span>
                   </div>
                 </div>
 
@@ -397,7 +413,7 @@ export default function SchedulePackage() {
                   disabled={scheduleClassesMutation.isPending}
                   data-testid="button-schedule"
                 >
-                  {scheduleClassesMutation.isPending ? "Scheduling..." : `Schedule ${selectedTimes.length} Class${selectedTimes.length > 1 ? 'es' : ''}`}
+                  {scheduleClassesMutation.isPending ? "Scheduling..." : `Schedule ${selectedSessions.length} Class${selectedSessions.length > 1 ? 'es' : ''}`}
                 </Button>
               </CardContent>
             </Card>
