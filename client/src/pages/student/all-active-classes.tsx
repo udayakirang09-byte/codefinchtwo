@@ -8,12 +8,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Clock, Video, Home, BookOpen, AlertCircle } from 'lucide-react';
 import { Link } from 'wouter';
 import Navigation from '@/components/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { format, isPast } from 'date-fns';
+import { format, isPast, addMinutes, parseISO } from 'date-fns';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 
 interface Booking {
@@ -56,11 +57,13 @@ export default function AllActiveClasses() {
   const { toast } = useToast();
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const [newDateTime, setNewDateTime] = useState('');
+  const [newDate, setNewDate] = useState('');
+  const [newHour, setNewHour] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedBookingIds, setSelectedBookingIds] = useState<string[]>([]);
   const [bulkRescheduleDialogOpen, setBulkRescheduleDialogOpen] = useState(false);
-  const [bulkNewDateTime, setBulkNewDateTime] = useState('');
+  const [bulkNewDate, setBulkNewDate] = useState('');
+  const [bulkNewHour, setBulkNewHour] = useState('');
   const [bulkErrorMessage, setBulkErrorMessage] = useState('');
   const [cancelCourseDialogOpen, setCancelCourseDialogOpen] = useState(false);
   const [selectedEnrollment, setSelectedEnrollment] = useState<Enrollment | null>(null);
@@ -140,7 +143,8 @@ export default function AllActiveClasses() {
       queryClient.invalidateQueries({ queryKey: ['/api/students', studentId, 'bookings'] });
       setRescheduleDialogOpen(false);
       setSelectedBooking(null);
-      setNewDateTime('');
+      setNewDate('');
+      setNewHour('');
       setErrorMessage('');
       toast({
         title: 'Booking Rescheduled',
@@ -161,7 +165,8 @@ export default function AllActiveClasses() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/students', studentId, 'bookings'] });
       setBulkRescheduleDialogOpen(false);
-      setBulkNewDateTime('');
+      setBulkNewDate('');
+      setBulkNewHour('');
       setBulkErrorMessage('');
       setSelectedBookingIds([]);
       toast({
@@ -293,11 +298,36 @@ export default function AllActiveClasses() {
     setSelectedBooking(booking);
     setRescheduleDialogOpen(true);
     setErrorMessage('');
-    setNewDateTime('');
+    setNewDate('');
+    setNewHour('');
   };
 
   const handleRescheduleSubmit = () => {
-    if (!selectedBooking || !newDateTime) return;
+    if (!selectedBooking || !newDate || !newHour) return;
+
+    // Construct the new date-time with minutes fixed at 00
+    const newDateTime = `${newDate}T${newHour}:00:00`;
+    const newScheduledAt = new Date(newDateTime);
+
+    // Check for conflicts with other active bookings
+    const hasConflict = activeBookings.some(booking => {
+      // Skip the booking being rescheduled
+      if (booking.id === selectedBooking.id) return false;
+
+      const bookingStart = new Date(booking.scheduledAt);
+      const bookingEnd = addMinutes(bookingStart, booking.duration);
+      const newEnd = addMinutes(newScheduledAt, selectedBooking.duration);
+
+      // Check if the times overlap
+      return (newScheduledAt >= bookingStart && newScheduledAt < bookingEnd) ||
+             (newEnd > bookingStart && newEnd <= bookingEnd) ||
+             (newScheduledAt <= bookingStart && newEnd >= bookingEnd);
+    });
+
+    if (hasConflict) {
+      setErrorMessage('This time conflicts with another active class. Please choose a different time.');
+      return;
+    }
 
     rescheduleMutation.mutate({
       bookingId: selectedBooking.id,
@@ -329,11 +359,42 @@ export default function AllActiveClasses() {
     if (selectedBookingIds.length === 0) return;
     setBulkRescheduleDialogOpen(true);
     setBulkErrorMessage('');
-    setBulkNewDateTime('');
+    setBulkNewDate('');
+    setBulkNewHour('');
   };
 
   const handleBulkRescheduleSubmit = () => {
-    if (selectedBookingIds.length === 0 || !bulkNewDateTime) return;
+    if (selectedBookingIds.length === 0 || !bulkNewDate || !bulkNewHour) return;
+
+    // Construct the new date-time with minutes fixed at 00
+    const bulkNewDateTime = `${bulkNewDate}T${bulkNewHour}:00:00`;
+    const newScheduledAt = new Date(bulkNewDateTime);
+
+    // Check for conflicts with other active bookings
+    const conflictingBookings = selectedBookingIds.filter(selectedId => {
+      const selectedBooking = activeBookings.find(b => b.id === selectedId);
+      if (!selectedBooking) return false;
+
+      return activeBookings.some(booking => {
+        // Skip the bookings being rescheduled
+        if (selectedBookingIds.includes(booking.id)) return false;
+
+        const bookingStart = new Date(booking.scheduledAt);
+        const bookingEnd = addMinutes(bookingStart, booking.duration);
+        const newEnd = addMinutes(newScheduledAt, selectedBooking.duration);
+
+        // Check if the times overlap
+        return (newScheduledAt >= bookingStart && newScheduledAt < bookingEnd) ||
+               (newEnd > bookingStart && newEnd <= bookingEnd) ||
+               (newScheduledAt <= bookingStart && newEnd >= bookingEnd);
+      });
+    });
+
+    if (conflictingBookings.length > 0) {
+      setBulkErrorMessage('This time conflicts with other active classes. Please choose a different time.');
+      return;
+    }
+
     bulkRescheduleMutation.mutate({
       bookingIds: selectedBookingIds,
       scheduledAt: bulkNewDateTime,
@@ -575,17 +636,32 @@ export default function AllActiveClasses() {
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="datetime">New Date & Time</Label>
+              <Label htmlFor="new-date">New Date</Label>
               <Input
-                id="datetime"
-                type="datetime-local"
-                value={newDateTime}
-                onChange={(e) => setNewDateTime(e.target.value)}
-                min={new Date().toISOString().slice(0, 16)}
-                data-testid="input-new-datetime"
+                id="new-date"
+                type="date"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                data-testid="input-new-date"
               />
+            </div>
+            <div>
+              <Label htmlFor="new-hour">New Time (Hours: 9-22, Minutes: 00 fixed)</Label>
+              <Select value={newHour} onValueChange={setNewHour}>
+                <SelectTrigger id="new-hour" data-testid="select-new-hour">
+                  <SelectValue placeholder="Select hour (9-22)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 14 }, (_, i) => i + 9).map((hour) => (
+                    <SelectItem key={hour} value={hour.toString().padStart(2, '0')}>
+                      {hour.toString().padStart(2, '0')}:00
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <p className="text-sm text-gray-500 mt-1">
-                Note: Rescheduling is not allowed within 6 hours of the scheduled class time.
+                Note: Rescheduling is not allowed within 6 hours of the scheduled class time. Minutes are fixed at :00.
               </p>
             </div>
           </div>
@@ -603,7 +679,7 @@ export default function AllActiveClasses() {
             </Button>
             <Button
               onClick={handleRescheduleSubmit}
-              disabled={!newDateTime || rescheduleMutation.isPending}
+              disabled={!newDate || !newHour || rescheduleMutation.isPending}
               data-testid="button-confirm-reschedule"
             >
               {rescheduleMutation.isPending ? 'Rescheduling...' : 'Reschedule'}
@@ -631,17 +707,32 @@ export default function AllActiveClasses() {
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="bulk-datetime">New Date & Time</Label>
+              <Label htmlFor="bulk-new-date">New Date</Label>
               <Input
-                id="bulk-datetime"
-                type="datetime-local"
-                value={bulkNewDateTime}
-                onChange={(e) => setBulkNewDateTime(e.target.value)}
-                min={new Date().toISOString().slice(0, 16)}
-                data-testid="input-bulk-new-datetime"
+                id="bulk-new-date"
+                type="date"
+                value={bulkNewDate}
+                onChange={(e) => setBulkNewDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                data-testid="input-bulk-new-date"
               />
+            </div>
+            <div>
+              <Label htmlFor="bulk-new-hour">New Time (Hours: 9-22, Minutes: 00 fixed)</Label>
+              <Select value={bulkNewHour} onValueChange={setBulkNewHour}>
+                <SelectTrigger id="bulk-new-hour" data-testid="select-bulk-new-hour">
+                  <SelectValue placeholder="Select hour (9-22)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 14 }, (_, i) => i + 9).map((hour) => (
+                    <SelectItem key={hour} value={hour.toString().padStart(2, '0')}>
+                      {hour.toString().padStart(2, '0')}:00
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <p className="text-sm text-gray-500 mt-1">
-                Note: The 6-hour restriction applies to each booking individually. Some bookings may fail if they're too close to their scheduled time.
+                Note: The 6-hour restriction applies to each booking individually. Some bookings may fail if they're too close to their scheduled time. Minutes are fixed at :00.
               </p>
             </div>
           </div>
@@ -659,7 +750,7 @@ export default function AllActiveClasses() {
             </Button>
             <Button
               onClick={handleBulkRescheduleSubmit}
-              disabled={!bulkNewDateTime || bulkRescheduleMutation.isPending}
+              disabled={!bulkNewDate || !bulkNewHour || bulkRescheduleMutation.isPending}
               data-testid="button-confirm-bulk-reschedule"
             >
               {bulkRescheduleMutation.isPending ? 'Rescheduling...' : `Reschedule ${selectedBookingIds.length} Booking(s)`}

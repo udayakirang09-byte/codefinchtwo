@@ -3,11 +3,12 @@ import { useAuth } from "@/hooks/use-auth";
 import Navigation from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Package, Calendar, DollarSign, Clock } from "lucide-react";
+import { Package, Calendar, DollarSign, Clock, Info } from "lucide-react";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
 
@@ -226,7 +227,15 @@ export default function MyPackages() {
                   </div>
                 </CardContent>
 
-                <CardFooter>
+                <CardFooter className="flex flex-col gap-3">
+                  {!isActive && pkg.remainingClasses === 0 && (
+                    <Alert className="bg-blue-50 border-blue-200">
+                      <Info className="h-4 w-4 text-blue-600" />
+                      <AlertDescription className="text-blue-800 text-sm">
+                        Classes can be rescheduled from All Active Classes section
+                      </AlertDescription>
+                    </Alert>
+                  )}
                   <Button
                     className="w-full"
                     disabled={!isActive}
