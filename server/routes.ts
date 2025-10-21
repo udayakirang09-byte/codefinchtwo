@@ -2966,7 +2966,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         const dayOfWeek = dateFormatter.format(scheduledDate);
-        const timeString = timeFormatter.format(scheduledDate);
+        let timeString = timeFormatter.format(scheduledDate);
+        
+        // Remove any extra spaces and ensure HH:MM format
+        timeString = timeString.replace(/\s/g, '');
+        
+        console.log(`📅 Validation: Looking for ${dayOfWeek} at ${timeString} (from UTC: ${session.scheduledAt})`);
+        console.log(`📅 Available slots:`, teacherTimeSlots.map(s => `${s.dayOfWeek} ${s.startTime}-${s.endTime}`));
 
         // Check if teacher has availability for this day/time
         const hasAvailability = teacherTimeSlots.some(slot => 
@@ -2974,10 +2980,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
 
         if (!hasAvailability) {
+          console.log(`❌ No availability found for ${dayOfWeek} at ${timeString}`);
           return res.status(400).json({ 
             message: `Teacher not available on ${dayOfWeek} at ${timeString} (${mentorTimeZone}). Please check teacher's schedule.` 
           });
         }
+        
+        console.log(`✅ Availability confirmed for ${dayOfWeek} at ${timeString}`);
 
         // Check for existing bookings or holds at this time
         const existingBookings = await db

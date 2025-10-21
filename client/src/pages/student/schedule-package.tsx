@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -55,6 +55,11 @@ export default function SchedulePackage() {
 
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
+
+  // Clear time selections when date changes
+  useEffect(() => {
+    setSelectedTimes([]);
+  }, [selectedDate]);
 
   // Get student ID from the user's email
   const { data: studentData } = useQuery({
