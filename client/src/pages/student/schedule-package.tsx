@@ -164,7 +164,7 @@ export default function SchedulePackage() {
   };
 
   const toggleTimeSelection = (time: string) => {
-    if (!selectedDate) return;
+    if (!selectedDate || !packageData) return;
 
     const dateKey = format(selectedDate, "yyyy-MM-dd");
     const existingIndex = selectedSessions.findIndex(
@@ -175,6 +175,15 @@ export default function SchedulePackage() {
       // Remove this selection
       setSelectedSessions(prev => prev.filter((_, i) => i !== existingIndex));
     } else {
+      // Check if we've reached the limit
+      if (selectedSessions.length >= packageData.remainingClasses) {
+        toast({
+          title: "All classes selected",
+          description: "All available classes are selected. You can unselect any specific time to select this time.",
+          variant: "default",
+        });
+        return;
+      }
       // Add this selection
       setSelectedSessions(prev => [...prev, { date: selectedDate, time }]);
     }
