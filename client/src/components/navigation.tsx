@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, User, LogOut, Home, AlertTriangle } from "lucide-react";
+import { Menu, X, User, LogOut, Home, AlertTriangle, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
-import logoImage from "@assets/image_1760956041351.png";
 
 export default function Navigation() {
   const [location] = useLocation();
@@ -90,11 +89,12 @@ export default function Navigation() {
             className="flex items-center space-x-3 transition-all duration-200 hover:opacity-90" 
             data-testid="link-logo"
           >
-            <img 
-              src={logoImage} 
-              alt="Techlearnorbit Logo" 
-              className="h-16 w-auto object-contain"
-            />
+            <div className="flex items-center space-x-2">
+              <GraduationCap className="h-8 w-8 text-primary" />
+              <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                TechLearnOrbit
+              </span>
+            </div>
           </Link>
           
 
