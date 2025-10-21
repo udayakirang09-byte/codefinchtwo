@@ -99,7 +99,6 @@ export default function Booking() {
 
   const [formData, setFormData] = useState({
     studentName: "",
-    studentAge: "",
     parentEmail: "",
     selectedDate: "",
     selectedTime: "",
@@ -165,7 +164,6 @@ export default function Booking() {
       setFormData(prev => ({
         ...prev,
         studentName: studentData.user ? `${studentData.user.firstName} ${studentData.user.lastName}` : "",
-        studentAge: studentData.age?.toString() || "",
         parentEmail: studentData.parentEmail || user.email,
       }));
     }
@@ -291,19 +289,6 @@ export default function Booking() {
       return;
     }
 
-    // Student age validation (optional but if provided must be valid)
-    if (formData.studentAge) {
-      const age = parseInt(formData.studentAge);
-      if (isNaN(age) || age < 5 || age > 18) {
-        toast({
-          title: "Invalid Age",
-          description: "Student age must be between 5 and 18 years.",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-
     // Parent email validation
     const trimmedParentEmail = formData.parentEmail.trim();
     if (!trimmedParentEmail) {
@@ -367,7 +352,6 @@ export default function Booking() {
         totalClasses: bulkClassCount,
         subject: formData.subject,
         notes: formData.notes,
-        studentAge: parseInt(formData.studentAge) || null,
         studentName: formData.studentName,
         parentEmail: formData.parentEmail,
         pricePerClass: perClassCost,
@@ -479,7 +463,6 @@ export default function Booking() {
       duration: duration,
       subject: formData.subject || 'General Programming', // Default if not selected
       notes: formData.notes,
-      studentAge: parseInt(formData.studentAge) || null,
       studentName: formData.studentName,
       parentEmail: formData.parentEmail,
       sessionCost: sessionCost,
@@ -703,31 +686,16 @@ export default function Booking() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="studentName">Student Name *</Label>
-                    <Input
-                      id="studentName"
-                      value={formData.studentName}
-                      onChange={(e) => handleInputChange("studentName", e.target.value)}
-                      placeholder="Enter student's name"
-                      required
-                      data-testid="input-student-name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="studentAge">Student Age</Label>
-                    <Input
-                      id="studentAge"
-                      type="number"
-                      value={formData.studentAge}
-                      onChange={(e) => handleInputChange("studentAge", e.target.value)}
-                      placeholder="Age"
-                      min="5"
-                      max="18"
-                      data-testid="input-student-age"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="studentName">Student Name *</Label>
+                  <Input
+                    id="studentName"
+                    value={formData.studentName}
+                    onChange={(e) => handleInputChange("studentName", e.target.value)}
+                    placeholder="Enter student's name"
+                    required
+                    data-testid="input-student-name"
+                  />
                 </div>
 
                 <div className="space-y-2">

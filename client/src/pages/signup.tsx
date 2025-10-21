@@ -431,6 +431,22 @@ export default function Signup() {
         }
       }
 
+      // Check for duplicate subjects
+      const selectedSubjects = formData.subjects
+        .filter(s => s.subject.trim() !== "")
+        .map(s => s.subject.trim());
+      const uniqueSubjects = new Set(selectedSubjects);
+      
+      if (selectedSubjects.length !== uniqueSubjects.size) {
+        toast({
+          title: "Duplicate Subjects",
+          description: "You cannot select the same subject multiple times. Please choose different subjects.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       // Validate that subjects have experience and vice versa
       for (const subj of formData.subjects) {
         const hasSubject = subj.subject.trim() !== "";
@@ -454,6 +470,29 @@ export default function Signup() {
           });
           setLoading(false);
           return;
+        }
+
+        // Validate teaching experience is within reasonable range (max 50 years)
+        if (hasExperience) {
+          const experienceYears = parseInt(subj.experience);
+          if (isNaN(experienceYears) || experienceYears < 0) {
+            toast({
+              title: "Invalid Experience",
+              description: "Teaching experience must be a positive number.",
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
+          if (experienceYears > 50) {
+            toast({
+              title: "Experience Too High",
+              description: "Teaching experience cannot exceed 50 years. Please enter a valid number.",
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
         }
       }
       
@@ -845,6 +884,8 @@ export default function Signup() {
                         <Input
                           type="number"
                           placeholder="e.g., 5"
+                          min="0"
+                          max="50"
                           value={subj.experience}
                           onChange={(e) => handleSubjectChange(index, "experience", e.target.value)}
                           maxLength={CHAR_LIMITS.experience}
