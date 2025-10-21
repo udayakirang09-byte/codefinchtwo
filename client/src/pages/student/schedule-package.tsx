@@ -200,10 +200,15 @@ export default function SchedulePackage() {
 
   // Get available time slots for selected date
   const getAvailableTimeSlotsForDate = (date: Date) => {
-    if (!availableTimes || !Array.isArray(availableTimes)) return [];
+    if (!availableTimes || !Array.isArray(availableTimes)) {
+      console.log("📅 [Schedule Package] No availableTimes data:", availableTimes);
+      return [];
+    }
 
     const dayName = format(date, "EEEE");
+    console.log(`📅 [Schedule Package] Selected date: ${format(date, "yyyy-MM-dd")}, Day: ${dayName}`);
     const slots = availableTimes.filter(slot => slot.dayOfWeek === dayName);
+    console.log(`📅 [Schedule Package] Found ${slots.length} slots for ${dayName}:`, slots);
 
     // Generate time slots from start to end time
     const timeSlots: string[] = [];
@@ -231,10 +236,12 @@ export default function SchedulePackage() {
       }
     });
 
+    console.log(`📅 [Schedule Package] Available time slots for ${dayName}:`, timeSlots.sort());
     return timeSlots.sort();
   };
 
   const availableSlots = selectedDate ? getAvailableTimeSlotsForDate(selectedDate) : [];
+  console.log(`📅 [Schedule Package] Final availableSlots for rendering:`, availableSlots);
 
   if (isLoading) {
     return (
