@@ -31,6 +31,7 @@ import StudentCommunity from "@/pages/student-community";
 import AchievementBadges from "@/pages/achievement-badges";
 import UserManagement from "./pages/admin/user-management";
 import MentorApproval from "./pages/admin/mentor-approval";
+import TeacherMediaApproval from "./pages/admin/teacher-media-approval";
 import ActiveClasses from "./pages/student/active-classes";
 import AllActiveClasses from "./pages/student/all-active-classes";
 import LearningHours from "./pages/student/learning-hours";
@@ -108,6 +109,7 @@ function Router() {
       <Route path="/admin" component={AdminHome} />
       <Route path="/admin/user-management" component={UserManagement} />
       <Route path="/admin/mentor-approval" component={MentorApproval} />
+      <Route path="/admin/teacher-media-approval" component={TeacherMediaApproval} />
       <Route path="/admin/analytics" component={AdminAnalytics} />
       <Route path="/admin/payment-config" component={PaymentConfig} />
       <Route path="/admin/ui-config" component={UiConfig} />

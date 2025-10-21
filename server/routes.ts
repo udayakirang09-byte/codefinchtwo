@@ -1257,9 +1257,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         
-        // Create mentor record
+        // Create mentor record first (needed for teacherMedia foreign key)
         console.log('👨‍🏫 Creating mentor record...');
-        await storage.createMentor({
+        const mentor = await storage.createMentor({
           userId: user.id,
           title: 'Academic Mentor',
           description: 'Experienced academic mentor',
@@ -1279,6 +1279,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
             subjects: pendingSignup.mentorData.subjects || [],
             isProfileComplete: true
           });
+        }
+        
+        // Create teacher media record if photo/video was uploaded
+        if (profileImageUrl || introVideoUrl) {
+          console.log('📸 Creating teacher media record...');
+          
+          // Check if media approval is required from admin config
+          const approvalConfig = await storage.getAdminConfig('teacher_media_approval_required');
+          const approvalRequired = approvalConfig?.isActive !== false; // Default to true
+          
+          const initialStatus = approvalRequired ? 'pending' : 'approved';
+          
+          await storage.createTeacherMedia({
+            mentorId: mentor.id,
+            photoBlobPath: profileImageUrl ? `mentors/${user.id}/profile.jpg` : '',
+            photoBlobUrl: profileImageUrl || null,
+            photoValidationStatus: profileImageUrl ? initialStatus : null,
+            videoBlobPath: introVideoUrl ? `mentors/${user.id}/intro.mp4` : null,
+            videoBlobUrl: introVideoUrl || null,
+            videoValidationStatus: introVideoUrl ? initialStatus : null,
+          });
+          
+          console.log(`✅ Teacher media created with status: ${initialStatus}`);
+          
+          // Send email notification based on approval requirement
+          if (!approvalRequired && (profileImageUrl || introVideoUrl)) {
+            // Auto-approved - send login notification
+            try {
+              const { sendEmail, generateTeacherWelcomeEmail } = await import('./email');
+              const emailContent = generateTeacherWelcomeEmail(user.email);
+              await sendEmail({
+                to: user.email,
+                subject: emailContent.subject,
+                html: emailContent.html,
+                text: emailContent.text
+              });
+              console.log('📧 Welcome email sent to teacher');
+            } catch (emailError) {
+              console.error('❌ Failed to send welcome email:', emailError);
+            }
+          } else if (approvalRequired) {
+            console.log('⏳ Media pending admin approval - no email sent yet');
+          }
         }
         
         // Clear all temporary data
@@ -5941,6 +5984,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating application:", error);
       res.status(500).json({ message: "Failed to update application" });
+    }
+  });
+
+  // Teacher Media Approval endpoints
+  app.get("/api/admin/teacher-media/pending", authenticateSession, requireAdmin, async (req, res) => {
+    try {
+      console.log('📸 GET /api/admin/teacher-media/pending - Fetching pending teacher media');
+      const pendingMedia = await storage.getPendingTeacherMedia();
+      console.log(`✅ Found ${pendingMedia.length} pending teacher media submissions`);
+      res.json(pendingMedia);
+    } catch (error) {
+      console.error("❌ Error fetching pending teacher media:", error);
+      res.status(500).json({ message: "Failed to fetch pending teacher media" });
+    }
+  });
+
+  app.post("/api/admin/teacher-media/:mentorId/approve", authenticateSession, requireAdmin, async (req, res) => {
+    try {
+      const { mentorId } = req.params;
+      const { photoApproved, videoApproved } = req.body;
+      
+      console.log(`✅ POST /api/admin/teacher-media/${mentorId}/approve - Approving media`);
+      
+      // Check if this is the first approval (to send welcome email only once)
+      const existingMedia = await storage.getTeacherMedia(mentorId);
+      const hadPreviousApproval = existingMedia && (
+        existingMedia.photoValidationStatus === 'approved' || 
+        existingMedia.videoValidationStatus === 'approved'
+      );
+      
+      await storage.approveTeacherMedia(mentorId, { photoApproved, videoApproved });
+      
+      // Send welcome email only on first approval
+      if (!hadPreviousApproval && (photoApproved || videoApproved)) {
+        const mentor = await storage.getMentor(mentorId);
+        if (mentor && mentor.user) {
+          try {
+            const { sendEmail, generateTeacherWelcomeEmail } = await import('./email');
+            const emailContent = generateTeacherWelcomeEmail(mentor.user.email);
+            await sendEmail({
+              to: mentor.user.email,
+              subject: emailContent.subject,
+              html: emailContent.html,
+              text: emailContent.text
+            });
+            console.log(`📧 Welcome email sent to ${mentor.user.email} on first media approval`);
+          } catch (emailError) {
+            console.error('❌ Failed to send welcome email:', emailError);
+          }
+        }
+      } else if (hadPreviousApproval) {
+        console.log(`ℹ️ Skipping welcome email - teacher already approved previously`);
+      }
+      
+      console.log(`✅ Teacher media approved for mentor ${mentorId}`);
+      res.json({ message: "Teacher media approved successfully" });
+    } catch (error) {
+      console.error("❌ Error approving teacher media:", error);
+      res.status(500).json({ message: "Failed to approve teacher media" });
+    }
+  });
+
+  app.post("/api/admin/teacher-media/:mentorId/reject", authenticateSession, requireAdmin, async (req, res) => {
+    try {
+      const { mentorId } = req.params;
+      const { photoRejected, videoRejected, reason } = req.body;
+      
+      console.log(`❌ POST /api/admin/teacher-media/${mentorId}/reject - Rejecting media`);
+      
+      await storage.rejectTeacherMedia(mentorId, { photoRejected, videoRejected, reason });
+      
+      console.log(`✅ Teacher media rejected for mentor ${mentorId}`);
+      res.json({ message: "Teacher media rejected successfully" });
+    } catch (error) {
+      console.error("❌ Error rejecting teacher media:", error);
+      res.status(500).json({ message: "Failed to reject teacher media" });
+    }
+  });
+
+  app.get("/api/admin/teacher-media-config", authenticateSession, requireAdmin, async (req, res) => {
+    try {
+      console.log('⚙️ GET /api/admin/teacher-media-config - Fetching teacher media config');
+      const config = await storage.getAdminConfig('teacher_media_approval_required');
+      res.json({ 
+        approvalRequired: config?.isActive !== false // Default to true if not set
+      });
+    } catch (error) {
+      console.error("❌ Error fetching teacher media config:", error);
+      res.status(500).json({ message: "Failed to fetch teacher media config" });
+    }
+  });
+
+  app.post("/api/admin/teacher-media-config", authenticateSession, requireAdmin, async (req, res) => {
+    try {
+      const { approvalRequired } = req.body;
+      
+      console.log(`⚙️ POST /api/admin/teacher-media-config - Setting approval requirement to ${approvalRequired}`);
+      
+      await storage.upsertAdminConfig(
+        'teacher_media_approval_required',
+        approvalRequired ? 'true' : 'false',
+        'Require admin approval for teacher profile photos and videos before displaying them on Find Mentors page',
+        approvalRequired
+      );
+      
+      console.log(`✅ Teacher media approval config updated`);
+      res.json({ message: "Configuration updated successfully" });
+    } catch (error) {
+      console.error("❌ Error updating teacher media config:", error);
+      res.status(500).json({ message: "Failed to update configuration" });
     }
   });
 

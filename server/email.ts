@@ -183,6 +183,82 @@ Need help? Contact our support team at support@codeconnect.com
   return { subject, html, text };
 }
 
+export function generateTeacherWelcomeEmail(email: string): { subject: string, html: string, text: string } {
+  const subject = 'Welcome to TechLearnOrbit - Your Account is Approved!';
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }
+        .info-box { background: #e0e7ff; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .cta-button { display: inline-block; background: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold; }
+        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🎉 Welcome to TechLearnOrbit!</h1>
+          <p>Where Learners Meet Expert Mentors</p>
+        </div>
+        <div class="content">
+          <p>Hello!</p>
+          <p>Great news! Your teacher account has been approved and you can now login to TechLearnOrbit.</p>
+          
+          <div class="info-box">
+            <h3>Next Steps:</h3>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+              <li>Login to your teacher dashboard</li>
+              <li>Complete your profile if you haven't already</li>
+              <li>Set your available time slots for classes</li>
+              <li>Start connecting with students!</li>
+            </ul>
+          </div>
+          
+          <div style="text-align: center;">
+            <a href="https://techlearnorbit.com/login" class="cta-button">Login to Your Dashboard</a>
+          </div>
+          
+          <p style="margin-top: 30px;">Need help getting started? Check out our teacher resources or contact our support team at support@techlearnorbit.com</p>
+        </div>
+        <div class="footer">
+          <p>© 2025 TechLearnOrbit. All rights reserved.</p>
+          <p>This email was sent to ${email}</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+Welcome to TechLearnOrbit!
+
+Hello!
+
+Great news! Your teacher account has been approved and you can now login to TechLearnOrbit.
+
+Next Steps:
+- Login to your teacher dashboard
+- Complete your profile if you haven't already
+- Set your available time slots for classes
+- Start connecting with students!
+
+Login at: https://techlearnorbit.com/login
+
+Need help getting started? Check out our teacher resources or contact our support team at support@techlearnorbit.com
+
+© 2025 TechLearnOrbit. All rights reserved.
+This email was sent to ${email}
+  `;
+
+  return { subject, html, text };
+}
+
 export function generateCourseCancellationEmail(
   recipientEmail: string,
   recipientName: string,

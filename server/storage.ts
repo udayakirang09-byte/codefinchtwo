@@ -85,6 +85,7 @@ import {
   adminPaymentConfig,
   adminUiConfig,
   adminBookingLimits,
+  adminConfig,
   sessionDossiers,
   teacherRestrictionAppeals,
   moderationWhitelist,
@@ -102,13 +103,17 @@ import {
   type InsertMergedRecording,
   type TeacherSubject,
   type InsertTeacherSubject,
+  type TeacherMedia,
+  type InsertTeacherMedia,
   type AdminPaymentConfig,
   type InsertAdminPaymentConfig,
   type AdminUiConfig,
   type InsertAdminUiConfig,
+  type AdminConfig,
+  type InsertAdminConfig,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, sql, asc, ne } from "drizzle-orm";
+import { eq, desc, and, sql, asc, ne, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { cache } from "./redis";
 import { sendEmail } from "./email";
@@ -234,6 +239,13 @@ export interface IStorage {
   createTeacherProfile(profile: InsertTeacherProfile): Promise<TeacherProfile>;
   getTeacherProfile(userId: string): Promise<TeacherProfile | undefined>;
   updateTeacherProfile(userId: string, updates: Partial<InsertTeacherProfile>): Promise<void>;
+  
+  // Teacher Media operations
+  createTeacherMedia(media: InsertTeacherMedia): Promise<TeacherMedia>;
+  getTeacherMedia(mentorId: string): Promise<TeacherMedia | undefined>;
+  getPendingTeacherMedia(): Promise<(TeacherMedia & { mentor: Mentor & { user: User } })[]>;
+  approveTeacherMedia(mentorId: string, approvalData: { photoApproved?: boolean; videoApproved?: boolean }): Promise<void>;
+  rejectTeacherMedia(mentorId: string, rejectionData: { photoRejected?: boolean; videoRejected?: boolean; reason?: string }): Promise<void>;
   
   // Payment Method operations
   createPaymentMethod(paymentMethod: InsertPaymentMethod): Promise<PaymentMethod>;
@@ -389,6 +401,10 @@ export interface IStorage {
     adminUpiId?: string
   ): Promise<void>;
   
+  // Admin Configuration operations
+  getAdminConfig(configKey: string): Promise<AdminConfig | undefined>;
+  upsertAdminConfig(configKey: string, configValue: string, description?: string, isActive?: boolean): Promise<void>;
+  
   // Admin UI Configuration operations
   getAdminUiConfig(): Promise<AdminUiConfig | undefined>;
   updateAdminUiConfig(config: { 
@@ -531,6 +547,10 @@ export class DatabaseStorage implements IStorage {
 
     console.log('❌ Cache miss: mentors list - fetching from DB');
 
+    // Get admin config to check if approval is required
+    const [adminConfigData] = await db.select().from(adminConfig).where(eq(adminConfig.configKey, 'teacher_media_approval_required'));
+    const approvalRequired = adminConfigData?.configValue === 'true';
+
     const result = await db
       .select()
       .from(mentors)
@@ -633,10 +653,25 @@ export class DatabaseStorage implements IStorage {
       };
     });
 
-    // Cache for 5 minutes (mentors list changes rarely)
-    await cache.set(cacheKey, mentorsData, 300);
+    // Filter based on media approval if required
+    let filteredMentors = mentorsData;
+    if (approvalRequired) {
+      filteredMentors = mentorsData.filter((mentorData: any) => {
+        // If teacher has no media, hide them
+        if (!mentorData.media) return false;
+        
+        // Show teacher if at least one media (photo or video) is approved
+        const photoApproved = mentorData.media.photoValidationStatus === 'approved';
+        const videoApproved = mentorData.media.videoValidationStatus === 'approved';
+        
+        return photoApproved || videoApproved;
+      });
+    }
 
-    return mentorsData;
+    // Cache for 5 minutes (mentors list changes rarely)
+    await cache.set(cacheKey, filteredMentors, 300);
+
+    return filteredMentors;
   }
 
   async getMentor(id: string): Promise<MentorWithUser | undefined> {
@@ -1674,6 +1709,102 @@ export class DatabaseStorage implements IStorage {
       .update(teacherProfiles)
       .set(processedUpdates)
       .where(eq(teacherProfiles.userId, userId));
+  }
+
+  // Teacher Media operations
+  async createTeacherMedia(mediaData: InsertTeacherMedia): Promise<TeacherMedia> {
+    const [media] = await db.insert(teacherMedia).values(mediaData).returning();
+    return media;
+  }
+
+  async getTeacherMedia(mentorId: string): Promise<TeacherMedia | undefined> {
+    const [media] = await db.select().from(teacherMedia).where(eq(teacherMedia.mentorId, mentorId));
+    return media;
+  }
+
+  async getPendingTeacherMedia(): Promise<(TeacherMedia & { mentor: Mentor & { user: User } })[]> {
+    const result = await db
+      .select()
+      .from(teacherMedia)
+      .leftJoin(mentors, eq(teacherMedia.mentorId, mentors.id))
+      .leftJoin(users, eq(mentors.userId, users.id))
+      .where(
+        or(
+          eq(teacherMedia.photoValidationStatus, 'pending'),
+          eq(teacherMedia.videoValidationStatus, 'pending')
+        )
+      );
+
+    return result.map(row => ({
+      ...row.teacher_media,
+      mentor: {
+        ...row.mentors!,
+        user: row.users!
+      }
+    }));
+  }
+
+  async approveTeacherMedia(mentorId: string, approvalData: { photoApproved?: boolean; videoApproved?: boolean }): Promise<void> {
+    const updates: any = {};
+    if (approvalData.photoApproved) {
+      updates.photoValidationStatus = 'approved';
+    }
+    if (approvalData.videoApproved) {
+      updates.videoValidationStatus = 'approved';
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await db
+        .update(teacherMedia)
+        .set(updates)
+        .where(eq(teacherMedia.mentorId, mentorId));
+    }
+  }
+
+  async rejectTeacherMedia(mentorId: string, rejectionData: { photoRejected?: boolean; videoRejected?: boolean; reason?: string }): Promise<void> {
+    const updates: any = {};
+    if (rejectionData.photoRejected) {
+      updates.photoValidationStatus = 'rejected';
+      updates.photoValidationMessage = rejectionData.reason || 'Media rejected by admin';
+    }
+    if (rejectionData.videoRejected) {
+      updates.videoValidationStatus = 'rejected';
+      updates.videoValidationMessage = rejectionData.reason || 'Media rejected by admin';
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await db
+        .update(teacherMedia)
+        .set(updates)
+        .where(eq(teacherMedia.mentorId, mentorId));
+    }
+  }
+
+  // Admin Configuration operations
+  async getAdminConfig(configKey: string): Promise<AdminConfig | undefined> {
+    const [config] = await db
+      .select()
+      .from(adminConfig)
+      .where(eq(adminConfig.configKey, configKey));
+    return config;
+  }
+
+  async upsertAdminConfig(configKey: string, configValue: string, description?: string, isActive: boolean = true): Promise<void> {
+    const existing = await this.getAdminConfig(configKey);
+    
+    if (existing) {
+      await db
+        .update(adminConfig)
+        .set({ configValue, description, isActive, updatedAt: new Date() })
+        .where(eq(adminConfig.configKey, configKey));
+    } else {
+      await db.insert(adminConfig).values({
+        configKey,
+        configValue,
+        description,
+        isActive
+      });
+    }
   }
 
   // Payment Method operations

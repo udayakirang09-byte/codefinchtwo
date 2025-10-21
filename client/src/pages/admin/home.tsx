@@ -60,7 +60,8 @@ import {
   Cog,
   Map,
   Zap,
-  Calendar
+  Calendar,
+  FileImage
 } from 'lucide-react';
 import { Link } from 'wouter';
 import Navigation from '@/components/navigation';
@@ -342,6 +343,12 @@ export default function AdminHome() {
                   <Button variant="outline" className="w-full" data-testid="button-mentor-approval">
                     <Shield className="w-4 h-4 mr-2" />
                     Mentor Approval
+                  </Button>
+                </Link>
+                <Link href="/admin/teacher-media-approval">
+                  <Button variant="outline" className="w-full bg-blue-50 hover:bg-blue-100 border-blue-300" data-testid="button-teacher-media-approval">
+                    <FileImage className="w-4 h-4 mr-2 text-blue-600" />
+                    Teacher Media Approval
                   </Button>
                 </Link>
                 <Link href="/admin/moderation-review">
