@@ -88,6 +88,7 @@ import {
   sessionDossiers,
   teacherRestrictionAppeals,
   moderationWhitelist,
+  teacherMedia,
   type TeacherAudioMetrics,
   type InsertTeacherRestrictionAppeal,
   type SelectTeacherRestrictionAppeal,
@@ -567,6 +568,9 @@ export class DatabaseStorage implements IStorage {
     // Get all teacher profiles to fetch signup subjects
     const allTeacherProfiles = await db.select().from(teacherProfiles);
 
+    // Get all teacher media (photos and videos)
+    const allTeacherMedia = await db.select().from(teacherMedia);
+
     const mentorsData = result.map(({ mentors: mentor, users: user }: any) => {
       // Calculate actual unique students for this mentor
       const mentorBookings = allBookings.filter((b: any) => b.mentorId === mentor.id);
@@ -592,6 +596,9 @@ export class DatabaseStorage implements IStorage {
       const teacherProfile = allTeacherProfiles.find((p: any) => p.userId === user?.id);
       const signupSubjects = teacherProfile?.subjects || [];
 
+      // Get teacher media (photo and video)
+      const media = allTeacherMedia.find((m: any) => m.mentorId === mentor.id);
+
       // Calculate total experience from signup subjects (specialties)
       let totalExperience = mentor.experience || 0;
       if (signupSubjects.length > 0) {
@@ -616,6 +623,12 @@ export class DatabaseStorage implements IStorage {
         signupSubjects: signupSubjects,
         subjects: mentorSubjects,
         qualifications: mentorQualifications,
+        media: media ? {
+          photoBlobUrl: media.photoBlobUrl,
+          videoBlobUrl: media.videoBlobUrl,
+          photoValidationStatus: media.photoValidationStatus,
+          videoValidationStatus: media.videoValidationStatus,
+        } : null,
         user: user!,
       };
     });

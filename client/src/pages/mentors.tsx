@@ -242,6 +242,28 @@ export default function Mentors() {
             {filteredMentors.map((mentor: any) => (
               <Card key={mentor.id} className="group hover:shadow-xl transition-all duration-300 transform hover:scale-105 bg-white border-0">
                 <CardHeader className="pb-3">
+                  {/* Teacher Photo/Video */}
+                  {mentor.media && (mentor.media.videoBlobUrl || mentor.media.photoBlobUrl) && (
+                    <div className="mb-4 relative rounded-xl overflow-hidden">
+                      {mentor.media.videoBlobUrl ? (
+                        <video 
+                          src={mentor.media.videoBlobUrl} 
+                          className="w-full h-48 object-cover"
+                          controls
+                          poster={mentor.media.photoBlobUrl || undefined}
+                          data-testid={`video-mentor-${mentor.id}`}
+                        />
+                      ) : mentor.media.photoBlobUrl && (
+                        <img 
+                          src={mentor.media.photoBlobUrl} 
+                          alt={`${mentor.user?.firstName} ${mentor.user?.lastName}`}
+                          className="w-full h-48 object-cover"
+                          data-testid={`img-mentor-photo-${mentor.id}`}
+                        />
+                      )}
+                    </div>
+                  )}
+                  
                   <div className="flex items-center justify-between mb-3">
                     <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
                       {mentor.title?.charAt(0) || 'M'}
