@@ -178,13 +178,13 @@ export default function Privacy() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Children's Privacy</CardTitle>
+              <CardTitle>Student's Privacy</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-gray-700">
                 TechLearnOrbit is designed for educational purposes and serves students of various ages. 
                 For users under 13, we require parental consent and implement additional privacy protections 
-                in compliance with applicable children's privacy laws.
+                in compliance with applicable student's privacy laws.
               </p>
             </CardContent>
           </Card>

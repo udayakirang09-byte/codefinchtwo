@@ -3,7 +3,7 @@ export default function HowItWorksSection() {
     {
       number: 1,
       title: "Choose Your Path",
-      description: "Browse our mentor profiles and find the perfect teacher for your child's interests and skill level.",
+      description: "Browse our mentor profiles and find the perfect teacher for student's interests and skill level.",
       image: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=250",
       alt: "Online classroom environment with students",
     },
@@ -17,9 +17,9 @@ export default function HowItWorksSection() {
     {
       number: 3,
       title: "Learn & Grow",
-      description: "Watch your child build confidence and gain new skills on preferred subjects through engaging, personalized learning experiences.",
+      description: "Watch your student build confidence and gain new skills on preferred subjects through engaging, personalized learning experiences.",
       image: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=250",
-      alt: "Children programming and celebrating success",
+      alt: "Students programming and celebrating success",
     },
   ];
 

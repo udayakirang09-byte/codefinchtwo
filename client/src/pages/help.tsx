@@ -232,7 +232,7 @@ export default function Help() {
     },
     {
       question: "What age groups do you support?",
-      answer: "We primarily serve children ages 6-17, with age-appropriate content and teaching methods for each group."
+      answer: "We primarily serve children ages 6-17, exception for General Computer Science topics."
     },
     {
       question: "Can I cancel or reschedule a session?",
