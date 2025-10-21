@@ -53,6 +53,12 @@ export default function MyPackages() {
   // Fetch student's packages
   const { data: packages, isLoading: packagesLoading } = useQuery<BulkPackage[]>({
     queryKey: ["/api/bulk-packages/student", studentId],
+    queryFn: async () => {
+      if (!studentId) throw new Error('No student ID');
+      const response = await fetch(`/api/bulk-packages/student/${studentId}`);
+      if (!response.ok) throw new Error('Failed to fetch packages');
+      return response.json();
+    },
     enabled: !!studentId,
   });
 

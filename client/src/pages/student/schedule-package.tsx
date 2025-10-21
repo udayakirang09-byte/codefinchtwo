@@ -73,6 +73,12 @@ export default function SchedulePackage() {
   // Fetch all packages for this student
   const { data: packages, isLoading } = useQuery<BulkPackage[]>({
     queryKey: ["/api/bulk-packages/student", studentId],
+    queryFn: async () => {
+      if (!studentId) throw new Error('No student ID');
+      const response = await fetch(`/api/bulk-packages/student/${studentId}`);
+      if (!response.ok) throw new Error('Failed to fetch packages');
+      return response.json();
+    },
     enabled: !!studentId,
   });
 
@@ -82,6 +88,12 @@ export default function SchedulePackage() {
   // Fetch mentor's available times
   const { data: availableTimes } = useQuery<AvailableTime[]>({
     queryKey: ["/api/mentors", packageData?.mentorId, "available-times"],
+    queryFn: async () => {
+      if (!packageData?.mentorId) throw new Error('No mentor ID');
+      const response = await fetch(`/api/mentors/${packageData.mentorId}/available-times`);
+      if (!response.ok) throw new Error('Failed to fetch available times');
+      return response.json();
+    },
     enabled: !!packageData?.mentorId,
   });
 
