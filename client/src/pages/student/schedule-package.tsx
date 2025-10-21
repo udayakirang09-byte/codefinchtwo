@@ -56,9 +56,9 @@ export default function SchedulePackage() {
   const packageId = params.packageId;
   const [, setLocation] = useLocation();
   const { user, isAuthenticated } = useAuth();
-  const { toast } = useToast();
+  const { toast} = useToast();
 
-  const [selectedDate, setSelectedDate] = useState<Date>();
+  const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date()));
   const [selectedSessions, setSelectedSessions] = useState<DateTimeSelection[]>([]);
 
   // Get student ID from the user's email
