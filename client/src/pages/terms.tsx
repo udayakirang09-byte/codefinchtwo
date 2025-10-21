@@ -37,7 +37,7 @@ export default function Terms() {
                 If you do not agree to these terms, please do not use our services.
               </p>
               <p className="text-gray-700">
-                TechLearnOrbit is a platform that connects young students with coding mentors for personalized learning experiences.
+                TechLearnOrbit is a platform that connects students with mentors for personalized learning experiences.
                 We facilitate educational relationships and provide tools for effective learning.
               </p>
             </CardContent>

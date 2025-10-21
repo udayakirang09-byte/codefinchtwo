@@ -116,13 +116,6 @@ export default function Navigation() {
             {isMainPage && (
               <>
                 <button
-                  onClick={() => scrollToSection("discover")}
-                  className="text-muted-foreground hover:text-primary transition-colors"
-                  data-testid="button-discover"
-                >
-                  Discover
-                </button>
-                <button
                   onClick={() => scrollToSection("how-it-works")}
                   className="text-muted-foreground hover:text-primary transition-colors"
                   data-testid="button-how-it-works"
@@ -280,13 +273,6 @@ export default function Navigation() {
               )}
               {isMainPage && (
                 <>
-                  <button
-                    onClick={() => scrollToSection("discover")}
-                    className="block px-3 py-2 text-muted-foreground hover:text-primary transition-colors"
-                    data-testid="button-mobile-discover"
-                  >
-                    Discover
-                  </button>
                   <button
                     onClick={() => scrollToSection("how-it-works")}
                     className="block px-3 py-2 text-muted-foreground hover:text-primary transition-colors"

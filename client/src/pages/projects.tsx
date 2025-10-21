@@ -255,7 +255,7 @@ export default function Projects() {
             Project <span className="text-gradient">Showcase</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto" data-testid="text-projects-description">
-            Discover amazing projects built by young coders, get inspired, and share your own creations.
+            Discover amazing projects built by learners, get inspired, and share your own creations.
           </p>
         </div>
 

@@ -50,7 +50,7 @@ export default function FeedbackForm() {
         const expiresAt = new Date(completedAt.getTime() + 12 * 60 * 60 * 1000); // 12 hours after class
         
         setClassInfo({
-          subject: booking.notes || booking.mentor?.title || 'Coding Session',
+          subject: booking.notes || booking.mentor?.title || 'Learning Session',
           mentor: `${booking.mentor.user.firstName} ${booking.mentor.user.lastName}`,
           completedAt,
           expiresAt

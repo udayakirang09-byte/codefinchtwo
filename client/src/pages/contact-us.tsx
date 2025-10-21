@@ -64,7 +64,7 @@ export default function ContactUs() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-gray-700">
-                  Have questions about our coding mentorship platform? We're here to help! Reach out to us through any of the following channels.
+                  Have questions about our mentorship platform? We're here to help! Reach out to us through any of the following channels.
                 </p>
 
                 <div className="space-y-4 pt-4">

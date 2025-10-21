@@ -12,7 +12,7 @@ export default function CommunitySection() {
           Join Our Growing <span className="text-accent">Community</span>
         </h2>
         <p className="text-xl text-white/90 mb-12 max-w-3xl mx-auto" data-testid="text-community-description">
-          Connect with other young coders, share projects, and celebrate achievements together.
+          Connect with other learners, share projects, and celebrate achievements together.
         </p>
         
         <div className="grid md:grid-cols-2 gap-8 mb-12">
@@ -20,7 +20,7 @@ export default function CommunitySection() {
             <Users className="mx-auto text-4xl text-accent mb-4" size={48} />
             <h3 className="text-2xl font-bold mb-4">For Students</h3>
             <p className="mb-6">
-              Join thousands of young coders, share your projects, and make new friends who love programming as much as you do.
+              Join thousands of learners, share your projects, and make new friends who love learning as much as you do.
             </p>
             <Button 
               className="bg-white text-primary hover:bg-white/90 transition-colors"
@@ -38,7 +38,7 @@ export default function CommunitySection() {
             <Presentation className="mx-auto text-4xl text-accent mb-4" size={48} />
             <h3 className="text-2xl font-bold mb-4">For Mentors</h3>
             <p className="mb-6">
-              Share your passion for coding, inspire the next generation, and build a rewarding teaching career with flexible scheduling.
+              Share your passion for education, inspire the next generation, and build a rewarding teaching career with flexible scheduling.
             </p>
             <Button 
               className="bg-accent text-accent-foreground hover:bg-accent/90 transition-colors"

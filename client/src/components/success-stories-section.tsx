@@ -24,7 +24,7 @@ export default function SuccessStoriesSection() {
       id: 3,
       name: "Liam (14 years old)",
       project: "Built Personal Website", 
-      quote: "Jake helped me build my own website! I'm now helping other kids in my class learn to code.",
+      quote: "Jake helped me build my own website! I'm now helping other kids in my class continue learning.",
       timeAgo: "2 weeks ago",
       initials: "LS",
       bgColor: "bg-accent",

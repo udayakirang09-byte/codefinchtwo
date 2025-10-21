@@ -142,7 +142,7 @@ export default function StudentProgress() {
             <div className="flex-1"></div>
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Your Learning Progress 📊</h1>
-          <p className="text-xl text-gray-600">Track your coding journey and celebrate your achievements</p>
+          <p className="text-xl text-gray-600">Track your learning journey and celebrate your achievements</p>
         </div>
 
         {/* Stats Overview */}

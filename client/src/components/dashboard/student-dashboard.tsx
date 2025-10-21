@@ -466,7 +466,7 @@ export default function StudentDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-4xl font-bold text-white mb-3 tracking-tight">Welcome Back, Student! 🎓</h1>
-                <p className="text-indigo-100 text-xl font-medium">Continue your coding journey with personalized learning experiences</p>
+                <p className="text-indigo-100 text-xl font-medium">Continue your learning journey with personalized learning experiences</p>
               </div>
               <div className="hidden md:flex items-center space-x-6">
                 <div 

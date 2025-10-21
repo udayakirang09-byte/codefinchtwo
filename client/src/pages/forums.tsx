@@ -191,7 +191,7 @@ export default function Forums() {
             Discussion <span className="text-gradient">Forums</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto" data-testid="text-forums-description">
-            Connect with fellow coders, ask questions, share knowledge, and get help from the community.
+            Connect with fellow learners, ask questions, share knowledge, and get help from the community.
           </p>
         </div>
 

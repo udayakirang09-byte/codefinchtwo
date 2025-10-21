@@ -80,10 +80,10 @@ export default function Courses() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center mb-16">
           <h1 className="text-4xl lg:text-5xl font-bold text-foreground mb-6" data-testid="text-courses-title">
-            Browse <span className="text-gradient">Coding Courses</span>
+            Browse <span className="text-gradient">Courses</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto" data-testid="text-courses-description">
-            Structured learning paths designed specifically for young coders. Learn at your own pace with expert guidance.
+            Structured learning paths designed specifically for learners. Learn at your own pace with expert guidance.
           </p>
         </div>
 

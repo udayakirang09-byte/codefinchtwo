@@ -613,7 +613,7 @@ export default function Signup() {
             <span className="text-gradient">Join TechLearnOrbit</span>
           </CardTitle>
           <p className="text-gray-600">
-            Start your coding journey with expert mentors
+            Start your learning journey with expert mentors
           </p>
         </CardHeader>
         
@@ -678,8 +678,8 @@ export default function Signup() {
                   <SelectValue placeholder="Choose your role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="student">Learn coding (Student)</SelectItem>
-                  <SelectItem value="mentor">Teach coding (Teacher)</SelectItem>
+                  <SelectItem value="student">Start learning (Student)</SelectItem>
+                  <SelectItem value="mentor">Share knowledge (Teacher)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

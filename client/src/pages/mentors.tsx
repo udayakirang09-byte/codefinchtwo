@@ -92,7 +92,7 @@ export default function Mentors() {
         <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-8 rounded-3xl shadow-2xl border border-white/20">
           <div className="absolute inset-0 bg-gradient-to-r from-black/10 to-transparent"></div>
           <div className="relative z-10">
-            <h1 className="text-4xl font-bold text-white mb-3 tracking-tight">Find Your Perfect Coding Mentor 🎓</h1>
+            <h1 className="text-4xl font-bold text-white mb-3 tracking-tight">Find Your Expert Mentor 🎓</h1>
             <p className="text-purple-100 text-xl font-medium">Connect with experienced mentors and accelerate your learning journey</p>
           </div>
           <div className="absolute -top-6 -right-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
@@ -252,10 +252,10 @@ export default function Mentors() {
                     </Badge>
                   </div>
                   <CardTitle className="text-xl font-bold text-gray-800" data-testid={`text-mentor-name-${mentor.id}`}>
-                    {mentor.user ? `${mentor.user.firstName} ${mentor.user.lastName}` : 'Expert Coding Mentor'}
+                    {mentor.user ? `${mentor.user.firstName} ${mentor.user.lastName}` : 'Expert Mentor'}
                   </CardTitle>
                   <p className="text-sm font-medium text-blue-600 mb-2" data-testid={`text-mentor-title-${mentor.id}`}>
-                    {mentor.title || 'Expert Coding Mentor'}
+                    {mentor.title || 'Expert Mentor'}
                   </p>
                   <p className="text-gray-600 line-clamp-2">
                     {mentor.description || 'Experienced developer ready to help you master programming skills'}

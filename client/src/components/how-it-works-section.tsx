@@ -17,7 +17,7 @@ export default function HowItWorksSection() {
     {
       number: 3,
       title: "Learn & Grow",
-      description: "Watch your child build confidence and coding skills through engaging, personalized learning experiences.",
+      description: "Watch your child build confidence and gain new skills on preferred subjects through engaging, personalized learning experiences.",
       image: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=250",
       alt: "Children programming and celebrating success",
     },
@@ -31,7 +31,7 @@ export default function HowItWorksSection() {
             Simple Steps to <span className="text-gradient">Start Learning</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto" data-testid="text-how-it-works-description">
-            Our platform makes it easy for kids to connect with amazing coding mentors and start their programming journey.
+            Our platform makes it easy for kids to connect with amazing mentors and start their learning journey.
           </p>
         </div>
         

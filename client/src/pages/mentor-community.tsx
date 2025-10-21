@@ -59,7 +59,7 @@ export default function MentorCommunity() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-600 mb-4">
-                Join coding challenges, workshops, and meetups
+                Join teaching challenges, workshops, and meetups
               </p>
               <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm mb-4">
                 Next event: Tomorrow
@@ -128,7 +128,7 @@ export default function MentorCommunity() {
             
             <div className="border-l-4 border-green-600 pl-4">
               <h3 className="font-semibold text-gray-900">Best Practices for Online Teaching</h3>
-              <p className="text-gray-600">Tips and tricks for effective remote coding instruction</p>
+              <p className="text-gray-600">Tips and tricks for effective remote instruction</p>
               <div className="text-sm text-gray-500 mt-2">45 replies • Active 4 hours ago</div>
             </div>
             

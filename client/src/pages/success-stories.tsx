@@ -12,7 +12,7 @@ export default function SuccessStories() {
       student: "Alex Chen",
       mentor: "Sarah Johnson",
       title: "From Zero to Full-Stack Developer",
-      story: "Started with no coding experience, now building web applications after 6 months of mentoring.",
+      story: "Started with no prior experience on this subject, now building web applications after 6 months of mentoring.",
       rating: 5,
       achievement: "Built first full-stack application",
       avatar: "/placeholder-avatar.jpg"
@@ -22,9 +22,9 @@ export default function SuccessStories() {
       student: "Emma Williams",
       mentor: "David Martinez",
       title: "Competition Winner",
-      story: "Won the regional coding competition after intensive Python tutoring sessions.",
+      story: "Won the regional learning competition after intensive Python tutoring sessions.",
       rating: 5,
-      achievement: "1st place in state coding competition",
+      achievement: "1st place in state learning competition",
       avatar: "/placeholder-avatar.jpg"
     },
     {
@@ -32,7 +32,7 @@ export default function SuccessStories() {
       student: "Ryan Kumar",
       mentor: "Lisa Thompson",
       title: "Scholarship Success",
-      story: "Earned a computer science scholarship to MIT with help from my coding mentor.",
+      story: "Earned a computer science scholarship to MIT with help from my mentor.",
       rating: 5,
       achievement: "MIT Computer Science Scholarship",
       avatar: "/placeholder-avatar.jpg"
@@ -49,7 +49,7 @@ export default function SuccessStories() {
             Success Stories
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Inspiring journeys of students who achieved their coding dreams with the help of our mentors
+            Inspiring journeys of students who achieved their learning dreams with the help of our mentors
           </p>
         </div>
 

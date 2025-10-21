@@ -15,7 +15,7 @@ export default function TeacherResources() {
             Teacher Resources
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Everything you need to become a successful coding mentor on TechLearnOrbit
+            Everything you need to become a successful mentor on TechLearnOrbit
           </p>
         </div>
 
@@ -27,7 +27,7 @@ export default function TeacherResources() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-600 mb-4">
-                Access our comprehensive library of coding exercises, project templates, and lesson plans.
+                Access our comprehensive library of exercises, project templates, and lesson plans.
               </p>
               <Button data-testid="button-teaching-materials">Browse Materials</Button>
             </CardContent>

@@ -177,7 +177,7 @@ export default function Login() {
             <span className="text-gradient">Welcome Back to TechLearnOrbit</span>
           </CardTitle>
           <p className="text-gray-600">
-            Sign in to continue your coding journey
+            Sign in to continue your learning journey
           </p>
         </CardHeader>
         

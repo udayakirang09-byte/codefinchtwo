@@ -283,7 +283,7 @@ export default function Events() {
             Community <span className="text-gradient">Events</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto" data-testid="text-events-description">
-            Join coding challenges, workshops, hackathons, and meetups to learn and connect with the community.
+            Join challenges, workshops, and events to learn and connect with the community.
           </p>
         </div>
 

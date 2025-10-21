@@ -10,7 +10,7 @@ export default function AchievementBadges() {
     {
       id: 1,
       name: "First Steps",
-      description: "Complete your first coding lesson",
+      description: "Complete your first lesson on this subject",
       icon: <BookOpen className="h-12 w-12" />,
       earned: true,
       color: "text-green-600"
@@ -18,7 +18,7 @@ export default function AchievementBadges() {
     {
       id: 2,
       name: "Code Warrior",
-      description: "Complete 10 coding challenges",
+      description: "Complete 10 challenges",
       icon: <Target className="h-12 w-12" />,
       earned: true,
       color: "text-blue-600"
@@ -33,7 +33,7 @@ export default function AchievementBadges() {
     },
     {
       id: 4,
-      name: "Master Coder",
+      name: "Master Learner",
       description: "Complete an advanced course",
       icon: <Trophy className="h-12 w-12" />,
       earned: false,
@@ -66,7 +66,7 @@ export default function AchievementBadges() {
             Achievement <span className="text-gradient">Badges</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto" data-testid="text-badges-description">
-            Track your coding journey and celebrate your milestones with our achievement system.
+            Track your learning journey and celebrate your milestones with our achievement system.
           </p>
         </div>
 
@@ -136,7 +136,7 @@ export default function AchievementBadges() {
         </div>
 
         <div className="text-center mt-16">
-          <h2 className="text-2xl font-bold text-foreground mb-4">Keep coding to unlock more badges!</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">Keep learning to unlock more badges!</h2>
           <p className="text-muted-foreground mb-6">
             Complete lessons, help others, and share projects to earn achievement badges.
           </p>

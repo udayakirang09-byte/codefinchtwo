@@ -247,7 +247,7 @@ export default function Checkout() {
                     <ul className="space-y-1 text-sm text-green-700">
                       <li>✓ Live interactive lessons</li>
                       <li>✓ 1-on-1 mentor support</li>
-                      <li>✓ Hands-on coding projects</li>
+                      <li>✓ Hands-on projects</li>
                       <li>✓ Course completion certificate</li>
                       <li>✓ Lifetime access to materials</li>
                     </ul>
