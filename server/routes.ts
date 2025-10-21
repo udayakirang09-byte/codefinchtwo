@@ -3040,8 +3040,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         console.log(`✅ Availability confirmed for ${dayOfWeek} at ${timeString}`);
 
-        // Check for existing bookings or holds at this time
-        const existingBookings = await db
+        // Check for student's existing bookings at this time (conflict check)
+        const studentExistingBookings = await db
+          .select()
+          .from(bookings)
+          .where(
+            and(
+              eq(bookings.studentId, bulkPackage.studentId),
+              eq(bookings.scheduledAt, scheduledDate),
+              ne(bookings.status, 'cancelled')
+            )
+          );
+
+        if (studentExistingBookings.length > 0) {
+          console.log(`❌ Student already has a booking at ${dayOfWeek} ${timeString}`);
+          return res.status(409).json({ 
+            message: `You already have a class scheduled on ${dayOfWeek} at ${timeString}. Please choose a different time.` 
+          });
+        }
+
+        // Check for teacher's existing bookings or holds at this time
+        const teacherExistingBookings = await db
           .select()
           .from(bookings)
           .where(
@@ -3052,9 +3071,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             )
           );
 
-        if (existingBookings.length > 0) {
+        if (teacherExistingBookings.length > 0) {
+          console.log(`❌ Teacher already has a booking at ${dayOfWeek} ${timeString}`);
           return res.status(409).json({ 
-            message: `Time slot ${dayOfWeek} at ${timeString} is already booked` 
+            message: `This teacher already has a class scheduled on ${dayOfWeek} at ${timeString}. Please choose a different time.` 
           });
         }
       }
