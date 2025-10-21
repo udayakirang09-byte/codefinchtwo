@@ -19,12 +19,13 @@ interface BulkPackage {
   status: "active" | "depleted" | "expired";
   expiryDate?: string;
   createdAt: string;
-  mentor?: {
-    id: string;
-    name: string;
-    username: string;
-    profilePhotoUrl?: string;
-  };
+}
+
+interface Mentor {
+  id: string;
+  name: string;
+  username: string;
+  profilePhotoUrl?: string;
 }
 
 export default function SchedulePackage() {
@@ -55,6 +56,12 @@ export default function SchedulePackage() {
 
   // Find the specific package
   const packageData = packages?.find(pkg => pkg.id === packageId);
+
+  // Fetch mentor details
+  const { data: mentorData } = useQuery<Mentor>({
+    queryKey: ["/api/mentors", packageData?.mentorId],
+    enabled: !!packageData?.mentorId,
+  });
 
   if (isLoading) {
     return (
@@ -122,7 +129,7 @@ export default function SchedulePackage() {
               <User className="h-5 w-5 text-primary" />
               <div>
                 <p className="text-sm text-muted-foreground">Mentor</p>
-                <p className="text-lg font-semibold">{packageData.mentor?.name || 'Loading...'}</p>
+                <p className="text-lg font-semibold">{mentorData?.name || 'Loading...'}</p>
               </div>
             </div>
           </div>
