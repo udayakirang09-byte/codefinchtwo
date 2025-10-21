@@ -8,7 +8,7 @@ import { Calendar, Clock, User, ArrowLeft, CheckCircle2, XCircle } from "lucide-
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { format, addDays, startOfDay, parse } from "date-fns";
+import { format, addDays, startOfDay, parse, isToday, isBefore } from "date-fns";
 
 interface Mentor {
   id: string;
@@ -175,13 +175,25 @@ export default function SchedulePackage() {
 
     // Generate time slots from start to end time
     const timeSlots: string[] = [];
+    const now = new Date();
+    const isSelectedDateToday = isToday(date);
+    
     slots.forEach(slot => {
       const start = parse(slot.startTime, "HH:mm", date);
       const end = parse(slot.endTime, "HH:mm", date);
       
       let current = start;
       while (current < end) {
-        timeSlots.push(format(current, "HH:mm"));
+        // If selected date is today, only include future times
+        if (isSelectedDateToday) {
+          const timeSlot = parse(format(current, "HH:mm"), "HH:mm", now);
+          if (timeSlot > now) {
+            timeSlots.push(format(current, "HH:mm"));
+          }
+        } else {
+          timeSlots.push(format(current, "HH:mm"));
+        }
+        
         current = addDays(current, 0);
         current.setHours(current.getHours() + 1);
       }
