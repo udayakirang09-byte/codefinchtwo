@@ -22,6 +22,18 @@ export default function MentorCard({ mentor }: MentorCardProps) {
   // Use teacher's actual photo from approved media, fallback to user profileImageUrl, then initials
   const profileImage = mentor.media?.photoBlobUrl || mentor.user.profileImageUrl || null;
 
+  // 🔍 DEBUG: Log photo data for troubleshooting
+  if (mentor.user.firstName === 'UDAYA' && mentor.user.lastName === 'prm') {
+    console.log('🖼️ [MENTOR CARD] UDAYA prm photo debug:', {
+      hasMedia: !!mentor.media,
+      photoBlobUrl: mentor.media?.photoBlobUrl,
+      photoStatus: mentor.media?.photoValidationStatus,
+      profileImageUrl: mentor.user.profileImageUrl,
+      finalProfileImage: profileImage,
+      mentorId: mentor.id
+    });
+  }
+
   return (
     <div className="group relative bg-gradient-to-br from-blue-50/80 via-purple-50/60 to-blue-50/80 dark:from-gray-800 dark:to-gray-900 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700" data-testid={`card-mentor-${mentor.id}`}>
       {/* Content */}

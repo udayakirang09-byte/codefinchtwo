@@ -3338,14 +3338,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Bulk Booking Package routes
-  // POST /api/bulk-packages - Purchase a bulk package (5 or 10 classes)
+  // POST /api/bulk-packages - Purchase a bulk package (6 classes only)
   app.post("/api/bulk-packages", async (req, res) => {
     try {
       const { studentId, mentorId, totalClasses, pricePerClass, subject, sessionDuration } = req.body;
 
-      // Validate totalClasses is either 5 or 10
-      if (totalClasses !== 5 && totalClasses !== 10) {
-        return res.status(400).json({ message: "Bulk packages must be either 5 or 10 classes" });
+      // Validate totalClasses is 6 (fixed package size)
+      if (totalClasses !== 6) {
+        return res.status(400).json({ message: "Bulk packages must be 6 classes" });
       }
 
       // Resolve student ID from email if needed

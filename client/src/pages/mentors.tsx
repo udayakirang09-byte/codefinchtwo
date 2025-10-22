@@ -13,11 +13,30 @@ export default function Mentors() {
   const { data: mentors, isLoading } = useQuery({
     queryKey: ["/api/mentors", "v3"], // Updated cache key
     queryFn: async () => {
+      console.log('🔄 [FIND MENTORS] Fetching mentors data...');
       const res = await fetch("/api/mentors", {
         credentials: "include",
       });
       if (!res.ok) throw new Error(await res.text());
-      return res.json();
+      const data = await res.json();
+      console.log('✅ [FIND MENTORS] Received mentors:', data.length);
+      
+      // Debug log for UDAYA prm specifically
+      const udayaMentor = data.find((m: any) => 
+        m.user?.firstName === 'UDAYA' && m.user?.lastName === 'prm'
+      );
+      if (udayaMentor) {
+        console.log('🖼️ [FIND MENTORS] UDAYA prm data:', {
+          mentorId: udayaMentor.id,
+          hasMedia: !!udayaMentor.media,
+          mediaObject: udayaMentor.media,
+          userName: `${udayaMentor.user?.firstName} ${udayaMentor.user?.lastName}`
+        });
+      } else {
+        console.log('⚠️ [FIND MENTORS] UDAYA prm not found in response');
+      }
+      
+      return data;
     }
   });
 
