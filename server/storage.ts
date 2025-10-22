@@ -2400,8 +2400,8 @@ export class DatabaseStorage implements IStorage {
     // Send email with OTP
     await sendEmail({
       to: user.email,
-      subject: 'Your CodeConnect Login Code',
-      text: `Your CodeConnect Login Code: ${otp}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this code, please ignore this email.`,
+      subject: 'Your TechLearnOrbit Login Code',
+      text: `Your TechLearnOrbit Login Code: ${otp}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this code, please ignore this email.`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #4F46E5;">Your Login Code</h2>
