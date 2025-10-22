@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck, Mail, MessageSquare, Phone, CreditCard, Key, Lock, X, Building, Activity, TestTube, Zap, Monitor, Map, Brain, Cloud, Calendar, Cog } from "lucide-react";
+import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck, Mail, MessageSquare, Phone, CreditCard, Key, Lock, X, Building, Activity, TestTube, Zap, Monitor, Map, Brain, Cloud, Calendar, Cog, FileImage, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { useAdminAlerts } from "@/hooks/use-admin-alerts";
@@ -1104,6 +1104,33 @@ export default function AdminDashboard() {
                 >
                   <Settings className="h-8 w-8 mb-2 text-orange-600 group-hover:scale-110 transition-transform duration-200" />
                   <span className="font-bold">Platform Settings</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-24 p-4 flex-col hover:bg-blue-50 hover:border-blue-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group bg-blue-50/50" 
+                  data-testid="button-teacher-media-approval"
+                  onClick={() => window.location.href = '/admin/teacher-media-approval'}
+                >
+                  <FileImage className="h-8 w-8 mb-2 text-blue-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold text-sm">Teacher Media Approval</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-24 p-4 flex-col hover:bg-orange-50 hover:border-orange-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group bg-orange-50/50" 
+                  data-testid="button-ai-moderation-review"
+                  onClick={() => window.location.href = '/admin/moderation-review'}
+                >
+                  <AlertTriangle className="h-8 w-8 mb-2 text-orange-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold text-sm">AI Moderation Review</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-24 p-4 flex-col hover:bg-green-50 hover:border-green-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group bg-green-50/50" 
+                  data-testid="button-whitelist-management"
+                  onClick={() => window.location.href = '/admin/whitelist-management'}
+                >
+                  <CheckCircle className="h-8 w-8 mb-2 text-green-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold text-sm">Whitelist Management</span>
                 </Button>
               </div>
             </CardContent>
