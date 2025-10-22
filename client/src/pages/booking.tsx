@@ -95,7 +95,7 @@ export default function Booking() {
 
   // Bulk booking state
   const [bookingType, setBookingType] = useState<"single" | "bulk">("single");
-  const [bulkClassCount, setBulkClassCount] = useState<5 | 10>(5);
+  const bulkClassCount = 6; // Fixed package size: 6 classes only
 
   const [formData, setFormData] = useState({
     studentName: "",
@@ -796,18 +796,13 @@ export default function Booking() {
                 <div className="space-y-2">
                   <Label htmlFor="bookingPackage">Booking Package *</Label>
                   <Select 
-                    value={bookingType === "single" ? formData.sessionType : `bulk-${bulkClassCount}`} 
+                    value={bookingType === "single" ? formData.sessionType : "bulk-6"} 
                     onValueChange={(value) => {
                       if (value === "regular" || value === "demo") {
                         setBookingType("single");
                         handleInputChange("sessionType", value);
-                      } else if (value === "bulk-5") {
+                      } else if (value === "bulk-6") {
                         setBookingType("bulk");
-                        setBulkClassCount(5);
-                        handleInputChange("sessionType", "regular");
-                      } else if (value === "bulk-10") {
-                        setBookingType("bulk");
-                        setBulkClassCount(10);
                         handleInputChange("sessionType", "regular");
                       }
                     }} 
@@ -821,8 +816,7 @@ export default function Booking() {
                       {mentor?.demoEnabled && (
                         <SelectItem value="demo">Single Session - Demo (Free)</SelectItem>
                       )}
-                      <SelectItem value="bulk-5">Bulk Package - 5 Classes</SelectItem>
-                      <SelectItem value="bulk-10">Bulk Package - 10 Classes</SelectItem>
+                      <SelectItem value="bulk-6">Bulk Package - 6 Classes</SelectItem>
                     </SelectContent>
                   </Select>
                   {bookingType === "bulk" && (
