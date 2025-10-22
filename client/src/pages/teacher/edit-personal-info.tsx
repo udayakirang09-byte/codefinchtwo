@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { User, Mail, Phone, Save, Shield, ArrowLeft, AlertCircle } from "lucide-react";
+import { User, Mail, Save, Shield, ArrowLeft, AlertCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -20,7 +20,6 @@ export default function EditPersonalInfo() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [bio, setBio] = useState("");
   
   // 2FA verification state
@@ -42,7 +41,6 @@ export default function EditPersonalInfo() {
       setFirstName(userData.firstName || "");
       setLastName(userData.lastName || "");
       setEmail(userData.email || "");
-      setPhone(userData.phone || "");
       setBio(userData.bio || "");
     }
   }, [userData]);
@@ -74,7 +72,7 @@ export default function EditPersonalInfo() {
 
   // Check if editing sensitive fields
   const isSensitiveChange = () => {
-    return email !== (userData?.email || "") || phone !== (userData?.phone || "");
+    return email !== (userData?.email || "");
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -84,7 +82,6 @@ export default function EditPersonalInfo() {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       email: email.trim(),
-      phone: phone.trim(),
       bio: bio.trim(),
     };
 
@@ -183,14 +180,14 @@ export default function EditPersonalInfo() {
           <CardHeader className="bg-gradient-to-r from-rose-600 to-pink-700 text-white">
             <CardTitle className="flex items-center gap-3 text-2xl">
               <User className="h-6 w-6" />
-              Edit Personal Information
+              Edit Profile
             </CardTitle>
           </CardHeader>
           <CardContent className="p-8">
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
               <div className="text-sm text-blue-800">
-                <strong>Important:</strong> Changes to email or phone number require 2FA verification for your security.
+                <strong>Important:</strong> Changes to email require 2FA verification for your security.
               </div>
             </div>
 
@@ -243,27 +240,7 @@ export default function EditPersonalInfo() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone" className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  Phone Number
-                  {isSensitiveChange() && phone !== userData?.phone && (
-                    <span className="text-xs bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full">
-                      Requires 2FA
-                    </span>
-                  )}
-                </Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Enter phone number"
-                  data-testid="input-phone"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="bio">Bio</Label>
+                <Label htmlFor="bio">About Me</Label>
                 <textarea
                   id="bio"
                   value={bio}

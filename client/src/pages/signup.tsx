@@ -33,6 +33,7 @@ export default function Signup() {
     confirmPassword: "",
     role: "",
     country: "India", // Default to India
+    bio: "", // About Teacher field
     // Mentor qualification fields
     qualifications: [
       { qualification: "", specialization: "", score: "" },
@@ -918,6 +919,20 @@ export default function Signup() {
                       </div>
                     </div>
                   ))}
+                </div>
+
+                {/* About Teacher (Bio) */}
+                <div className="space-y-2">
+                  <Label htmlFor="bio">About Teacher</Label>
+                  <textarea
+                    id="bio"
+                    value={formData.bio}
+                    onChange={(e) => handleInputChange("bio", e.target.value)}
+                    placeholder="Tell students about yourself, your teaching approach, and what makes you a great teacher..."
+                    className="w-full min-h-[120px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    data-testid="input-bio"
+                  />
+                  <p className="text-xs text-gray-500">This will help students understand your teaching style and expertise</p>
                 </div>
               </div>
             )}
