@@ -1444,7 +1444,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send real email
       const emailSent = await sendEmail({
         to: email,
-        from: 'noreply@techlearnorbit.com',
+        from: 'admin@techlearnorbit.com',
         subject: emailContent.subject,
         html: emailContent.html,
         text: emailContent.text
