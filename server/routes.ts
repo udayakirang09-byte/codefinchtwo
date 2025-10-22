@@ -1444,7 +1444,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send real email
       const emailSent = await sendEmail({
         to: email,
-        from: 'noreply@codeconnect.com',
+        from: 'noreply@techlearnorbit.com',
         subject: emailContent.subject,
         html: emailContent.html,
         text: emailContent.text
@@ -6881,7 +6881,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/teacher/schedule", async (req, res) => {
     try {
       const { teacherId } = req.query;
-      const email = teacherId || 'teacher@codeconnect.com'; // Default for demo
+      const email = teacherId || 'teacher@techlearnorbit.com'; // Default for demo
       
       // Get user by email first, then mentor
       const user = await storage.getUserByEmail(email as string);
@@ -7148,7 +7148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/teacher/schedule", async (req, res) => {
     try {
       const { teacherId, dayOfWeek, startTime, endTime, isRecurring } = req.body;
-      const email = teacherId || 'teacher@codeconnect.com'; // Default for demo
+      const email = teacherId || 'teacher@techlearnorbit.com'; // Default for demo
       
       // Get user by email first, then mentor
       const user = await storage.getUserByEmail(email as string);

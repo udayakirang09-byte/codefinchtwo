@@ -23,7 +23,7 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
   try {
     await sgMail.send({
       to: params.to,
-      from: params.from || 'noreply@codeconnect.com',
+      from: params.from || 'noreply@techlearnorbit.com',
       subject: params.subject,
       text: params.text,
       html: params.html,
@@ -47,7 +47,7 @@ export function generateEmailOTP(): string {
 
 export function generateEmailOTPVerificationEmail(email: string, otp: string, purpose: string = 'signup'): { subject: string, html: string, text: string } {
   const purposeText = purpose === 'signup' ? 'Sign Up' : purpose === 'login' ? 'Login' : 'Account Verification';
-  const subject = `${otp} is your CodeConnect verification code`;
+  const subject = `${otp} is your TechLearnOrbit verification code`;
   
   const html = `
     <!DOCTYPE html>
@@ -67,7 +67,7 @@ export function generateEmailOTPVerificationEmail(email: string, otp: string, pu
       <div class="container">
         <div class="header">
           <h1>🔐 Email Verification</h1>
-          <p>CodeConnect - Where Young Minds Meet Coding Mentors</p>
+          <p>TechLearnOrbit - Where Learners Meet Expert Mentors</p>
         </div>
         <div class="content">
           <p>Hello,</p>
@@ -83,10 +83,10 @@ export function generateEmailOTPVerificationEmail(email: string, otp: string, pu
             </ul>
           </div>
           <p>After verifying your email, you'll be prompted to set up your Authenticator App (Microsoft Authenticator or Google Authenticator) for enhanced security.</p>
-          <p style="margin-top: 30px;">Need help? Contact our support team at support@codeconnect.com</p>
+          <p style="margin-top: 30px;">Need help? Contact our support team at support@techlearnorbit.com</p>
         </div>
         <div class="footer">
-          <p>© 2025 CodeConnect. All rights reserved.</p>
+          <p>© 2025 TechLearnOrbit. All rights reserved.</p>
           <p>This email was sent to ${email}</p>
         </div>
       </div>
@@ -95,7 +95,7 @@ export function generateEmailOTPVerificationEmail(email: string, otp: string, pu
   `;
 
   const text = `
-Email Verification Code - CodeConnect
+Email Verification Code - TechLearnOrbit
 
 Hello,
 
@@ -109,16 +109,16 @@ Important Security Information:
 
 After verifying your email, you'll be prompted to set up your Authenticator App (Microsoft Authenticator or Google Authenticator) for enhanced security.
 
-Need help? Contact our support team at support@codeconnect.com
+Need help? Contact our support team at support@techlearnorbit.com
 
-© 2025 CodeConnect. All rights reserved.
+© 2025 TechLearnOrbit. All rights reserved.
   `;
 
   return { subject, html, text };
 }
 
 export function generateResetEmail(email: string, resetCode: string): { subject: string, html: string, text: string } {
-  const subject = 'Password Reset Code - CodeConnect';
+  const subject = 'Password Reset Code - TechLearnOrbit';
   
   const html = `
     <!DOCTYPE html>
@@ -137,11 +137,11 @@ export function generateResetEmail(email: string, resetCode: string): { subject:
       <div class="container">
         <div class="header">
           <h1>🔑 Password Reset Request</h1>
-          <p>CodeConnect - Where Young Minds Meet Coding Mentors</p>
+          <p>TechLearnOrbit - Where Learners Meet Expert Mentors</p>
         </div>
         <div class="content">
           <p>Hello,</p>
-          <p>We received a request to reset your password for your CodeConnect account (${email}).</p>
+          <p>We received a request to reset your password for your TechLearnOrbit account (${email}).</p>
           <p>Please use this 6-digit code to reset your password:</p>
           <div class="reset-code">${resetCode}</div>
           <p><strong>Important:</strong></p>
@@ -150,10 +150,10 @@ export function generateResetEmail(email: string, resetCode: string): { subject:
             <li>If you didn't request this reset, please ignore this email</li>
             <li>Never share this code with anyone</li>
           </ul>
-          <p>Need help? Contact our support team at support@codeconnect.com</p>
+          <p>Need help? Contact our support team at support@techlearnorbit.com</p>
         </div>
         <div class="footer">
-          <p>© 2025 CodeConnect. All rights reserved.</p>
+          <p>© 2025 TechLearnOrbit. All rights reserved.</p>
           <p>This email was sent to ${email}</p>
         </div>
       </div>
@@ -162,11 +162,11 @@ export function generateResetEmail(email: string, resetCode: string): { subject:
   `;
 
   const text = `
-Password Reset Code - CodeConnect
+Password Reset Code - TechLearnOrbit
 
 Hello,
 
-We received a request to reset your password for your CodeConnect account (${email}).
+We received a request to reset your password for your TechLearnOrbit account (${email}).
 
 Your 6-digit reset code is: ${resetCode}
 
@@ -175,9 +175,9 @@ Important:
 - If you didn't request this reset, please ignore this email
 - Never share this code with anyone
 
-Need help? Contact our support team at support@codeconnect.com
+Need help? Contact our support team at support@techlearnorbit.com
 
-© 2025 CodeConnect. All rights reserved.
+© 2025 TechLearnOrbit. All rights reserved.
   `;
 
   return { subject, html, text };
@@ -377,7 +377,7 @@ export function generateCourseCancellationEmail(
       <div class="container">
         <div class="header">
           <h1>📚 Course Cancellation Notice</h1>
-          <p>CodeConnect - Where Young Minds Meet Coding Mentors</p>
+          <p>TechLearnOrbit - Where Learners Meet Expert Mentors</p>
         </div>
         <div class="content">
           <p>Hello ${recipientName},</p>
@@ -406,10 +406,10 @@ export function generateCourseCancellationEmail(
           </div>
           ` : ''}
 
-          <p>If you have any questions or concerns, please contact our support team at support@codeconnect.com</p>
+          <p>If you have any questions or concerns, please contact our support team at support@techlearnorbit.com</p>
         </div>
         <div class="footer">
-          <p>© 2025 CodeConnect. All rights reserved.</p>
+          <p>© 2025 TechLearnOrbit. All rights reserved.</p>
           <p>This email was sent to ${recipientEmail}</p>
         </div>
       </div>
@@ -440,9 +440,9 @@ ${keptClasses > 0 ? `
 Note: ${keptClasses} class(es) could not be cancelled because they are scheduled within the next 6 hours.
 ` : ''}
 
-If you have any questions or concerns, please contact our support team at support@codeconnect.com
+If you have any questions or concerns, please contact our support team at support@techlearnorbit.com
 
-© 2025 CodeConnect. All rights reserved.
+© 2025 TechLearnOrbit. All rights reserved.
   `;
 
   return { subject, html, text };
@@ -476,7 +476,7 @@ export function generateClassDeletionEmail(
       <div class="container">
         <div class="header">
           <h1>🗑️ Class Deleted</h1>
-          <p>CodeConnect - Where Young Minds Meet Coding Mentors</p>
+          <p>TechLearnOrbit - Where Learners Meet Expert Mentors</p>
         </div>
         <div class="content">
           <p>Hello ${recipientName},</p>
@@ -498,10 +498,10 @@ export function generateClassDeletionEmail(
           </div>
           ` : ''}
 
-          <p>If you have any questions or concerns, please contact our support team at support@codeconnect.com</p>
+          <p>If you have any questions or concerns, please contact our support team at support@techlearnorbit.com</p>
         </div>
         <div class="footer">
-          <p>© 2025 CodeConnect. All rights reserved.</p>
+          <p>© 2025 TechLearnOrbit. All rights reserved.</p>
           <p>This email was sent to ${recipientEmail}</p>
         </div>
       </div>
@@ -527,9 +527,9 @@ A refund of ₹${refundAmount} will be initiated within 48 hours and processed t
 Important: The refund will be initiated only for classes deleted at least 48 hours before the scheduled time.
 ` : ''}
 
-If you have any questions or concerns, please contact our support team at support@codeconnect.com
+If you have any questions or concerns, please contact our support team at support@techlearnorbit.com
 
-© 2025 CodeConnect. All rights reserved.
+© 2025 TechLearnOrbit. All rights reserved.
   `;
 
   return { subject, html, text };
@@ -598,10 +598,10 @@ export function generateAbusiveLanguageAlertEmail(
           </div>
 
           <p><strong>Action Required:</strong> Please review this incident and take appropriate action if necessary. You can view all incidents in the admin dashboard.</p>
-          <p><a href="${process.env.REPLIT_DEV_DOMAIN || 'https://codeconnect.com'}/admin/abusive-incidents" style="display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 6px; margin-top: 10px;">View Incidents Dashboard</a></p>
+          <p><a href="${process.env.REPLIT_DEV_DOMAIN || 'https://techlearnorbit.com'}/admin/abusive-incidents" style="display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 6px; margin-top: 10px;">View Incidents Dashboard</a></p>
         </div>
         <div class="footer">
-          <p>© 2025 CodeConnect. All rights reserved.</p>
+          <p>© 2025 TechLearnOrbit. All rights reserved.</p>
           <p>This alert was sent to ${adminEmail}</p>
         </div>
       </div>
@@ -626,9 +626,9 @@ Message:
 Detected Abusive Words: ${incident.detectedWords.join(', ')}
 
 Action Required: Please review this incident and take appropriate action if necessary.
-View all incidents at: ${process.env.REPLIT_DEV_DOMAIN || 'https://codeconnect.com'}/admin/abusive-incidents
+View all incidents at: ${process.env.REPLIT_DEV_DOMAIN || 'https://techlearnorbit.com'}/admin/abusive-incidents
 
-© 2025 CodeConnect. All rights reserved.
+© 2025 TechLearnOrbit. All rights reserved.
   `;
 
   return { subject, html, text };
@@ -737,14 +737,14 @@ export function generateTeacherRestrictionEmail(
               ${restrictionType === 'suspended' ? '<li>Submit an appeal if you believe this decision was made in error</li>' : ''}
               <li>Read our community guidelines and safety policies</li>
             </ul>
-            <a href="${process.env.REPLIT_DEV_DOMAIN || 'https://codeconnect.com'}/teacher/moderation-status" class="button">View Moderation Status</a>
+            <a href="${process.env.REPLIT_DEV_DOMAIN || 'https://techlearnorbit.com'}/teacher/moderation-status" class="button">View Moderation Status</a>
           </div>
           ` : ''}
 
-          <p style="margin-top: 30px;">If you have questions or believe this decision was made in error, please contact our moderation team at moderation@codeconnect.com</p>
+          <p style="margin-top: 30px;">If you have questions or believe this decision was made in error, please contact our moderation team at moderation@techlearnorbit.com</p>
         </div>
         <div class="footer">
-          <p>© 2025 CodeConnect. All rights reserved.</p>
+          <p>© 2025 TechLearnOrbit. All rights reserved.</p>
           <p>This email was sent to ${teacherEmail}</p>
         </div>
       </div>
@@ -780,12 +780,12 @@ What You Can Do:
 ${restrictionType === 'suspended' ? '- Submit an appeal if you believe this decision was made in error' : ''}
 - Read our community guidelines and safety policies
 
-View your moderation status: ${process.env.REPLIT_DEV_DOMAIN || 'https://codeconnect.com'}/teacher/moderation-status
+View your moderation status: ${process.env.REPLIT_DEV_DOMAIN || 'https://techlearnorbit.com'}/teacher/moderation-status
 ` : ''}
 
-If you have questions or believe this decision was made in error, please contact our moderation team at moderation@codeconnect.com
+If you have questions or believe this decision was made in error, please contact our moderation team at moderation@techlearnorbit.com
 
-© 2025 CodeConnect. All rights reserved.
+© 2025 TechLearnOrbit. All rights reserved.
   `;
 
   return { subject, html, text };

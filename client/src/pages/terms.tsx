@@ -165,7 +165,7 @@ export default function Terms() {
                 For questions about these Terms of Service, please contact us:
               </p>
               <div className="space-y-2 text-gray-700">
-                <p>📧 Email: support@codeconnect.com</p>
+                <p>📧 Email: support@techlearnorbit.com</p>
                 <p>📞 Phone: +91-9876543210</p>
                 <p>🏢 Address: Tech Park, Bangalore, Karnataka, India</p>
               </div>

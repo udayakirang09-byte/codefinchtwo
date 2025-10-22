@@ -1295,7 +1295,7 @@ export const supportConfig = pgTable("support_config", {
   enableEmailSupport: boolean("enable_email_support").default(false),
   enableChatSupport: boolean("enable_chat_support").default(false),
   enablePhoneSupport: boolean("enable_phone_support").default(false),
-  supportEmail: varchar("support_email").default("support@codeconnect.com"),
+  supportEmail: varchar("support_email").default("support@techlearnorbit.com"),
   supportPhone: varchar("support_phone"),
   updatedBy: varchar("updated_by").references(() => users.id),
   updatedAt: timestamp("updated_at").defaultNow(),
