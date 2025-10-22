@@ -862,7 +862,11 @@ export default function Signup() {
                       <div className="sm:col-span-3 space-y-1">
                         <Label className="text-sm font-medium">Score/Grade</Label>
                         <Input
-                          placeholder="e.g., 3.8 GPA"
+                          type="number"
+                          placeholder="e.g., 3.8"
+                          min="0"
+                          max="100"
+                          step="0.01"
                           value={qual.score}
                           onChange={(e) => handleQualificationChange(index, "score", e.target.value)}
                           maxLength={CHAR_LIMITS.score}
