@@ -939,6 +939,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
+      // CHECK MENTOR APPROVAL STATUS: Block login for teachers pending media approval
+      if (user.role === 'mentor' && userData.mentor) {
+        if (userData.mentor.approvalStatus === 'pending') {
+          console.log(`🚫 Login blocked for ${user.email} - media approval pending`);
+          return res.status(403).json({ 
+            message: "Your teacher account is pending admin approval. You will receive an email notification once your profile media (photo and video) has been reviewed and approved by our team. Please check back later.",
+            approvalPending: true
+          });
+        }
+        
+        if (userData.mentor.approvalStatus === 'rejected') {
+          console.log(`🚫 Login blocked for ${user.email} - media approval rejected`);
+          const rejectionReason = userData.mentor.rejectionReason || 'Your profile did not meet our quality standards.';
+          return res.status(403).json({ 
+            message: `Your teacher application was not approved. Reason: ${rejectionReason}. Please contact support if you have questions.`,
+            approvalRejected: true
+          });
+        }
+      }
+      
       // MANDATORY 2FA ENFORCEMENT: Teachers must have 2FA enabled to login
       if (user.role === 'mentor' && (!user.totpEnabled || !user.totpSecret)) {
         return res.status(403).json({ 
