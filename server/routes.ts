@@ -2707,6 +2707,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Get fee configuration for commission and GST calculation
+      const feeConfig = await storage.getAdminPaymentConfig();
+      const gstRate = feeConfig?.gstRate ? parseFloat(feeConfig.gstRate) : 18.00;
+      const platformFeeRate = feeConfig?.platformFeeRate ? parseFloat(feeConfig.platformFeeRate) : 15.00;
+      
+      // Calculate platform fee, GST, and teacher payout
+      let platformFeeAmount = null;
+      let platformFeeGstAmount = null;
+      let teacherPayoutAmount = null;
+      
+      // Only calculate fees for paid sessions (not demo sessions)
+      if (sessionType !== 'demo' && req.body.cost) {
+        const totalCost = parseFloat(req.body.cost);
+        
+        // Platform commission (e.g., 15% of total)
+        const commission = totalCost * (platformFeeRate / 100);
+        
+        // GST on platform commission (e.g., 18% of commission)
+        const gstOnCommission = commission * (gstRate / 100);
+        
+        // Teacher payout (total - commission - GST)
+        const teacherPayout = totalCost - commission - gstOnCommission;
+        
+        platformFeeAmount = commission.toFixed(2);
+        platformFeeGstAmount = gstOnCommission.toFixed(2);
+        teacherPayoutAmount = teacherPayout.toFixed(2);
+        
+        console.log(`💰 Fee calculation: Total=₹${totalCost}, Commission=₹${commission.toFixed(2)} (${platformFeeRate}%), GST=₹${gstOnCommission.toFixed(2)} (${gstRate}% of commission), Teacher=₹${teacherPayout.toFixed(2)}`);
+      }
+      
       const bookingData = {
         studentId: student.id,
         mentorId: req.body.mentorId,
@@ -2715,7 +2745,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         duration: req.body.duration,
         subject: req.body.subject || null, // Include subject if provided
         notes: req.body.notes || '',
-        sessionType: sessionType // Include session type
+        sessionType: sessionType, // Include session type
+        platformFeeAmount,
+        platformFeeGstAmount,
+        teacherPayoutAmount,
+        teacherPayoutStatus: sessionType === 'demo' ? 'not_applicable' : 'pending'
       };
       
       // Record booking creation attempt

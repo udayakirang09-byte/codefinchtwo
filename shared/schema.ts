@@ -179,8 +179,9 @@ export const bookings = pgTable("bookings", {
   refundAmount: decimal("refund_amount", { precision: 10, scale: 2 }), // Amount to refund in INR
   refundProcessedAt: timestamp("refund_processed_at"), // When refund was completed
   // Teacher Payout & Platform Fee Tracking
-  teacherPayoutAmount: decimal("teacher_payout_amount", { precision: 10, scale: 2 }), // Amount to pay teacher (85% or 0%)
-  platformFeeAmount: decimal("platform_fee_amount", { precision: 10, scale: 2 }), // Platform fee retained (15%, 10%, or 0%)
+  teacherPayoutAmount: decimal("teacher_payout_amount", { precision: 10, scale: 2 }), // Amount to pay teacher after deducting commission and GST
+  platformFeeAmount: decimal("platform_fee_amount", { precision: 10, scale: 2 }), // Platform commission (e.g., 15% of total)
+  platformFeeGstAmount: decimal("platform_fee_gst_amount", { precision: 10, scale: 2 }), // GST on platform commission (e.g., 18% of commission)
   teacherPayoutStatus: varchar("teacher_payout_status"), // pending, processed, withheld, not_applicable
   teacherPayoutProcessedAt: timestamp("teacher_payout_processed_at"), // When teacher payout was completed
   // AI/System Detection Fields
