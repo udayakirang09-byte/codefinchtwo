@@ -11,7 +11,7 @@ import { Star, Users, BookOpen, Clock, Search, Filter, X } from "lucide-react";
 
 export default function Mentors() {
   const { data: mentors, isLoading } = useQuery({
-    queryKey: ["/api/mentors"]
+    queryKey: ["/api/mentors", "v2"] // Cache bust for media support
   });
 
   // Debug: Log mentors data to see what we're getting

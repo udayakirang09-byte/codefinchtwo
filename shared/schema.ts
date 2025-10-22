@@ -502,6 +502,12 @@ export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
 export type MentorWithUser = Mentor & { 
   user: User;
   subjectsWithExperience?: { subject: string; experience: string }[];
+  media?: {
+    photoBlobUrl: string | null;
+    videoBlobUrl: string | null;
+    photoValidationStatus: string | null;
+    videoValidationStatus: string | null;
+  } | null;
 };
 export type StudentWithUser = Student & { user: User };
 export type BookingWithDetails = Booking & {
