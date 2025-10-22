@@ -33,22 +33,12 @@ export default function TeacherMediaApproval() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: config, isLoading: configLoading } = useQuery({
-    queryKey: ['teacher-media-config'],
-    queryFn: async () => {
-      const response = await fetch('/api/admin/teacher-media-config');
-      if (!response.ok) throw new Error('Failed to fetch config');
-      return response.json();
-    }
+  const { data: config, isLoading: configLoading } = useQuery<{ approvalRequired: boolean }>({
+    queryKey: ['/api/admin/teacher-media-config']
   });
 
-  const { data: pendingMedia = [], isLoading } = useQuery({
-    queryKey: ['pending-teacher-media'],
-    queryFn: async () => {
-      const response = await fetch('/api/admin/teacher-media/pending');
-      if (!response.ok) throw new Error('Failed to fetch pending media');
-      return response.json();
-    }
+  const { data: pendingMedia = [], isLoading } = useQuery<TeacherMedia[]>({
+    queryKey: ['/api/admin/teacher-media/pending']
   });
 
   const updateConfigMutation = useMutation({
@@ -56,7 +46,7 @@ export default function TeacherMediaApproval() {
       return apiRequest('POST', '/api/admin/teacher-media-config', { approvalRequired });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teacher-media-config'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/teacher-media-config'] });
       toast({
         title: "Success",
         description: "Configuration updated successfully",
@@ -83,7 +73,7 @@ export default function TeacherMediaApproval() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pending-teacher-media'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/teacher-media/pending'] });
       toast({
         title: "Success",
         description: "Teacher media approved and welcome email sent",
@@ -112,7 +102,7 @@ export default function TeacherMediaApproval() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pending-teacher-media'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/teacher-media/pending'] });
       toast({
         title: "Success",
         description: "Teacher media rejected",
