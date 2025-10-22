@@ -5560,6 +5560,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get teacher profile by userId
+  app.get("/api/teacher-profiles/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      
+      const [profile] = await db.select().from(teacherProfiles).where(eq(teacherProfiles.userId, userId));
+      
+      if (!profile) {
+        return res.status(404).json({ message: "Teacher profile not found" });
+      }
+      
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching teacher profile:", error);
+      res.status(500).json({ message: "Failed to fetch teacher profile" });
+    }
+  });
+
+  // Update user profile (basic info + qualifications & subjects for teachers)
+  app.patch("/api/users/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { firstName, lastName, email, bio, qualifications, subjects, verified2FA } = req.body;
+      
+      // Prepare user updates (basic fields only)
+      const userUpdates: any = {};
+      if (firstName !== undefined) userUpdates.firstName = firstName;
+      if (lastName !== undefined) userUpdates.lastName = lastName;
+      if (email !== undefined) userUpdates.email = email;
+      if (bio !== undefined) userUpdates.bio = bio;
+      
+      // Update user basic info
+      if (Object.keys(userUpdates).length > 0) {
+        await storage.updateUser(id, userUpdates);
+      }
+      
+      // Update teacher profile (qualifications & subjects) if provided
+      if (qualifications !== undefined || subjects !== undefined) {
+        const teacherUpdates: any = { updatedAt: new Date() };
+        if (qualifications !== undefined) teacherUpdates.qualifications = qualifications;
+        if (subjects !== undefined) teacherUpdates.subjects = subjects;
+        
+        // Check if profile exists
+        const [existing] = await db.select().from(teacherProfiles).where(eq(teacherProfiles.userId, id));
+        
+        if (existing) {
+          // Update existing profile
+          await db.update(teacherProfiles)
+            .set(teacherUpdates)
+            .where(eq(teacherProfiles.userId, id));
+        } else {
+          // Create new profile if it doesn't exist
+          await db.insert(teacherProfiles).values({
+            userId: id,
+            qualifications: qualifications || [],
+            subjects: subjects || [],
+          });
+        }
+      }
+      
+      res.json({ message: "Profile updated successfully" });
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
   // Check teacher profile completion status
   app.get("/api/teacher/profile-completion", async (req, res) => {
     try {

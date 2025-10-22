@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User, Mail, Save, Shield, ArrowLeft, AlertCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +12,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import Navigation from "@/components/navigation";
 import { useEffect } from "react";
+import type { Qualification, Specialization, Subject } from "@shared/schema";
 
 export default function EditPersonalInfo() {
   const { user } = useAuth();
@@ -21,6 +23,18 @@ export default function EditPersonalInfo() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [bio, setBio] = useState("");
+  const [qualifications, setQualifications] = useState([
+    { qualification: "", specialization: "", score: "" },
+    { qualification: "", specialization: "", score: "" },
+    { qualification: "", specialization: "", score: "" }
+  ]);
+  const [subjects, setSubjects] = useState([
+    { subject: "", experience: "" },
+    { subject: "", experience: "" },
+    { subject: "", experience: "" },
+    { subject: "", experience: "" },
+    { subject: "", experience: "" }
+  ]);
   
   // 2FA verification state
   const [show2FADialog, setShow2FADialog] = useState(false);
@@ -35,6 +49,25 @@ export default function EditPersonalInfo() {
     enabled: !!user?.id,
   });
 
+  // Fetch teacher profile data (qualifications and subjects)
+  const { data: teacherProfile } = useQuery<any>({
+    queryKey: [`/api/teacher-profiles/${user?.id}`],
+    enabled: !!user?.id,
+  });
+
+  // Fetch dropdown data for qualifications, specializations, and subjects
+  const { data: qualificationsList = [], isLoading: qualificationsLoading } = useQuery<Qualification[]>({
+    queryKey: ['/api/qualifications'],
+  });
+
+  const { data: specializationsList = [], isLoading: specializationsLoading } = useQuery<Specialization[]>({
+    queryKey: ['/api/specializations'],
+  });
+
+  const { data: subjectsList = [], isLoading: subjectsLoading } = useQuery<Subject[]>({
+    queryKey: ['/api/subjects'],
+  });
+
   // Update form state when data loads
   useEffect(() => {
     if (userData) {
@@ -43,7 +76,28 @@ export default function EditPersonalInfo() {
       setEmail(userData.email || "");
       setBio(userData.bio || "");
     }
-  }, [userData]);
+    
+    // Update qualifications and subjects from teacher profile
+    if (teacherProfile) {
+      if (teacherProfile.qualifications && teacherProfile.qualifications.length > 0) {
+        const loadedQuals = [...teacherProfile.qualifications];
+        // Ensure we always have 3 slots
+        while (loadedQuals.length < 3) {
+          loadedQuals.push({ qualification: "", specialization: "", score: "" });
+        }
+        setQualifications(loadedQuals.slice(0, 3));
+      }
+      
+      if (teacherProfile.subjects && teacherProfile.subjects.length > 0) {
+        const loadedSubjects = [...teacherProfile.subjects];
+        // Ensure we always have 5 slots
+        while (loadedSubjects.length < 5) {
+          loadedSubjects.push({ subject: "", experience: "" });
+        }
+        setSubjects(loadedSubjects.slice(0, 5));
+      }
+    }
+  }, [userData, teacherProfile]);
 
   // Mutation to save changes
   const updateProfileMutation = useMutation({
@@ -70,6 +124,19 @@ export default function EditPersonalInfo() {
     }
   });
 
+  // Handlers for qualifications and subjects
+  const handleQualificationChange = (index: number, field: string, value: string) => {
+    setQualifications(prev => prev.map((qual, i) => 
+      i === index ? { ...qual, [field]: value } : qual
+    ));
+  };
+
+  const handleSubjectChange = (index: number, field: string, value: string) => {
+    setSubjects(prev => prev.map((subj, i) => 
+      i === index ? { ...subj, [field]: value } : subj
+    ));
+  };
+
   // Check if editing sensitive fields
   const isSensitiveChange = () => {
     return email !== (userData?.email || "");
@@ -78,11 +145,71 @@ export default function EditPersonalInfo() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate qualifications and subjects
+    const validQualifications = qualifications.filter(q => q.qualification.trim() !== "");
+    const validSubjects = subjects.filter(s => s.subject.trim() !== "");
+
+    if (validQualifications.length === 0) {
+      toast({
+        title: "Qualifications Required",
+        description: "Please provide at least one educational qualification.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (validSubjects.length === 0) {
+      toast({
+        title: "Subjects Required",
+        description: "Please specify at least one teaching subject.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate that qualifications have all required fields
+    for (const qual of validQualifications) {
+      if (!qual.specialization || !qual.score) {
+        toast({
+          title: "Incomplete Qualification",
+          description: "Please fill in specialization and score for all selected qualifications.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    // Validate that subjects have experience
+    for (const subj of validSubjects) {
+      if (!subj.experience) {
+        toast({
+          title: "Incomplete Subject",
+          description: "Please specify teaching experience for all selected subjects.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    // Check for duplicate subjects
+    const selectedSubjects = validSubjects.map(s => s.subject.trim());
+    const uniqueSubjects = new Set(selectedSubjects);
+    if (selectedSubjects.length !== uniqueSubjects.size) {
+      toast({
+        title: "Duplicate Subjects",
+        description: "You cannot select the same subject multiple times.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const changes = {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       email: email.trim(),
       bio: bio.trim(),
+      qualifications: validQualifications,
+      subjects: validSubjects,
     };
 
     // If editing sensitive fields (email, phone), require 2FA verification
@@ -249,6 +376,105 @@ export default function EditPersonalInfo() {
                   className="w-full min-h-[100px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500"
                   data-testid="input-bio"
                 />
+              </div>
+
+              {/* Edit Qualifications Section */}
+              <div className="space-y-4 border-t pt-6">
+                <Label className="text-base font-semibold text-gray-900">Educational Qualifications (Top 3)</Label>
+                {qualifications.map((qual, index) => (
+                  <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-3 p-4 bg-gray-50 rounded-lg">
+                    <div className="sm:col-span-5 space-y-1">
+                      <Label className="text-sm font-medium">{index === 0 ? "Highest" : index === 1 ? "Second" : "Third"} Qualification</Label>
+                      <Select 
+                        value={qual.qualification} 
+                        onValueChange={(value) => handleQualificationChange(index, "qualification", value)}
+                        disabled={qualificationsLoading}
+                      >
+                        <SelectTrigger data-testid={`select-qualification-${index}`}>
+                          <SelectValue placeholder={qualificationsLoading ? "Loading..." : "Select qualification"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {qualificationsList.map((qualification) => (
+                            <SelectItem key={qualification.id} value={qualification.name}>
+                              {qualification.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="sm:col-span-4 space-y-1">
+                      <Label className="text-sm font-medium">Specialization</Label>
+                      <Select 
+                        value={qual.specialization} 
+                        onValueChange={(value) => handleQualificationChange(index, "specialization", value)}
+                        disabled={specializationsLoading}
+                      >
+                        <SelectTrigger data-testid={`select-specialization-${index}`}>
+                          <SelectValue placeholder={specializationsLoading ? "Loading..." : "Select specialization"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {specializationsList.map((specialization) => (
+                            <SelectItem key={specialization.id} value={specialization.name}>
+                              {specialization.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="sm:col-span-3 space-y-1">
+                      <Label className="text-sm font-medium">Score/GPA</Label>
+                      <Input
+                        type="text"
+                        placeholder="e.g., 3.8 GPA"
+                        value={qual.score}
+                        onChange={(e) => handleQualificationChange(index, "score", e.target.value)}
+                        data-testid={`input-score-${index}`}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Edit Teaching Subjects & Experience Section */}
+              <div className="space-y-4 border-t pt-6">
+                <Label className="text-base font-semibold text-gray-900">Teaching Subjects & Experience</Label>
+                {subjects.map((subj, index) => (
+                  <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-3 p-4 bg-gray-50 rounded-lg">
+                    <div className="sm:col-span-7 space-y-1">
+                      <Label className="text-sm font-medium">Subject {index + 1}</Label>
+                      <Select 
+                        value={subj.subject} 
+                        onValueChange={(value) => handleSubjectChange(index, "subject", value)}
+                        disabled={subjectsLoading}
+                      >
+                        <SelectTrigger data-testid={`select-subject-${index}`}>
+                          <SelectValue placeholder={subjectsLoading ? "Loading..." : "Select subject"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {subjectsList.map((subject) => (
+                            <SelectItem key={subject.id} value={subject.name}>
+                              {subject.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="sm:col-span-5 space-y-1">
+                      <Label className="text-sm font-medium">Teaching Experience (Years)</Label>
+                      <Input
+                        type="number"
+                        placeholder="e.g., 5"
+                        min="0"
+                        max="50"
+                        value={subj.experience}
+                        onChange={(e) => handleSubjectChange(index, "experience", e.target.value)}
+                        data-testid={`input-experience-${index}`}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
 
               <Button
