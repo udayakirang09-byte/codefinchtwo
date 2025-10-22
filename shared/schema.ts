@@ -60,6 +60,19 @@ export const backupCodes = pgTable("backup_codes", {
   userIdIdx: index("backup_codes_user_id_idx").on(table.userId),
 }));
 
+// Password reset codes for forgot password flow
+export const passwordResetCodes = pgTable("password_reset_codes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").notNull(),
+  code: varchar("code").notNull(), // 6-digit reset code
+  used: boolean("used").default(false),
+  expiresAt: timestamp("expires_at").notNull(), // 15 minutes from creation
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  emailIdx: index("password_reset_codes_email_idx").on(table.email),
+  expiresAtIdx: index("password_reset_codes_expires_at_idx").on(table.expiresAt),
+}));
+
 // Security event logs for audit trail
 export const securityLogs = pgTable("security_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

@@ -44,6 +44,7 @@ import {
   notifications,
   bookingHolds,
   sessionDossiers,
+  passwordResetCodes,
   type InsertAdminConfig, 
   type InsertFooterLink, 
   type InsertTimeSlot, 
@@ -1421,7 +1422,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { email }: { email: string } = req.body;
       
-      // Generate reset code and store it temporarily
+      // Generate reset code
       const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
       
       // Import email service dynamically to avoid startup errors
@@ -1451,7 +1452,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       if (emailSent) {
-        // TODO: Store reset code in database with expiration
+        // Delete any existing unused reset codes for this email (cleanup)
+        await db.delete(passwordResetCodes)
+          .where(and(
+            eq(passwordResetCodes.email, email.toLowerCase()),
+            eq(passwordResetCodes.used, false)
+          ));
+        
+        // Store reset code in database with 15-minute expiration
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
+        await db.insert(passwordResetCodes).values({
+          email: email.toLowerCase(),
+          code: resetCode,
+          expiresAt,
+          used: false
+        });
+        
         res.json({ 
           success: true, 
           message: "Reset code sent to your email. Please check your inbox."
@@ -1462,6 +1478,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Forgot password error:", error);
       res.status(500).json({ message: "Failed to send reset code" });
+    }
+  });
+  
+  app.post("/api/auth/verify-reset-code", async (req, res) => {
+    try {
+      const { email, code }: { email: string; code: string } = req.body;
+      
+      if (!email || !code) {
+        return res.status(400).json({ message: "Email and code are required" });
+      }
+      
+      // Find the reset code in database
+      const resetCodes = await db.select()
+        .from(passwordResetCodes)
+        .where(and(
+          eq(passwordResetCodes.email, email.toLowerCase()),
+          eq(passwordResetCodes.code, code),
+          eq(passwordResetCodes.used, false)
+        ))
+        .limit(1);
+      
+      if (resetCodes.length === 0) {
+        return res.status(400).json({ message: "Invalid or expired reset code" });
+      }
+      
+      const resetCode = resetCodes[0];
+      
+      // Check if code has expired (15 minutes)
+      if (new Date() > new Date(resetCode.expiresAt)) {
+        return res.status(400).json({ message: "Reset code has expired. Please request a new one." });
+      }
+      
+      res.json({ 
+        success: true, 
+        message: "Reset code verified successfully" 
+      });
+    } catch (error) {
+      console.error("Verify reset code error:", error);
+      res.status(500).json({ message: "Failed to verify reset code" });
+    }
+  });
+  
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { email, code, newPassword }: { email: string; code: string; newPassword: string } = req.body;
+      
+      if (!email || !code || !newPassword) {
+        return res.status(400).json({ message: "Email, code, and new password are required" });
+      }
+      
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters long" });
+      }
+      
+      // Find and validate the reset code
+      const resetCodes = await db.select()
+        .from(passwordResetCodes)
+        .where(and(
+          eq(passwordResetCodes.email, email.toLowerCase()),
+          eq(passwordResetCodes.code, code),
+          eq(passwordResetCodes.used, false)
+        ))
+        .limit(1);
+      
+      if (resetCodes.length === 0) {
+        return res.status(400).json({ message: "Invalid or expired reset code" });
+      }
+      
+      const resetCode = resetCodes[0];
+      
+      // Check if code has expired
+      if (new Date() > new Date(resetCode.expiresAt)) {
+        return res.status(400).json({ message: "Reset code has expired. Please request a new one." });
+      }
+      
+      // Find the user
+      const userList = await db.select()
+        .from(users)
+        .where(eq(users.email, email.toLowerCase()))
+        .limit(1);
+      
+      if (userList.length === 0) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const user = userList[0];
+      
+      // Hash the new password
+      const bcrypt = await import('bcrypt');
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      
+      // Update user's password
+      await db.update(users)
+        .set({ password: hashedPassword })
+        .where(eq(users.id, user.id));
+      
+      // Mark the reset code as used
+      await db.update(passwordResetCodes)
+        .set({ used: true })
+        .where(eq(passwordResetCodes.id, resetCode.id));
+      
+      res.json({ 
+        success: true, 
+        message: "Password reset successfully. You can now sign in with your new password." 
+      });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ message: "Failed to reset password" });
     }
   });
   

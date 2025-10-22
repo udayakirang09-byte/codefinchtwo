@@ -31,7 +31,7 @@ export default function ForgotPassword() {
       if (response.ok) {
         toast({
           title: "Reset Code Sent",
-          description: `We've sent a reset code to ${email}. Please check your email. Use code "123456" for demo.`,
+          description: `We've sent a reset code to ${email}. Please check your email.`,
           variant: "default",
         });
         setStep("code");
@@ -46,11 +46,10 @@ export default function ForgotPassword() {
     } catch (error) {
       console.error('Password reset error:', error);
       toast({
-        title: "Email Sent Successfully",
-        description: `Reset code has been sent to ${email}. For demo purposes, use code "123456".`,
-        variant: "default",
+        title: "Error",
+        description: "Failed to send reset code. Please check your email address and try again.",
+        variant: "destructive",
       });
-      setStep("code");
     } finally {
       setLoading(false);
     }
@@ -61,19 +60,29 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
-      // Simulate code verification
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      if (resetCode === "123456") { // Demo code
+      const response = await fetch('/api/auth/verify-reset-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code: resetCode })
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Code Verified",
+          description: "Reset code verified successfully. You can now set a new password.",
+          variant: "default",
+        });
         setStep("reset");
       } else {
+        const errorData = await response.json();
         toast({
           title: "Invalid Code",
-          description: "The reset code you entered is incorrect. Please try again.",
+          description: errorData.message || "The reset code you entered is incorrect. Please try again.",
           variant: "destructive",
         });
       }
     } catch (error) {
+      console.error('Verify code error:', error);
       toast({
         title: "Error",
         description: "Failed to verify code. Please try again.",
@@ -109,18 +118,33 @@ export default function ForgotPassword() {
     }
 
     try {
-      // Simulate password reset
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "Password Reset Successful",
-        description: "Your password has been reset. You can now sign in with your new password.",
-        variant: "default",
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code: resetCode, newPassword })
       });
-      
-      // Redirect to login
-      window.location.href = "/login";
+
+      if (response.ok) {
+        toast({
+          title: "Password Reset Successful",
+          description: "Your password has been reset. You can now sign in with your new password.",
+          variant: "default",
+        });
+        
+        // Redirect to login after a short delay
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 1500);
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Error",
+          description: errorData.message || "Failed to reset password. Please try again.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
+      console.error('Reset password error:', error);
       toast({
         title: "Error",
         description: "Failed to reset password. Please try again.",
@@ -202,9 +226,6 @@ export default function ForgotPassword() {
                   required
                   data-testid="input-reset-code"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Demo: Use code "123456" to continue
-                </p>
               </div>
 
               <Button
