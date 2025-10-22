@@ -736,6 +736,8 @@ export const adminPaymentConfig = pgTable("admin_payment_config", {
   razorpayMode: varchar("razorpay_mode").notNull().default("upi"), // "upi" or "api_keys"
   enableRazorpay: boolean("enable_razorpay").default(false), // Toggle for Razorpay integration
   adminUpiId: varchar("admin_upi_id"), // Admin UPI ID for UPI mode
+  gstRate: decimal("gst_rate", { precision: 5, scale: 2 }).default("18.00"), // GST percentage (default 18%)
+  platformFeeRate: decimal("platform_fee_rate", { precision: 5, scale: 2 }).default("15.00"), // Platform fee percentage (default 15%)
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 

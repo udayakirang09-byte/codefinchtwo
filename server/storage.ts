@@ -398,7 +398,9 @@ export interface IStorage {
     paymentMode?: 'dummy' | 'realtime',
     razorpayMode?: 'upi' | 'api_keys',
     enableRazorpay?: boolean,
-    adminUpiId?: string
+    adminUpiId?: string,
+    gstRate?: number,
+    platformFeeRate?: number
   ): Promise<void>;
   
   // Admin Configuration operations
@@ -3004,7 +3006,9 @@ export class DatabaseStorage implements IStorage {
     paymentMode?: 'dummy' | 'realtime',
     razorpayMode?: 'upi' | 'api_keys',
     enableRazorpay?: boolean,
-    adminUpiId?: string
+    adminUpiId?: string,
+    gstRate?: number,
+    platformFeeRate?: number
   ): Promise<void> {
     const existing = await this.getAdminPaymentConfig();
     
@@ -3013,6 +3017,8 @@ export class DatabaseStorage implements IStorage {
     if (razorpayMode !== undefined) updates.razorpayMode = razorpayMode;
     if (enableRazorpay !== undefined) updates.enableRazorpay = enableRazorpay;
     if (adminUpiId !== undefined) updates.adminUpiId = adminUpiId;
+    if (gstRate !== undefined) updates.gstRate = gstRate.toString();
+    if (platformFeeRate !== undefined) updates.platformFeeRate = platformFeeRate.toString();
     
     if (existing) {
       await db
@@ -3024,7 +3030,9 @@ export class DatabaseStorage implements IStorage {
         paymentMode: paymentMode || 'dummy',
         razorpayMode: razorpayMode || 'upi',
         enableRazorpay: enableRazorpay || false,
-        ...(adminUpiId && { adminUpiId })
+        ...(adminUpiId && { adminUpiId }),
+        ...(gstRate !== undefined && { gstRate: gstRate.toString() }),
+        ...(platformFeeRate !== undefined && { platformFeeRate: platformFeeRate.toString() })
       });
     }
   }

@@ -7898,13 +7898,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentMode: adminPaymentConfig?.paymentMode || 'dummy',
         razorpayMode: adminPaymentConfig?.razorpayMode || 'upi',
         enableRazorpay: adminPaymentConfig?.enableRazorpay || false,
-        adminUpiId: adminPaymentConfig?.adminUpiId || undefined
+        adminUpiId: adminPaymentConfig?.adminUpiId || undefined,
+        // Add fee configuration
+        gstRate: adminPaymentConfig?.gstRate ? parseFloat(adminPaymentConfig.gstRate) : 18.00,
+        platformFeeRate: adminPaymentConfig?.platformFeeRate ? parseFloat(adminPaymentConfig.platformFeeRate) : 15.00
       };
       
       res.json(paymentConfig);
     } catch (error) {
       console.error("Error loading payment config:", error);
       res.status(500).json({ error: "Failed to load payment configuration" });
+    }
+  });
+
+  // Public endpoint to fetch fee configuration for booking pages
+  app.get("/api/fee-config", async (req, res) => {
+    try {
+      const adminPaymentConfig = await storage.getAdminPaymentConfig();
+      
+      const feeConfig = {
+        gstRate: adminPaymentConfig?.gstRate ? parseFloat(adminPaymentConfig.gstRate) : 18.00,
+        platformFeeRate: adminPaymentConfig?.platformFeeRate ? parseFloat(adminPaymentConfig.platformFeeRate) : 15.00
+      };
+      
+      res.json(feeConfig);
+    } catch (error) {
+      console.error("Error loading fee config:", error);
+      res.status(500).json({ error: "Failed to load fee configuration" });
     }
   });
 
@@ -10366,15 +10386,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Admin access required' });
       }
 
-      const { paymentMode, razorpayMode, enableRazorpay, adminUpiId } = req.body;
+      const { paymentMode, razorpayMode, enableRazorpay, adminUpiId, gstRate, platformFeeRate } = req.body;
       if (paymentMode && !['dummy', 'realtime'].includes(paymentMode)) {
         return res.status(400).json({ message: 'paymentMode must be either "dummy" or "realtime"' });
       }
       if (razorpayMode && !['upi', 'api_keys'].includes(razorpayMode)) {
         return res.status(400).json({ message: 'razorpayMode must be either "upi" or "api_keys"' });
       }
+      if (gstRate !== undefined && (gstRate < 0 || gstRate > 100)) {
+        return res.status(400).json({ message: 'GST rate must be between 0 and 100' });
+      }
+      if (platformFeeRate !== undefined && (platformFeeRate < 0 || platformFeeRate > 100)) {
+        return res.status(400).json({ message: 'Platform fee rate must be between 0 and 100' });
+      }
 
-      await storage.updateAdminPaymentConfig(paymentMode, razorpayMode, enableRazorpay, adminUpiId);
+      await storage.updateAdminPaymentConfig(paymentMode, razorpayMode, enableRazorpay, adminUpiId, gstRate, platformFeeRate);
       res.json({ success: true, message: 'Payment configuration updated successfully' });
     } catch (error) {
       console.error('Error updating admin payment config:', error);
