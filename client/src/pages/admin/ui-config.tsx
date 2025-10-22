@@ -190,10 +190,8 @@ export default function AdminUiConfig() {
     { key: 'achievementBadges' as const, label: 'Achievement Badges', section: 'For Students' },
     { key: 'discussionForums' as const, label: 'Discussion Forums', section: 'For Students' },
     { key: 'projectShowcase' as const, label: 'Project Showcase', section: 'For Students' },
-    { key: 'communityEvents' as const, label: 'Community Events', section: 'For Students' },
     { key: 'mentorCommunity' as const, label: 'Mentor Community', section: 'For Mentors' },
     { key: 'teacherResources' as const, label: 'Teacher Resources', section: 'For Mentors' },
-    { key: 'successStories' as const, label: 'Success Stories', section: 'For Mentors' },
     { key: 'contactUs' as const, label: 'Contact Us', section: 'Support' },
   ];
 
