@@ -153,6 +153,18 @@ export default function Booking() {
     },
   });
 
+  // Check if student has completed prerequisite sessions for bulk booking
+  const { data: studentBookings } = useQuery<any[]>({
+    queryKey: ["/api/bookings/student", studentData?.id],
+    enabled: !!studentData?.id,
+  });
+
+  // Calculate if student meets bulk booking prerequisite
+  const completedSessions = studentBookings?.filter(
+    booking => booking.status === 'completed' && !booking.bulkPackageId
+  ) || [];
+  const meetsBulkPrerequisite = completedSessions.length > 0;
+
   // Get selected subject's fee from mentorSubjects
   const selectedSubjectFee = formData.subject && mentorSubjects
     ? mentorSubjects.subjects.find(s => s.subject === formData.subject)?.classFee
@@ -819,7 +831,17 @@ export default function Booking() {
                       <SelectItem value="bulk-6">Bulk Package - 6 Classes</SelectItem>
                     </SelectContent>
                   </Select>
-                  {bookingType === "bulk" && (
+                  {bookingType === "bulk" && !meetsBulkPrerequisite && (
+                    <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                      <p className="text-sm text-yellow-900 dark:text-yellow-100 font-medium">
+                        ⚠️ Prerequisite Required
+                      </p>
+                      <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+                        You must complete at least one demo session or 1:1 class before purchasing a bulk package. This ensures you're happy with the teacher's style!
+                      </p>
+                    </div>
+                  )}
+                  {bookingType === "bulk" && meetsBulkPrerequisite && (
                     <p className="text-xs text-green-600 dark:text-green-400">
                       💰 Purchase {bulkClassCount} classes upfront. Schedule them later at your convenience!
                     </p>
@@ -894,11 +916,16 @@ export default function Booking() {
                     type="submit" 
                     className="w-full" 
                     size="lg"
-                    disabled={bookingMutation.isPending}
+                    disabled={bookingMutation.isPending || (bookingType === "bulk" && !meetsBulkPrerequisite)}
                     data-testid="button-confirm-booking"
                   >
                     {bookingMutation.isPending ? "Processing..." : (bookingType === "bulk" ? "Purchase Bulk Package" : "Confirm Booking")}
                   </Button>
+                  {bookingType === "bulk" && !meetsBulkPrerequisite && (
+                    <p className="text-xs text-yellow-600 dark:text-yellow-400 text-center mt-2">
+                      Complete a demo or 1:1 session first to unlock bulk packages
+                    </p>
+                  )}
                 </div>
               </form>
             </CardContent>

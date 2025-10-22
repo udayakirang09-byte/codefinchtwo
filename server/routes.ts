@@ -3379,6 +3379,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Mentor not found" });
       }
 
+      // PREREQUISITE CHECK: Student must have completed at least one demo OR 1-to-1 class
+      const studentBookings = await storage.getBookingsByStudent(resolvedStudentId);
+      const completedSessions = studentBookings.filter(
+        booking => booking.status === 'completed' && !booking.bulkPackageId
+      );
+      
+      if (completedSessions.length === 0) {
+        console.log(`❌ Student ${resolvedStudentId} has no completed demo or 1-to-1 classes`);
+        return res.status(400).json({ 
+          message: "You must complete at least one demo session or 1-to-1 class before purchasing a bulk package",
+          requirementNotMet: true,
+          completedSessions: 0
+        });
+      }
+      
+      console.log(`✅ Student ${resolvedStudentId} has ${completedSessions.length} completed session(s) - prerequisite met`);
+
       // Check if student has reached max packages limit
       const existingPackages = await storage.getBulkPackagesByStudent(resolvedStudentId);
       const activePackages = existingPackages.filter(pkg => pkg.status === 'active' && pkg.remainingClasses > 0);
