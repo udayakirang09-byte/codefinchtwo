@@ -1565,19 +1565,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const user = userList[0];
       
-      // Hash the new password
+      // Hash the new password (trim to match login behavior)
       const bcrypt = await import('bcrypt');
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      const hashedPassword = await bcrypt.hash(newPassword.trim(), 10);
+      
+      console.log(`🔐 [PASSWORD RESET] Updating password for user ${user.id} (${email.toLowerCase()})`);
+      console.log(`🔐 [PASSWORD RESET] New password hash: ${hashedPassword.substring(0, 20)}...`);
       
       // Update user's password
-      await db.update(users)
+      const updateResult = await db.update(users)
         .set({ password: hashedPassword })
-        .where(eq(users.id, user.id));
+        .where(eq(users.id, user.id))
+        .returning({ id: users.id, email: users.email });
+      
+      console.log(`🔐 [PASSWORD RESET] Password updated for:`, updateResult);
       
       // Mark the reset code as used
       await db.update(passwordResetCodes)
         .set({ used: true })
         .where(eq(passwordResetCodes.id, resetCode.id));
+      
+      console.log(`🔐 [PASSWORD RESET] Reset code marked as used`);
       
       res.json({ 
         success: true, 
