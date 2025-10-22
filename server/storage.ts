@@ -1758,6 +1758,10 @@ export class DatabaseStorage implements IStorage {
         .update(teacherMedia)
         .set(updates)
         .where(eq(teacherMedia.mentorId, mentorId));
+      
+      // Invalidate mentors cache so the updated media shows up in Find Mentors immediately
+      await cache.del('mentors:list');
+      console.log('🗑️ [CACHE] Cleared mentors cache after media approval for mentor:', mentorId);
     }
   }
 

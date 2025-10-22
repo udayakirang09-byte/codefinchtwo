@@ -55,6 +55,7 @@ import {
 import { sendEmail, generateEmailOTP, generateEmailOTPVerificationEmail } from "./email";
 import { aiAnalytics } from "./ai-analytics";
 import { detectAbusiveLanguage } from "./abusive-language-detector";
+import { cache } from "./redis";
 import Stripe from "stripe";
 import Razorpay from "razorpay";
 import crypto from "crypto";
@@ -6532,6 +6533,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("❌ Error updating teacher media config:", error);
       res.status(500).json({ message: "Failed to update configuration" });
+    }
+  });
+
+  // Admin endpoint to manually clear the mentors cache
+  app.post("/api/admin/clear-mentors-cache", authenticateSession, requireAdmin, async (req, res) => {
+    try {
+      console.log('🗑️ POST /api/admin/clear-mentors-cache - Manually clearing mentors cache');
+      await cache.del('mentors:list');
+      console.log('✅ Mentors cache cleared successfully');
+      res.json({ message: "Mentors cache cleared successfully" });
+    } catch (error) {
+      console.error("❌ Error clearing mentors cache:", error);
+      res.status(500).json({ message: "Failed to clear mentors cache" });
     }
   });
 
