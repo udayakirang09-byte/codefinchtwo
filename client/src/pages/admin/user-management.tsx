@@ -16,7 +16,7 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'student' | 'teacher' | 'admin';
+  role: 'student' | 'mentor' | 'admin';
   isActive: boolean;
   createdAt: string;
 }
@@ -90,7 +90,7 @@ export default function UserManagement() {
   };
 
   const handleRoleChange = (userId: string, newRole: string) => {
-    updateUserMutation.mutate({ userId, updates: { role: newRole as 'student' | 'teacher' | 'admin' } });
+    updateUserMutation.mutate({ userId, updates: { role: newRole as 'student' | 'mentor' | 'admin' } });
   };
 
   const handleDeleteUser = (userId: string) => {
@@ -133,7 +133,7 @@ export default function UserManagement() {
                 <SelectContent>
                   <SelectItem value="all">All Roles</SelectItem>
                   <SelectItem value="student">Students</SelectItem>
-                  <SelectItem value="teacher">Teachers</SelectItem>
+                  <SelectItem value="mentor">Mentors</SelectItem>
                   <SelectItem value="admin">Admins</SelectItem>
                 </SelectContent>
               </Select>
@@ -187,7 +187,7 @@ export default function UserManagement() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="student">Student</SelectItem>
-                            <SelectItem value="teacher">Teacher</SelectItem>
+                            <SelectItem value="mentor">Mentor</SelectItem>
                             <SelectItem value="admin">Admin</SelectItem>
                           </SelectContent>
                         </Select>
