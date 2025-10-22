@@ -2920,6 +2920,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Set fallback meeting URL for WebRTC failures (Teams, Zoom, Google Meet, etc.)
+  app.patch("/api/bookings/:id/fallback-meeting", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { fallbackMeetingUrl } = req.body;
+      
+      // Get booking
+      const booking = await storage.getBooking(id);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      // Validate URL format if provided
+      if (fallbackMeetingUrl) {
+        try {
+          new URL(fallbackMeetingUrl);
+        } catch {
+          return res.status(400).json({ message: "Invalid meeting URL format" });
+        }
+      }
+      
+      // Update fallback meeting URL
+      await db
+        .update(bookings)
+        .set({ 
+          fallbackMeetingUrl,
+          updatedAt: new Date()
+        })
+        .where(eq(bookings.id, id));
+      
+      console.log(`✅ Updated fallback meeting URL for booking ${id}`);
+      
+      res.json({ 
+        message: "Fallback meeting URL updated successfully",
+        fallbackMeetingUrl 
+      });
+    } catch (error) {
+      console.error("Error updating fallback meeting URL:", error);
+      res.status(500).json({ message: "Failed to update fallback meeting URL" });
+    }
+  });
+
   // C4, C10: Booking Hold Routes
   // Create a booking hold (locks time slot for 10 minutes during payment)
   app.post("/api/booking-holds", async (req, res) => {

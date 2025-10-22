@@ -197,6 +197,8 @@ export const bookings = pgTable("bookings", {
   transferFeeAdjustment: decimal("transfer_fee_adjustment", { precision: 10, scale: 2 }), // Fee difference (positive = student pays, negative = refund)
   transferredAt: timestamp("transferred_at"), // When the transfer occurred
   transferReason: text("transfer_reason"), // Reason for transfer
+  // WebRTC Fallback Support
+  fallbackMeetingUrl: text("fallback_meeting_url"), // External meeting link (Teams, Zoom, Google Meet) for WebRTC failures
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
