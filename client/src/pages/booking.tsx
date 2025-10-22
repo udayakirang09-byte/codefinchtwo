@@ -153,6 +153,20 @@ export default function Booking() {
     },
   });
 
+  // Fetch fee configuration (GST and Platform Fee)
+  const { data: feeConfig } = useQuery<{ gstRate: number; platformFeeRate: number }>({
+    queryKey: ['/api/fee-config'],
+    queryFn: async () => {
+      try {
+        const response = await fetch('/api/fee-config');
+        return await response.json();
+      } catch (error) {
+        console.error('Failed to fetch fee config:', error);
+        return { gstRate: 18, platformFeeRate: 15 }; // Default values
+      }
+    },
+  });
+
   // Check if student has completed prerequisite sessions for bulk booking
   const { data: studentBookings } = useQuery<any[]>({
     queryKey: ["/api/bookings/student", studentData?.id],
@@ -890,10 +904,42 @@ export default function Booking() {
                 </div>
 
                 <div className="pt-4 border-t">
+                  {formData.sessionType !== 'demo' && displayedCost > 0 && feeConfig && (
+                    <div className="bg-muted/50 dark:bg-muted/30 rounded-lg p-4 mb-4 space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Fee Breakdown</p>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Base Cost {bookingType === "bulk" ? `(${bulkClassCount} classes)` : ""}</span>
+                          <span data-testid="text-base-cost">₹{(displayedCost * (bookingType === "bulk" ? bulkClassCount : 1)).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">GST ({feeConfig.gstRate}%)</span>
+                          <span data-testid="text-gst-amount">₹{(displayedCost * (bookingType === "bulk" ? bulkClassCount : 1) * feeConfig.gstRate / 100).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Platform Fee ({feeConfig.platformFeeRate}%)</span>
+                          <span data-testid="text-platform-fee-amount">₹{(displayedCost * (bookingType === "bulk" ? bulkClassCount : 1) * feeConfig.platformFeeRate / 100).toFixed(2)}</span>
+                        </div>
+                        <div className="h-px bg-border my-2"></div>
+                        <div className="flex justify-between font-medium">
+                          <span>Subtotal</span>
+                          <span data-testid="text-subtotal">
+                            ₹{(displayedCost * (bookingType === "bulk" ? bulkClassCount : 1) * (1 + feeConfig.gstRate / 100 + feeConfig.platformFeeRate / 100)).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-lg font-medium">Total Cost:</span>
                     <span className="text-2xl font-bold text-primary" data-testid="text-total-cost">
-                      ₹{bookingType === "bulk" ? (displayedCost * bulkClassCount).toFixed(2) : displayedCost.toFixed(2)}
+                      {formData.sessionType === 'demo' ? (
+                        <span className="text-green-600 dark:text-green-400">FREE</span>
+                      ) : feeConfig ? (
+                        `₹${(displayedCost * (bookingType === "bulk" ? bulkClassCount : 1) * (1 + feeConfig.gstRate / 100 + feeConfig.platformFeeRate / 100)).toFixed(2)}`
+                      ) : (
+                        `₹${(bookingType === "bulk" ? (displayedCost * bulkClassCount) : displayedCost).toFixed(2)}`
+                      )}
                     </span>
                   </div>
                   {bookingType === "bulk" && (
