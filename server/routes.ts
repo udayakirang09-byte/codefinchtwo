@@ -3133,6 +3133,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Transfer booking to a new teacher with fee recalculation
+  app.post("/api/bookings/:id/transfer", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { newMentorId, transferReason } = req.body;
+
+      if (!newMentorId) {
+        return res.status(400).json({ message: "New teacher ID is required" });
+      }
+
+      // Get the original booking
+      const originalBooking = await storage.getBooking(id);
+      if (!originalBooking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Validate booking can be transferred
+      if (originalBooking.status === 'cancelled') {
+        return res.status(400).json({ message: "Cannot transfer a cancelled booking" });
+      }
+
+      if (originalBooking.status === 'completed') {
+        return res.status(400).json({ message: "Cannot transfer a completed booking" });
+      }
+
+      // Check 6-hour restriction
+      const now = new Date();
+      const scheduledTime = new Date(originalBooking.scheduledAt);
+      const sixHoursBeforeClass = new Date(scheduledTime.getTime() - 6 * 60 * 60 * 1000);
+
+      if (now >= sixHoursBeforeClass) {
+        return res.status(400).json({ 
+          message: "Cannot transfer within 6 hours of the scheduled class time" 
+        });
+      }
+
+      // Cannot transfer to the same teacher
+      if (originalBooking.mentorId === newMentorId) {
+        return res.status(400).json({ message: "New teacher must be different from current teacher" });
+      }
+
+      // Get new teacher details
+      const newMentor = await storage.getMentor(newMentorId);
+      if (!newMentor) {
+        return res.status(404).json({ message: "New teacher not found" });
+      }
+
+      // Get original teacher for comparison
+      const originalMentor = await storage.getMentor(originalBooking.mentorId);
+
+      console.log(`🔄 [TRANSFER] Starting class transfer from teacher ${originalBooking.mentorId} to ${newMentorId}`);
+
+      // Calculate fee difference
+      // For simplicity, assuming hourly rate. In production, you'd fetch subject-specific pricing
+      const originalFee = Number(originalMentor?.hourlyRate || 0);
+      const newFee = Number(newMentor.hourlyRate || 0);
+      const durationHours = (originalBooking.duration || 55) / 60;
+      const originalCost = originalFee * durationHours;
+      const newCost = newFee * durationHours;
+      const feeAdjustment = newCost - originalCost;
+
+      console.log(`💰 [TRANSFER] Fee calculation: Original ₹${originalCost.toFixed(2)} → New ₹${newCost.toFixed(2)} (Adjustment: ₹${feeAdjustment.toFixed(2)})`);
+
+      // Create new booking with the new teacher
+      const newBooking = await storage.createBooking({
+        studentId: originalBooking.studentId,
+        mentorId: newMentorId,
+        scheduledAt: originalBooking.scheduledAt,
+        duration: originalBooking.duration,
+        status: 'scheduled',
+        subject: originalBooking.subject,
+        notes: originalBooking.notes || '',
+        sessionType: originalBooking.sessionType,
+        transferredFromBookingId: originalBooking.id,
+        transferFeeAdjustment: feeAdjustment.toFixed(2),
+        transferredAt: new Date(),
+        transferReason: transferReason || 'Student requested teacher change'
+      });
+
+      console.log(`✅ [TRANSFER] New booking created: ${newBooking.id}`);
+
+      // Cancel the original booking
+      await storage.cancelBooking(originalBooking.id);
+      console.log(`✅ [TRANSFER] Original booking cancelled: ${originalBooking.id}`);
+
+      // Broadcast schedule changes to both teachers
+      if (global.broadcastScheduleChange) {
+        // Notify original teacher that booking was cancelled (transferred out)
+        global.broadcastScheduleChange({
+          type: 'booking-cancelled',
+          mentorId: originalBooking.mentorId,
+          data: { bookingId: originalBooking.id, reason: 'transferred' }
+        });
+        // Notify new teacher of new booking (transferred in)
+        global.broadcastScheduleChange({
+          type: 'booking-created',
+          mentorId: newMentorId,
+          data: { bookingId: newBooking.id, transferred: true }
+        });
+      }
+
+      res.json({
+        message: "Class transferred successfully",
+        newBookingId: newBooking.id,
+        originalBookingId: originalBooking.id,
+        feeAdjustment: parseFloat(feeAdjustment.toFixed(2)),
+        feeAdjustmentDisplay: feeAdjustment > 0 
+          ? `+₹${feeAdjustment.toFixed(2)} (Additional payment required)`
+          : feeAdjustment < 0 
+          ? `-₹${Math.abs(feeAdjustment).toFixed(2)} (Refund will be processed)`
+          : '₹0.00 (No fee adjustment)',
+        newTeacher: {
+          id: newMentor.id,
+          name: `${newMentor.user.firstName} ${newMentor.user.lastName}`,
+          email: newMentor.user.email
+        }
+      });
+    } catch (error) {
+      console.error("❌ [TRANSFER] Error transferring booking:", error);
+      res.status(500).json({ message: "Failed to transfer booking" });
+    }
+  });
+
   // Cancel course enrollment with prorated refund
   app.post("/api/enrollments/:id/cancel", async (req, res) => {
     try {

@@ -191,6 +191,11 @@ export const bookings = pgTable("bookings", {
   actualDuration: integer("actual_duration"), // Actual minutes the class lasted
   // Recording Visibility (for demo sessions)
   recordingVisibilityUnlockedAt: timestamp("recording_visibility_unlocked_at"), // When demo recording becomes visible
+  // Class Transfer Support
+  transferredFromBookingId: varchar("transferred_from_booking_id"), // Original booking ID if this is a transferred class
+  transferFeeAdjustment: decimal("transfer_fee_adjustment", { precision: 10, scale: 2 }), // Fee difference (positive = student pays, negative = refund)
+  transferredAt: timestamp("transferred_at"), // When the transfer occurred
+  transferReason: text("transfer_reason"), // Reason for transfer
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
