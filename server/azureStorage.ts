@@ -322,6 +322,37 @@ export class AzureStorageService {
       }
     }
   }
+
+  async downloadBlob(containerName: string, blobPath: string): Promise<{ success: boolean; buffer?: Buffer; error?: string }> {
+    try {
+      // Get container client (use default container if same as configured)
+      const container = containerName === CONTAINER_NAME 
+        ? this.getContainer() 
+        : blobServiceClient?.getContainerClient(containerName);
+
+      if (!container) {
+        return { success: false, error: 'Container client not initialized' };
+      }
+
+      const blobClient = container.getBlockBlobClient(blobPath);
+      const downloadResponse = await blobClient.download(0);
+
+      if (!downloadResponse.readableStreamBody) {
+        return { success: false, error: 'No readable stream in download response' };
+      }
+
+      const chunks: Buffer[] = [];
+      for await (const chunk of downloadResponse.readableStreamBody) {
+        chunks.push(Buffer.from(chunk));
+      }
+
+      const buffer = Buffer.concat(chunks);
+      return { success: true, buffer };
+    } catch (error: any) {
+      console.error(`❌ Error downloading blob ${containerName}/${blobPath}:`, error);
+      return { success: false, error: error.message || 'Unknown error' };
+    }
+  }
 }
 
 export const azureStorage = new AzureStorageService();
