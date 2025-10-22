@@ -2105,6 +2105,121 @@ export const azureMetricsHistory = pgTable("azure_metrics_history", {
   metadata: jsonb("metadata").$type<Record<string, any>>(),
 });
 
+// ========================================
+// WebRTC Telemetry Tables (99.99% Reliability)
+// ========================================
+
+// WebRTC Sessions - Track each video call session
+export const webrtcSessions = pgTable("webrtc_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bookingId: varchar("booking_id").references(() => bookings.id),
+  sessionId: varchar("session_id").notNull().unique(), // WebSocket session ID
+  teacherId: varchar("teacher_id").notNull(),
+  studentId: varchar("student_id").notNull(),
+  
+  // Connection Path Tracking
+  connectionType: varchar("connection_type"), // p2p, relay_udp, relay_tcp, relay_tls, sfu, external_fallback
+  primaryRegion: varchar("primary_region"), // central_india, south_india, etc.
+  backupRegionUsed: boolean("backup_region_used").default(false),
+  externalFallbackUsed: boolean("external_fallback_used").default(false),
+  
+  // Session Metrics
+  joinedAt: timestamp("joined_at"),
+  leftAt: timestamp("left_at"),
+  duration: integer("duration"), // seconds
+  averageHealthScore: decimal("average_health_score", { precision: 5, scale: 2 }), // 0-100
+  minHealthScore: decimal("min_health_score", { precision: 5, scale: 2 }),
+  maxHealthScore: decimal("max_health_score", { precision: 5, scale: 2 }),
+  
+  // Quality Metrics
+  averagePacketLoss: decimal("average_packet_loss", { precision: 5, scale: 2 }), // percentage
+  averageRtt: integer("average_rtt"), // milliseconds
+  averageJitter: integer("average_jitter"), // milliseconds
+  totalFreezes: integer("total_freezes").default(0),
+  
+  // Auto-repair Events
+  iceRestartsCount: integer("ice_restarts_count").default(0),
+  qualityDowngradesCount: integer("quality_downgrades_count").default(0),
+  regionSwitchesCount: integer("region_switches_count").default(0),
+  
+  // Session Status
+  sessionStatus: varchar("session_status").default("active"), // active, completed, failed, aborted
+  failureReason: text("failure_reason"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  bookingIdIdx: index("webrtc_sessions_booking_id_idx").on(table.bookingId),
+  sessionIdIdx: index("webrtc_sessions_session_id_idx").on(table.sessionId),
+  teacherIdIdx: index("webrtc_sessions_teacher_id_idx").on(table.teacherId),
+  studentIdIdx: index("webrtc_sessions_student_id_idx").on(table.studentId),
+  joinedAtIdx: index("webrtc_sessions_joined_at_idx").on(table.joinedAt),
+  sessionStatusIdx: index("webrtc_sessions_status_idx").on(table.sessionStatus),
+}));
+
+// WebRTC Stats - Real-time statistics sampled every 3-5 seconds
+export const webrtcStats = pgTable("webrtc_stats", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").references(() => webrtcSessions.id).notNull(),
+  userId: varchar("user_id").notNull(), // Teacher or student
+  
+  // Health Score (0-100 calculated from metrics below)
+  healthScore: decimal("health_score", { precision: 5, scale: 2 }).notNull(),
+  
+  // Network Metrics
+  packetLoss: decimal("packet_loss", { precision: 5, scale: 2 }), // percentage (0-100)
+  rtt: integer("rtt"), // Round-trip time in ms
+  jitter: integer("jitter"), // Jitter in ms
+  
+  // Media Quality Metrics
+  videoResolution: varchar("video_resolution"), // 1280x720, 640x360, audio_only
+  videoBitrate: integer("video_bitrate"), // kbps
+  audioBitrate: integer("audio_bitrate"), // kbps
+  framesPerSecond: integer("frames_per_second"),
+  freezeCount: integer("freeze_count").default(0), // Freezes in last sample window
+  
+  // Connection Details
+  candidateType: varchar("candidate_type"), // host, srflx, relay
+  protocol: varchar("protocol"), // udp, tcp, tls
+  localAddress: varchar("local_address"),
+  remoteAddress: varchar("remote_address"),
+  
+  // Bandwidth
+  availableSendBandwidth: integer("available_send_bandwidth"), // kbps
+  availableReceiveBandwidth: integer("available_receive_bandwidth"), // kbps
+  
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+}, (table) => ({
+  sessionIdIdx: index("webrtc_stats_session_id_idx").on(table.sessionId),
+  timestampIdx: index("webrtc_stats_timestamp_idx").on(table.timestamp),
+  healthScoreIdx: index("webrtc_stats_health_score_idx").on(table.healthScore),
+}));
+
+// WebRTC Events - Track connection state changes and auto-repair actions
+export const webrtcEvents = pgTable("webrtc_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").references(() => webrtcSessions.id).notNull(),
+  userId: varchar("user_id").notNull(),
+  
+  // Event Details
+  eventType: varchar("event_type").notNull(), // connection_state_change, ice_restart, quality_downgrade, region_switch, external_fallback, ice_candidate_pair
+  eventStatus: varchar("event_status").notNull(), // initiated, success, failed
+  
+  // Event Metadata
+  fromState: varchar("from_state"), // e.g., 'good' → 'poor'
+  toState: varchar("to_state"),
+  triggerReason: text("trigger_reason"), // e.g., 'health_score_below_35_for_25s'
+  
+  // Additional Context
+  metadata: jsonb("metadata").$type<Record<string, any>>().default({}),
+  
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+}, (table) => ({
+  sessionIdIdx: index("webrtc_events_session_id_idx").on(table.sessionId),
+  eventTypeIdx: index("webrtc_events_event_type_idx").on(table.eventType),
+  timestampIdx: index("webrtc_events_timestamp_idx").on(table.timestamp),
+}));
+
 // Schema definitions for teacher audio metrics
 export const insertTeacherAudioMetricsSchema = createInsertSchema(teacherAudioMetrics);
 
@@ -2175,3 +2290,17 @@ export type InsertAzureMetricsAlert = z.infer<typeof insertAzureMetricsAlertSche
 
 export type AzureMetricsHistory = typeof azureMetricsHistory.$inferSelect;
 export type InsertAzureMetricsHistory = z.infer<typeof insertAzureMetricsHistorySchema>;
+
+// WebRTC Telemetry schemas and types
+export const insertWebrtcSessionSchema = createInsertSchema(webrtcSessions);
+export const insertWebrtcStatsSchema = createInsertSchema(webrtcStats);
+export const insertWebrtcEventSchema = createInsertSchema(webrtcEvents);
+
+export type WebrtcSession = typeof webrtcSessions.$inferSelect;
+export type InsertWebrtcSession = z.infer<typeof insertWebrtcSessionSchema>;
+
+export type WebrtcStats = typeof webrtcStats.$inferSelect;
+export type InsertWebrtcStats = z.infer<typeof insertWebrtcStatsSchema>;
+
+export type WebrtcEvent = typeof webrtcEvents.$inferSelect;
+export type InsertWebrtcEvent = z.infer<typeof insertWebrtcEventSchema>;
