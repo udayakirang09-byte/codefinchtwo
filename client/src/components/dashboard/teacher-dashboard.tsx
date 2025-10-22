@@ -464,7 +464,18 @@ export default function TeacherDashboard() {
             <AlertCircle className="h-5 w-5 text-red-600" />
             <AlertTitle className="text-red-900 font-bold text-lg">⚠️ Complete Your Profile (Mandatory)</AlertTitle>
             <AlertDescription className="text-red-800">
-              <p className="font-semibold">{profileCompletion.message}</p>
+              <p className="mb-3">Please complete your profile to appear in Find Mentors. Missing:</p>
+              <div className="space-y-2 mt-2">
+                {!profileCompletion.hasSubjects && (
+                  <div className="text-2xl font-bold text-red-950">• Class Fee Configuration</div>
+                )}
+                {!profileCompletion.hasTimeSlots && (
+                  <div className="text-2xl font-bold text-red-950">• Manage Schedule</div>
+                )}
+                {!profileCompletion.hasUpiId && (
+                  <div className="text-2xl font-bold text-red-950">• UPI ID for Payment Processing</div>
+                )}
+              </div>
             </AlertDescription>
           </Alert>
         )}

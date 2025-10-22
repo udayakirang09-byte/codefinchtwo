@@ -279,10 +279,10 @@ ${backupCodes.map((code, i) => `${i + 1}. ${code}`).join('\n')}`;
                     <div>
                       <p className="font-medium">Microsoft Authenticator</p>
                       <p className="text-sm text-gray-600">
-                        {twoFAStatus?.totpEnabled ? "✅ Enabled" : "❌ Not Enabled"}
+                        {twoFAStatus?.enabled ? "✅ Enabled" : "❌ Not Enabled"}
                       </p>
                     </div>
-                    {twoFAStatus?.totpEnabled && (
+                    {twoFAStatus?.enabled && (
                       <CheckCircle className="h-8 w-8 text-green-600" />
                     )}
                   </div>
@@ -303,7 +303,7 @@ ${backupCodes.map((code, i) => `${i + 1}. ${code}`).join('\n')}`;
                   </p>
                   <Button
                     onClick={handleReset2FA}
-                    disabled={!is2FAVerified && !twoFAStatus?.totpEnabled}
+                    disabled={!is2FAVerified && !twoFAStatus?.enabled}
                     className="w-full bg-gradient-to-r from-rose-600 to-pink-700 hover:from-rose-700 hover:to-pink-800"
                     data-testid="button-reset-2fa"
                   >

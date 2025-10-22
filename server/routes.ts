@@ -1417,6 +1417,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to verify 2FA code" });
     }
   });
+
+  // Get 2FA status for a user
+  app.get("/api/auth/2fa-status/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({
+        enabled: user.totpEnabled || false,
+        hasSecret: !!user.totpSecret
+      });
+    } catch (error) {
+      console.error("Error fetching 2FA status:", error);
+      res.status(500).json({ message: "Failed to fetch 2FA status" });
+    }
+  });
   
   app.post("/api/auth/forgot-password", async (req, res) => {
     try {
