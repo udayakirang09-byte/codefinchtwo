@@ -2038,12 +2038,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Debug: Log the data being sent to frontend
       console.log('🎯 [/api/mentors] Sending mentors to frontend:', completeTeachers.length, 'teachers');
-      if (completeTeachers.length > 0) {
-        console.log('🎯 [/api/mentors] First teacher media:', {
-          name: `${completeTeachers[0].user.firstName} ${completeTeachers[0].user.lastName}`,
-          media: (completeTeachers[0] as any).media
-        });
-      }
+      completeTeachers.forEach((t: any, i: number) => {
+        console.log(`🎯 [${i+1}] ${t.user.firstName} ${t.user.lastName} - Media:`, t.media ? 'YES' : 'NO');
+      });
       
       res.json(completeTeachers);
     } catch (error) {

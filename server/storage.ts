@@ -590,6 +590,8 @@ export class DatabaseStorage implements IStorage {
 
     // Get all teacher media (photos and videos)
     const allTeacherMedia = await db.select().from(teacherMedia);
+    console.log(`📷 [DEBUG] Loaded ${allTeacherMedia.length} teacher media records`);
+    console.log(`📷 [DEBUG] First media record:`, allTeacherMedia[0]);
 
     const mentorsData = result.map(({ mentors: mentor, users: user }: any) => {
       // Calculate actual unique students for this mentor
@@ -618,6 +620,15 @@ export class DatabaseStorage implements IStorage {
 
       // Get teacher media (photo and video)
       const media = allTeacherMedia.find((m: any) => m.mentorId === mentor.id);
+      
+      if (user?.firstName === 'UDAYA' && user?.lastName === 'prm') {
+        console.log(`📷 [DEBUG] UDAYA prm - Mentor ID: ${mentor.id}`);
+        console.log(`📷 [DEBUG] UDAYA prm - Media found:`, media ? 'YES' : 'NO');
+        if (media) {
+          console.log(`📷 [DEBUG] UDAYA prm - Photo URL:`, media.photoBlobUrl);
+          console.log(`📷 [DEBUG] UDAYA prm - Photo Status:`, media.photoValidationStatus);
+        }
+      }
 
       // Calculate total experience from signup subjects (specialties)
       let totalExperience = mentor.experience || 0;
