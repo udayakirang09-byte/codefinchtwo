@@ -11,23 +11,15 @@ import { Star, Users, BookOpen, Clock, Search, Filter, X } from "lucide-react";
 
 export default function Mentors() {
   const { data: mentors, isLoading } = useQuery({
-    queryKey: ["/api/mentors", "with-media"], // Cache bust for media support
+    queryKey: ["/api/mentors", "v3"], // Updated cache key
     queryFn: async () => {
       const res = await fetch("/api/mentors", {
-        credentials: "include"
+        credentials: "include",
       });
       if (!res.ok) throw new Error(await res.text());
       return res.json();
     }
   });
-
-  // Debug: Log mentors data to see what we're getting
-  useEffect(() => {
-    if (mentors) {
-      console.log('🎯 [MENTORS PAGE] Received mentors data:', mentors);
-      console.log('🎯 [MENTORS PAGE] First mentor media:', (mentors as any)[0]?.media);
-    }
-  }, [mentors]);
 
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState("");
