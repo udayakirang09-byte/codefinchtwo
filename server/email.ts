@@ -21,18 +21,23 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
   }
 
   try {
-    await sgMail.send({
+    const emailData = {
       to: params.to,
       from: params.from || 'noreply@techlearnorbit.com',
       subject: params.subject,
       text: params.text,
       html: params.html,
-    });
+    };
+    
+    console.log(`📧 Attempting to send email from ${emailData.from} to ${emailData.to}`);
+    
+    await sgMail.send(emailData);
     
     console.log(`📧 Email sent successfully to ${params.to}`);
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('📧 SendGrid email error:', error);
+    console.error('📧 SendGrid error details:', JSON.stringify(error.response?.body, null, 2));
     return false;
   }
 }
