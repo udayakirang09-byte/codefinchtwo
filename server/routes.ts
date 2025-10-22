@@ -592,6 +592,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           interests: ['programming']
         });
         
+        // Send welcome email to student
+        console.log('📧 Sending welcome email to student:', email);
+        try {
+          const { generateStudentWelcomeEmail, sendEmail } = await import('./email.js');
+          const { subject, html, text } = generateStudentWelcomeEmail(email, firstName);
+          await sendEmail({
+            to: email,
+            subject,
+            text,
+            html
+          });
+          console.log('✅ Welcome email sent successfully to student');
+        } catch (emailError) {
+          console.error('❌ Failed to send welcome email to student:', emailError);
+          // Don't fail the signup if email fails
+        }
+        
         console.log('🎉 Student signup completed successfully for:', email);
         
         return res.status(201).json({ 

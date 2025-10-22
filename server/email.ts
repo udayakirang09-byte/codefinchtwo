@@ -183,6 +183,82 @@ Need help? Contact our support team at support@codeconnect.com
   return { subject, html, text };
 }
 
+export function generateStudentWelcomeEmail(email: string, firstName: string): { subject: string, html: string, text: string } {
+  const subject = 'Welcome to TechLearnOrbit - Your Learning Journey Begins!';
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }
+        .info-box { background: #e0e7ff; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .cta-button { display: inline-block; background: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold; }
+        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🎉 Welcome to TechLearnOrbit!</h1>
+          <p>Where Learners Meet Expert Mentors</p>
+        </div>
+        <div class="content">
+          <p>Hello ${firstName}!</p>
+          <p>Thank you for registering with TechLearnOrbit. Your account has been successfully created, and you can now explore our platform and start your learning journey!</p>
+          
+          <div class="info-box">
+            <h3>Get Started:</h3>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+              <li>Browse expert teachers across different subjects</li>
+              <li>Book personalized 1-on-1 sessions</li>
+              <li>Track your learning progress</li>
+              <li>Connect with mentors who match your learning goals</li>
+            </ul>
+          </div>
+          
+          <div style="text-align: center;">
+            <a href="https://techlearnorbit.com/login" class="cta-button">Login to Your Dashboard</a>
+          </div>
+          
+          <p style="margin-top: 30px;">Have questions? Our support team is here to help at support@techlearnorbit.com</p>
+        </div>
+        <div class="footer">
+          <p>© 2025 TechLearnOrbit. All rights reserved.</p>
+          <p>This email was sent to ${email}</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+Welcome to TechLearnOrbit!
+
+Hello ${firstName}!
+
+Thank you for registering with TechLearnOrbit. Your account has been successfully created, and you can now explore our platform and start your learning journey!
+
+Get Started:
+- Browse expert teachers across different subjects
+- Book personalized 1-on-1 sessions
+- Track your learning progress
+- Connect with mentors who match your learning goals
+
+Login at: https://techlearnorbit.com/login
+
+Have questions? Our support team is here to help at support@techlearnorbit.com
+
+© 2025 TechLearnOrbit. All rights reserved.
+This email was sent to ${email}
+  `;
+
+  return { subject, html, text };
+}
+
 export function generateTeacherWelcomeEmail(email: string): { subject: string, html: string, text: string } {
   const subject = 'Welcome to TechLearnOrbit - Your Account is Approved!';
   
