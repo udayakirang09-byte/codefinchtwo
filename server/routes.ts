@@ -6125,6 +6125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Media proxy endpoint to serve Azure Blob Storage images with proper CORS headers
+  // Uses authenticated access via Azure SDK (storage account has public access disabled)
   app.get("/api/media/proxy", async (req, res) => {
     try {
       const { url } = req.query;
@@ -6144,27 +6145,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`🖼️ Proxying media request: ${url.substring(0, 100)}...`);
 
-      // Fetch the image from Azure Blob Storage
-      const response = await fetch(url);
+      // Extract container and blob path from URL
+      // URL format: https://<account>.blob.core.windows.net/<container>/<path>
+      const pathParts = urlObj.pathname.split('/').filter(Boolean);
+      if (pathParts.length < 2) {
+        return res.status(400).json({ message: "Invalid blob URL format" });
+      }
       
-      if (!response.ok) {
-        console.error(`❌ Failed to fetch media from Azure: ${response.status} ${response.statusText}`);
-        return res.status(response.status).json({ message: "Failed to fetch media" });
+      const containerName = pathParts[0];
+      const blobPath = pathParts.slice(1).join('/');
+
+      console.log(`📦 Container: ${containerName}, Blob: ${blobPath}`);
+
+      // Download blob using authenticated Azure SDK
+      const downloadResult = await azureStorage.downloadBlob(containerName, blobPath);
+      
+      if (!downloadResult.success || !downloadResult.buffer) {
+        console.error(`❌ Failed to download blob from Azure: ${downloadResult.error}`);
+        return res.status(404).json({ message: "Media not found" });
       }
 
-      // Get content type from Azure response
-      const contentType = response.headers.get('content-type') || 'image/jpeg';
+      // Determine content type from blob path extension
+      const ext = blobPath.split('.').pop()?.toLowerCase();
+      const contentType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg'
+        : ext === 'png' ? 'image/png'
+        : ext === 'gif' ? 'image/gif'
+        : ext === 'mp4' ? 'video/mp4'
+        : ext === 'webm' ? 'video/webm'
+        : 'application/octet-stream';
       
-      // Set proper headers for the proxied image
+      // Set proper headers for the proxied media
       res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Length', downloadResult.buffer.length);
       res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
       res.setHeader('Access-Control-Allow-Origin', '*');
       
-      // Stream the image data to the client
-      const buffer = await response.arrayBuffer();
-      res.send(Buffer.from(buffer));
+      // Send the media buffer to the client
+      res.send(downloadResult.buffer);
       
-      console.log(`✅ Media proxied successfully`);
+      console.log(`✅ Media proxied successfully (${downloadResult.buffer.length} bytes)`);
     } catch (error) {
       console.error("❌ Error proxying media:", error);
       res.status(500).json({ message: "Failed to proxy media" });
