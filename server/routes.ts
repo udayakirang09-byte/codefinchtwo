@@ -757,6 +757,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Send OTP email
       const emailContent = generateEmailOTPVerificationEmail(email.trim(), otp, purpose);
+      
+      console.log('📧 [SEND OTP] Attempting to send email to:', email.trim());
+      console.log('📧 [SEND OTP] Purpose:', purpose);
+      console.log('📧 [SEND OTP] Subject:', emailContent.subject);
+      console.log('📧 [SEND OTP] SendGrid API Key present:', !!process.env.SENDGRID_API_KEY);
+      console.log('📧 [SEND OTP] OTP code:', otp.substring(0, 2) + '****');
+      
       const emailSent = await sendEmail({
         to: email.trim(),
         subject: emailContent.subject,
@@ -765,10 +772,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       if (!emailSent) {
-        console.log('📧 Email send failed, but OTP stored for testing');
+        console.warn('⚠️ [SEND OTP] Email send failed, but OTP stored for testing');
+      } else {
+        console.log('✅ [SEND OTP] Email sent successfully to:', email.trim());
       }
       
-      console.log(`📧 Email OTP sent to ${email} for ${purpose}`);
+      console.log(`📧 [SEND OTP] Email OTP sent to ${email} for ${purpose}`);
       
       res.status(200).json({
         success: true,
@@ -1439,6 +1448,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching 2FA status:", error);
       res.status(500).json({ message: "Failed to fetch 2FA status" });
+    }
+  });
+
+  // Reset 2FA - sends email and generates new setup
+  app.post("/api/auth/reset-2fa", async (req, res) => {
+    try {
+      const { userId }: { userId: string } = req.body;
+      
+      console.log('🔄 [RESET 2FA] Request received for userId:', userId);
+      
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required" });
+      }
+      
+      // Get user
+      const user = await storage.getUser(userId);
+      if (!user) {
+        console.error('❌ [RESET 2FA] User not found:', userId);
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      console.log('✅ [RESET 2FA] User found:', { email: user.email, has2FA: user.totpEnabled });
+      
+      // Generate new TOTP secret
+      const { authenticator } = await import('otplib');
+      const newSecret = authenticator.generateSecret();
+      
+      console.log('🔑 [RESET 2FA] Generated new secret for user');
+      
+      // Store new secret temporarily (will be saved after verification)
+      storePending2FASecret(user.email.trim(), newSecret);
+      
+      // Generate setup token
+      const setupToken = generateSetupToken(user.id, user.email.trim());
+      console.log('🎫 [RESET 2FA] Generated setup token');
+      
+      // Generate QR code URL
+      const otpauthUrl = authenticator.keyuri(
+        user.email,
+        'TechLearnOrbit',
+        newSecret
+      );
+      
+      // Import email service
+      let sendEmail: any, generateEmailOTPVerificationEmail: any;
+      try {
+        const emailModule = await import('./email');
+        sendEmail = emailModule.sendEmail;
+        generateEmailOTPVerificationEmail = emailModule.generateEmailOTPVerificationEmail;
+        console.log('✅ [RESET 2FA] Email module loaded successfully');
+      } catch (emailError: any) {
+        console.error('❌ [RESET 2FA] Email module import failed:', emailError);
+        return res.status(503).json({ 
+          error: 'Email service temporarily unavailable',
+          details: process.env.NODE_ENV === 'development' ? emailError.message : undefined
+        });
+      }
+      
+      // Generate email OTP for identity verification
+      const emailOTP = generateEmailOTP();
+      console.log('📧 [RESET 2FA] Generated email OTP:', emailOTP.substring(0, 2) + '****');
+      
+      // Hash OTP for storage
+      const bcrypt = await import('bcrypt');
+      const otpHash = await bcrypt.hash(emailOTP, 10);
+      
+      // Store OTP in database with 10-minute expiration
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+      
+      // Delete any previous OTPs for this email/purpose
+      await db.delete(emailOtps)
+        .where(and(
+          eq(emailOtps.email, user.email.trim()),
+          eq(emailOtps.purpose, '2fa-reset')
+        ));
+      
+      // Create new OTP record
+      await db.insert(emailOtps).values({
+        email: user.email.trim(),
+        otpHash,
+        purpose: '2fa-reset',
+        expiresAt,
+        verified: false,
+        attempts: 0
+      });
+      
+      console.log('💾 [RESET 2FA] OTP stored in database');
+      
+      // Send email with verification code
+      const emailContent = generateEmailOTPVerificationEmail(user.email.trim(), emailOTP, '2fa-reset');
+      
+      console.log('📧 [RESET 2FA] Attempting to send email to:', user.email);
+      console.log('📧 [RESET 2FA] Email subject:', emailContent.subject);
+      console.log('📧 [RESET 2FA] SendGrid API Key present:', !!process.env.SENDGRID_API_KEY);
+      
+      const emailSent = await sendEmail({
+        to: user.email.trim(),
+        from: 'admin@techlearnorbit.com',
+        subject: emailContent.subject,
+        html: emailContent.html,
+        text: emailContent.text
+      });
+      
+      if (emailSent) {
+        console.log('✅ [RESET 2FA] Email sent successfully to:', user.email);
+      } else {
+        console.warn('⚠️ [RESET 2FA] Email sending reported failure, but OTP is stored');
+      }
+      
+      res.json({
+        success: true,
+        message: "Verification code sent to your email. Please verify to continue.",
+        qrCode: otpauthUrl,
+        setupToken,
+        requiresEmailVerification: true
+      });
+    } catch (error: any) {
+      console.error('❌ [RESET 2FA] Error:', error);
+      console.error('❌ [RESET 2FA] Stack:', error.stack);
+      res.status(500).json({ 
+        message: "Failed to reset 2FA",
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Please try again'
+      });
     }
   });
   
