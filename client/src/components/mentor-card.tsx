@@ -13,11 +13,22 @@ export default function MentorCard({ mentor }: MentorCardProps) {
     return `${firstName?.charAt(0) || ""}${lastName?.charAt(0) || ""}`.toUpperCase();
   };
 
+  // Debug: Log mentor data to see media info
+  console.log(`📸 [MENTOR CARD] ${mentor.user.firstName} ${mentor.user.lastName}:`, {
+    mentorId: mentor.id,
+    media: (mentor as any).media,
+    hasMedia: !!(mentor as any).media,
+    photoBlobUrl: (mentor as any).media?.photoBlobUrl,
+    videoBlobUrl: (mentor as any).media?.videoBlobUrl,
+  });
+
   // Use teacher's actual photo from approved media, fallback to user profileImageUrl, then initials
   const getProfileImage = () => {
     if ((mentor as any).media?.photoBlobUrl) {
+      console.log(`✅ [MENTOR CARD] Using photo blob URL for ${mentor.user.firstName}`);
       return (mentor as any).media.photoBlobUrl;
     }
+    console.log(`❌ [MENTOR CARD] No photo blob URL for ${mentor.user.firstName}, using fallback`);
     return mentor.user.profileImageUrl || null;
   };
 

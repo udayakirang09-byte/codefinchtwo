@@ -14,6 +14,14 @@ export default function Mentors() {
     queryKey: ["/api/mentors"]
   });
 
+  // Debug: Log mentors data to see what we're getting
+  useEffect(() => {
+    if (mentors) {
+      console.log('🎯 [MENTORS PAGE] Received mentors data:', mentors);
+      console.log('🎯 [MENTORS PAGE] First mentor media:', (mentors as any)[0]?.media);
+    }
+  }, [mentors]);
+
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSpecialty, setSelectedSpecialty] = useState("all");

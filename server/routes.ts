@@ -2035,6 +2035,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Debug: Log the data being sent to frontend
+      console.log('🎯 [/api/mentors] Sending mentors to frontend:', completeTeachers.length, 'teachers');
+      if (completeTeachers.length > 0) {
+        console.log('🎯 [/api/mentors] First teacher media:', {
+          name: `${completeTeachers[0].user.firstName} ${completeTeachers[0].user.lastName}`,
+          media: (completeTeachers[0] as any).media
+        });
+      }
+      
       res.json(completeTeachers);
     } catch (error) {
       console.error("Error fetching mentors:", error);
