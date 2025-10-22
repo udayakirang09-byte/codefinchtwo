@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck, Mail, MessageSquare, Phone, CreditCard, Key, Lock, X, Building, Activity, TestTube, Zap, Monitor, Map, Brain, Cloud, Calendar, Cog } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
+import { useAdminAlerts } from "@/hooks/use-admin-alerts";
 
 interface SystemStats {
   totalUsers: number;
@@ -44,6 +45,8 @@ interface HomeSectionControl {
 
 export default function AdminDashboard() {
   const { toast } = useToast();
+  const { data: alerts = [], isLoading: alertsLoading } = useAdminAlerts();
+  
   const [stats, setStats] = useState<SystemStats>({
     totalUsers: 0,
     totalMentors: 0,
@@ -55,8 +58,6 @@ export default function AdminDashboard() {
     averageRating: 0,
     completionRate: 0
   });
-
-  const [alerts, setAlerts] = useState<Alert[]>([]);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [contactSettings, setContactSettings] = useState({
     emailEnabled: false,
@@ -183,31 +184,6 @@ export default function AdminDashboard() {
     fetchSystemHealth();
     fetchAdminStats();
     
-    // Load sample alert data
-    setAlerts([
-      {
-        id: '1',
-        type: 'warning',
-        title: 'High Cancellation Rate',
-        message: 'Mentor "John Doe" has a 15% cancellation rate this week',
-        timestamp: new Date(Date.now() - 30 * 60 * 1000)
-      },
-      {
-        id: '2',
-        type: 'error',
-        title: 'Payment Failed',
-        message: 'Payment processing failed for booking #12345',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000)
-      },
-      {
-        id: '3',
-        type: 'info',
-        title: 'New Mentor Application',
-        message: '5 new mentor applications pending review',
-        timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000)
-      }
-    ]);
-
     setRecentActivities([
       { id: 1, action: 'New student registration', user: 'Emma Wilson', time: '5 minutes ago' },
       { id: 2, action: 'Mentor approved', user: 'Sarah Johnson', time: '15 minutes ago' },
@@ -323,9 +299,12 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleResolveAlert = (alertId: string) => {
+  const handleResolveAlert = (alertId: string | number) => {
     console.log(`✅ Resolving alert ${alertId}`);
-    setAlerts(alerts.filter(alert => alert.id !== alertId));
+    toast({
+      title: "Alert Acknowledged",
+      description: "Alerts are managed by the system. Please address the underlying issue.",
+    });
   };
 
   const getAlertColor = (type: Alert['type']) => {
