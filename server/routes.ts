@@ -2009,6 +2009,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Mentor routes
+  // Clear mentors cache (for development/testing)
+  app.post("/api/mentors/clear-cache", async (req, res) => {
+    try {
+      await cache.del('mentors:list');
+      console.log('🗑️  Cleared mentors cache');
+      res.json({ success: true, message: 'Mentors cache cleared' });
+    } catch (error) {
+      console.error("Error clearing mentors cache:", error);
+      res.status(500).json({ message: "Failed to clear cache" });
+    }
+  });
+
   app.get("/api/mentors", async (req, res) => {
     try {
       const mentors = await storage.getMentors();
