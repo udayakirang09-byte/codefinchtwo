@@ -241,6 +241,7 @@ export default function TeacherDashboard() {
     isComplete: boolean;
     hasSubjects: boolean;
     hasTimeSlots: boolean;
+    hasUpiId: boolean;
     message: string;
   }>({
     queryKey: [`/api/teacher/profile-completion?teacherId=${user?.id}`],
@@ -282,6 +283,7 @@ export default function TeacherDashboard() {
         description: "Subject added successfully!",
       });
       queryClient.invalidateQueries({ queryKey: [`/api/teacher-subjects/${mentorData?.id}/fees`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teacher/profile-completion?teacherId=${user?.id}`] });
       setShowAddSubjectDialog(false);
       setNewSubject("");
       setNewExperience("");
@@ -307,6 +309,7 @@ export default function TeacherDashboard() {
         description: "UPI ID updated successfully!",
       });
       queryClient.invalidateQueries({ queryKey: [`/api/mentors/by-user/${user?.id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teacher/profile-completion?teacherId=${user?.id}`] });
       setIsEditingUpi(false);
     },
     onError: (error: any) => {
@@ -384,8 +387,41 @@ export default function TeacherDashboard() {
     window.location.href = `/chat/${classId}`;
   };
 
+  const handleLogout = async () => {
+    try {
+      await apiRequest('POST', '/api/auth/logout', {});
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Logout error:', error);
+      window.location.href = '/login';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+      {/* Header with User Info and Logout */}
+      <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-to-br from-purple-600 to-indigo-600 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold">
+              {user?.email?.charAt(0).toUpperCase() || 'T'}
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-gray-800" data-testid="text-user-email">{user?.email}</h2>
+              <p className="text-xs text-gray-500">Teacher Dashboard</p>
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={handleLogout}
+            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            data-testid="button-logout"
+          >
+            Logout
+          </Button>
+        </div>
+      </div>
+
       <div className="space-y-8 p-6 max-w-7xl mx-auto">
         {/* Ultra Modern Welcome Section */}
         <div className="relative overflow-hidden bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 p-8 rounded-3xl shadow-2xl border border-white/20">
@@ -424,33 +460,11 @@ export default function TeacherDashboard() {
 
         {/* Profile Completion Alert - Teachers must complete profile to appear in Find Mentors */}
         {profileCompletion && !profileCompletion.isComplete && (
-          <Alert className="border-orange-300 bg-orange-50" data-testid="alert-profile-incomplete">
-            <AlertCircle className="h-5 w-5 text-orange-600" />
-            <AlertTitle className="text-orange-900 font-semibold">Complete Your Profile</AlertTitle>
-            <AlertDescription className="text-orange-800">
-              <p className="mb-3">{profileCompletion.message}</p>
-              <div className="flex gap-3 flex-wrap">
-                {!profileCompletion.hasSubjects && (
-                  <Button
-                    onClick={() => window.scrollTo({ top: document.getElementById('class-fee-config')?.offsetTop, behavior: 'smooth' })}
-                    size="sm"
-                    className="bg-orange-600 hover:bg-orange-700"
-                    data-testid="button-goto-subjects"
-                  >
-                    Configure Class Fees
-                  </Button>
-                )}
-                {!profileCompletion.hasTimeSlots && (
-                  <Button
-                    onClick={() => window.location.href = '/teacher-schedule'}
-                    size="sm"
-                    className="bg-orange-600 hover:bg-orange-700"
-                    data-testid="button-goto-schedule"
-                  >
-                    Manage Schedule
-                  </Button>
-                )}
-              </div>
+          <Alert variant="destructive" className="border-red-600 bg-red-50" data-testid="alert-profile-incomplete">
+            <AlertCircle className="h-5 w-5 text-red-600" />
+            <AlertTitle className="text-red-900 font-bold text-lg">⚠️ Complete Your Profile (Mandatory)</AlertTitle>
+            <AlertDescription className="text-red-800">
+              <p className="font-semibold">{profileCompletion.message}</p>
             </AlertDescription>
           </Alert>
         )}

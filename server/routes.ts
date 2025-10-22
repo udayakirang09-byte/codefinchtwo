@@ -5432,15 +5432,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .limit(1);
       const hasTimeSlots = slots.length > 0;
       
-      // Profile is complete if both subjects and time slots are configured
-      const isComplete = hasSubjects && hasTimeSlots;
+      // Check if teacher has UPI ID configured for payment processing
+      const hasUpiId = !!mentor.upiId && mentor.upiId.trim().length > 0;
+      
+      // Profile is complete if subjects, time slots, and UPI ID are all configured
+      const isComplete = hasSubjects && hasTimeSlots && hasUpiId;
+      
+      // Build missing items list
+      const missing = [];
+      if (!hasSubjects) missing.push('Class Fee Configuration');
+      if (!hasTimeSlots) missing.push('Manage Schedule');
+      if (!hasUpiId) missing.push('UPI ID for Payment Processing');
       
       res.json({
         isComplete,
         hasSubjects,
         hasTimeSlots,
+        hasUpiId,
         message: !isComplete 
-          ? `Please complete your profile to appear in Find Mentors. Missing: ${!hasSubjects ? 'Class Fee Configuration' : ''}${!hasSubjects && !hasTimeSlots ? ' and ' : ''}${!hasTimeSlots ? 'Manage Schedule' : ''}`
+          ? `Please complete your profile to appear in Find Mentors. Missing: ${missing.join(', ')}`
           : 'Profile complete! You are visible in Find Mentors.'
       });
     } catch (error) {
