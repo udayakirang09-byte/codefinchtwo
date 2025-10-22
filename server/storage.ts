@@ -542,7 +542,9 @@ export class DatabaseStorage implements IStorage {
     const cached = await cache.get(cacheKey);
     if (cached) {
       console.log('✅ Cache hit: mentors list');
-      return cached;
+      // TEMPORARY: Force cache invalidation for debugging
+      await cache.del(cacheKey);
+      console.log('🗑️  [DEBUG] Forced cache invalidation - will fetch fresh data');
     }
 
     console.log('❌ Cache miss: mentors list - fetching from DB');
