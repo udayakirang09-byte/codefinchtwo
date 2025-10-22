@@ -1132,6 +1132,105 @@ export default function AdminDashboard() {
                   <CheckCircle className="h-8 w-8 mb-2 text-green-600 group-hover:scale-110 transition-transform duration-200" />
                   <span className="font-bold text-sm">Whitelist Management</span>
                 </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-24 p-4 flex-col hover:bg-indigo-50 hover:border-indigo-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                  data-testid="button-payment-config"
+                  onClick={() => window.location.href = '/admin/payment-config'}
+                >
+                  <DollarSign className="h-8 w-8 mb-2 text-indigo-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold text-sm">Payment Config</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-24 p-4 flex-col hover:bg-purple-50 hover:border-purple-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                  data-testid="button-ai-analytics"
+                  onClick={() => window.location.href = '/admin/analytics'}
+                >
+                  <Brain className="h-8 w-8 mb-2 text-purple-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold text-sm">AI Analytics</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-24 p-4 flex-col hover:bg-sky-50 hover:border-sky-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                  data-testid="button-cloud-deployments"
+                  onClick={() => window.location.href = '/admin/cloud-deployments'}
+                >
+                  <Cloud className="h-8 w-8 mb-2 text-sky-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold text-sm">Cloud Deployments</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-24 p-4 flex-col hover:bg-teal-50 hover:border-teal-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                  data-testid="button-code-mapping"
+                  onClick={() => window.location.href = '/admin/code-mapping'}
+                >
+                  <Map className="h-8 w-8 mb-2 text-teal-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold text-sm">Code Mapping</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-24 p-4 flex-col hover:bg-amber-50 hover:border-amber-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                  data-testid="button-test-management"
+                  onClick={() => window.location.href = '/admin/test-management'}
+                >
+                  <TestTube className="h-8 w-8 mb-2 text-amber-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold text-sm">Unit & System Tests</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-24 p-4 flex-col hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                  data-testid="button-finance-dashboard"
+                  onClick={() => window.location.href = '/admin/finance-dashboard'}
+                >
+                  <TrendingUp className="h-8 w-8 mb-2 text-emerald-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold text-sm">Finance Dashboard</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-24 p-4 flex-col hover:bg-slate-50 hover:border-slate-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                  data-testid="button-storage-config"
+                  onClick={() => window.location.href = '/admin/storage-config'}
+                >
+                  <Building className="h-8 w-8 mb-2 text-slate-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold text-sm">Storage Config</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-24 p-4 flex-col hover:bg-red-50 hover:border-red-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                  data-testid="button-abusive-incidents"
+                  onClick={() => window.location.href = '/admin/abusive-incidents'}
+                >
+                  <AlertTriangle className="h-8 w-8 mb-2 text-red-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold text-sm">Abusive Incidents</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-24 p-4 flex-col hover:bg-violet-50 hover:border-violet-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                  data-testid="button-review-appeals"
+                  onClick={() => window.location.href = '/admin/review-appeals'}
+                >
+                  <Shield className="h-8 w-8 mb-2 text-violet-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold text-sm">Review Appeals</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-24 p-4 flex-col hover:bg-pink-50 hover:border-pink-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                  data-testid="button-ui-config"
+                  onClick={() => window.location.href = '/admin/ui-config'}
+                >
+                  <Settings className="h-8 w-8 mb-2 text-pink-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold text-sm">UI Configuration</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-24 p-4 flex-col hover:bg-lime-50 hover:border-lime-300 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 rounded-2xl group" 
+                  data-testid="button-booking-limits"
+                  onClick={() => window.location.href = '/admin/booking-limits-config'}
+                >
+                  <Calendar className="h-8 w-8 mb-2 text-lime-600 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="font-bold text-sm">Booking Limits</span>
+                </Button>
               </div>
             </CardContent>
           </Card>
