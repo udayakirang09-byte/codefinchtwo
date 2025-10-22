@@ -1735,6 +1735,14 @@ export class DatabaseStorage implements IStorage {
         )
       );
 
+    console.log(`🔍 [DEBUG] getPendingTeacherMedia: Found ${result.length} rows`);
+    if (result.length > 0) {
+      console.log('🔍 [DEBUG] First row keys:', Object.keys(result[0]));
+      console.log('🔍 [DEBUG] First row teacher_media:', result[0].teacher_media);
+      console.log('🔍 [DEBUG] First row mentors:', result[0].mentors);
+      console.log('🔍 [DEBUG] First row users:', result[0].users);
+    }
+
     return result.map(row => ({
       ...row.teacher_media,
       mentor: {
