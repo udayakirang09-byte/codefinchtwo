@@ -23,7 +23,7 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
   try {
     const emailData = {
       to: params.to,
-      from: params.from || 'noreply@techlearnorbit.com',
+      from: params.from || 'admin@techlearnorbit.com',
       subject: params.subject,
       text: params.text,
       html: params.html,
