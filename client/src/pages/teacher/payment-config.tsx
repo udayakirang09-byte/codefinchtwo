@@ -241,7 +241,7 @@ export default function TeacherPaymentConfig() {
               <Home className="h-4 w-4 hover:text-primary cursor-pointer" />
             </Link>
             <span>/</span>
-            <Link href="/teacher/home" data-testid="link-teacher">Teacher</Link>
+            <Link href="/teacher" data-testid="link-teacher">Teacher</Link>
             <span>/</span>
             <span>Payment Configuration</span>
           </div>

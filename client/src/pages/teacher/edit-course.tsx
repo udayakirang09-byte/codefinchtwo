@@ -75,7 +75,7 @@ export default function EditCourse() {
         description: "Course updated successfully!",
       });
       queryClient.invalidateQueries({ queryKey: [`/api/teacher/courses`] });
-      navigate('/teacher/home');
+      navigate('/teacher');
     },
     onError: (error) => {
       console.error('❌ Course update failed:', error);
@@ -132,7 +132,7 @@ export default function EditCourse() {
       <Navigation />
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="mb-6">
-          <Link href="/teacher/home">
+          <Link href="/teacher">
             <Button variant="outline" size="sm" data-testid="button-back">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Home
@@ -318,7 +318,7 @@ export default function EditCourse() {
                       <Save className="w-4 h-4 mr-2" />
                       {updateCourseMutation.isPending ? 'Saving...' : 'Save Changes'}
                     </Button>
-                    <Link href="/teacher/home">
+                    <Link href="/teacher">
                       <Button type="button" variant="outline" data-testid="button-cancel">
                         Cancel
                       </Button>

@@ -59,7 +59,8 @@ import SafetyGuidelines from "./pages/safety-guidelines";
 import AdminAnalytics from "./pages/admin/analytics";
 import CloudDeployments from "./pages/admin/cloud-deployments";
 import TeacherDashboard from "./components/dashboard/teacher-dashboard";
-import AdminHome from "./pages/admin/home";
+import AdminDashboard from "./components/dashboard/admin-dashboard";
+import StudentDashboard from "./components/dashboard/student-dashboard";
 import CodeMapping from "./pages/admin/code-mapping";
 import TestManagement from "./pages/admin/test-management";
 import LoadTestingGuide from "./pages/admin/load-testing-guide";
@@ -106,7 +107,9 @@ function Router() {
       <Route path="/events" component={Events} />
       <Route path="/achievement-badges" component={AchievementBadges} />
       <Route path="/help" component={Help} />
-      <Route path="/admin" component={AdminHome} />
+      <Route path="/admin" component={AdminDashboard} />
+      <Route path="/teacher" component={TeacherDashboard} />
+      <Route path="/student" component={StudentDashboard} />
       <Route path="/admin/user-management" component={UserManagement} />
       <Route path="/admin/mentor-approval" component={MentorApproval} />
       <Route path="/admin/teacher-media-approval" component={TeacherMediaApproval} />
@@ -126,11 +129,9 @@ function Router() {
       <Route path="/admin/whitelist-management" component={WhitelistManagement} />
       <Route path="/admin/azure-metrics" component={AzureMetrics} />
       <Route path="/admin/azure-metrics/:severity" component={AzureMetricsDetail} />
-      <Route path="/teacher/home" component={TeacherDashboard} />
       <Route path="/teacher/payment-config" component={TeacherPaymentConfig} />
       <Route path="/teacher/moderation-status" component={TeacherModerationStatus} />
       <Route path="/teacher/appeal-restriction" component={TeacherAppealRestriction} />
-      <Route path="/admin/home" component={AdminHome} />
       <Route path="/student/active-classes" component={ActiveClasses} />
       <Route path="/student/all-active-classes" component={AllActiveClasses} />
       <Route path="/student/learning-hours" component={LearningHours} />

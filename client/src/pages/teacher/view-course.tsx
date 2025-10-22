@@ -52,7 +52,7 @@ export default function ViewCourse() {
       <Navigation />
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="mb-6">
-          <Link href="/teacher/home">
+          <Link href="/teacher">
             <Button variant="outline" size="sm" data-testid="button-back">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Home

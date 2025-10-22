@@ -307,7 +307,7 @@ export default function AdminPaymentConfig() {
                 <Home className="h-4 w-4 hover:text-primary cursor-pointer" />
               </Link>
               <span>/</span>
-              <Link href="/admin/home" data-testid="link-admin">Admin</Link>
+              <Link href="/admin" data-testid="link-admin">Admin</Link>
               <span>/</span>
               <span>Payment Configuration</span>
             </div>
