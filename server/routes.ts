@@ -6161,6 +6161,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get single user by ID (for profile editing)
+  app.get("/api/users/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = await storage.getUser(id);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
   app.get("/api/admin/users", async (req, res) => {
     console.log("👥 GET /api/admin/users - Fetching all users (admin only)");
     try {
