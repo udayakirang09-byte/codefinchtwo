@@ -6124,6 +6124,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Media proxy endpoint to serve Azure Blob Storage images with proper CORS headers
+  app.get("/api/media/proxy", async (req, res) => {
+    try {
+      const { url } = req.query;
+      
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ message: "URL parameter is required" });
+      }
+
+      // Whitelist: Only allow URLs from our Azure Blob Storage domain
+      const allowedDomain = 'kidzaimathstore31320.blob.core.windows.net';
+      const urlObj = new URL(url);
+      
+      if (!urlObj.hostname.includes(allowedDomain)) {
+        console.warn(`⚠️ Blocked proxy request to unauthorized domain: ${urlObj.hostname}`);
+        return res.status(403).json({ message: "Unauthorized media source" });
+      }
+
+      console.log(`🖼️ Proxying media request: ${url.substring(0, 100)}...`);
+
+      // Fetch the image from Azure Blob Storage
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        console.error(`❌ Failed to fetch media from Azure: ${response.status} ${response.statusText}`);
+        return res.status(response.status).json({ message: "Failed to fetch media" });
+      }
+
+      // Get content type from Azure response
+      const contentType = response.headers.get('content-type') || 'image/jpeg';
+      
+      // Set proper headers for the proxied image
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      // Stream the image data to the client
+      const buffer = await response.arrayBuffer();
+      res.send(Buffer.from(buffer));
+      
+      console.log(`✅ Media proxied successfully`);
+    } catch (error) {
+      console.error("❌ Error proxying media:", error);
+      res.status(500).json({ message: "Failed to proxy media" });
+    }
+  });
+
   // DISABLED: Insecure payment processing (PCI violation - collects raw card data)
   // Only use Stripe Elements for secure payment processing
   app.post("/api/process-payment", async (req, res) => {
