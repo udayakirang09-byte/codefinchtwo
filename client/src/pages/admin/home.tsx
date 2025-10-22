@@ -406,6 +406,60 @@ export default function AdminHome() {
               </CardContent>
             </Card>
 
+            {/* Quick Navigation & System Tools */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Quick Navigation & System Tools
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Link href="/admin/analytics">
+                  <Button variant="outline" className="w-full" data-testid="button-nav-ai-analytics-quick">
+                    <Brain className="w-4 h-4 mr-2" />
+                    AI Analytics
+                  </Button>
+                </Link>
+                <Link href="/admin/cloud-deployments">
+                  <Button variant="outline" className="w-full" data-testid="button-nav-cloud-deployments-quick">
+                    <Cloud className="w-4 h-4 mr-2" />
+                    Cloud Deployment
+                  </Button>
+                </Link>
+                <Link href="/admin/finance-dashboard">
+                  <Button variant="outline" className="w-full" data-testid="button-nav-finance-dashboard-quick">
+                    <TrendingUp className="w-4 h-4 mr-2" />
+                    Finance Dashboard
+                  </Button>
+                </Link>
+                <Link href="/admin/payment-config">
+                  <Button variant="outline" className="w-full" data-testid="button-nav-payment-config-quick">
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Payment Configuration
+                  </Button>
+                </Link>
+                <Link href="/admin/storage-config">
+                  <Button variant="outline" className="w-full" data-testid="button-nav-storage-config">
+                    <Database className="w-4 h-4 mr-2" />
+                    Storage Configuration
+                  </Button>
+                </Link>
+                <Link href="/admin/abusive-incidents">
+                  <Button variant="outline" className="w-full" data-testid="button-nav-abusive-incidents">
+                    <AlertTriangle className="w-4 h-4 mr-2" />
+                    Abusive Incidents
+                  </Button>
+                </Link>
+                <Link href="/admin/review-appeals">
+                  <Button variant="outline" className="w-full" data-testid="button-nav-review-appeals">
+                    <Shield className="w-4 h-4 mr-2" />
+                    Review Appeals
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
             {/* Navigation Links */}
             <Card>
               <CardHeader>
