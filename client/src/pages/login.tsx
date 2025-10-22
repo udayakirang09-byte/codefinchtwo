@@ -138,10 +138,14 @@ export default function Login() {
         variant: "default",
       });
       
-      // Redirect to home page
+      // Redirect to role-based dashboard (not home page)
+      const dashboardPath = userData.user.role === 'admin' ? '/admin' 
+        : userData.user.role === 'mentor' ? '/teacher' 
+        : '/student';
+      
       setTimeout(() => {
-        console.log('🏠 Redirecting to home page now...');
-        window.location.href = "/";
+        console.log(`🏠 Redirecting to ${dashboardPath} dashboard...`);
+        window.location.href = dashboardPath;
       }, 500);
       
     } catch (error) {
