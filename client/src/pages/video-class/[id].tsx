@@ -66,6 +66,9 @@ export default function VideoClass() {
     isAudioEnabled, 
     connectionQuality,
     error,
+    healthScore,
+    healthDetails,
+    currentMetrics,
     toggleVideo,
     toggleAudio,
     startScreenShare,
@@ -1236,6 +1239,47 @@ export default function VideoClass() {
           </div>
         </div>
       </div>
+
+      {/* Health Score Indicator */}
+      {isConnected && healthScore !== null && healthDetails && (
+        <div className="bg-black/60 backdrop-blur-sm border-t border-gray-700/50 px-4 py-2 flex-shrink-0">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {/* Connection Quality Badge - All 5 Quality Bands */}
+              <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${
+                healthDetails.quality === 'excellent' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                healthDetails.quality === 'good' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                healthDetails.quality === 'fair' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                healthDetails.quality === 'poor' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
+                'bg-red-500/20 text-red-400 border-2 border-red-500/50 animate-pulse' // critical - more severe styling
+              }`} data-testid="connection-quality-badge">
+                {healthDetails.quality === 'critical' ? <WifiOff className="h-3 w-3" /> : <Wifi className="h-3 w-3" />}
+                <span className="capitalize">{healthDetails.quality}</span>
+              </div>
+              
+              {/* Health Score */}
+              <div className="text-xs text-gray-400">
+                Health Score: <span className={`font-bold ${
+                  healthDetails.quality === 'excellent' ? 'text-green-400' :
+                  healthDetails.quality === 'good' ? 'text-blue-400' :
+                  healthDetails.quality === 'fair' ? 'text-yellow-400' :
+                  healthDetails.quality === 'poor' ? 'text-orange-400' :
+                  'text-red-400'
+                }`} data-testid="health-score-value">{Math.round(healthScore)}</span>/100
+              </div>
+              
+              {/* Detailed Metrics */}
+              {currentMetrics && (
+                <div className="hidden md:flex items-center gap-3 text-xs text-gray-500">
+                  <span data-testid="packet-loss-value">Loss: {currentMetrics.packetLoss.toFixed(1)}%</span>
+                  <span data-testid="rtt-value">RTT: {Math.round(currentMetrics.rtt)}ms</span>
+                  <span data-testid="jitter-value">Jitter: {Math.round(currentMetrics.jitter)}ms</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Controls */}
       <div className="bg-black/80 backdrop-blur-sm border-t border-gray-700 p-3 md:p-4 flex-shrink-0">
