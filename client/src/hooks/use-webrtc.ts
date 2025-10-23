@@ -44,6 +44,12 @@ export function useWebRTC({
   const screenStreamRef = useRef<MediaStream | null>(null); // Keep screen stream separate
   const isSharingScreenRef = useRef<boolean>(false); // Track screen sharing state
   
+  // Auto-repair state tracking (R2.3)
+  const lastRepairAttemptRef = useRef<number>(0);
+  const repairAttemptsCountRef = useRef<number>(0);
+  const isRepairingRef = useRef<boolean>(false);
+  const poorQualityStartTimeRef = useRef<number | null>(null);
+  
   // ICE servers configuration with TURN for NAT traversal
   const iceServers = [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -396,6 +402,89 @@ export function useWebRTC({
     }
     
     return null;
+  }, []);
+
+  // R2.3: ICE Restart for connection recovery
+  const performICERestart = useCallback(async () => {
+    if (isRepairingRef.current) {
+      console.log('⚠️ ICE restart already in progress, skipping...');
+      return;
+    }
+
+    console.log('🔧 [AUTO-REPAIR] Starting ICE restart for all peer connections...');
+    isRepairingRef.current = true;
+    let restartedCount = 0;
+
+    try {
+      const peerEntries = Array.from(peerConnectionsRef.current.entries());
+      for (const [peerId, pc] of peerEntries) {
+        try {
+          console.log(`🔄 Restarting ICE for peer ${peerId}`);
+          
+          // Create new offer with iceRestart flag
+          const offer = await pc.createOffer({ iceRestart: true });
+          await pc.setLocalDescription(offer);
+          
+          // Send ICE restart offer via existing WebSocket handler with correct payload
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({
+              type: 'webrtc-offer',
+              sessionId,
+              userId,
+              targetUserId: peerId,
+              offer,  // Correct field name to match handler
+              iceRestart: true  // Flag to indicate this is an ICE restart
+            }));
+          }
+          
+          restartedCount++;
+          console.log(`✅ ICE restart initiated for peer ${peerId}`);
+        } catch (err) {
+          console.error(`❌ Failed to restart ICE for peer ${peerId}:`, err);
+        }
+      }
+
+      repairAttemptsCountRef.current++;
+      lastRepairAttemptRef.current = Date.now();
+      
+      console.log(`✅ [AUTO-REPAIR] ICE restart completed for ${restartedCount}/${peerConnectionsRef.current.size} peers`);
+    } finally {
+      // Allow next repair after cooldown
+      setTimeout(() => {
+        isRepairingRef.current = false;
+      }, 5000); // 5 second cooldown
+    }
+  }, []);
+
+  // R2.3: Adjust bitrate to reduce bandwidth usage
+  const adjustBitrate = useCallback(async (targetBitrate: number) => {
+    console.log(`🔧 [AUTO-REPAIR] Adjusting bitrate to ${targetBitrate} kbps`);
+    
+    const peerEntries = Array.from(peerConnectionsRef.current.entries());
+    for (const [peerId, pc] of peerEntries) {
+      const senders = pc.getSenders();
+      
+      for (const sender of senders) {
+        if (sender.track?.kind === 'video') {
+          const parameters = sender.getParameters();
+          
+          if (!parameters.encodings) {
+            parameters.encodings = [{}];
+          }
+          
+          parameters.encodings.forEach((encoding) => {
+            encoding.maxBitrate = targetBitrate * 1000; // Convert to bps
+          });
+          
+          try {
+            await sender.setParameters(parameters);
+            console.log(`✅ Bitrate adjusted for peer ${peerId}`);
+          } catch (err) {
+            console.error(`❌ Failed to adjust bitrate for peer ${peerId}:`, err);
+          }
+        }
+      }
+    }
   }, []);
 
   // Share screen
@@ -848,6 +937,66 @@ export function useWebRTC({
       clearInterval(statsInterval);
     };
   }, [isConnected, collectStats]);
+
+  // R2.3: Auto-repair trigger - Monitor health and initiate repairs
+  useEffect(() => {
+    if (!isConnected || !healthDetails) {
+      // Reset poor quality tracking when disconnected
+      poorQualityStartTimeRef.current = null;
+      return;
+    }
+
+    const now = Date.now();
+    const BASE_REPAIR_INTERVAL = 30000; // 30 seconds base interval
+    const POOR_QUALITY_THRESHOLD = 10000; // 10 seconds of poor quality before repair
+    const MAX_REPAIR_ATTEMPTS = 5; // Max attempts before giving up
+
+    // Implement exponential backoff: 30s, 60s, 120s, 240s, 480s
+    const repairInterval = BASE_REPAIR_INTERVAL * Math.pow(2, Math.min(repairAttemptsCountRef.current, MAX_REPAIR_ATTEMPTS - 1));
+
+    // Track when poor/critical quality starts
+    if (healthDetails.quality === 'poor' || healthDetails.quality === 'critical') {
+      if (poorQualityStartTimeRef.current === null) {
+        poorQualityStartTimeRef.current = now;
+        console.log(`⚠️ [AUTO-REPAIR] Poor quality detected, starting timer... (next repair in ${repairInterval/1000}s)`);
+      }
+    } else {
+      // Quality improved, reset tracking and attempt counter
+      if (poorQualityStartTimeRef.current !== null) {
+        console.log('✅ [AUTO-REPAIR] Quality improved, resetting timer and attempt counter');
+        poorQualityStartTimeRef.current = null;
+        repairAttemptsCountRef.current = 0; // Reset on recovery
+      }
+      return;
+    }
+
+    // Check if we should trigger repair
+    const poorQualityDuration = now - poorQualityStartTimeRef.current;
+    const timeSinceLastRepair = now - lastRepairAttemptRef.current;
+
+    if (
+      poorQualityDuration >= POOR_QUALITY_THRESHOLD &&
+      timeSinceLastRepair >= repairInterval &&
+      !isRepairingRef.current &&
+      repairAttemptsCountRef.current < MAX_REPAIR_ATTEMPTS
+    ) {
+      console.log(`🚨 [AUTO-REPAIR] Triggering repair after ${poorQualityDuration}ms of ${healthDetails.quality} quality`);
+      
+      // Reset timer
+      poorQualityStartTimeRef.current = null;
+
+      // Choose repair strategy based on quality and attempt count
+      if (healthDetails.quality === 'critical' || repairAttemptsCountRef.current === 0) {
+        // Critical: Try ICE restart first
+        console.log('🔧 [AUTO-REPAIR] Strategy: ICE restart');
+        performICERestart();
+      } else if (healthDetails.quality === 'poor') {
+        // Poor: Try bitrate adjustment first
+        console.log('🔧 [AUTO-REPAIR] Strategy: Bitrate reduction');
+        adjustBitrate(500); // Reduce to 500 kbps
+      }
+    }
+  }, [isConnected, healthDetails, performICERestart, adjustBitrate]);
 
   // Auto-connect on mount and reconnect when userId changes
   useEffect(() => {
