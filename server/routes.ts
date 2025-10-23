@@ -8420,6 +8420,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/payment-accounts/:mentorId", async (req, res) => {
     try {
       const { mentorId } = req.params;
+      console.log(`💳 [Payment Accounts] Fetching for mentor: ${mentorId}`);
 
       // Get admin's preferred payment method
       const adminPreferredMethodConfig = await db.select().from(adminConfig)
@@ -8460,12 +8461,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         }
       }
+      console.log(`💳 [Payment Accounts] Admin account:`, adminPaymentAccount);
 
       // Get teacher's user ID from mentor ID
       const mentor = await storage.getMentor(mentorId);
       if (!mentor) {
+        console.log(`❌ [Payment Accounts] Teacher not found: ${mentorId}`);
         return res.status(404).json({ message: "Teacher not found" });
       }
+      console.log(`💳 [Payment Accounts] Mentor data:`, { 
+        id: mentor.id, 
+        upiId: mentor.upiId, 
+        userId: mentor.userId,
+        userName: mentor.user ? `${mentor.user.firstName} ${mentor.user.lastName}` : 'No user object'
+      });
 
       // Priority 1: Check if teacher has UPI ID configured in mentors table
       let teacherPaymentAccount = null;
@@ -8475,6 +8484,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           displayName: mentor.user?.firstName || 'Teacher',
           details: mentor.upiId
         };
+        console.log(`💳 [Payment Accounts] Teacher UPI (from mentors table):`, teacherPaymentAccount);
       } else {
         // Priority 2: Fallback to payment methods table
         const teacherPaymentMethods = await db.select().from(paymentMethods)
@@ -8500,14 +8510,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   ? 'Stripe Account'
                   : 'Bank Account'
           };
+          console.log(`💳 [Payment Accounts] Teacher payment (from payment methods):`, teacherPaymentAccount);
+        } else {
+          console.log(`⚠️ [Payment Accounts] No teacher payment method found in payment methods table`);
         }
       }
 
-      res.json({
+      const response = {
         adminPaymentAccount,
         teacherPaymentAccount,
         teacherName: `${mentor.user?.firstName || ''} ${mentor.user?.lastName || ''}`.trim() || 'Teacher'
-      });
+      };
+      console.log(`💳 [Payment Accounts] Final response:`, response);
+      
+      res.json(response);
     } catch (error) {
       console.error("Error loading payment accounts:", error);
       res.status(500).json({ error: "Failed to load payment accounts" });
