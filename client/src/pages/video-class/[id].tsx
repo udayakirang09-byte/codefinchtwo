@@ -11,6 +11,7 @@ import { useWebRTC } from "@/hooks/use-webrtc";
 import { useRecording } from "@/hooks/use-recording";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Video, VideoOff, Mic, MicOff, Users, MessageCircle, Phone, Settings, AlertTriangle, Wifi, WifiOff, Shield, Monitor, Home, ArrowLeft, Maximize, Minimize, Send, X, Hand } from "lucide-react";
+import { evaluateBitrateQuality } from "@shared/webrtc-health";
 
 export default function VideoClass() {
   const [, params] = useRoute("/video-class/:id");
@@ -38,6 +39,9 @@ export default function VideoClass() {
   
   // R2.4: Jitter tracking - track last warning time to avoid spam
   const lastJitterWarningRef = useRef<number>(0);
+  
+  // R2.6: Bitrate tracking - track last warning time to avoid spam
+  const lastBitrateWarningRef = useRef<number>(0);
   
   // Query to get booking/class schedule information
   const { data: bookingData } = useQuery<any>({
@@ -339,6 +343,29 @@ export default function VideoClass() {
         variant: "default",
       });
       lastJitterWarningRef.current = now;
+    }
+  }, [currentMetrics, isConnected, toast]);
+  
+  // R2.6: Monitor bitrate and alert on low bandwidth (critical or low quality)
+  useEffect(() => {
+    if (!currentMetrics || !isConnected) return;
+    if (currentMetrics.videoBitrate === undefined || currentMetrics.videoBitrate === 0) return;
+    
+    const videoBitrate = currentMetrics.videoBitrate;
+    const audioBitrate = currentMetrics.audioBitrate || 0;
+    const now = Date.now();
+    const MIN_WARNING_INTERVAL = 60000; // Only warn once per minute
+    
+    // Evaluate bitrate quality and alert if low or critical
+    const bitrateQuality = evaluateBitrateQuality(videoBitrate, audioBitrate);
+    
+    if (bitrateQuality.shouldAlert && now - lastBitrateWarningRef.current > MIN_WARNING_INTERVAL) {
+      toast({
+        title: bitrateQuality.quality === 'critical' ? "Critical Bitrate Warning" : "Low Bitrate Warning",
+        description: bitrateQuality.message,
+        variant: bitrateQuality.quality === 'critical' ? "destructive" : "default",
+      });
+      lastBitrateWarningRef.current = now;
     }
   }, [currentMetrics, isConnected, toast]);
   
