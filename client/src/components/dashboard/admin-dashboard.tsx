@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck, Mail, MessageSquare, Phone, CreditCard, Key, Lock, X, Building, Activity, TestTube, Zap, Monitor, Map, Brain, Cloud, Calendar, Cog, FileImage, CheckCircle, Clock } from "lucide-react";
+import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck, Mail, MessageSquare, Phone, CreditCard, Key, Lock, X, Building, Activity, TestTube, Zap, Monitor, Map, Brain, Cloud, Calendar, Cog, FileImage, CheckCircle, Clock, Radio } from "lucide-react";
+import { TurnMetricsDashboard } from "@/components/admin/TurnMetricsDashboard";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { useAdminAlerts } from "@/hooks/use-admin-alerts";
@@ -789,6 +790,25 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* TURN Server Metrics (R1.3-R1.6: 99.99% Reliability Infrastructure) */}
+        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-blue-600 to-cyan-700 text-white">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <Radio className="h-6 w-6" />
+              TURN Server Metrics
+              <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30">
+                Infrastructure Monitoring
+              </Badge>
+            </CardTitle>
+            <CardDescription className="text-blue-100 mt-2">
+              Real-time WebRTC connection statistics and TURN server performance metrics
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            <TurnMetricsDashboard />
+          </CardContent>
+        </Card>
 
         {/* Alerts & Issues */}
         {alerts.length > 0 && (
