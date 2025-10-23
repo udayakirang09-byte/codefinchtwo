@@ -14,8 +14,8 @@
 | R1.1 | P2P WebRTC | 1:1 video sessions | ✅ DONE | Primary path | P0 | - | Complete | Basic P2P working |
 | R1.2 | STUN Servers | Public STUN discovery | ✅ DONE | Multiple STUN | P0 | - | Complete | Google STUN x3 |
 | R1.3 | TURN UDP | UDP relay fallback | ✅ DONE | Production TURN | P0 | - | Complete | turn:4.247.24.167:3478 |
-| R1.4 | TURN TCP | TCP relay fallback | 🟡 VERIFY | Port 443 support | P0 | LOW | In Progress | Check Coturn config |
-| R1.5 | TURN TLS | TLS relay fallback | 🟡 VERIFY | Encrypted relay | P0 | LOW | In Progress | Check Coturn config |
+| R1.4 | TURN TCP | TCP relay fallback | ✅ DONE | ?transport=tcp | P0 | - | Complete | WebRTC configured |
+| R1.5 | TURN TLS | TLS relay fallback | 🟡 AZURE | Port 5349, SSL cert | P0 | LOW | Pending | Azure VM setup needed |
 | R1.6 | Multi-region TURN | 2+ regions active | ❌ TODO | Central + South India | P0 | HIGH | Pending | Need 2nd server |
 | R1.7 | SFU Architecture | >2 participants | ❌ TODO | Group classes | P0 | HIGH | Pending | Awaiting provider |
 | R1.8 | External Fallback | Teams/Zoom backup | 🟡 OPTIONAL | Auto-redirect | P2 | LOW | Optional | User preference: not required |
@@ -75,12 +75,12 @@
 ## 🎯 Completion Metrics
 
 - **Total Requirements:** 53
-- **Completed:** 25 (47.2%)
-- **In Progress:** 2 (3.8%)
+- **Completed:** 26 (49.1%)
+- **In Progress:** 1 (1.9%)
 - **Pending:** 26 (49.1%)
 
 **Priority Breakdown:**
-- P0 (Critical): 28 items - 20 done, 6 pending, 2 verify
+- P0 (Critical): 28 items - 21 done, 6 pending, 1 Azure setup
 - P1 (High): 19 items - 3 done, 16 pending  
 - P2 (Medium): 6 items - 2 done, 4 pending
 

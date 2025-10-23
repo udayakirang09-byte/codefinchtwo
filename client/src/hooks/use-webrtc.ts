@@ -87,19 +87,40 @@ export function useWebRTC({
     { urls: 'stun:stun2.l.google.com:19302' },
   ];
 
-  // Add TURN relay servers if configured (R1.3: TURN UDP fallback)
+  // Add TURN relay servers if configured (R1.3-R1.5: UDP, TCP, TLS fallback ladder)
   if (import.meta.env.VITE_TURN_SERVER_URL && 
       import.meta.env.VITE_TURN_USERNAME && 
       import.meta.env.VITE_TURN_CREDENTIAL) {
+    const baseUrl = import.meta.env.VITE_TURN_SERVER_URL;
+    const turnUrls: string[] = [
+      baseUrl, // R1.3: UDP (default transport)
+    ];
+    
+    // R1.4: Add explicit TCP transport fallback
+    // Strip existing transport param if present, then add TCP
+    const baseUrlWithoutTransport = baseUrl.split('?')[0];
+    const tcpUrl = baseUrlWithoutTransport.includes('?') 
+      ? baseUrlWithoutTransport + '&transport=tcp'
+      : baseUrlWithoutTransport + '?transport=tcp';
+    turnUrls.push(tcpUrl);
+    
+    // R1.5: Add TLS transport fallback (port 5349, must use TCP)
+    // Remove any existing transport params and ensure TLS uses TCP
+    const tlsUrl = baseUrlWithoutTransport
+      .replace('turn:', 'turns:')
+      .replace(':3478', ':5349') + '?transport=tcp';
+    turnUrls.push(tlsUrl);
+    
     iceServers.push({
-      urls: [
-        import.meta.env.VITE_TURN_SERVER_URL,
-        import.meta.env.VITE_TURN_SERVER_URL.replace('turn:', 'turns:'), // TLS fallback
-      ],
+      urls: turnUrls,
       username: import.meta.env.VITE_TURN_USERNAME,
       credential: import.meta.env.VITE_TURN_CREDENTIAL,
     });
-    console.log('🔗 ICE Servers configured with TURN relay:', import.meta.env.VITE_TURN_SERVER_URL);
+    console.log('🔗 ICE Servers configured with TURN relay:', {
+      udp: baseUrl,
+      tcp: tcpUrl,
+      tls: tlsUrl
+    });
   } else {
     console.warn('⚠️ TURN server not configured - P2P only mode (may fail in restrictive networks)');
   }
