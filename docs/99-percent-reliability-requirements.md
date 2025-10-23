@@ -30,9 +30,9 @@
 | **R3** | **Auto-Repair Ladder** |
 | R3.1 | Quality Degradation | Reduce resolution | ✅ DONE | 720p→360p→audio | P0 | - | Complete | Graceful degrade |
 | R3.2 | Audio-Only Recovery | Smart upgrade | ✅ DONE | Auto-resume video | P0 | - | Complete | UX improvement |
-| R3.3 | ICE Restart (5s) | First restart | ❌ TODO | No media 5s | P0 | MED | Pending | Quick recovery |
-| R3.4 | ICE Restart (15s) | Second restart | ❌ TODO | No media 15s | P0 | LOW | Pending | Retry logic |
-| R3.5 | ICE Restart (30s) | Final restart | ❌ TODO | Abandon at 30s | P0 | LOW | Pending | Escalate |
+| R3.3 | ICE Restart (5s) | First restart | ✅ DONE | No media 5s | P0 | - | Complete | 5s→15s→30s ladder |
+| R3.4 | ICE Restart (15s) | Second restart | ✅ DONE | No media 15s | P0 | - | Complete | Severity escalation |
+| R3.5 | ICE Restart (30s) | Final restart | ✅ DONE | Abandon at 30s | P0 | - | Complete | Event logging |
 | R3.6 | Region Switch | Backup TURN region | ❌ TODO | Cross-region | P1 | HIGH | Pending | Failover |
 | R3.7 | Fallback Trigger | Health <35 for 25s | 🟡 OPTIONAL | Auto-redirect | P2 | LOW | Optional | Only if external fallback enabled |
 | **R4** | **Pre-Call Readiness** |
@@ -44,7 +44,7 @@
 | R4.6 | Pre-join UI | Green/orange/red | ❌ TODO | User feedback | P1 | MED | Pending | Clear guidance |
 | **R5** | **Observability** |
 | R5.1 | Telemetry Schema | DB tables | ✅ DONE | webrtc_sessions | P0 | - | Complete | 3 tables, 25+ fields |
-| R5.2 | Stats Collection | getStats() logger | ❌ TODO | Every 3-5s | P0 | MED | Pending | Real-time data |
+| R5.2 | Stats Collection | getStats() logger | ✅ DONE | Every 3s | P0 | - | Complete | Backend logging |
 | R5.3 | Connection Mix | P2P/TURN/SFU % | ✅ DONE | Dashboard tile | P0 | - | Complete | TURN metrics dashboard |
 | R5.4 | Success Rate | 99.99% SLO | ❌ TODO | Monthly tracking | P0 | LOW | Pending | Uptime calc |
 | R5.5 | Admin Dashboard | Metrics UI | ✅ DONE | Real-time view | P0 | - | Complete | TURN section added |
@@ -75,14 +75,14 @@
 ## 🎯 Completion Metrics
 
 - **Total Requirements:** 53
-- **Completed:** 17 (32.1%)
+- **Completed:** 24 (45.3%)
 - **In Progress:** 2 (3.8%)
-- **Pending:** 34 (64.1%)
+- **Pending:** 27 (50.9%)
 
 **Priority Breakdown:**
-- P0 (Critical): 28 items - 15 done, 11 pending, 2 verify
-- P1 (High): 19 items - 1 done, 18 pending  
-- P2 (Medium): 6 items - 1 done, 5 pending
+- P0 (Critical): 28 items - 19 done, 7 pending, 2 verify
+- P1 (High): 19 items - 3 done, 16 pending  
+- P2 (Medium): 6 items - 2 done, 4 pending
 
 ---
 
