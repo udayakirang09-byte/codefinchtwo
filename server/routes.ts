@@ -4296,6 +4296,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Razorpay: Create order for booking payment
+  app.post("/api/razorpay/create-booking-order", async (req, res) => {
+    try {
+      if (!razorpay) {
+        return res.status(503).json({ 
+          message: "Razorpay payment system is not configured",
+          error: "RAZORPAY_NOT_CONFIGURED"
+        });
+      }
+
+      const { mentorId, subject, duration, isBulkPackage, totalClasses } = req.body;
+
+      if (!mentorId || !subject) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // SECURITY: Fetch mentor's actual pricing from database (not client-provided)
+      const mentorSubjects = await db.select().from(teacherSubjects).where(eq(teacherSubjects.mentorId, mentorId));
+      const matchingSubject = mentorSubjects.find(s => s.subject === subject);
+      
+      if (!matchingSubject) {
+        return res.status(400).json({ message: "Mentor does not teach this subject" });
+      }
+
+      // Calculate amount server-side from database pricing
+      const pricePerClass = parseFloat(matchingSubject.fee);
+      if (isNaN(pricePerClass) || pricePerClass <= 0) {
+        return res.status(400).json({ message: "Invalid pricing configuration" });
+      }
+
+      // For bulk packages, multiply by number of classes
+      const numClasses = isBulkPackage ? (totalClasses || 1) : 1;
+      const totalAmount = pricePerClass * numClasses;
+
+      // Create Razorpay order with verified amount
+      const options = {
+        amount: Math.round(totalAmount * 100), // Convert to paise (smallest currency unit)
+        currency: "INR",
+        receipt: `booking_${mentorId}_${Date.now()}`,
+        notes: {
+          mentorId,
+          subject,
+          duration: duration || '60',
+          isBulkPackage: isBulkPackage || false,
+          totalClasses: numClasses,
+          pricePerClass: pricePerClass,
+          type: 'session_booking'
+        }
+      };
+
+      const order = await razorpay.orders.create(options);
+      
+      console.log('✅ Razorpay booking order created:', order.id, `Amount: ₹${totalAmount} (${numClasses}x₹${pricePerClass})`);
+
+      res.json({
+        orderId: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        keyId: razorpayKeyId
+      });
+    } catch (error: any) {
+      console.error("❌ Error creating Razorpay booking order:", error);
+      res.status(500).json({ 
+        message: "Failed to create payment order",
+        error: error.message 
+      });
+    }
+  });
+
   // Razorpay: Verify payment signature
   app.post("/api/razorpay/verify-payment", async (req, res) => {
     try {

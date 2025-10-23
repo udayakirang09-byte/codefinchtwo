@@ -13,6 +13,13 @@ import { apiRequest } from "@/lib/queryClient";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 
+// Razorpay TypeScript declaration
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 // Stripe will be loaded dynamically after fetching config from admin settings
 
 // Separate component for card payments that uses Stripe hooks
@@ -153,59 +160,107 @@ const BookingCheckoutForm = ({ bookingDetails, hasStripe, paymentIntentId }: { b
     setProcessing(true);
 
     try {
-      if (selectedPaymentMethod === 'upi') {
-        // Handle UPI payment
-        if (!upiId || !upiId.includes('@')) {
-          toast({
-            title: "Invalid UPI ID",
-            description: "Please enter a valid UPI ID (e.g., username@paytm)",
-            variant: "destructive",
-          });
-          setProcessing(false);
-          return;
-        }
-
-        // Simulate UPI payment processing
-        toast({
-          title: "UPI Payment Initiated",
-          description: `Payment request sent to ${upiId}. Please approve on your UPI app.`,
+      if (selectedPaymentMethod === 'upi' || selectedPaymentMethod === 'netbanking') {
+        // Create Razorpay order (amount calculated server-side from database pricing)
+        const orderResponse = await fetch('/api/razorpay/create-booking-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mentorId: bookingDetails.mentorId,
+            subject: bookingDetails.subject,
+            duration: bookingDetails.duration,
+            isBulkPackage: bookingDetails.isBulkPackage || false,
+            totalClasses: bookingDetails.totalClasses || 1
+          })
         });
 
-        // In production, this would integrate with actual UPI payment gateway
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        await createBooking();
-
-      } else if (selectedPaymentMethod === 'netbanking') {
-        // Handle Net Banking payment
-        if (!bankName || !accountNumber) {
-          toast({
-            title: "Invalid Details",
-            description: "Please provide bank name and account number",
-            variant: "destructive",
-          });
-          setProcessing(false);
-          return;
+        if (!orderResponse.ok) {
+          const error = await orderResponse.json();
+          throw new Error(error.message || 'Failed to create payment order');
         }
 
-        // Simulate Net Banking payment processing
-        toast({
-          title: "Net Banking Initiated",
-          description: `Redirecting to ${bankName} for payment authorization...`,
-        });
+        const orderData = await orderResponse.json();
 
-        // In production, this would redirect to bank's payment gateway
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        await createBooking();
+        // Open Razorpay checkout
+        const options = {
+          key: orderData.keyId,
+          amount: orderData.amount,
+          currency: orderData.currency,
+          order_id: orderData.orderId,
+          name: 'TechLearnOrbit',
+          description: bookingDetails.isBulkPackage 
+            ? `Bulk Package: ${bookingDetails.totalClasses} classes` 
+            : `Coding Session - ${bookingDetails.subject}`,
+          prefill: {
+            email: bookingDetails.userEmail,
+            contact: ''
+          },
+          theme: {
+            color: '#2563eb'
+          },
+          handler: async function (response: any) {
+            // Payment successful - verify and create booking
+            try {
+              const verifyResponse = await fetch('/api/razorpay/verify-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature
+                })
+              });
+
+              if (!verifyResponse.ok) {
+                throw new Error('Payment verification failed');
+              }
+
+              const verifyData = await verifyResponse.json();
+              
+              if (verifyData.verified) {
+                toast({
+                  title: "Payment Successful!",
+                  description: "Creating your booking...",
+                });
+                await createBooking();
+              } else {
+                throw new Error('Payment verification failed');
+              }
+            } catch (error) {
+              console.error('Payment verification error:', error);
+              toast({
+                title: "Payment Verification Failed",
+                description: "Please contact support with your payment details.",
+                variant: "destructive",
+              });
+              setProcessing(false);
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              toast({
+                title: "Payment Cancelled",
+                description: "You cancelled the payment process.",
+                variant: "destructive",
+              });
+              setProcessing(false);
+            }
+          }
+        };
+
+        // @ts-ignore - Razorpay is loaded via script tag
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error('Payment error:', err);
       toast({
         title: "Payment Error",
-        description: "An unexpected error occurred during payment processing.",
+        description: err.message || "An unexpected error occurred during payment processing.",
         variant: "destructive",
       });
+      setProcessing(false);
     }
-
-    setProcessing(false);
   };
 
   const handleCardPaymentSuccess = async (paymentIntentId: string) => {
