@@ -10,6 +10,8 @@ export interface NetworkMetrics {
   rtt: number;             // Round-trip time in milliseconds
   jitter: number;          // Jitter in milliseconds
   freezeCount?: number;    // Optional: number of video freezes
+  videoBitrate?: number;   // Optional: R2.6 - Video bitrate in kbps
+  audioBitrate?: number;   // Optional: R2.6 - Audio bitrate in kbps
 }
 
 export interface HealthScore {

@@ -10366,6 +10366,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         rtt,
         jitter,
         freezeCount,
+        videoBitrate,
+        audioBitrate,
         healthScore,
         quality,
         connectionState
@@ -10385,6 +10387,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           rtt: rtt || 0,
           jitter: jitter || 0,
           freezeCount: freezeCount || 0,
+          videoBitrate: videoBitrate || null,
+          audioBitrate: audioBitrate || null,
           healthScore: healthScore || null,
           quality: quality || null,
           connectionState: connectionState || null,
