@@ -18,7 +18,7 @@
 | R1.5 | TURN TLS | TLS relay fallback | 🟡 VERIFY | Encrypted relay | P0 | LOW | In Progress | Check Coturn config |
 | R1.6 | Multi-region TURN | 2+ regions active | ❌ TODO | Central + South India | P0 | HIGH | Pending | Need 2nd server |
 | R1.7 | SFU Architecture | >2 participants | ❌ TODO | Group classes | P0 | HIGH | Pending | Awaiting provider |
-| R1.8 | External Fallback | Teams/Zoom backup | 🟡 PARTIAL | Auto-redirect | P1 | MED | In Progress | Backend done |
+| R1.8 | External Fallback | Teams/Zoom backup | 🟡 OPTIONAL | Auto-redirect | P2 | LOW | Optional | User preference: not required |
 | **R2** | **Health Monitoring** |
 | R2.1 | Health Score | 0-100 calculation | ✅ DONE | Real-time scoring | P0 | - | Complete | Algorithm + 44 tests |
 | R2.2 | Real-time Stats | Every 3s collection | ✅ DONE | Backend + UI | P0 | - | Complete | 5 APIs + DB integration |
@@ -34,7 +34,7 @@
 | R3.4 | ICE Restart (15s) | Second restart | ❌ TODO | No media 15s | P0 | LOW | Pending | Retry logic |
 | R3.5 | ICE Restart (30s) | Final restart | ❌ TODO | Abandon at 30s | P0 | LOW | Pending | Escalate |
 | R3.6 | Region Switch | Backup TURN region | ❌ TODO | Cross-region | P1 | HIGH | Pending | Failover |
-| R3.7 | Fallback Trigger | Health <35 for 25s | ❌ TODO | Auto-redirect | P1 | LOW | Pending | Last resort |
+| R3.7 | Fallback Trigger | Health <35 for 25s | 🟡 OPTIONAL | Auto-redirect | P2 | LOW | Optional | Only if external fallback enabled |
 | **R4** | **Pre-Call Readiness** |
 | R4.1 | Device Check | Camera/mic access | 🟡 PARTIAL | 60s pre-test | P1 | MED | In Progress | Basic check exists |
 | R4.2 | UDP Reachability | STUN test | ❌ TODO | UDP connectivity | P1 | MED | Pending | Network test |
@@ -56,13 +56,13 @@
 | R6.2 | Relay Surge | >25% relay | ❌ TODO | P2 investigate | P2 | LOW | Pending | UDP blocks |
 | R6.3 | TURN Saturation | >65% NIC/CPU | ❌ TODO | P2 autoscale | P1 | MED | Pending | Capacity |
 | R6.4 | Teacher Health | Score <35 60s | ❌ TODO | P3 banner | P2 | LOW | Pending | UX alert |
-| R6.5 | External Fallback | >0.2% sessions | ❌ TODO | P2 review | P2 | LOW | Pending | Overuse |
+| R6.5 | External Fallback | >0.2% sessions | 🟡 OPTIONAL | P2 review | P2 | LOW | Optional | Only if external fallback enabled |
 | R6.6 | Recording Delay | >30min wait | ❌ TODO | P2 ticket | P2 | LOW | Pending | Pipeline |
 | **R7** | **Recording & Compliance** |
 | R7.1 | Client Recording | 1:1 optional | ❌ TODO | Azure Blob | P2 | MED | Pending | Student request |
 | R7.2 | Server Recording | SFU required | ❌ TODO | Platform control | P0 | HIGH | Pending | >2 participants |
 | R7.3 | Recording Storage | Azure Blob | ✅ DONE | Existing infra | P0 | - | Complete | Already setup |
-| R7.4 | Recording Ingest | External→Blob | ❌ TODO | Fallback sync | P1 | MED | Pending | Teams/Zoom |
+| R7.4 | Recording Ingest | External→Blob | 🟡 OPTIONAL | Fallback sync | P2 | LOW | Optional | Only if external fallback enabled |
 | **R8** | **Infrastructure** |
 | R8.1 | TURN Server 1 | Central India | ❌ TODO | Coturn/Azure | P0 | HIGH | Pending | Primary region |
 | R8.2 | TURN Server 2 | South India | ❌ TODO | Coturn/Azure | P0 | HIGH | Pending | Backup region |
