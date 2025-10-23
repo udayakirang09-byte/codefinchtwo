@@ -1737,7 +1737,7 @@ export class DatabaseStorage implements IStorage {
         )
       );
 
-    return result.map(row => ({
+    return result.map((row: any) => ({
       ...row.teacher_media,
       mentor: {
         ...row.mentors!,

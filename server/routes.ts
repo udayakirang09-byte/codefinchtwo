@@ -6560,7 +6560,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sloCompliant: monthlySloCompliant,
           monthStart: currentMonthStart.toISOString(),
         },
-        failureReasons: failureReasonsResult.map(r => ({
+        failureReasons: failureReasonsResult.map((r: { reason: string | null; count: number }) => ({
           reason: r.reason || 'Unknown',
           count: Number(r.count),
         })),
