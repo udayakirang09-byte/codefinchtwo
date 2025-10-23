@@ -4346,7 +4346,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // SECURITY: Fetch mentor's actual pricing from database (not client-provided)
       const mentorSubjects = await db.select().from(teacherSubjects).where(eq(teacherSubjects.mentorId, mentorId));
-      const matchingSubject = mentorSubjects.find(s => s.subject === subject);
+      const matchingSubject = mentorSubjects.find((s: any) => s.subject === subject);
       
       if (!matchingSubject) {
         return res.status(400).json({ message: "Mentor does not teach this subject" });
