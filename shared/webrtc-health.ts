@@ -5,6 +5,28 @@
  * Used across client and server for consistent quality assessment.
  */
 
+// R2.6: Bitrate Quality Thresholds (in kbps)
+export const BITRATE_THRESHOLDS = {
+  VIDEO: {
+    OPTIMAL_MIN: 1200,    // Target: 1.2-1.5 Mbps
+    OPTIMAL_MAX: 1500,
+    LOW: 400,             // < 400 kbps is poor quality
+    HIGH: 2000,           // > 2 Mbps is excessive
+    CRITICAL: 200,        // < 200 kbps is unusable
+  },
+  AUDIO: {
+    OPTIMAL: 64,          // Typical audio codec bitrate
+    LOW: 24,              // < 24 kbps is poor quality
+    HIGH: 128,            // > 128 kbps is excessive
+  },
+  TOTAL: {
+    OPTIMAL_MIN: 1200,    // Combined target
+    OPTIMAL_MAX: 1500,
+  }
+} as const;
+
+export type BitrateQuality = 'optimal' | 'good' | 'low' | 'high' | 'critical';
+
 export interface NetworkMetrics {
   packetLoss: number;      // Percentage (0-100)
   rtt: number;             // Round-trip time in milliseconds
@@ -230,6 +252,86 @@ export function shouldTriggerExternalFallback(
   
   // Trigger external fallback if critically poor
   return avgScore < criticalThreshold;
+}
+
+/**
+ * R2.6: Evaluate bitrate quality based on thresholds
+ * 
+ * Returns quality indicator for UI display and alerts
+ */
+export function evaluateBitrateQuality(videoBitrate: number, audioBitrate: number = 0): {
+  quality: BitrateQuality;
+  message: string;
+  shouldAlert: boolean;
+} {
+  const totalBitrate = videoBitrate + audioBitrate;
+  
+  // Critical: Unusably low bitrate
+  if (videoBitrate < BITRATE_THRESHOLDS.VIDEO.CRITICAL) {
+    return {
+      quality: 'critical',
+      message: `Critical low bitrate: ${Math.round(totalBitrate)} kbps (target: ${BITRATE_THRESHOLDS.TOTAL.OPTIMAL_MIN}-${BITRATE_THRESHOLDS.TOTAL.OPTIMAL_MAX} kbps)`,
+      shouldAlert: true,
+    };
+  }
+  
+  // Low: Poor quality but usable
+  if (videoBitrate < BITRATE_THRESHOLDS.VIDEO.LOW) {
+    return {
+      quality: 'low',
+      message: `Low bitrate: ${Math.round(totalBitrate)} kbps (target: ${BITRATE_THRESHOLDS.TOTAL.OPTIMAL_MIN}-${BITRATE_THRESHOLDS.TOTAL.OPTIMAL_MAX} kbps)`,
+      shouldAlert: true,
+    };
+  }
+  
+  // Optimal: Target range for best quality
+  if (
+    videoBitrate >= BITRATE_THRESHOLDS.VIDEO.OPTIMAL_MIN &&
+    videoBitrate <= BITRATE_THRESHOLDS.VIDEO.OPTIMAL_MAX
+  ) {
+    return {
+      quality: 'optimal',
+      message: `Optimal bitrate: ${Math.round(totalBitrate)} kbps`,
+      shouldAlert: false,
+    };
+  }
+  
+  // High: Excessive bandwidth usage
+  if (videoBitrate > BITRATE_THRESHOLDS.VIDEO.HIGH) {
+    return {
+      quality: 'high',
+      message: `High bitrate: ${Math.round(totalBitrate)} kbps (may cause buffering)`,
+      shouldAlert: false,
+    };
+  }
+  
+  // Good: Acceptable range (between low and optimal, or optimal and high)
+  return {
+    quality: 'good',
+    message: `Good bitrate: ${Math.round(totalBitrate)} kbps`,
+    shouldAlert: false,
+  };
+}
+
+/**
+ * R2.6: Get bitrate color indicator for UI
+ */
+export function getBitrateColor(quality: BitrateQuality): {
+  className: string;
+  hex: string;
+} {
+  switch (quality) {
+    case 'optimal':
+      return { className: 'text-green-600', hex: '#16a34a' };
+    case 'good':
+      return { className: 'text-blue-600', hex: '#2563eb' };
+    case 'low':
+      return { className: 'text-orange-600', hex: '#ea580c' };
+    case 'high':
+      return { className: 'text-yellow-600', hex: '#ca8a04' };
+    case 'critical':
+      return { className: 'text-red-600', hex: '#dc2626' };
+  }
 }
 
 /**
