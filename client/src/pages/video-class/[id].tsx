@@ -1354,6 +1354,21 @@ export default function VideoClass() {
                       {currentMetrics.audioBitrate >= 64 && currentMetrics.audioBitrate <= 128 && ' ✓'}
                     </span>
                   )}
+                  {currentMetrics.freezeCount !== undefined && (
+                    <span 
+                      data-testid="freeze-count-value" 
+                      className={`font-medium ${
+                        currentMetrics.freezeCount === 0 ? 'text-green-400' :
+                        currentMetrics.freezeCount <= 1 ? 'text-blue-400' :
+                        currentMetrics.freezeCount <= 3 ? 'text-yellow-400' :
+                        'text-red-400'
+                      }`}
+                      title={`Video freezes ${currentMetrics.freezeCount === 0 ? 'none detected' : currentMetrics.freezeCount <= 1 ? 'minimal - good quality' : currentMetrics.freezeCount <= 3 ? 'moderate - noticeable' : 'high - poor quality'} (target: <1 freeze/10s)`}
+                    >
+                      Freezes: {currentMetrics.freezeCount.toFixed(1)}/10s
+                      {currentMetrics.freezeCount === 0 && ' ✓'}
+                    </span>
+                  )}
                 </div>
               )}
             </div>

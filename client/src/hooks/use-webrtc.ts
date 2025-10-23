@@ -57,6 +57,10 @@ export function useWebRTC({
   const lastQualityChangeRef = useRef<number>(0);
   const qualityStableTimeRef = useRef<number | null>(null);
   
+  // R2.5: Freeze detection state (delta tracking)
+  const previousFreezeCountsRef = useRef<Map<string, number>>(new Map());
+  const lastStatsTimestampRef = useRef<number>(Date.now());
+  
   // ICE servers configuration with TURN for NAT traversal
   const iceServers = [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -320,6 +324,11 @@ export function useWebRTC({
       return null;
     }
 
+    // R2.5: Calculate time delta for freeze rate normalization
+    const currentTimestamp = Date.now();
+    const timeDeltaSeconds = (currentTimestamp - lastStatsTimestampRef.current) / 1000;
+    lastStatsTimestampRef.current = currentTimestamp;
+
     // Collect stats from all peer connections
     const allMetrics: NetworkMetrics[] = [];
     
@@ -349,8 +358,21 @@ export function useWebRTC({
               jitter = report.jitter * 1000; // Convert to ms
             }
             
-            if (report.freezeCount) {
-              freezeCount = report.freezeCount;
+            // R2.5: Freeze detection with delta calculation
+            // WebRTC API returns cumulative freeze count, we need the delta
+            if (report.freezeCount !== undefined) {
+              const currentFreezeCount = report.freezeCount;
+              const previousFreezeCount = previousFreezeCountsRef.current.get(peerId) || 0;
+              
+              // Calculate delta (freezes since last measurement)
+              const freezeDelta = Math.max(0, currentFreezeCount - previousFreezeCount);
+              
+              // Normalize to "freezes per 10 seconds" as per R2.5 requirement
+              // If timeDelta is 3 seconds and we had 2 freezes, that's (2 / 3) * 10 = 6.67 freezes/10s
+              freezeCount = timeDeltaSeconds > 0 ? (freezeDelta / timeDeltaSeconds) * 10 : freezeDelta;
+              
+              // Store current count for next delta calculation
+              previousFreezeCountsRef.current.set(peerId, currentFreezeCount);
             }
             
             // R2.6: Video bitrate (bytes per second to kbps)
@@ -399,7 +421,8 @@ export function useWebRTC({
         packetLoss: allMetrics.reduce((sum, m) => sum + m.packetLoss, 0) / allMetrics.length,
         rtt: allMetrics.reduce((sum, m) => sum + m.rtt, 0) / allMetrics.length,
         jitter: allMetrics.reduce((sum, m) => sum + m.jitter, 0) / allMetrics.length,
-        freezeCount: Math.max(...allMetrics.map(m => m.freezeCount)),
+        // R2.5: Average freeze count (now representing freezes/10s rate)
+        freezeCount: allMetrics.reduce((sum, m) => sum + (m.freezeCount || 0), 0) / allMetrics.length,
         videoBitrate: allMetrics.reduce((sum, m) => sum + (m.videoBitrate || 0), 0) / allMetrics.length,
         audioBitrate: allMetrics.reduce((sum, m) => sum + (m.audioBitrate || 0), 0) / allMetrics.length,
       };
