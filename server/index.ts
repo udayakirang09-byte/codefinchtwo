@@ -19,6 +19,10 @@ import { initializeRedis } from "./redis";
 
 const app = express();
 
+// Trust proxy headers from Azure App Service and other reverse proxies
+// This ensures req.secure and req.ip work correctly behind proxies
+app.set('trust proxy', true);
+
 // Initialize Redis/cache
 initializeRedis().catch(console.error);
 
@@ -70,6 +74,27 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Force HTTPS redirect in production (Azure/Replit)
+app.use((req, res, next) => {
+  // Skip for local development
+  if (process.env.NODE_ENV === 'development') {
+    return next();
+  }
+
+  // Check if request is already HTTPS
+  const isHttps = req.secure || 
+                  req.headers['x-forwarded-proto'] === 'https' ||
+                  req.headers['x-arr-ssl']; // Azure-specific header
+
+  if (!isHttps) {
+    const httpsUrl = `https://${req.headers.host}${req.url}`;
+    console.log(`🔒 [HTTPS REDIRECT] ${req.url} → ${httpsUrl}`);
+    return res.redirect(301, httpsUrl);
+  }
+
+  next();
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
