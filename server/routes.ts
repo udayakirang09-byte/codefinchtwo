@@ -6393,6 +6393,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // TURN Server Metrics (R1.3-R1.6: 99.99% Reliability Infrastructure Monitoring)
+  app.get("/api/admin/turn-metrics", async (req, res) => {
+    console.log("🔄 GET /api/admin/turn-metrics - Fetching TURN server metrics");
+    try {
+      const result = await db
+        .select({
+          totalSessions: sql<number>`COUNT(*)`,
+          turnRelayCount: sql<number>`SUM(CASE WHEN ${webrtcSessions.connectionType} IN ('relay_udp', 'relay_tcp', 'relay_tls') THEN 1 ELSE 0 END)`,
+          p2pDirectCount: sql<number>`SUM(CASE WHEN ${webrtcSessions.connectionType} = 'p2p' THEN 1 ELSE 0 END)`,
+          avgHealthScore: sql<number>`AVG(${webrtcSessions.averageHealthScore})`,
+          avgDurationMinutes: sql<number>`AVG(EXTRACT(EPOCH FROM (${webrtcSessions.leftAt} - ${webrtcSessions.joinedAt})) / 60)`,
+          successfulSessions: sql<number>`SUM(CASE WHEN ${webrtcSessions.sessionStatus} = 'completed' THEN 1 ELSE 0 END)`,
+          failedSessions: sql<number>`SUM(CASE WHEN ${webrtcSessions.sessionStatus} = 'failed' THEN 1 ELSE 0 END)`,
+          totalICERestarts: sql<number>`SUM(${webrtcSessions.iceRestartsCount})`,
+          totalQualityDowngrades: sql<number>`SUM(${webrtcSessions.qualityDowngradesCount})`,
+        })
+        .from(webrtcSessions)
+        .where(sql`${webrtcSessions.joinedAt} IS NOT NULL`);
+
+      const metrics = result[0];
+
+      const turnPercentage = metrics.totalSessions > 0 
+        ? ((Number(metrics.turnRelayCount) / Number(metrics.totalSessions)) * 100).toFixed(1)
+        : '0.0';
+      
+      const p2pPercentage = metrics.totalSessions > 0
+        ? ((Number(metrics.p2pDirectCount) / Number(metrics.totalSessions)) * 100).toFixed(1)
+        : '0.0';
+
+      const successRate = metrics.totalSessions > 0
+        ? ((Number(metrics.successfulSessions) / Number(metrics.totalSessions)) * 100).toFixed(1)
+        : '0.0';
+
+      const turnServerHealthy = process.env.VITE_TURN_SERVER_URL && 
+                                 process.env.VITE_TURN_USERNAME && 
+                                 process.env.VITE_TURN_PASSWORD;
+
+      console.log(`✅ TURN Metrics - Total: ${metrics.totalSessions}, TURN: ${metrics.turnRelayCount}, P2P: ${metrics.p2pDirectCount}`);
+
+      res.json({
+        totalSessions: Number(metrics.totalSessions),
+        turnRelayCount: Number(metrics.turnRelayCount),
+        p2pDirectCount: Number(metrics.p2pDirectCount),
+        turnPercentage,
+        p2pPercentage,
+        avgHealthScore: Number(metrics.avgHealthScore).toFixed(1),
+        avgDurationMinutes: Number(metrics.avgDurationMinutes).toFixed(1),
+        successRate,
+        failedSessions: Number(metrics.failedSessions),
+        totalICERestarts: Number(metrics.totalICERestarts),
+        totalQualityDowngrades: Number(metrics.totalQualityDowngrades),
+        turnServerConfigured: turnServerHealthy,
+        turnServerUrl: process.env.VITE_TURN_SERVER_URL || 'Not configured',
+      });
+    } catch (error) {
+      console.error("❌ Error fetching TURN metrics:", error);
+      res.status(500).json({ message: "Failed to fetch TURN metrics" });
+    }
+  });
+
   // Get single user by ID (for profile editing)
   app.get("/api/users/:id", async (req, res) => {
     try {
