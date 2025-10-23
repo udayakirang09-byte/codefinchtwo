@@ -176,6 +176,18 @@ const BookingCheckoutForm = ({ bookingDetails, hasStripe, paymentIntentId }: { b
 
         if (!orderResponse.ok) {
           const error = await orderResponse.json();
+          
+          // Special handling for Razorpay not enabled
+          if (error.error === 'RAZORPAY_NOT_ENABLED' || error.adminConfigRequired) {
+            toast({
+              title: "Payment System Unavailable",
+              description: error.message || "Razorpay payment system is currently disabled. Please contact support or try again later.",
+              variant: "destructive",
+            });
+            setProcessing(false);
+            return;
+          }
+          
           throw new Error(error.message || 'Failed to create payment order');
         }
 
