@@ -112,9 +112,28 @@ if (razorpayKeyId && razorpayKeySecret && razorpayKeyId !== 'NA' && razorpayKeyS
     key_id: razorpayKeyId,
     key_secret: razorpayKeySecret
   });
-  console.log('✅ Razorpay payment system ready');
+  console.log('✅ Razorpay payment system ready (test keys)');
+  console.log('   Note: Enable Razorpay in Admin > Payment Configuration to accept payments');
 } else {
   console.warn('⚠️ Razorpay not configured - UPI payment features disabled');
+}
+
+// Helper function to check if Razorpay is available and enabled
+async function isRazorpayEnabled(): Promise<{ enabled: boolean; reason?: string }> {
+  if (!razorpay) {
+    return { enabled: false, reason: 'Razorpay is not configured. Please add API keys in environment variables.' };
+  }
+  
+  try {
+    const config = await storage.getAdminPaymentConfig();
+    if (!config || !config.enableRazorpay) {
+      return { enabled: false, reason: 'Razorpay is disabled. Please enable it in Admin > Payment Configuration.' };
+    }
+    return { enabled: true };
+  } catch (error) {
+    console.error('Error checking Razorpay config:', error);
+    return { enabled: false, reason: 'Failed to check payment configuration.' };
+  }
 }
 
 // Rate limiting for login attempts (in-memory store)
@@ -4299,10 +4318,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Razorpay: Create order for booking payment
   app.post("/api/razorpay/create-booking-order", async (req, res) => {
     try {
-      if (!razorpay) {
+      // Check if Razorpay is enabled in admin config
+      const razorpayStatus = await isRazorpayEnabled();
+      if (!razorpayStatus.enabled) {
         return res.status(503).json({ 
-          message: "Razorpay payment system is not configured",
-          error: "RAZORPAY_NOT_CONFIGURED"
+          message: razorpayStatus.reason || "Razorpay payment system is not available",
+          error: "RAZORPAY_NOT_ENABLED",
+          adminConfigRequired: true
         });
       }
 
@@ -4368,9 +4390,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Razorpay: Verify payment signature
   app.post("/api/razorpay/verify-payment", async (req, res) => {
     try {
-      if (!razorpay) {
+      // Check if Razorpay is enabled in admin config
+      const razorpayStatus = await isRazorpayEnabled();
+      if (!razorpayStatus.enabled) {
         return res.status(503).json({ 
-          message: "Razorpay payment system is not configured" 
+          message: razorpayStatus.reason || "Razorpay payment system is not available",
+          error: "RAZORPAY_NOT_ENABLED"
         });
       }
 
