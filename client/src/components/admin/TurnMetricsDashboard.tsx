@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, Radio, TrendingUp, Wifi, Server, AlertCircle, CheckCircle } from "lucide-react";
+import { Activity, Radio, TrendingUp, Wifi, Server, AlertCircle, CheckCircle, Target } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface TurnMetrics {
@@ -21,9 +21,41 @@ interface TurnMetrics {
   avgAudioBitrate: string;
 }
 
+interface SuccessRateMetrics {
+  sloTarget: number;
+  total: {
+    sessions: number;
+    successful: number;
+    failed: number;
+    aborted: number;
+    successRate: number;
+    failureRate: number;
+    sloCompliant: boolean;
+  };
+  currentMonth: {
+    sessions: number;
+    successful: number;
+    failed: number;
+    aborted: number;
+    successRate: number;
+    failureRate: number;
+    sloCompliant: boolean;
+    monthStart: string;
+  };
+  failureReasons: Array<{
+    reason: string;
+    count: number;
+  }>;
+}
+
 export function TurnMetricsDashboard() {
   const { data: metrics, isLoading } = useQuery<TurnMetrics>({
     queryKey: ["/api/admin/turn-metrics"],
+  });
+
+  // R5.4: Session Success Rate & SLO Tracking
+  const { data: successRateData, isLoading: isLoadingSuccessRate } = useQuery<SuccessRateMetrics>({
+    queryKey: ["/api/admin/session-success-rate"],
   });
 
   if (isLoading) {
@@ -126,22 +158,45 @@ export function TurnMetricsDashboard() {
           </CardContent>
         </Card>
 
-        {/* Connection Success Rate */}
+        {/* R5.4: Success Rate & SLO Compliance */}
         <Card data-testid="card-success-rate">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Success Rate (SLO)</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600" data-testid="text-success-rate">
-              {metrics.successRate}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {metrics.failedSessions} failed sessions
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Target: ≥99.9%
-            </p>
+            {isLoadingSuccessRate || !successRateData ? (
+              <div className="space-y-2">
+                <div className="h-8 w-20 bg-muted animate-pulse rounded" />
+                <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className={`text-2xl font-bold ${
+                  successRateData.currentMonth.sloCompliant ? 'text-green-600' : 'text-red-600'
+                }`} data-testid="text-success-rate">
+                  {successRateData.currentMonth.successRate.toFixed(2)}%
+                </div>
+                <div className="flex items-center gap-1">
+                  {successRateData.currentMonth.sloCompliant ? (
+                    <CheckCircle className="h-3 w-3 text-green-600" />
+                  ) : (
+                    <AlertCircle className="h-3 w-3 text-red-600" />
+                  )}
+                  <span className={`text-xs ${
+                    successRateData.currentMonth.sloCompliant ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {successRateData.currentMonth.sloCompliant ? 'SLO Met' : 'SLO Breach'}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {successRateData.currentMonth.failed} failed this month
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Target: ≥{successRateData.sloTarget}%
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

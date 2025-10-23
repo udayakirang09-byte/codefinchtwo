@@ -6467,6 +6467,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // R5.4: Session Success Rate & 99.99% SLO Tracking
+  app.get("/api/admin/session-success-rate", async (req, res) => {
+    console.log("📈 GET /api/admin/session-success-rate - Calculating success rate metrics");
+    try {
+      // Get current month sessions
+      const currentMonthStart = new Date();
+      currentMonthStart.setDate(1);
+      currentMonthStart.setHours(0, 0, 0, 0);
+
+      // Total sessions (all time)
+      const totalResult = await db
+        .select({
+          total: sql<number>`COUNT(*)`,
+          successful: sql<number>`SUM(CASE WHEN ${webrtcSessions.sessionStatus} = 'completed' THEN 1 ELSE 0 END)`,
+          failed: sql<number>`SUM(CASE WHEN ${webrtcSessions.sessionStatus} = 'failed' THEN 1 ELSE 0 END)`,
+          aborted: sql<number>`SUM(CASE WHEN ${webrtcSessions.sessionStatus} = 'aborted' THEN 1 ELSE 0 END)`,
+        })
+        .from(webrtcSessions)
+        .where(sql`${webrtcSessions.joinedAt} IS NOT NULL`);
+
+      // Current month sessions
+      const monthlyResult = await db
+        .select({
+          total: sql<number>`COUNT(*)`,
+          successful: sql<number>`SUM(CASE WHEN ${webrtcSessions.sessionStatus} = 'completed' THEN 1 ELSE 0 END)`,
+          failed: sql<number>`SUM(CASE WHEN ${webrtcSessions.sessionStatus} = 'failed' THEN 1 ELSE 0 END)`,
+          aborted: sql<number>`SUM(CASE WHEN ${webrtcSessions.sessionStatus} = 'aborted' THEN 1 ELSE 0 END)`,
+        })
+        .from(webrtcSessions)
+        .where(sql`${webrtcSessions.joinedAt} >= ${currentMonthStart}`);
+
+      const totalMetrics = totalResult[0];
+      const monthlyMetrics = monthlyResult[0];
+
+      // Calculate success rates
+      const totalSuccessRate = totalMetrics.total > 0
+        ? (Number(totalMetrics.successful) / Number(totalMetrics.total)) * 100
+        : 0;
+
+      const monthlySuccessRate = monthlyMetrics.total > 0
+        ? (Number(monthlyMetrics.successful) / Number(monthlyMetrics.total)) * 100
+        : 0;
+
+      // SLO target: 99.99%
+      const SLO_TARGET = 99.99;
+      const totalSloCompliant = totalSuccessRate >= SLO_TARGET;
+      const monthlySloCompliant = monthlySuccessRate >= SLO_TARGET;
+
+      // Calculate downtime (failed sessions as proxy for unavailability)
+      const totalFailureRate = totalMetrics.total > 0
+        ? (Number(totalMetrics.failed) / Number(totalMetrics.total)) * 100
+        : 0;
+
+      const monthlyFailureRate = monthlyMetrics.total > 0
+        ? (Number(monthlyMetrics.failed) / Number(monthlyMetrics.total)) * 100
+        : 0;
+
+      // Get failure reasons breakdown
+      const failureReasonsResult = await db
+        .select({
+          reason: webrtcSessions.failureReason,
+          count: sql<number>`COUNT(*)`,
+        })
+        .from(webrtcSessions)
+        .where(sql`${webrtcSessions.sessionStatus} = 'failed' AND ${webrtcSessions.failureReason} IS NOT NULL`)
+        .groupBy(webrtcSessions.failureReason)
+        .orderBy(sql`COUNT(*) DESC`)
+        .limit(5);
+
+      console.log(`✅ Success Rate - Total: ${totalSuccessRate.toFixed(2)}%, Monthly: ${monthlySuccessRate.toFixed(2)}%`);
+      console.log(`✅ SLO Compliance - Total: ${totalSloCompliant}, Monthly: ${monthlySloCompliant}`);
+
+      res.json({
+        sloTarget: SLO_TARGET,
+        total: {
+          sessions: Number(totalMetrics.total),
+          successful: Number(totalMetrics.successful),
+          failed: Number(totalMetrics.failed),
+          aborted: Number(totalMetrics.aborted),
+          successRate: totalSuccessRate,
+          failureRate: totalFailureRate,
+          sloCompliant: totalSloCompliant,
+        },
+        currentMonth: {
+          sessions: Number(monthlyMetrics.total),
+          successful: Number(monthlyMetrics.successful),
+          failed: Number(monthlyMetrics.failed),
+          aborted: Number(monthlyMetrics.aborted),
+          successRate: monthlySuccessRate,
+          failureRate: monthlyFailureRate,
+          sloCompliant: monthlySloCompliant,
+          monthStart: currentMonthStart.toISOString(),
+        },
+        failureReasons: failureReasonsResult.map(r => ({
+          reason: r.reason || 'Unknown',
+          count: Number(r.count),
+        })),
+      });
+    } catch (error) {
+      console.error("❌ Error calculating session success rate:", error);
+      res.status(500).json({ message: "Failed to calculate success rate" });
+    }
+  });
+
   // Get single user by ID (for profile editing)
   app.get("/api/users/:id", async (req, res) => {
     try {

@@ -46,7 +46,7 @@
 | R5.1 | Telemetry Schema | DB tables | ✅ DONE | webrtc_sessions | P0 | - | Complete | 3 tables, 25+ fields |
 | R5.2 | Stats Collection | getStats() logger | ✅ DONE | Every 3s | P0 | - | Complete | Backend logging |
 | R5.3 | Connection Mix | P2P/TURN/SFU % | ✅ DONE | Dashboard tile | P0 | - | Complete | TURN metrics dashboard |
-| R5.4 | Success Rate | 99.99% SLO | ❌ TODO | Monthly tracking | P0 | LOW | Pending | Uptime calc |
+| R5.4 | Success Rate | 99.99% SLO | ✅ DONE | Monthly tracking | P0 | - | Complete | SLO compliance |
 | R5.5 | Admin Dashboard | Metrics UI | ✅ DONE | Real-time view | P0 | - | Complete | TURN section added |
 | R5.6 | Failover Funnel | Degrade→restart | ❌ TODO | Funnel chart | P1 | MED | Pending | Analytics |
 | R5.7 | Teacher Quality | RTT/loss/health | ❌ TODO | Per-class view | P1 | MED | Pending | QA tool |
@@ -75,12 +75,12 @@
 ## 🎯 Completion Metrics
 
 - **Total Requirements:** 53
-- **Completed:** 24 (45.3%)
+- **Completed:** 25 (47.2%)
 - **In Progress:** 2 (3.8%)
-- **Pending:** 27 (50.9%)
+- **Pending:** 26 (49.1%)
 
 **Priority Breakdown:**
-- P0 (Critical): 28 items - 19 done, 7 pending, 2 verify
+- P0 (Critical): 28 items - 20 done, 6 pending, 2 verify
 - P1 (High): 19 items - 3 done, 16 pending  
 - P2 (Medium): 6 items - 2 done, 4 pending
 
