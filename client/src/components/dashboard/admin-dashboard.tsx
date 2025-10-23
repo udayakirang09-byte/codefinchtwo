@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck, Mail, MessageSquare, Phone, CreditCard, Key, Lock, X, Building, Activity, TestTube, Zap, Monitor, Map, Brain, Cloud, Calendar, Cog, FileImage, CheckCircle } from "lucide-react";
+import { Users, BookOpen, DollarSign, TrendingUp, AlertTriangle, Settings, Bell, Shield, BarChart3, UserCheck, Mail, MessageSquare, Phone, CreditCard, Key, Lock, X, Building, Activity, TestTube, Zap, Monitor, Map, Brain, Cloud, Calendar, Cog, FileImage, CheckCircle, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { useAdminAlerts } from "@/hooks/use-admin-alerts";
@@ -606,6 +606,84 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50">
       <div className="space-y-8 p-6 max-w-7xl mx-auto">
+        {/* TURN Server Infrastructure Warning Banner */}
+        {(!import.meta.env.VITE_TURN_SERVER_URL || 
+          import.meta.env.VITE_TURN_SERVER_URL?.includes('expressturn') ||
+          import.meta.env.VITE_TURN_SERVER_URL?.includes('cloudflare')) && (
+          <div 
+            className="relative overflow-hidden bg-gradient-to-r from-red-600 via-orange-600 to-amber-500 p-6 rounded-2xl shadow-2xl border-4 border-red-700 animate-pulse" 
+            data-testid="turn-server-warning"
+          >
+            <div className="absolute inset-0 bg-red-900 opacity-10"></div>
+            <div className="relative z-10 flex items-start gap-6">
+              <div className="flex-shrink-0">
+                <AlertTriangle className="h-16 w-16 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <h2 className="text-3xl font-black text-white uppercase tracking-wider">
+                    ⚠️ CRITICAL: TEMPORARY TURN SERVER INFRASTRUCTURE
+                  </h2>
+                  <Badge className="bg-red-800 text-white text-lg px-4 py-1 font-bold">
+                    ACTION REQUIRED
+                  </Badge>
+                </div>
+                <p className="text-white text-xl font-semibold mb-4 leading-relaxed">
+                  Your WebRTC infrastructure is currently running on a <span className="underline font-black">FREE TIER</span> service with <span className="underline font-black">NO SLA GUARANTEE</span>. 
+                  This is NOT suitable for production use and does NOT meet the 99.999% reliability requirement.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="bg-red-800/50 backdrop-blur-sm rounded-lg p-4 border-2 border-white/30">
+                    <h3 className="text-white font-bold text-lg mb-2">📊 Current Status:</h3>
+                    <ul className="text-white text-sm space-y-1">
+                      <li>✓ STUN: Google Public (OK)</li>
+                      <li>❌ TURN: {!import.meta.env.VITE_TURN_SERVER_URL ? 'NOT CONFIGURED' : 'Free Tier (ExpressTURN/Cloudflare)'}</li>
+                      <li>❌ SLA: None (Free tier)</li>
+                      <li>❌ Multi-Region: No</li>
+                      <li>❌ DDoS Protection: No</li>
+                    </ul>
+                  </div>
+                  <div className="bg-amber-700/50 backdrop-blur-sm rounded-lg p-4 border-2 border-white/30">
+                    <h3 className="text-white font-bold text-lg mb-2">🎯 Required for 99.999%:</h3>
+                    <ul className="text-white text-sm space-y-1">
+                      <li>✓ TURN: Azure Coturn (Self-hosted)</li>
+                      <li>✓ SLA: 99.999% uptime</li>
+                      <li>✓ Multi-Region: 2+ regions</li>
+                      <li>✓ DDoS: Azure Protection</li>
+                      <li>✓ Cost: ~$100/month</li>
+                    </ul>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-4">
+                  <Link href="/admin/webrtc-infrastructure">
+                    <Button 
+                      size="lg" 
+                      className="bg-white text-red-700 hover:bg-red-100 font-black text-lg px-8 py-6 shadow-xl"
+                      data-testid="button-webrtc-infrastructure"
+                    >
+                      <Activity className="mr-2 h-6 w-6" />
+                      View Infrastructure Metrics
+                    </Button>
+                  </Link>
+                  <Button 
+                    variant="outline" 
+                    size="lg" 
+                    className="bg-white/20 backdrop-blur-sm text-white border-2 border-white hover:bg-white/30 font-bold text-lg px-8 py-6"
+                    onClick={() => window.open('/docs/turn-server-setup-guide.md', '_blank')}
+                    data-testid="button-turn-setup-guide"
+                  >
+                    📖 Read Setup Guide
+                  </Button>
+                  <div className="flex items-center gap-2 text-white font-bold text-lg ml-auto">
+                    <Clock className="h-5 w-5" />
+                    <span>Migrate by: TBD</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* Ultra Modern Welcome Section */}
         <div className="relative overflow-hidden bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 p-8 rounded-3xl shadow-2xl border border-white/20">
           <div className="absolute inset-0 bg-gradient-to-r from-black/10 to-transparent"></div>

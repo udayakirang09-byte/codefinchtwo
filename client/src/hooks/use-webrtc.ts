@@ -61,14 +61,30 @@ export function useWebRTC({
   const previousFreezeCountsRef = useRef<Map<string, number>>(new Map());
   const lastStatsTimestampRef = useRef<number>(Date.now());
   
-  // ICE servers configuration with TURN for NAT traversal
-  const iceServers = [
+  // R1.3-R1.6: ICE servers configuration with TURN for NAT traversal
+  const iceServers: RTCIceServer[] = [
+    // STUN servers for public IP discovery
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
-    // Add TURN servers for production deployment
-    // { urls: 'turn:your-turn-server.com:3478', username: 'user', credential: 'pass' }
   ];
+
+  // Add TURN relay servers if configured (R1.3: TURN UDP fallback)
+  if (import.meta.env.VITE_TURN_SERVER_URL && 
+      import.meta.env.VITE_TURN_USERNAME && 
+      import.meta.env.VITE_TURN_CREDENTIAL) {
+    iceServers.push({
+      urls: [
+        import.meta.env.VITE_TURN_SERVER_URL,
+        import.meta.env.VITE_TURN_SERVER_URL.replace('turn:', 'turns:'), // TLS fallback
+      ],
+      username: import.meta.env.VITE_TURN_USERNAME,
+      credential: import.meta.env.VITE_TURN_CREDENTIAL,
+    });
+    console.log('🔗 ICE Servers configured with TURN relay:', import.meta.env.VITE_TURN_SERVER_URL);
+  } else {
+    console.warn('⚠️ TURN server not configured - P2P only mode (may fail in restrictive networks)');
+  }
 
   // Initialize local media stream
   const initializeLocalStream = useCallback(async () => {
