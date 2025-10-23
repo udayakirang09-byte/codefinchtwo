@@ -1306,20 +1306,22 @@ export default function VideoClass() {
                 </div>
               )}
               
-              {/* R2.7: Connection Type Indicator (P2P vs TURN) */}
+              {/* R2.7: Connection Type Indicator (P2P vs TURN vs SFU) */}
               {detectedConnectionType && (
                 <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                   detectedConnectionType === 'p2p' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
                   detectedConnectionType === 'relay_udp' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
                   detectedConnectionType === 'relay_tcp' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' :
-                  'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                  detectedConnectionType === 'relay_tls' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' :
+                  'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'
                 }`} data-testid="connection-type-indicator" title={
                   detectedConnectionType === 'p2p' ? 'Direct P2P connection (optimal)' :
                   detectedConnectionType === 'relay_udp' ? 'TURN relay via UDP (NAT traversal)' :
                   detectedConnectionType === 'relay_tcp' ? 'TURN relay via TCP (firewall bypass)' :
-                  'TURN relay via TLS (encrypted)'
+                  detectedConnectionType === 'relay_tls' ? 'TURN relay via TLS (encrypted)' :
+                  'SFU media server (multi-participant)'
                 }>
-                  <span className="font-mono">{detectedConnectionType === 'p2p' ? '🔗' : '🌐'}</span>
+                  <span className="font-mono">{detectedConnectionType === 'p2p' ? '🔗' : detectedConnectionType === 'sfu' ? '🎛️' : '🌐'}</span>
                   <span className="uppercase">{detectedConnectionType.replace('_', ' ')}</span>
                 </div>
               )}

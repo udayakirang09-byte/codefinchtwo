@@ -68,7 +68,7 @@ export function useWebRTC({
   const [isRecoveringConnection, setIsRecoveringConnection] = useState(false);
   
   // R2.7: Connection type tracking (P2P vs TURN detection)
-  const [detectedConnectionType, setDetectedConnectionType] = useState<'p2p' | 'relay_udp' | 'relay_tcp' | 'relay_tls' | null>(null);
+  const [detectedConnectionType, setDetectedConnectionType] = useState<'p2p' | 'relay_udp' | 'relay_tcp' | 'relay_tls' | 'sfu' | null>(null);
   const connectionTypeDetectedRef = useRef<boolean>(false);
   
   // R1.3-R1.6: ICE servers configuration with TURN for NAT traversal
