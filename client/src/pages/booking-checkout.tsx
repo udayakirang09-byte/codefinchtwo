@@ -177,13 +177,25 @@ const BookingCheckoutForm = ({ bookingDetails, hasStripe, paymentIntentId }: { b
         if (!orderResponse.ok) {
           const error = await orderResponse.json();
           
-          // Special handling for Razorpay not enabled
-          if (error.error === 'RAZORPAY_NOT_ENABLED' || error.adminConfigRequired) {
+          // Don't show Razorpay error if we're in UPI testing mode - this is normal/expected
+          // Only show error if admin selected Razorpay Mode (Production) but keys are missing
+          const isRazorpayMode = localStorage.getItem('paymentConfig') 
+            ? JSON.parse(localStorage.getItem('paymentConfig')!).razorpayMode === 'api_keys'
+            : false;
+          
+          if ((error.error === 'RAZORPAY_NOT_ENABLED' || error.adminConfigRequired) && isRazorpayMode) {
             toast({
               title: "Payment System Unavailable",
               description: error.message || "Razorpay payment system is currently disabled. Please contact support or try again later.",
               variant: "destructive",
             });
+            setProcessing(false);
+            return;
+          }
+          
+          // For UPI testing mode, this error is expected - don't show it
+          if (!isRazorpayMode && error.error === 'RAZORPAY_NOT_ENABLED') {
+            console.log('ℹ️ UPI Testing Mode active - Razorpay API not required');
             setProcessing(false);
             return;
           }
@@ -744,19 +756,27 @@ export default function BookingCheckout() {
                     <div className="space-y-3 text-sm">
                       <div className="flex items-center gap-3">
                         <Calendar className="h-4 w-4 text-blue-600" />
-                        <span>{new Date(bookingDetails.scheduledAt).toLocaleDateString('en-IN', { 
-                          weekday: 'long', 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })}</span>
+                        <span>
+                          {bookingDetails.scheduledAt && !isNaN(new Date(bookingDetails.scheduledAt).getTime())
+                            ? new Date(bookingDetails.scheduledAt).toLocaleDateString('en-IN', { 
+                                weekday: 'long', 
+                                year: 'numeric', 
+                                month: 'long', 
+                                day: 'numeric' 
+                              })
+                            : 'Invalid Date'}
+                        </span>
                       </div>
                       <div className="flex items-center gap-3">
                         <Clock className="h-4 w-4 text-blue-600" />
-                        <span>{new Date(bookingDetails.scheduledAt).toLocaleTimeString('en-IN', { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })} ({bookingDetails.duration} minutes)</span>
+                        <span>
+                          {bookingDetails.scheduledAt && !isNaN(new Date(bookingDetails.scheduledAt).getTime())
+                            ? `${new Date(bookingDetails.scheduledAt).toLocaleTimeString('en-IN', { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })} (${bookingDetails.duration} minutes)`
+                            : `Invalid Date (${bookingDetails.duration} minutes)`}
+                        </span>
                       </div>
                     </div>
                   </div>
