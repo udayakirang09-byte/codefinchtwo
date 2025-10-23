@@ -575,6 +575,41 @@ export function useWebRTC({
     
     console.log(`⬇️ [QUALITY] Degrading quality from ${currentQualityLevel}`);
     
+    // Determine target quality level
+    let targetQuality: QualityLevel | null = null;
+    switch (currentQualityLevel) {
+      case '720p':
+        targetQuality = '480p';
+        break;
+      case '480p':
+        targetQuality = '360p';
+        break;
+      case '360p':
+        targetQuality = 'audio-only';
+        break;
+      case 'audio-only':
+        console.log('⚠️ [QUALITY] Already at minimum quality (audio-only)');
+        return;
+    }
+    
+    // Log quality degradation event
+    if (targetQuality) {
+      try {
+        await apiRequest('POST', '/api/webrtc/events', {
+          sessionId,
+          eventType: 'quality_degradation',
+          eventData: {
+            from: currentQualityLevel,
+            to: targetQuality,
+            reason: 'Poor network quality'
+          },
+          severity: 'warning'
+        });
+      } catch (error) {
+        console.error('❌ Failed to log quality degradation event:', error);
+      }
+    }
+    
     // Progressive degradation ladder
     switch (currentQualityLevel) {
       case '720p':
@@ -588,11 +623,8 @@ export function useWebRTC({
         await adjustBitrate(200); // Floor: 200 kbps
         await changeVideoResolution('audio-only');
         break;
-      case 'audio-only':
-        console.log('⚠️ [QUALITY] Already at minimum quality (audio-only)');
-        break;
     }
-  }, [currentQualityLevel, changeVideoResolution, adjustBitrate]);
+  }, [currentQualityLevel, changeVideoResolution, adjustBitrate, sessionId]);
 
   // R3.2: Quality recovery when connection improves
   const upgradeQuality = useCallback(async () => {
@@ -622,6 +654,42 @@ export function useWebRTC({
     console.log(`⬆️ [QUALITY] Upgrading quality from ${currentQualityLevel}`);
     qualityStableTimeRef.current = null; // Reset timer
     
+    // Determine target quality level
+    let targetQuality: QualityLevel | null = null;
+    switch (currentQualityLevel) {
+      case 'audio-only':
+        targetQuality = '360p';
+        break;
+      case '360p':
+        targetQuality = '480p';
+        break;
+      case '480p':
+        targetQuality = '720p';
+        break;
+      case '720p':
+        console.log('✅ [QUALITY] Already at maximum quality (720p)');
+        return;
+    }
+    
+    // Log quality upgrade event
+    if (targetQuality) {
+      try {
+        await apiRequest('POST', '/api/webrtc/events', {
+          sessionId,
+          eventType: 'quality_upgrade',
+          eventData: {
+            from: currentQualityLevel,
+            to: targetQuality,
+            reason: 'Network quality improved',
+            stableTime: stableDuration
+          },
+          severity: 'info'
+        });
+      } catch (error) {
+        console.error('❌ Failed to log quality upgrade event:', error);
+      }
+    }
+    
     // Progressive upgrade ladder
     switch (currentQualityLevel) {
       case 'audio-only':
@@ -636,11 +704,8 @@ export function useWebRTC({
         await changeVideoResolution('720p');
         await adjustBitrate(1500); // High bitrate
         break;
-      case '720p':
-        console.log('✅ [QUALITY] Already at maximum quality (720p)');
-        break;
     }
-  }, [currentQualityLevel, changeVideoResolution, adjustBitrate]);
+  }, [currentQualityLevel, changeVideoResolution, adjustBitrate, sessionId]);
 
   // Share screen
   const startScreenShare = useCallback(async () => {
