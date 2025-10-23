@@ -26,7 +26,7 @@
 | R2.4 | Jitter Tracking | Delay variation | ✅ DONE | <20ms target | P0 | - | Complete | Audio quality |
 | R2.5 | Freeze Detection | Video freezes | ❌ TODO | Count freezes/10s | P1 | MED | Pending | UX metric |
 | R2.6 | Bitrate Monitoring | Up/down bitrate | ❌ TODO | 1.2-1.5 Mbps | P0 | LOW | Pending | Bandwidth |
-| R2.7 | Candidate Type | host/srflx/relay | ❌ TODO | Track connection | P1 | LOW | Pending | P2P vs TURN |
+| R2.7 | Connection Type | P2P/TURN detection | ✅ DONE | Real-time tracking | P1 | - | Complete | WebRTC getStats() + UI |
 | **R3** | **Auto-Repair Ladder** |
 | R3.1 | Quality Degradation | Reduce resolution | ✅ DONE | 720p→360p→audio | P0 | - | Complete | Graceful degrade |
 | R3.2 | Audio-Only Recovery | Smart upgrade | ✅ DONE | Auto-resume video | P0 | - | Complete | UX improvement |
