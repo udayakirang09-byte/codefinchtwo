@@ -20,7 +20,7 @@
 | R1.7 | SFU Architecture | >2 participants | ❌ TODO | Group classes | P0 | HIGH | Pending | Awaiting provider |
 | R1.8 | External Fallback | Teams/Zoom backup | 🟡 PARTIAL | Auto-redirect | P1 | MED | In Progress | Backend done |
 | **R2** | **Health Monitoring** |
-| R2.1 | Health Score | 0-100 calculation | ❌ TODO | Real-time scoring | P0 | MED | Pending | RTT+loss+jitter |
+| R2.1 | Health Score | 0-100 calculation | ✅ DONE | Real-time scoring | P0 | - | Complete | Algorithm + 44 tests |
 | R2.2 | Packet Loss | Real-time tracking | ❌ TODO | <2% target | P0 | MED | Pending | getStats() API |
 | R2.3 | RTT Monitoring | Round-trip time | ❌ TODO | <150ms median | P0 | LOW | Pending | WebRTC stats |
 | R2.4 | Jitter Tracking | Delay variation | ❌ TODO | <20ms target | P0 | LOW | Pending | Audio quality |
@@ -43,7 +43,7 @@
 | R4.5 | Bandwidth Test | Up/down speed | ❌ TODO | Optional metric | P2 | LOW | Pending | QoS prediction |
 | R4.6 | Pre-join UI | Green/orange/red | ❌ TODO | User feedback | P1 | MED | Pending | Clear guidance |
 | **R5** | **Observability** |
-| R5.1 | Telemetry Schema | DB tables | ❌ TODO | webrtc_sessions | P0 | LOW | Pending | Metrics storage |
+| R5.1 | Telemetry Schema | DB tables | ✅ DONE | webrtc_sessions | P0 | - | Complete | 3 tables, 25+ fields |
 | R5.2 | Stats Collection | getStats() logger | ❌ TODO | Every 3-5s | P0 | MED | Pending | Real-time data |
 | R5.3 | Connection Mix | P2P/TURN/SFU % | ❌ TODO | Dashboard tile | P0 | MED | Pending | Path analysis |
 | R5.4 | Success Rate | 99.99% SLO | ❌ TODO | Monthly tracking | P0 | LOW | Pending | Uptime calc |
@@ -75,12 +75,12 @@
 ## 🎯 Completion Metrics
 
 - **Total Requirements:** 53
-- **Completed:** 4 (7.5%)
-- **In Progress:** 2 (3.8%)
-- **Pending:** 47 (88.7%)
+- **Completed:** 6 (11.3%)
+- **In Progress:** 1 (1.9%)
+- **Pending:** 46 (86.8%)
 
 **Priority Breakdown:**
-- P0 (Critical): 28 items - 3 done, 25 pending
+- P0 (Critical): 28 items - 5 done, 23 pending
 - P1 (High): 19 items - 1 done, 18 pending  
 - P2 (Medium): 6 items - 0 done, 6 pending
 
@@ -130,10 +130,10 @@
 
 **Active Tasks:**
 1. ✅ R1: Requirements validation and tracking table
-2. 🟡 R2: TURN server infrastructure setup
-3. 🟡 R3: Health scoring engine (0-100 calculation)
-4. ⏳ R6: WebRTC statistics collection
-5. ⏳ R5.1: Telemetry database schema
+2. ✅ R5.1: Telemetry database schema (3 tables created)
+3. ✅ R2.1: Health scoring engine (0-100 calculation, 44 tests passing)
+4. ⏳ R2.2-R2.7: WebRTC statistics collection (getStats integration)
+5. ⏳ R1.3-R1.6: TURN server infrastructure setup
 
 **Success Criteria:**
 - Health score visible in real-time during calls
@@ -150,6 +150,20 @@
 - Defined 5 implementation phases
 - Marked completed items (P2P, STUN, Azure Blob)
 - Identified critical path: TURN + Health Scoring
+- ✅ Completed R2.1: Health Scoring Engine (shared/webrtc-health.ts) - **ARCHITECT APPROVED**
+  - 0-100 scoring algorithm based on packet loss (60%), RTT (25%), jitter (15%)
+  - Aggressive RTT penalty: ≥350ms hard-capped at score 59, ≥400ms subscore = 0
+  - Quality bands: Excellent (80-100), Good (60-79), Fair (40-59), Poor (20-39), Critical (0-19)
+  - Auto-repair trigger at score <60
+  - Region switch recommendation logic (avg <40 over 5 samples)
+  - External fallback trigger logic (avg <20 over 6 samples)
+  - 44 comprehensive tests (100% passing)
+  - Comprehensive documentation (docs/health-scoring-guide.md)
+- ✅ Completed R5.1: Telemetry Schema
+  - webrtc_sessions: Main session tracking with 25+ fields
+  - webrtc_stats: Real-time stats every 3-5s
+  - webrtc_events: Event logging for debugging
+  - TypeScript types and Zod schemas
 
 ---
 
