@@ -10415,6 +10415,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // R2.7: Update WebRTC session with detected connection type
+  app.patch('/api/webrtc/sessions/:sessionId/connection-type', authenticateSession, async (req: any, res) => {
+    try {
+      const { sessionId } = req.params;
+      const { connectionType } = req.body;
+
+      if (!sessionId) {
+        return res.status(400).json({ message: 'Session ID is required' });
+      }
+
+      if (!connectionType || !['p2p', 'relay_udp', 'relay_tcp', 'relay_tls', 'sfu'].includes(connectionType)) {
+        return res.status(400).json({ message: 'Valid connection type is required' });
+      }
+
+      console.log(`📊 [CONNECTION TYPE] Updating session ${sessionId} with type: ${connectionType}`);
+
+      const updated = await db
+        .update(webrtcSessions)
+        .set({ connectionType })
+        .where(eq(webrtcSessions.sessionId, sessionId))
+        .returning();
+
+      if (updated.length === 0) {
+        return res.status(404).json({ message: 'Session not found' });
+      }
+
+      console.log(`✅ [CONNECTION TYPE] Session updated successfully`);
+      res.json({ success: true, connectionType });
+    } catch (error) {
+      console.error('❌ Failed to update session connection type:', error);
+      res.status(500).json({ message: 'Failed to update connection type' });
+    }
+  });
+
   // Store WebRTC stats
   app.post('/api/webrtc/stats', authenticateSession, async (req: any, res) => {
     try {

@@ -67,6 +67,10 @@ export function useWebRTC({
   const iceRestartTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isRecoveringConnection, setIsRecoveringConnection] = useState(false);
   
+  // R2.7: Connection type tracking (P2P vs TURN detection)
+  const [detectedConnectionType, setDetectedConnectionType] = useState<'p2p' | 'relay_udp' | 'relay_tcp' | 'relay_tls' | null>(null);
+  const connectionTypeDetectedRef = useRef<boolean>(false);
+  
   // R1.3-R1.6: ICE servers configuration with TURN for NAT traversal
   const iceServers: RTCIceServer[] = [
     // STUN servers for public IP discovery
@@ -271,6 +275,74 @@ export function useWebRTC({
     }
   }, [sessionId, performICERestart]);
 
+  // R2.7: Detect connection type from ICE candidate pair
+  const detectConnectionType = useCallback(async (peerConnection: RTCPeerConnection): Promise<'p2p' | 'relay_udp' | 'relay_tcp' | 'relay_tls' | null> => {
+    try {
+      const stats = await peerConnection.getStats();
+      let selectedCandidatePair: RTCStatsReport | null = null;
+      
+      // Find the selected candidate pair
+      stats.forEach((report) => {
+        if (report.type === 'candidate-pair' && report.state === 'succeeded') {
+          selectedCandidatePair = report;
+        }
+      });
+      
+      if (!selectedCandidatePair) {
+        console.log('⚠️ [CONNECTION TYPE] No selected candidate pair found');
+        return null;
+      }
+      
+      // Get local and remote candidates
+      const localCandidateId = (selectedCandidatePair as any).localCandidateId;
+      const remoteCandidateId = (selectedCandidatePair as any).remoteCandidateId;
+      
+      let localCandidate: any = null;
+      let remoteCandidate: any = null;
+      
+      stats.forEach((report) => {
+        if (report.id === localCandidateId) localCandidate = report;
+        if (report.id === remoteCandidateId) remoteCandidate = report;
+      });
+      
+      if (!localCandidate || !remoteCandidate) {
+        console.log('⚠️ [CONNECTION TYPE] Could not find candidate details');
+        return null;
+      }
+      
+      const localType = localCandidate.candidateType;
+      const remoteType = remoteCandidate.candidateType;
+      const protocol = localCandidate.protocol?.toLowerCase() || '';
+      
+      console.log(`🔍 [CONNECTION TYPE] Local: ${localType}, Remote: ${remoteType}, Protocol: ${protocol}`);
+      
+      // Determine connection type based on candidate types
+      if (localType === 'relay' || remoteType === 'relay') {
+        // TURN relay connection
+        if (protocol === 'tcp') {
+          return 'relay_tcp';
+        } else if (protocol === 'udp') {
+          return 'relay_udp';
+        } else {
+          // Default to UDP for relay
+          return 'relay_udp';
+        }
+      } else if (localType === 'host' && remoteType === 'host') {
+        // Direct P2P connection (same network)
+        return 'p2p';
+      } else if (localType === 'srflx' || remoteType === 'srflx') {
+        // STUN-assisted P2P (NAT traversal without relay)
+        return 'p2p';
+      }
+      
+      console.log('⚠️ [CONNECTION TYPE] Unknown candidate combination:', { localType, remoteType, protocol });
+      return null;
+    } catch (error) {
+      console.error('❌ [CONNECTION TYPE] Detection failed:', error);
+      return null;
+    }
+  }, []);
+
   // Create peer connection for a participant
   const createPeerConnection = useCallback((targetUserId: string): RTCPeerConnection => {
     const peerConnection = new RTCPeerConnection({ iceServers });
@@ -338,6 +410,28 @@ export function useWebRTC({
       if (state === 'connected') {
         setConnectionQuality('good');
         
+        // R2.7: Detect connection type on first successful connection
+        if (!connectionTypeDetectedRef.current) {
+          setTimeout(async () => {
+            const connectionType = await detectConnectionType(peerConnection);
+            if (connectionType) {
+              console.log(`✅ [CONNECTION TYPE] Detected: ${connectionType}`);
+              setDetectedConnectionType(connectionType);
+              connectionTypeDetectedRef.current = true;
+              
+              // Update session with detected connection type
+              try {
+                await apiRequest('PATCH', `/api/webrtc/sessions/${sessionId}/connection-type`, {
+                  connectionType
+                });
+                console.log(`📊 [CONNECTION TYPE] Session updated with type: ${connectionType}`);
+              } catch (error) {
+                console.error('❌ [CONNECTION TYPE] Failed to update session:', error);
+              }
+            }
+          }, 1000); // Wait 1 second for connection to stabilize
+        }
+        
         // Reset connection failure tracking on successful connection
         if (connectionFailureStartRef.current !== null) {
           const recoveryTime = Date.now() - connectionFailureStartRef.current;
@@ -404,7 +498,7 @@ export function useWebRTC({
     
     peerConnectionsRef.current.set(targetUserId, peerConnection);
     return peerConnection;
-  }, [localStream, sessionId, userId, attemptICERestartLadder]);
+  }, [localStream, sessionId, userId, attemptICERestartLadder, detectConnectionType]);
 
   // Send WebRTC offer to a participant (with perfect negotiation)
   const sendOffer = useCallback(async (targetUserId: string) => {
@@ -1473,6 +1567,7 @@ export function useWebRTC({
     isVideoEnabled,
     isAudioEnabled,
     connectionQuality,
+    detectedConnectionType,
     isRecoveringConnection,
     error,
     healthScore,
