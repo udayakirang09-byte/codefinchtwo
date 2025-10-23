@@ -50,6 +50,12 @@ export function useWebRTC({
   const isRepairingRef = useRef<boolean>(false);
   const poorQualityStartTimeRef = useRef<number | null>(null);
   
+  // Quality degradation state (R3.1-R3.2)
+  type QualityLevel = '720p' | '480p' | '360p' | 'audio-only';
+  const [currentQualityLevel, setCurrentQualityLevel] = useState<QualityLevel>('720p');
+  const lastQualityChangeRef = useRef<number>(0);
+  const qualityStableTimeRef = useRef<number | null>(null);
+  
   // ICE servers configuration with TURN for NAT traversal
   const iceServers = [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -486,6 +492,135 @@ export function useWebRTC({
       }
     }
   }, []);
+
+  // R3.1: Change video resolution dynamically
+  const changeVideoResolution = useCallback(async (qualityLevel: QualityLevel) => {
+    if (!localStream || qualityLevel === currentQualityLevel) {
+      return;
+    }
+
+    console.log(`📹 [QUALITY] Changing resolution from ${currentQualityLevel} to ${qualityLevel}`);
+    
+    try {
+      const videoTrack = localStream.getVideoTracks()[0];
+      
+      if (qualityLevel === 'audio-only') {
+        // Disable video entirely
+        if (videoTrack) {
+          videoTrack.enabled = false;
+          console.log('✅ [QUALITY] Video disabled (audio-only mode)');
+        }
+        setCurrentQualityLevel('audio-only');
+        setIsVideoEnabled(false);
+        lastQualityChangeRef.current = Date.now(); // Update timestamp for cooldown
+        return;
+      }
+      
+      // Resolution constraints for each quality level
+      const constraints: Record<Exclude<QualityLevel, 'audio-only'>, MediaTrackConstraints> = {
+        '720p': { width: 1280, height: 720 },
+        '480p': { width: 854, height: 480 },
+        '360p': { width: 640, height: 360 }
+      };
+      
+      if (videoTrack) {
+        // Re-enable video track if upgrading from audio-only
+        if (!videoTrack.enabled) {
+          videoTrack.enabled = true;
+          setIsVideoEnabled(true);
+          console.log('✅ [QUALITY] Video re-enabled from audio-only mode');
+        }
+        
+        // Apply new constraints to the track
+        await videoTrack.applyConstraints(constraints[qualityLevel]);
+        console.log(`✅ [QUALITY] Resolution changed to ${qualityLevel}`);
+        setCurrentQualityLevel(qualityLevel);
+        lastQualityChangeRef.current = Date.now();
+      }
+    } catch (error) {
+      console.error(`❌ [QUALITY] Failed to change resolution to ${qualityLevel}:`, error);
+    }
+  }, [localStream, currentQualityLevel]);
+
+  // R3.1: Progressive quality degradation
+  const degradeQuality = useCallback(async () => {
+    const now = Date.now();
+    const MIN_QUALITY_CHANGE_INTERVAL = 60000; // 60 seconds between changes to prevent oscillation
+    
+    // Prevent rapid quality changes (but allow first degradation)
+    if (lastQualityChangeRef.current !== 0 && now - lastQualityChangeRef.current < MIN_QUALITY_CHANGE_INTERVAL) {
+      console.log('⏱️ [QUALITY] Quality change too soon, skipping...');
+      return;
+    }
+    
+    console.log(`⬇️ [QUALITY] Degrading quality from ${currentQualityLevel}`);
+    
+    // Progressive degradation ladder
+    switch (currentQualityLevel) {
+      case '720p':
+        await changeVideoResolution('480p');
+        break;
+      case '480p':
+        await changeVideoResolution('360p');
+        break;
+      case '360p':
+        // Before going audio-only, also reduce bitrate further
+        await adjustBitrate(200); // Floor: 200 kbps
+        await changeVideoResolution('audio-only');
+        break;
+      case 'audio-only':
+        console.log('⚠️ [QUALITY] Already at minimum quality (audio-only)');
+        break;
+    }
+  }, [currentQualityLevel, changeVideoResolution, adjustBitrate]);
+
+  // R3.2: Quality recovery when connection improves
+  const upgradeQuality = useCallback(async () => {
+    const now = Date.now();
+    const MIN_STABLE_TIME = 30000; // 30 seconds of good quality before upgrading
+    const MIN_QUALITY_CHANGE_INTERVAL = 60000; // 60 seconds between changes to prevent oscillation
+    
+    // Prevent rapid quality changes (but allow first upgrade)
+    if (lastQualityChangeRef.current !== 0 && now - lastQualityChangeRef.current < MIN_QUALITY_CHANGE_INTERVAL) {
+      console.log('⏱️ [QUALITY] Quality change too soon, skipping upgrade...');
+      return;
+    }
+    
+    // Track stable good quality period
+    if (qualityStableTimeRef.current === null) {
+      qualityStableTimeRef.current = now;
+      console.log('⏱️ [QUALITY] Starting stable quality timer...');
+      return;
+    }
+    
+    const stableDuration = now - qualityStableTimeRef.current;
+    if (stableDuration < MIN_STABLE_TIME) {
+      console.log(`⏱️ [QUALITY] Quality stable for ${stableDuration}ms, need ${MIN_STABLE_TIME}ms`);
+      return;
+    }
+    
+    console.log(`⬆️ [QUALITY] Upgrading quality from ${currentQualityLevel}`);
+    qualityStableTimeRef.current = null; // Reset timer
+    
+    // Progressive upgrade ladder
+    switch (currentQualityLevel) {
+      case 'audio-only':
+        await changeVideoResolution('360p');
+        await adjustBitrate(500); // Restore to 500 kbps
+        break;
+      case '360p':
+        await changeVideoResolution('480p');
+        await adjustBitrate(800); // Medium bitrate
+        break;
+      case '480p':
+        await changeVideoResolution('720p');
+        await adjustBitrate(1500); // High bitrate
+        break;
+      case '720p':
+        console.log('✅ [QUALITY] Already at maximum quality (720p)');
+        break;
+    }
+  }, [currentQualityLevel, changeVideoResolution, adjustBitrate]);
 
   // Share screen
   const startScreenShare = useCallback(async () => {
@@ -955,17 +1090,22 @@ export function useWebRTC({
     const repairInterval = BASE_REPAIR_INTERVAL * Math.pow(2, Math.min(repairAttemptsCountRef.current, MAX_REPAIR_ATTEMPTS - 1));
 
     // Track when poor/critical quality starts
-    if (healthDetails.quality === 'poor' || healthDetails.quality === 'critical') {
+    if (healthDetails.quality === 'fair' || healthDetails.quality === 'poor' || healthDetails.quality === 'critical') {
       if (poorQualityStartTimeRef.current === null) {
         poorQualityStartTimeRef.current = now;
-        console.log(`⚠️ [AUTO-REPAIR] Poor quality detected, starting timer... (next repair in ${repairInterval/1000}s)`);
+        console.log(`⚠️ [AUTO-REPAIR] ${healthDetails.quality} quality detected, starting timer... (next repair in ${repairInterval/1000}s)`);
       }
     } else {
-      // Quality improved, reset tracking and attempt counter
+      // Quality improved to good/excellent, reset tracking and upgrade quality if stable
       if (poorQualityStartTimeRef.current !== null) {
         console.log('✅ [AUTO-REPAIR] Quality improved, resetting timer and attempt counter');
         poorQualityStartTimeRef.current = null;
         repairAttemptsCountRef.current = 0; // Reset on recovery
+      }
+      
+      // Try to upgrade quality if connection is stable
+      if (healthDetails.quality === 'good' || healthDetails.quality === 'excellent') {
+        upgradeQuality();
       }
       return;
     }
@@ -985,18 +1125,28 @@ export function useWebRTC({
       // Reset timer
       poorQualityStartTimeRef.current = null;
 
-      // Choose repair strategy based on quality and attempt count
-      if (healthDetails.quality === 'critical' || repairAttemptsCountRef.current === 0) {
-        // Critical: Try ICE restart first
-        console.log('🔧 [AUTO-REPAIR] Strategy: ICE restart');
+      // Enhanced repair ladder: Quality Degradation → Bitrate → ICE Restart
+      if (healthDetails.quality === 'critical') {
+        // Critical: ICE restart immediately
+        console.log('🔧 [AUTO-REPAIR] Strategy: ICE restart (critical quality)');
         performICERestart();
       } else if (healthDetails.quality === 'poor') {
-        // Poor: Try bitrate adjustment first
-        console.log('🔧 [AUTO-REPAIR] Strategy: Bitrate reduction');
-        adjustBitrate(500); // Reduce to 500 kbps
+        // Poor: Degrade quality first, then bitrate
+        if (currentQualityLevel !== 'audio-only') {
+          console.log('🔧 [AUTO-REPAIR] Strategy: Quality degradation + bitrate reduction');
+          degradeQuality();
+          adjustBitrate(300); // Aggressive bitrate reduction
+        } else {
+          console.log('🔧 [AUTO-REPAIR] Strategy: ICE restart (already at minimum quality)');
+          performICERestart();
+        }
+      } else if (healthDetails.quality === 'fair') {
+        // Fair: Just degrade quality
+        console.log('🔧 [AUTO-REPAIR] Strategy: Quality degradation');
+        degradeQuality();
       }
     }
-  }, [isConnected, healthDetails, performICERestart, adjustBitrate]);
+  }, [isConnected, healthDetails, performICERestart, adjustBitrate, degradeQuality, upgradeQuality, currentQualityLevel]);
 
   // Auto-connect on mount and reconnect when userId changes
   useEffect(() => {
@@ -1056,6 +1206,7 @@ export function useWebRTC({
     healthScore,
     healthDetails,
     currentMetrics,
+    currentQualityLevel,
     toggleVideo,
     toggleAudio,
     startScreenShare,

@@ -69,6 +69,7 @@ export default function VideoClass() {
     healthScore,
     healthDetails,
     currentMetrics,
+    currentQualityLevel,
     toggleVideo,
     toggleAudio,
     startScreenShare,
@@ -1267,6 +1268,19 @@ export default function VideoClass() {
                   'text-red-400'
                 }`} data-testid="health-score-value">{Math.round(healthScore)}</span>/100
               </div>
+              
+              {/* Video Quality Level */}
+              {currentQualityLevel && (
+                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                  currentQualityLevel === '720p' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                  currentQualityLevel === '480p' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                  currentQualityLevel === '360p' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                  'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                }`} data-testid="quality-level-indicator">
+                  <span className="font-mono">{currentQualityLevel === 'audio-only' ? '🎤' : '📹'}</span>
+                  <span>{currentQualityLevel === 'audio-only' ? 'Audio Only' : currentQualityLevel}</span>
+                </div>
+              )}
               
               {/* Detailed Metrics */}
               {currentMetrics && (
