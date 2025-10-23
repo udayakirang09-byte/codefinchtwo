@@ -45,6 +45,9 @@ import {
   bookingHolds,
   sessionDossiers,
   passwordResetCodes,
+  webrtcSessions,
+  webrtcStats,
+  webrtcEvents,
   type InsertAdminConfig, 
   type InsertFooterLink, 
   type InsertTimeSlot, 
@@ -10310,6 +10313,167 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   console.log('✅ Recording Parts API routes registered successfully!');
+
+  // ============================================================================
+  // WebRTC STATS & HEALTH MONITORING ROUTES
+  // ============================================================================
+
+  // Create or update WebRTC session
+  app.post('/api/webrtc/sessions', authenticateSession, async (req: any, res) => {
+    try {
+      const {
+        bookingId,
+        participantCount,
+        connectionType,
+        region,
+        iceServers,
+        turnRegion
+      } = req.body;
+
+      if (!bookingId) {
+        return res.status(400).json({ message: 'Booking ID is required' });
+      }
+
+      const session = await db
+        .insert(webrtcSessions)
+        .values({
+          bookingId,
+          participantCount: participantCount || 2,
+          connectionType: connectionType || 'p2p',
+          region: region || 'unknown',
+          iceServers: iceServers || null,
+          turnRegion: turnRegion || null,
+          startTime: new Date(),
+        })
+        .returning();
+
+      console.log('📊 WebRTC session created:', session[0].id);
+      res.json(session[0]);
+    } catch (error) {
+      console.error('Error creating WebRTC session:', error);
+      res.status(500).json({ message: 'Failed to create WebRTC session' });
+    }
+  });
+
+  // Store WebRTC stats
+  app.post('/api/webrtc/stats', authenticateSession, async (req: any, res) => {
+    try {
+      const {
+        sessionId,
+        timestamp,
+        packetLoss,
+        rtt,
+        jitter,
+        freezeCount,
+        healthScore,
+        quality,
+        connectionState
+      } = req.body;
+
+      if (!sessionId) {
+        return res.status(400).json({ message: 'Session ID is required' });
+      }
+
+      const stats = await db
+        .insert(webrtcStats)
+        .values({
+          sessionId,
+          timestamp: timestamp ? new Date(timestamp) : new Date(),
+          packetLoss: packetLoss || 0,
+          rtt: rtt || 0,
+          jitter: jitter || 0,
+          freezeCount: freezeCount || 0,
+          healthScore: healthScore || null,
+          quality: quality || null,
+          connectionState: connectionState || null,
+        })
+        .returning();
+
+      res.json(stats[0]);
+    } catch (error) {
+      console.error('Error storing WebRTC stats:', error);
+      res.status(500).json({ message: 'Failed to store WebRTC stats' });
+    }
+  });
+
+  // Store WebRTC events
+  app.post('/api/webrtc/events', authenticateSession, async (req: any, res) => {
+    try {
+      const {
+        sessionId,
+        eventType,
+        eventData,
+        severity
+      } = req.body;
+
+      if (!sessionId || !eventType) {
+        return res.status(400).json({ message: 'Session ID and event type are required' });
+      }
+
+      const event = await db
+        .insert(webrtcEvents)
+        .values({
+          sessionId,
+          timestamp: new Date(),
+          eventType,
+          eventData: eventData || null,
+          severity: severity || 'info',
+        })
+        .returning();
+
+      console.log(`📊 WebRTC event logged: ${eventType} (${severity})`);
+      res.json(event[0]);
+    } catch (error) {
+      console.error('Error storing WebRTC event:', error);
+      res.status(500).json({ message: 'Failed to store WebRTC event' });
+    }
+  });
+
+  // Get WebRTC session stats
+  app.get('/api/webrtc/sessions/:sessionId/stats', authenticateSession, async (req: any, res) => {
+    try {
+      const { sessionId } = req.params;
+
+      const stats = await db
+        .select()
+        .from(webrtcStats)
+        .where(eq(webrtcStats.sessionId, sessionId))
+        .orderBy(webrtcStats.timestamp);
+
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching WebRTC stats:', error);
+      res.status(500).json({ message: 'Failed to fetch WebRTC stats' });
+    }
+  });
+
+  // End WebRTC session
+  app.patch('/api/webrtc/sessions/:sessionId/end', authenticateSession, async (req: any, res) => {
+    try {
+      const { sessionId } = req.params;
+      const { avgPacketLoss, avgRtt, avgJitter, avgHealthScore } = req.body;
+
+      const session = await db
+        .update(webrtcSessions)
+        .set({
+          endTime: new Date(),
+          avgPacketLoss: avgPacketLoss || null,
+          avgRtt: avgRtt || null,
+          avgJitter: avgJitter || null,
+          avgHealthScore: avgHealthScore || null,
+        })
+        .where(eq(webrtcSessions.id, sessionId))
+        .returning();
+
+      console.log('📊 WebRTC session ended:', sessionId);
+      res.json(session[0]);
+    } catch (error) {
+      console.error('Error ending WebRTC session:', error);
+      res.status(500).json({ message: 'Failed to end WebRTC session' });
+    }
+  });
+
+  console.log('✅ WebRTC Stats API routes registered successfully!');
 
   // Teacher Subject Fee Routes
   // Get teacher subjects with fees - SECURED (mentors only)
