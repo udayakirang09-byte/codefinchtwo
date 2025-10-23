@@ -628,9 +628,11 @@ export default function AdminDashboard() {
                     ACTION REQUIRED
                   </Badge>
                 </div>
-                <p className="text-white text-xl font-semibold mb-4 leading-relaxed">
-                  Your WebRTC infrastructure is currently running on a <span className="underline font-black">FREE TIER</span> service with <span className="underline font-black">NO SLA GUARANTEE</span>. 
-                  This is NOT suitable for production use and does NOT meet the 99.999% reliability requirement.
+                <p className="text-white text-xl font-semibold mb-2 leading-relaxed">
+                  🔒 <span className="underline font-black">STUDENT DATA PRIVACY RISK</span>: Your TURN server is {!import.meta.env.VITE_TURN_SERVER_URL ? 'NOT CONFIGURED' : 'using third-party infrastructure that can see student/teacher IP addresses and session metadata'}.
+                </p>
+                <p className="text-white text-lg font-medium mb-4 leading-relaxed">
+                  Educational platforms require <span className="font-bold">self-hosted infrastructure</span> for data sovereignty, GDPR/COPPA compliance, and 99.999% reliability.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div className="bg-red-800/50 backdrop-blur-sm rounded-lg p-4 border-2 border-white/30">
@@ -644,13 +646,13 @@ export default function AdminDashboard() {
                     </ul>
                   </div>
                   <div className="bg-amber-700/50 backdrop-blur-sm rounded-lg p-4 border-2 border-white/30">
-                    <h3 className="text-white font-bold text-lg mb-2">🎯 Required for 99.999%:</h3>
+                    <h3 className="text-white font-bold text-lg mb-2">✅ Required Solution:</h3>
                     <ul className="text-white text-sm space-y-1">
-                      <li>✓ TURN: Azure Coturn (Self-hosted)</li>
-                      <li>✓ SLA: 99.999% uptime</li>
-                      <li>✓ Multi-Region: 2+ regions</li>
-                      <li>✓ DDoS: Azure Protection</li>
-                      <li>✓ Cost: ~$100/month</li>
+                      <li>✓ TURN: Self-hosted Azure VM</li>
+                      <li>✓ Privacy: Full data control</li>
+                      <li>✓ Setup Time: 30 minutes (UI)</li>
+                      <li>✓ GDPR/COPPA: Compliant</li>
+                      <li>✓ Cost: ~$30-50/month (Single VM)</li>
                     </ul>
                   </div>
                 </div>
@@ -669,10 +671,10 @@ export default function AdminDashboard() {
                     variant="outline" 
                     size="lg" 
                     className="bg-white/20 backdrop-blur-sm text-white border-2 border-white hover:bg-white/30 font-bold text-lg px-8 py-6"
-                    onClick={() => window.open('/docs/turn-server-setup-guide.md', '_blank')}
-                    data-testid="button-turn-setup-guide"
+                    onClick={() => window.open('/docs/azure-coturn-ui-setup-guide.md', '_blank')}
+                    data-testid="button-azure-setup-guide"
                   >
-                    📖 Read Setup Guide
+                    🚀 Azure Setup Guide (UI)
                   </Button>
                   <div className="flex items-center gap-2 text-white font-bold text-lg ml-auto">
                     <Clock className="h-5 w-5" />
