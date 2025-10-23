@@ -68,6 +68,8 @@ export default function VideoClass() {
     isVideoEnabled,
     isAudioEnabled, 
     connectionQuality,
+    detectedConnectionType,
+    isRecoveringConnection,
     error,
     healthScore,
     healthDetails,
@@ -1301,6 +1303,32 @@ export default function VideoClass() {
                 }`} data-testid="quality-level-indicator">
                   <span className="font-mono">{currentQualityLevel === 'audio-only' ? '🎤' : '📹'}</span>
                   <span>{currentQualityLevel === 'audio-only' ? 'Audio Only' : currentQualityLevel}</span>
+                </div>
+              )}
+              
+              {/* R2.7: Connection Type Indicator (P2P vs TURN) */}
+              {detectedConnectionType && (
+                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                  detectedConnectionType === 'p2p' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                  detectedConnectionType === 'relay_udp' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                  detectedConnectionType === 'relay_tcp' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' :
+                  'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                }`} data-testid="connection-type-indicator" title={
+                  detectedConnectionType === 'p2p' ? 'Direct P2P connection (optimal)' :
+                  detectedConnectionType === 'relay_udp' ? 'TURN relay via UDP (NAT traversal)' :
+                  detectedConnectionType === 'relay_tcp' ? 'TURN relay via TCP (firewall bypass)' :
+                  'TURN relay via TLS (encrypted)'
+                }>
+                  <span className="font-mono">{detectedConnectionType === 'p2p' ? '🔗' : '🌐'}</span>
+                  <span className="uppercase">{detectedConnectionType.replace('_', ' ')}</span>
+                </div>
+              )}
+              
+              {/* Connection Recovery Indicator */}
+              {isRecoveringConnection && (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-500/20 text-orange-400 border border-orange-500/30 animate-pulse" data-testid="recovery-indicator">
+                  <span className="font-mono">🔄</span>
+                  <span>Reconnecting...</span>
                 </div>
               )}
               
