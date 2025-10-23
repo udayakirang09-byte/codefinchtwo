@@ -36,6 +36,9 @@ export default function VideoClass() {
   // Ref for moderation alert callback to avoid closure issues
   const moderationAlertRef = useRef<((message: string, severity?: 'moderate' | 'critical') => void) | null>(null);
   
+  // R2.4: Jitter tracking - track last warning time to avoid spam
+  const lastJitterWarningRef = useRef<number>(0);
+  
   // Query to get booking/class schedule information
   const { data: bookingData } = useQuery<any>({
     queryKey: ['/api/bookings', classId],
@@ -317,6 +320,25 @@ export default function VideoClass() {
       addTeacherAlert("Video session started successfully. You are the host.");
     }
   }, [isConnected, isTeacher, addTeacherAlert]);
+  
+  // R2.4: Monitor jitter and alert on high audio quality degradation (>50ms)
+  useEffect(() => {
+    if (!currentMetrics || !isConnected) return;
+    
+    const jitter = currentMetrics.jitter;
+    const now = Date.now();
+    const MIN_WARNING_INTERVAL = 60000; // Only warn once per minute
+    
+    // Alert when jitter exceeds 50ms (audio quality degradation threshold)
+    if (jitter > 50 && now - lastJitterWarningRef.current > MIN_WARNING_INTERVAL) {
+      toast({
+        title: "Audio Quality Warning",
+        description: `High jitter detected (${Math.round(jitter)}ms). Audio may be choppy or distorted. Target is <20ms for optimal quality.`,
+        variant: "default",
+      });
+      lastJitterWarningRef.current = now;
+    }
+  }, [currentMetrics, isConnected, toast]);
   
   // Auto-recording timer: Start recording 1 minute after class scheduled time
   useEffect(() => {
@@ -1284,10 +1306,25 @@ export default function VideoClass() {
               
               {/* Detailed Metrics */}
               {currentMetrics && (
-                <div className="hidden md:flex items-center gap-3 text-xs text-gray-500">
-                  <span data-testid="packet-loss-value">Loss: {currentMetrics.packetLoss.toFixed(1)}%</span>
-                  <span data-testid="rtt-value">RTT: {Math.round(currentMetrics.rtt)}ms</span>
-                  <span data-testid="jitter-value">Jitter: {Math.round(currentMetrics.jitter)}ms</span>
+                <div className="hidden md:flex items-center gap-3 text-xs">
+                  <span data-testid="packet-loss-value" className="text-gray-500">
+                    Loss: {currentMetrics.packetLoss.toFixed(1)}%
+                  </span>
+                  <span data-testid="rtt-value" className="text-gray-500">
+                    RTT: {Math.round(currentMetrics.rtt)}ms
+                  </span>
+                  <span 
+                    data-testid="jitter-value" 
+                    className={`font-medium ${
+                      currentMetrics.jitter < 20 ? 'text-green-400' :
+                      currentMetrics.jitter < 50 ? 'text-yellow-400' :
+                      'text-orange-400'
+                    }`}
+                    title={`Jitter ${currentMetrics.jitter < 20 ? 'excellent' : currentMetrics.jitter < 50 ? 'acceptable' : 'high - audio may be affected'} (target: <20ms)`}
+                  >
+                    Jitter: {Math.round(currentMetrics.jitter)}ms
+                    {currentMetrics.jitter < 20 && ' ✓'}
+                  </span>
                 </div>
               )}
             </div>

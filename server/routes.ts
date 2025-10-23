@@ -10360,6 +10360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const {
         sessionId,
+        userId,
         timestamp,
         packetLoss,
         rtt,
@@ -10370,14 +10371,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         connectionState
       } = req.body;
 
-      if (!sessionId) {
-        return res.status(400).json({ message: 'Session ID is required' });
+      if (!sessionId || !userId) {
+        return res.status(400).json({ message: 'Session ID and User ID are required' });
       }
 
       const stats = await db
         .insert(webrtcStats)
         .values({
           sessionId,
+          userId,
           timestamp: timestamp ? new Date(timestamp) : new Date(),
           packetLoss: packetLoss || 0,
           rtt: rtt || 0,

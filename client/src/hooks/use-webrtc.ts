@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { calculateHealthScore, type NetworkMetrics, type HealthScore } from "@shared/webrtc-health";
+import { apiRequest } from "@/lib/queryClient";
 
 interface Participant {
   userId: string;
@@ -404,11 +405,30 @@ export function useWebRTC({
         quality: health.quality,
       });
       
+      // R2.4: Submit stats to backend API for database storage
+      try {
+        await apiRequest('POST', '/api/webrtc/stats', {
+          sessionId,
+          userId,
+          timestamp: new Date().toISOString(),
+          packetLoss: avgMetrics.packetLoss,
+          rtt: avgMetrics.rtt,
+          jitter: avgMetrics.jitter,
+          freezeCount: avgMetrics.freezeCount || 0,
+          healthScore: health.score,
+          quality: health.quality,
+          connectionState: 'connected'
+        });
+      } catch (error) {
+        console.error('❌ Failed to submit WebRTC stats:', error);
+        // Don't throw - stats submission failure shouldn't break the connection
+      }
+      
       return { metrics: avgMetrics, health };
     }
     
     return null;
-  }, []);
+  }, [sessionId, userId]);
 
   // R2.3: ICE Restart for connection recovery
   const performICERestart = useCallback(async () => {
