@@ -1325,6 +1325,35 @@ export default function VideoClass() {
                     Jitter: {Math.round(currentMetrics.jitter)}ms
                     {currentMetrics.jitter < 20 && ' ✓'}
                   </span>
+                  {currentMetrics.videoBitrate !== undefined && currentMetrics.videoBitrate > 0 && (
+                    <span 
+                      data-testid="video-bitrate-value" 
+                      className={`font-medium ${
+                        currentMetrics.videoBitrate >= 1200 && currentMetrics.videoBitrate <= 1500 ? 'text-green-400' :
+                        currentMetrics.videoBitrate >= 800 ? 'text-blue-400' :
+                        currentMetrics.videoBitrate >= 400 ? 'text-yellow-400' :
+                        'text-orange-400'
+                      }`}
+                      title={`Video bitrate ${currentMetrics.videoBitrate >= 1200 && currentMetrics.videoBitrate <= 1500 ? 'optimal' : currentMetrics.videoBitrate >= 800 ? 'good' : currentMetrics.videoBitrate >= 400 ? 'acceptable' : 'low - quality may be affected'} (target: 1.2-1.5 Mbps)`}
+                    >
+                      Video: {Math.round(currentMetrics.videoBitrate)} kbps
+                      {currentMetrics.videoBitrate >= 1200 && currentMetrics.videoBitrate <= 1500 && ' ✓'}
+                    </span>
+                  )}
+                  {currentMetrics.audioBitrate !== undefined && currentMetrics.audioBitrate > 0 && (
+                    <span 
+                      data-testid="audio-bitrate-value" 
+                      className={`font-medium ${
+                        currentMetrics.audioBitrate >= 64 && currentMetrics.audioBitrate <= 128 ? 'text-green-400' :
+                        currentMetrics.audioBitrate >= 32 ? 'text-yellow-400' :
+                        'text-orange-400'
+                      }`}
+                      title={`Audio bitrate ${currentMetrics.audioBitrate >= 64 && currentMetrics.audioBitrate <= 128 ? 'optimal' : currentMetrics.audioBitrate >= 32 ? 'acceptable' : 'low - quality may be affected'} (target: 64-128 kbps)`}
+                    >
+                      Audio: {Math.round(currentMetrics.audioBitrate)} kbps
+                      {currentMetrics.audioBitrate >= 64 && currentMetrics.audioBitrate <= 128 && ' ✓'}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
