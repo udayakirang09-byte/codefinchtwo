@@ -4298,7 +4298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       };
 
-      const order = await razorpay.orders.create(options);
+      const order = await razorpay!.orders.create(options);
       
       console.log('✅ Razorpay order created:', order.id, `Amount: ₹${verifiedAmount}`);
 
@@ -4320,6 +4320,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Razorpay: Create order for booking payment
   app.post("/api/razorpay/create-booking-order", async (req, res) => {
     try {
+      // Check if Razorpay instance exists
+      if (!razorpay) {
+        return res.status(503).json({ 
+          message: "Razorpay payment system is not configured",
+          error: "RAZORPAY_NOT_CONFIGURED"
+        });
+      }
+
       // Check if Razorpay is enabled in admin config
       const razorpayStatus = await isRazorpayEnabled();
       if (!razorpayStatus.enabled) {
@@ -4370,7 +4378,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       };
 
-      const order = await razorpay.orders.create(options);
+      const order = await razorpay!.orders.create(options);
       
       console.log('✅ Razorpay booking order created:', order.id, `Amount: ₹${totalAmount} (${numClasses}x₹${pricePerClass})`);
 
