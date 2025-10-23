@@ -193,9 +193,10 @@ const BookingCheckoutForm = ({ bookingDetails, hasStripe, paymentIntentId }: { b
             return;
           }
           
-          // For UPI testing mode, this error is expected - don't show it
+          // For UPI testing mode, this error is expected - create booking directly
           if (!isRazorpayMode && error.error === 'RAZORPAY_NOT_ENABLED') {
-            console.log('ℹ️ UPI Testing Mode active - Razorpay API not required');
+            console.log('ℹ️ UPI Testing Mode active - Creating booking directly without Razorpay');
+            await createBooking();
             setProcessing(false);
             return;
           }
