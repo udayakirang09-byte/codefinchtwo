@@ -219,7 +219,13 @@ export function useWebRTC({
     console.log(`🚨 [ICE LADDER] Attempt ${attemptNumber} after ${failureDuration}ms of connection loss`);
     setIsRecoveringConnection(true);
     
-    // Log escalation event
+    // Log escalation event with progressive severity: info → warning → critical
+    const getSeverity = (attempt: number): 'info' | 'warning' | 'critical' => {
+      if (attempt === 1) return 'info';
+      if (attempt === 2) return 'warning';
+      return 'critical'; // attempt 3
+    };
+    
     try {
       await apiRequest('POST', '/api/webrtc/events', {
         sessionId,
@@ -228,9 +234,9 @@ export function useWebRTC({
           attemptNumber,
           failureDuration,
           maxAttempts: 3,
-          message: `ICE restart attempt ${attemptNumber} of 3`
+          message: `ICE restart attempt ${attemptNumber} of 3 (${getSeverity(attemptNumber)} severity)`
         },
-        severity: attemptNumber === 3 ? 'critical' : 'warning'
+        severity: getSeverity(attemptNumber)
       });
     } catch (error) {
       console.error('❌ Failed to log ICE restart ladder event:', error);
