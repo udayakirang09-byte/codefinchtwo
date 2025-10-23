@@ -11917,6 +11917,142 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   console.log('✅ Redacted Media Clips API routes registered successfully!');
 
+  // Static policy pages for Razorpay verification (bot-friendly HTML)
+  // These routes serve simple HTML versions that don't require JavaScript execution
+  app.get('/cancellation-policy', (req, res) => {
+    res.type('html').send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cancellation & Refund Policy - TechLearnOrbit</title>
+  <meta name="description" content="TechLearnOrbit cancellation and refund policy for students and teachers">
+</head>
+<body>
+  <h1>Cancellation & Refund Policy</h1>
+  <p>Last updated: January 2025</p>
+  
+  <h2>Overview</h2>
+  <p>At TechLearnOrbit, we understand that plans can change. This policy outlines our cancellation and refund procedures for both students and teachers to ensure fairness and transparency for all parties involved.</p>
+  
+  <h2>Cancellation Windows</h2>
+  
+  <h3>For Students:</h3>
+  <ul>
+    <li><strong>More than 24 hours before class:</strong> Full refund (100%) processed within 5-7 business days</li>
+    <li><strong>12-24 hours before class:</strong> 50% refund processed within 5-7 business days</li>
+    <li><strong>Less than 12 hours before class:</strong> No refund available</li>
+    <li><strong>Demo classes:</strong> Can be rescheduled once at no additional cost</li>
+  </ul>
+  
+  <h3>For Teachers:</h3>
+  <ul>
+    <li><strong>More than 48 hours before class:</strong> Cancellation allowed with no penalty</li>
+    <li><strong>24-48 hours before class:</strong> Warning issued, student receives full refund</li>
+    <li><strong>Less than 24 hours before class:</strong> Account suspension risk, student receives full refund</li>
+  </ul>
+  
+  <h2>Refund Processing</h2>
+  <p>All refunds are processed within 5-7 business days to the original payment method. Platform fees are non-refundable for processed classes.</p>
+  
+  <h2>Contact Information</h2>
+  <p>For refund inquiries, please contact us at: <a href="mailto:support@techlearnorbit.com">support@techlearnorbit.com</a></p>
+  
+  <p><a href="/">Return to Home</a> | <a href="/terms">Terms of Service</a> | <a href="/privacy">Privacy Policy</a></p>
+</body>
+</html>
+    `);
+  });
+
+  app.get('/shipping', (req, res) => {
+    res.type('html').send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shipping Policy - TechLearnOrbit</title>
+  <meta name="description" content="TechLearnOrbit shipping policy - Digital services only, no physical shipping">
+</head>
+<body>
+  <h1>Shipping Policy</h1>
+  <p>Last updated: January 2025</p>
+  
+  <h2>Digital Service - No Physical Shipping</h2>
+  <p>TechLearnOrbit is a digital educational platform that provides online mentorship and learning sessions. As all our services are delivered electronically through our web platform, we do not ship any physical products.</p>
+  
+  <p>All course materials, session recordings, and educational content are accessible immediately through your account dashboard upon enrollment or class completion.</p>
+  
+  <h2>Service Delivery</h2>
+  <ul>
+    <li>All classes are conducted online via our web platform</li>
+    <li>Session recordings available within 24 hours after class completion</li>
+    <li>Course materials provided digitally through the platform</li>
+    <li>No physical shipments or deliveries required</li>
+  </ul>
+  
+  <h2>Contact Information</h2>
+  <p>For questions about our services, please contact: <a href="mailto:support@techlearnorbit.com">support@techlearnorbit.com</a></p>
+  
+  <p><a href="/">Return to Home</a> | <a href="/terms">Terms of Service</a> | <a href="/cancellation-policy">Cancellation Policy</a></p>
+</body>
+</html>
+    `);
+  });
+
+  app.get('/contact-us', (req, res) => {
+    res.type('html').send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us - TechLearnOrbit</title>
+  <meta name="description" content="Contact TechLearnOrbit support team for assistance with our educational platform">
+</head>
+<body>
+  <h1>Contact Us</h1>
+  
+  <h2>Get in Touch</h2>
+  <p>Have questions about our mentorship platform? We're here to help! Reach out to us through any of the following channels.</p>
+  
+  <h3>Email</h3>
+  <p><a href="mailto:support@techlearnorbit.com">support@techlearnorbit.com</a></p>
+  <p>We respond to all inquiries within 24-48 hours</p>
+  
+  <h3>Phone</h3>
+  <p>+91 (555) 123-4567</p>
+  <p>Monday - Friday: 9:00 AM - 6:00 PM IST<br>
+  Saturday: 10:00 AM - 4:00 PM IST<br>
+  Sunday: Closed</p>
+  
+  <h3>Address</h3>
+  <p>
+    TechLearnOrbit Headquarters<br>
+    123 Tech Park, Innovation District<br>
+    Bangalore, Karnataka 560001<br>
+    India
+  </p>
+  
+  <h2>Support Hours</h2>
+  <p>Our support team is available to assist you during business hours. For urgent matters outside business hours, please send an email and we'll respond as soon as possible.</p>
+  
+  <h2>Social Media</h2>
+  <ul>
+    <li>Twitter: @TechLearnOrbit</li>
+    <li>LinkedIn: TechLearnOrbit</li>
+    <li>Instagram: @techlearnorbit</li>
+  </ul>
+  
+  <p><a href="/">Return to Home</a> | <a href="/terms">Terms of Service</a> | <a href="/privacy">Privacy Policy</a></p>
+</body>
+</html>
+    `);
+  });
+
+  console.log('✅ Static policy pages registered for Razorpay verification');
+
   const httpServer = createServer(app);
   return httpServer;
 }
