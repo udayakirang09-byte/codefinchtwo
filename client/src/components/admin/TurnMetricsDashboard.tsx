@@ -17,6 +17,8 @@ interface TurnMetrics {
   totalQualityDowngrades: number;
   turnServerConfigured: boolean;
   turnServerUrl: string;
+  avgVideoBitrate: string;
+  avgAudioBitrate: string;
 }
 
 export function TurnMetricsDashboard() {
@@ -193,6 +195,38 @@ export function TurnMetricsDashboard() {
             </div>
             <p className="text-xs text-muted-foreground">
               720p→480p→360p transitions
+            </p>
+          </CardContent>
+        </Card>
+        
+        {/* R2.6: Average Bitrate Statistics */}
+        <Card data-testid="card-avg-bitrate">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Bitrate</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Video:</span>
+                <span className={`text-lg font-bold ${
+                  Number(metrics.avgVideoBitrate) >= 1200 && Number(metrics.avgVideoBitrate) <= 1500 ? 'text-green-600' :
+                  Number(metrics.avgVideoBitrate) >= 800 ? 'text-blue-600' :
+                  Number(metrics.avgVideoBitrate) >= 400 ? 'text-yellow-600' :
+                  'text-orange-600'
+                }`} data-testid="text-avg-video-bitrate">
+                  {metrics.avgVideoBitrate || '0'} kbps
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Audio:</span>
+                <span className="text-sm font-medium text-gray-600" data-testid="text-avg-audio-bitrate">
+                  {metrics.avgAudioBitrate || '0'} kbps
+                </span>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Target: 1.2-1.5 Mbps (video)
             </p>
           </CardContent>
         </Card>

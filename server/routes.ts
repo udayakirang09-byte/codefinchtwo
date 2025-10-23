@@ -6413,6 +6413,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(sql`${webrtcSessions.joinedAt} IS NOT NULL`);
 
       const metrics = result[0];
+      
+      // R2.6: Fetch average bitrate statistics from webrtc_stats
+      const bitrateResult = await db
+        .select({
+          avgVideoBitrate: sql<number>`AVG(${webrtcStats.videoBitrate})`,
+          avgAudioBitrate: sql<number>`AVG(${webrtcStats.audioBitrate})`,
+        })
+        .from(webrtcStats)
+        .where(sql`${webrtcStats.videoBitrate} IS NOT NULL AND ${webrtcStats.videoBitrate} > 0`);
 
       const turnPercentage = metrics.totalSessions > 0 
         ? ((Number(metrics.turnRelayCount) / Number(metrics.totalSessions)) * 100).toFixed(1)
@@ -6430,7 +6439,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                                  process.env.VITE_TURN_USERNAME && 
                                  process.env.VITE_TURN_PASSWORD;
 
+      const bitrateMetrics = bitrateResult[0] || { avgVideoBitrate: null, avgAudioBitrate: null };
+
       console.log(`✅ TURN Metrics - Total: ${metrics.totalSessions}, TURN: ${metrics.turnRelayCount}, P2P: ${metrics.p2pDirectCount}`);
+      console.log(`✅ Bitrate Metrics - Video: ${bitrateMetrics.avgVideoBitrate || 0} kbps, Audio: ${bitrateMetrics.avgAudioBitrate || 0} kbps`);
 
       res.json({
         totalSessions: Number(metrics.totalSessions),
@@ -6446,6 +6458,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalQualityDowngrades: Number(metrics.totalQualityDowngrades),
         turnServerConfigured: turnServerHealthy,
         turnServerUrl: process.env.VITE_TURN_SERVER_URL || 'Not configured',
+        avgVideoBitrate: Number(bitrateMetrics.avgVideoBitrate || 0).toFixed(0),
+        avgAudioBitrate: Number(bitrateMetrics.avgAudioBitrate || 0).toFixed(0),
       });
     } catch (error) {
       console.error("❌ Error fetching TURN metrics:", error);
