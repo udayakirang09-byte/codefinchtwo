@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { calculateHealthScore, type NetworkMetrics, type HealthScore } from "@shared/webrtc-health";
 
 interface Participant {
   userId: string;
@@ -32,6 +33,9 @@ export function useWebRTC({
   const [connectionQuality, setConnectionQuality] = useState<'good' | 'poor' | 'disconnected'>('disconnected');
   const [isPolite, setIsPolite] = useState(false); // For perfect negotiation
   const [error, setError] = useState<string | null>(null);
+  const [healthScore, setHealthScore] = useState<number | null>(null);
+  const [healthDetails, setHealthDetails] = useState<HealthScore | null>(null);
+  const [currentMetrics, setCurrentMetrics] = useState<NetworkMetrics | null>(null);
   
   const wsRef = useRef<WebSocket | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -295,6 +299,103 @@ export function useWebRTC({
         console.log(`🎤 Microphone ${audioTrack.enabled ? 'enabled' : 'muted'}`);
       }
     }
+  }, []);
+
+  // Collect WebRTC stats from peer connections
+  const collectStats = useCallback(async () => {
+    if (peerConnectionsRef.current.size === 0) {
+      return null;
+    }
+
+    // Collect stats from all peer connections
+    const allMetrics: NetworkMetrics[] = [];
+    
+    // Convert Map entries to array for iteration
+    const peerEntries = Array.from(peerConnectionsRef.current.entries());
+    
+    for (const [peerId, pc] of peerEntries) {
+      try {
+        const stats = await pc.getStats();
+        
+        let packetLoss = 0;
+        let rtt = 0;
+        let jitter = 0;
+        let freezeCount = 0;
+        
+        stats.forEach((report) => {
+          // Inbound RTP (receiving)
+          if (report.type === 'inbound-rtp' && report.kind === 'video') {
+            if (report.packetsLost && report.packetsReceived) {
+              const totalPackets = report.packetsLost + report.packetsReceived;
+              packetLoss = (report.packetsLost / totalPackets) * 100;
+            }
+            
+            if (report.jitter) {
+              jitter = report.jitter * 1000; // Convert to ms
+            }
+            
+            if (report.freezeCount) {
+              freezeCount = report.freezeCount;
+            }
+          }
+          
+          // Candidate pair (for RTT)
+          if (report.type === 'candidate-pair' && report.state === 'succeeded') {
+            if (report.currentRoundTripTime) {
+              rtt = report.currentRoundTripTime * 1000; // Convert to ms
+            }
+          }
+        });
+        
+        const metrics: NetworkMetrics = {
+          packetLoss,
+          rtt,
+          jitter,
+          freezeCount,
+        };
+        
+        allMetrics.push(metrics);
+      } catch (error) {
+        console.error(`Failed to collect stats for peer ${peerId}:`, error);
+      }
+    }
+    
+    // Average all metrics if multiple peers
+    if (allMetrics.length > 0) {
+      const avgMetrics: NetworkMetrics = {
+        packetLoss: allMetrics.reduce((sum, m) => sum + m.packetLoss, 0) / allMetrics.length,
+        rtt: allMetrics.reduce((sum, m) => sum + m.rtt, 0) / allMetrics.length,
+        jitter: allMetrics.reduce((sum, m) => sum + m.jitter, 0) / allMetrics.length,
+        freezeCount: Math.max(...allMetrics.map(m => m.freezeCount)),
+      };
+      
+      // Calculate health score
+      const health = calculateHealthScore(avgMetrics);
+      
+      // Update state
+      setCurrentMetrics(avgMetrics);
+      setHealthScore(health.score);
+      setHealthDetails(health);
+      
+      // Update connection quality based on health score
+      if (health.score >= 60) {
+        setConnectionQuality('good');
+      } else if (health.score >= 40) {
+        setConnectionQuality('poor');
+      } else {
+        setConnectionQuality('disconnected');
+      }
+      
+      console.log('📊 WebRTC Stats:', {
+        metrics: avgMetrics,
+        health: health.score,
+        quality: health.quality,
+      });
+      
+      return { metrics: avgMetrics, health };
+    }
+    
+    return null;
   }, []);
 
   // Share screen
@@ -726,6 +827,28 @@ export function useWebRTC({
     }
   }, [localStream, userId]);
 
+  // Collect WebRTC stats periodically when connected
+  useEffect(() => {
+    if (!isConnected || peerConnectionsRef.current.size === 0) {
+      return;
+    }
+
+    console.log('📊 Starting WebRTC stats collection (every 3s)');
+    
+    // Collect stats immediately
+    collectStats();
+    
+    // Then collect every 3 seconds
+    const statsInterval = setInterval(async () => {
+      await collectStats();
+    }, 3000);
+
+    return () => {
+      console.log('🛑 Stopping WebRTC stats collection');
+      clearInterval(statsInterval);
+    };
+  }, [isConnected, collectStats]);
+
   // Auto-connect on mount and reconnect when userId changes
   useEffect(() => {
     let mounted = true;
@@ -781,6 +904,9 @@ export function useWebRTC({
     isAudioEnabled,
     connectionQuality,
     error,
+    healthScore,
+    healthDetails,
+    currentMetrics,
     toggleVideo,
     toggleAudio,
     startScreenShare,
