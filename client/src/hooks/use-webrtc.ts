@@ -61,6 +61,12 @@ export function useWebRTC({
   const previousFreezeCountsRef = useRef<Map<string, number>>(new Map());
   const lastStatsTimestampRef = useRef<number>(Date.now());
   
+  // R3.3-R3.5: ICE Restart Ladder state (connection loss recovery)
+  const connectionFailureStartRef = useRef<number | null>(null);
+  const iceRestartAttemptsRef = useRef<number>(0);
+  const iceRestartTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [isRecoveringConnection, setIsRecoveringConnection] = useState(false);
+  
   // R1.3-R1.6: ICE servers configuration with TURN for NAT traversal
   const iceServers: RTCIceServer[] = [
     // STUN servers for public IP discovery
@@ -156,6 +162,109 @@ export function useWebRTC({
     }
   }, []);
 
+  // R2.3: ICE Restart for connection recovery (moved before createPeerConnection)
+  const performICERestart = useCallback(async () => {
+    if (isRepairingRef.current) {
+      console.log('⚠️ ICE restart already in progress, skipping...');
+      return;
+    }
+
+    console.log('🔧 [AUTO-REPAIR] Starting ICE restart for all peer connections...');
+    isRepairingRef.current = true;
+    let restartedCount = 0;
+
+    try {
+      const peerEntries = Array.from(peerConnectionsRef.current.entries());
+      for (const [peerId, pc] of peerEntries) {
+        try {
+          console.log(`🔄 Restarting ICE for peer ${peerId}`);
+          
+          // Create new offer with iceRestart flag
+          const offer = await pc.createOffer({ iceRestart: true });
+          await pc.setLocalDescription(offer);
+          
+          // Send ICE restart offer via existing WebSocket handler with correct payload
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({
+              type: 'webrtc-offer',
+              sessionId,
+              userId,
+              targetUserId: peerId,
+              offer,  // Correct field name to match handler
+              iceRestart: true  // Flag to indicate this is an ICE restart
+            }));
+          }
+          
+          restartedCount++;
+          console.log(`✅ ICE restart initiated for peer ${peerId}`);
+        } catch (err) {
+          console.error(`❌ Failed to restart ICE for peer ${peerId}:`, err);
+        }
+      }
+
+      repairAttemptsCountRef.current++;
+      lastRepairAttemptRef.current = Date.now();
+      
+      console.log(`✅ [AUTO-REPAIR] ICE restart completed for ${restartedCount}/${peerConnectionsRef.current.size} peers`);
+    } finally {
+      // Allow next repair after cooldown
+      setTimeout(() => {
+        isRepairingRef.current = false;
+      }, 5000); // 5 second cooldown
+    }
+  }, [sessionId, userId]);
+  
+  // R3.3-R3.5: ICE Restart Ladder - Progressive connection recovery at 5s, 15s, 30s (moved before createPeerConnection)
+  const attemptICERestartLadder = useCallback(async (attemptNumber: number, failureDuration: number) => {
+    console.log(`🚨 [ICE LADDER] Attempt ${attemptNumber} after ${failureDuration}ms of connection loss`);
+    setIsRecoveringConnection(true);
+    
+    // Log escalation event
+    try {
+      await apiRequest('POST', '/api/webrtc/events', {
+        sessionId,
+        eventType: 'ice_restart_ladder',
+        eventData: {
+          attemptNumber,
+          failureDuration,
+          maxAttempts: 3,
+          message: `ICE restart attempt ${attemptNumber} of 3`
+        },
+        severity: attemptNumber === 3 ? 'critical' : 'warning'
+      });
+    } catch (error) {
+      console.error('❌ Failed to log ICE restart ladder event:', error);
+    }
+    
+    // Perform ICE restart
+    await performICERestart();
+    
+    // Schedule next attempt if not the last one
+    if (attemptNumber < 3) {
+      const nextInterval = attemptNumber === 1 ? 10000 : 15000; // 5s→15s (10s more), 15s→30s (15s more)
+      console.log(`⏱️ [ICE LADDER] Next restart attempt in ${nextInterval}ms if connection not restored`);
+    } else {
+      console.log('🛑 [ICE LADDER] Final restart attempt completed - connection abandoned at 30s');
+      setIsRecoveringConnection(false);
+      
+      // Log connection abandonment
+      try {
+        await apiRequest('POST', '/api/webrtc/events', {
+          sessionId,
+          eventType: 'connection_abandoned',
+          eventData: {
+            totalAttempts: 3,
+            totalDuration: failureDuration,
+            message: 'All ICE restart attempts failed after 30 seconds'
+          },
+          severity: 'critical'
+        });
+      } catch (error) {
+        console.error('❌ Failed to log connection abandonment event:', error);
+      }
+    }
+  }, [sessionId, performICERestart]);
+
   // Create peer connection for a participant
   const createPeerConnection = useCallback((targetUserId: string): RTCPeerConnection => {
     const peerConnection = new RTCPeerConnection({ iceServers });
@@ -215,21 +324,81 @@ export function useWebRTC({
       }
     };
     
-    // Monitor connection state
+    // Monitor connection state (R3.3-R3.5: ICE Restart Ladder)
     peerConnection.onconnectionstatechange = () => {
       const state = peerConnection.connectionState;
-      console.log(`Peer connection with ${targetUserId}: ${state}`);
+      console.log(`📡 [CONNECTION] Peer ${targetUserId}: ${state}`);
       
       if (state === 'connected') {
         setConnectionQuality('good');
+        
+        // Reset connection failure tracking on successful connection
+        if (connectionFailureStartRef.current !== null) {
+          const recoveryTime = Date.now() - connectionFailureStartRef.current;
+          console.log(`✅ [ICE LADDER] Connection restored after ${recoveryTime}ms`);
+          
+          // Clear any pending restart timers
+          if (iceRestartTimerRef.current) {
+            clearTimeout(iceRestartTimerRef.current);
+            iceRestartTimerRef.current = null;
+          }
+          
+          connectionFailureStartRef.current = null;
+          iceRestartAttemptsRef.current = 0;
+          setIsRecoveringConnection(false);
+        }
       } else if (state === 'failed' || state === 'disconnected') {
         setConnectionQuality('poor');
+        
+        // Start connection failure tracking (R3.3-R3.5)
+        if (connectionFailureStartRef.current === null) {
+          console.log(`🚨 [ICE LADDER] Connection lost, starting recovery ladder`);
+          connectionFailureStartRef.current = Date.now();
+          iceRestartAttemptsRef.current = 0;
+          
+          // Schedule ICE restart ladder: 5s → 15s → 30s
+          const scheduleRestartAttempts = () => {
+            // Clear any existing timer
+            if (iceRestartTimerRef.current) {
+              clearTimeout(iceRestartTimerRef.current);
+            }
+            
+            // Attempt 1: After 5 seconds
+            iceRestartTimerRef.current = setTimeout(() => {
+              if (connectionFailureStartRef.current !== null) {
+                const duration = Date.now() - connectionFailureStartRef.current;
+                iceRestartAttemptsRef.current = 1;
+                attemptICERestartLadder(1, duration);
+                
+                // Attempt 2: After 15 seconds (10s more)
+                iceRestartTimerRef.current = setTimeout(() => {
+                  if (connectionFailureStartRef.current !== null) {
+                    const duration2 = Date.now() - connectionFailureStartRef.current;
+                    iceRestartAttemptsRef.current = 2;
+                    attemptICERestartLadder(2, duration2);
+                    
+                    // Attempt 3: After 30 seconds (15s more)
+                    iceRestartTimerRef.current = setTimeout(() => {
+                      if (connectionFailureStartRef.current !== null) {
+                        const duration3 = Date.now() - connectionFailureStartRef.current;
+                        iceRestartAttemptsRef.current = 3;
+                        attemptICERestartLadder(3, duration3);
+                      }
+                    }, 15000);
+                  }
+                }, 10000);
+              }
+            }, 5000);
+          };
+          
+          scheduleRestartAttempts();
+        }
       }
     };
     
     peerConnectionsRef.current.set(targetUserId, peerConnection);
     return peerConnection;
-  }, [localStream, sessionId, userId]);
+  }, [localStream, sessionId, userId, attemptICERestartLadder]);
 
   // Send WebRTC offer to a participant (with perfect negotiation)
   const sendOffer = useCallback(async (targetUserId: string) => {
@@ -492,58 +661,6 @@ export function useWebRTC({
     
     return null;
   }, [sessionId, userId]);
-
-  // R2.3: ICE Restart for connection recovery
-  const performICERestart = useCallback(async () => {
-    if (isRepairingRef.current) {
-      console.log('⚠️ ICE restart already in progress, skipping...');
-      return;
-    }
-
-    console.log('🔧 [AUTO-REPAIR] Starting ICE restart for all peer connections...');
-    isRepairingRef.current = true;
-    let restartedCount = 0;
-
-    try {
-      const peerEntries = Array.from(peerConnectionsRef.current.entries());
-      for (const [peerId, pc] of peerEntries) {
-        try {
-          console.log(`🔄 Restarting ICE for peer ${peerId}`);
-          
-          // Create new offer with iceRestart flag
-          const offer = await pc.createOffer({ iceRestart: true });
-          await pc.setLocalDescription(offer);
-          
-          // Send ICE restart offer via existing WebSocket handler with correct payload
-          if (wsRef.current?.readyState === WebSocket.OPEN) {
-            wsRef.current.send(JSON.stringify({
-              type: 'webrtc-offer',
-              sessionId,
-              userId,
-              targetUserId: peerId,
-              offer,  // Correct field name to match handler
-              iceRestart: true  // Flag to indicate this is an ICE restart
-            }));
-          }
-          
-          restartedCount++;
-          console.log(`✅ ICE restart initiated for peer ${peerId}`);
-        } catch (err) {
-          console.error(`❌ Failed to restart ICE for peer ${peerId}:`, err);
-        }
-      }
-
-      repairAttemptsCountRef.current++;
-      lastRepairAttemptRef.current = Date.now();
-      
-      console.log(`✅ [AUTO-REPAIR] ICE restart completed for ${restartedCount}/${peerConnectionsRef.current.size} peers`);
-    } finally {
-      // Allow next repair after cooldown
-      setTimeout(() => {
-        isRepairingRef.current = false;
-      }, 5000); // 5 second cooldown
-    }
-  }, []);
 
   // R2.3: Adjust bitrate to reduce bandwidth usage
   const adjustBitrate = useCallback(async (targetBitrate: number) => {
@@ -1350,6 +1467,7 @@ export function useWebRTC({
     isVideoEnabled,
     isAudioEnabled,
     connectionQuality,
+    isRecoveringConnection,
     error,
     healthScore,
     healthDetails,
