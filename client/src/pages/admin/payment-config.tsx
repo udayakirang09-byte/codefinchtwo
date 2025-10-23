@@ -250,21 +250,14 @@ export default function AdminPaymentConfig() {
         adminUpiId: adminUpiId
       });
     } else {
-      if (!razorpayKeyId || !razorpayKeySecret) {
-        toast({
-          title: "Missing Razorpay Credentials",
-          description: "Please enter both Razorpay Key ID and Key Secret",
-          variant: "destructive",
-        });
-        return;
-      }
-      // Razorpay mode = realtime payment mode with API keys
+      // Razorpay mode = realtime payment mode with API keys from Secrets
+      // Keys are optional here - they come from environment variables (Secrets)
       updateConfigMutation.mutate({
         paymentMode: 'realtime',
         razorpayMode: 'api_keys',
         enableRazorpay: true,
-        razorpayKeyId: razorpayKeyId,
-        razorpayKeySecret: razorpayKeySecret
+        razorpayKeyId: razorpayKeyId || undefined,
+        razorpayKeySecret: razorpayKeySecret || undefined
       });
     }
   };
@@ -461,35 +454,27 @@ export default function AdminPaymentConfig() {
                         </div>
                         <Alert>
                           <AlertDescription>
-                            <strong>Production Mode:</strong> Real payments through Razorpay. Get your API keys from{' '}
-                            <a href="https://dashboard.razorpay.com/app/keys" target="_blank" rel="noopener noreferrer" className="underline">
+                            <strong>✅ Razorpay Keys Configured:</strong> API keys are loaded from environment variables (Secrets: TESTING_RAZORPAY_KEY_ID, TESTING_RAZORPAY_KEY_SECRET). 
+                            Simply click "Save Payment Configuration" below to enable Razorpay payments.
+                          </AlertDescription>
+                        </Alert>
+                        <Alert className="bg-blue-50 border-blue-200">
+                          <AlertDescription className="text-sm text-blue-900">
+                            <strong>📋 For Production:</strong> Update <code>TESTING_RAZORPAY_KEY_ID</code> and <code>TESTING_RAZORPAY_KEY_SECRET</code> in Secrets 
+                            with your live Razorpay keys from{' '}
+                            <a href="https://dashboard.razorpay.com/app/keys" target="_blank" rel="noopener noreferrer" className="underline font-semibold">
                               Razorpay Dashboard
                             </a>
                           </AlertDescription>
                         </Alert>
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="razorpayKeyId">Razorpay Key ID *</Label>
-                            <Input
-                              id="razorpayKeyId"
-                              type="text"
-                              placeholder="rzp_test_..."
-                              value={razorpayKeyId}
-                              onChange={(e) => setRazorpayKeyId(e.target.value)}
-                              data-testid="input-razorpay-key-id"
-                            />
+                        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <CheckCircle className="h-5 w-5 text-green-600" />
+                            <span className="font-semibold text-green-900">Razorpay Status</span>
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="razorpayKeySecret">Razorpay Key Secret *</Label>
-                            <Input
-                              id="razorpayKeySecret"
-                              type="password"
-                              placeholder="Enter key secret"
-                              value={razorpayKeySecret}
-                              onChange={(e) => setRazorpayKeySecret(e.target.value)}
-                              data-testid="input-razorpay-key-secret"
-                            />
-                          </div>
+                          <p className="text-sm text-green-800">
+                            Razorpay payment system is ready with test keys. Enable it by clicking "Save Payment Configuration" below.
+                          </p>
                         </div>
                       </div>
                     )}

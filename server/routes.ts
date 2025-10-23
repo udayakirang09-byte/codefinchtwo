@@ -120,14 +120,16 @@ if (razorpayKeyId && razorpayKeySecret && razorpayKeyId !== 'NA' && razorpayKeyS
 
 // Helper function to check if Razorpay is available and enabled
 async function isRazorpayEnabled(): Promise<{ enabled: boolean; reason?: string }> {
+  // Check if Razorpay instance is initialized (keys from secrets)
   if (!razorpay) {
-    return { enabled: false, reason: 'Razorpay is not configured. Please add API keys in environment variables.' };
+    return { enabled: false, reason: 'Razorpay is not configured. Please add API keys in environment variables (Secrets: TESTING_RAZORPAY_KEY_ID, TESTING_RAZORPAY_KEY_SECRET).' };
   }
   
   try {
+    // Check if admin has selected Razorpay mode
     const config = await storage.getAdminPaymentConfig();
-    if (!config || !config.enableRazorpay) {
-      return { enabled: false, reason: 'Razorpay is disabled. Please enable it in Admin > Payment Configuration.' };
+    if (!config || config.razorpayMode !== 'api_keys') {
+      return { enabled: false, reason: 'Razorpay mode is not selected. Please select "Razorpay Mode (Production)" in Admin > Payment Configuration > Payment Mode tab and click Save.' };
     }
     return { enabled: true };
   } catch (error) {
