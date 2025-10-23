@@ -61,6 +61,14 @@ export function useWebRTC({
   const previousFreezeCountsRef = useRef<Map<string, number>>(new Map());
   const lastStatsTimestampRef = useRef<number>(Date.now());
   
+  // R2.6: Bitrate tracking state (delta tracking for accurate bitrate calculation)
+  const previousBytesRef = useRef<Map<string, {
+    videoReceived: number;
+    audioReceived: number;
+    videoSent: number;
+    audioSent: number;
+  }>>(new Map());
+  
   // R3.3-R3.5: ICE Restart Ladder state (connection loss recovery)
   const connectionFailureStartRef = useRef<number | null>(null);
   const iceRestartAttemptsRef = useRef<number>(0);
@@ -660,20 +668,51 @@ export function useWebRTC({
               previousFreezeCountsRef.current.set(peerId, currentFreezeCount);
             }
             
-            // R2.6: Video bitrate (bytes per second to kbps)
-            if (report.bytesReceived && report.timestamp) {
-              // Calculate bitrate from bytesReceived (converted to kbps)
-              // Note: actual bitrate calculation requires delta between measurements
-              // For now, we'll use the estimated value if available
-              videoBitrate = Math.round((report.bytesReceived * 8) / 1000); // Convert to kbps
+            // R2.6: Video bitrate - delta-based calculation for accurate measurement
+            if (report.bytesReceived !== undefined) {
+              const previousBytes = previousBytesRef.current.get(peerId) || {
+                videoReceived: 0,
+                audioReceived: 0,
+                videoSent: 0,
+                audioSent: 0
+              };
+              
+              const bytesDelta = report.bytesReceived - previousBytes.videoReceived;
+              
+              // Calculate bitrate in kbps: (bytes/second) * 8 bits/byte / 1000
+              if (timeDeltaSeconds > 0 && bytesDelta > 0) {
+                videoBitrate = Math.round((bytesDelta / timeDeltaSeconds) * 8 / 1000);
+              }
+              
+              // Update stored value for next calculation
+              previousBytesRef.current.set(peerId, {
+                ...previousBytes,
+                videoReceived: report.bytesReceived
+              });
             }
           }
           
           // Inbound RTP audio
           if (report.type === 'inbound-rtp' && report.kind === 'audio') {
-            // R2.6: Audio bitrate
-            if (report.bytesReceived && report.timestamp) {
-              audioBitrate = Math.round((report.bytesReceived * 8) / 1000); // Convert to kbps
+            // R2.6: Audio bitrate - delta-based calculation
+            if (report.bytesReceived !== undefined) {
+              const previousBytes = previousBytesRef.current.get(peerId) || {
+                videoReceived: 0,
+                audioReceived: 0,
+                videoSent: 0,
+                audioSent: 0
+              };
+              
+              const bytesDelta = report.bytesReceived - previousBytes.audioReceived;
+              
+              if (timeDeltaSeconds > 0 && bytesDelta > 0) {
+                audioBitrate = Math.round((bytesDelta / timeDeltaSeconds) * 8 / 1000);
+              }
+              
+              previousBytesRef.current.set(peerId, {
+                ...previousBytes,
+                audioReceived: report.bytesReceived
+              });
             }
           }
           
