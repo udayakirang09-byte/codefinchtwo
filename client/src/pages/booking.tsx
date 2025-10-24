@@ -125,7 +125,15 @@ export default function Booking() {
     availableSlots: Array<{day: string, times: string[]}>,
     rawTimes: string[]
   }>({
-    queryKey: ["/api/mentors", mentorId, "available-times"],
+    queryKey: ["/api/mentors", mentorId, "available-times", studentData?.id],
+    queryFn: async () => {
+      // Include studentId to filter out conflicting times
+      const url = studentData?.id 
+        ? `/api/mentors/${mentorId}/available-times?studentId=${studentData.id}`
+        : `/api/mentors/${mentorId}/available-times`;
+      const response = await fetch(url);
+      return await response.json();
+    },
     enabled: !!mentorId,
   });
 

@@ -75,20 +75,28 @@ export default function CourseEnrollment() {
     enabled: !!courseId,
   });
 
+  // Fetch student details for auto-population
+  const { data: studentData } = useQuery<any>({
+    queryKey: ["/api/users", user?.email, "student"],
+    enabled: !!user?.email,
+  });
+
   // Fetch teacher availability
   const { data: availabilityData } = useQuery<{
     timeSlots: Array<{id: string, time: string, dayOfWeek: string, startTime: string, endTime: string}>,
     availableSlots: Array<{day: string, times: string[]}>,
     rawTimes: string[]
   }>({
-    queryKey: ["/api/mentors", course?.mentorId, "available-times"],
+    queryKey: ["/api/mentors", course?.mentorId, "available-times", studentData?.id],
+    queryFn: async () => {
+      // Include studentId to filter out conflicting times
+      const url = studentData?.id 
+        ? `/api/mentors/${course?.mentorId}/available-times?studentId=${studentData.id}`
+        : `/api/mentors/${course?.mentorId}/available-times`;
+      const response = await fetch(url);
+      return await response.json();
+    },
     enabled: !!course?.mentorId,
-  });
-
-  // Fetch student details for auto-population
-  const { data: studentData } = useQuery<any>({
-    queryKey: ["/api/users", user?.email, "student"],
-    enabled: !!user?.email,
   });
 
   const enrollmentMutation = useMutation({

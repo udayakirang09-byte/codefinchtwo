@@ -8120,9 +8120,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/mentors/:mentorId/available-times", async (req, res) => {
     try {
       const { mentorId } = req.params;
-      const { date } = req.query; // Optional: filter by date
+      const { date, studentId } = req.query; // Optional: filter by date and student
       
-      console.log(`📅 Getting available times for mentor: ${mentorId}`);
+      console.log(`📅 Getting available times for mentor: ${mentorId}, student: ${studentId || 'none'}`);
       
       // Get time slots for this mentor
       const mentorTimeSlots = await db.select().from(timeSlots)
@@ -8132,14 +8132,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
           eq(timeSlots.isBlocked, false)
         ));
       
-      // Transform to format needed by booking pages
-      const availableTimes = mentorTimeSlots.map((slot: any) => ({
-        id: slot.id,
-        dayOfWeek: slot.dayOfWeek,
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        time: slot.startTime // For compatibility with booking page
-      }));
+      // Get all bookings for this mentor (to exclude booked times)
+      const mentorBookings = await db.select().from(bookings)
+        .where(and(
+          eq(bookings.mentorId, mentorId),
+          ne(bookings.status, 'cancelled') // Don't exclude cancelled bookings
+        ));
+      
+      // Get all bookings for the student (if studentId provided)
+      let studentBookings: any[] = [];
+      if (studentId && typeof studentId === 'string') {
+        studentBookings = await db.select().from(bookings)
+          .where(and(
+            eq(bookings.studentId, studentId as string),
+            ne(bookings.status, 'cancelled')
+          ));
+      }
+      
+      console.log(`🔍 Found ${mentorBookings.length} mentor bookings, ${studentBookings.length} student bookings`);
+      
+      // Helper function to check if a time conflicts with bookings
+      const isTimeConflicting = (dayOfWeek: string, timeStr: string, date?: string) => {
+        // Parse the time (e.g., "14:00" -> hour: 14, minute: 0)
+        const [hourStr, minuteStr] = timeStr.split(':');
+        const hour = parseInt(hourStr);
+        const minute = parseInt(minuteStr);
+        
+        // Check against mentor bookings
+        for (const booking of mentorBookings) {
+          const bookingDate = new Date(booking.scheduledAt);
+          const bookingDay = bookingDate.toLocaleDateString('en-US', { weekday: 'long' });
+          
+          // Check if booking is on the same day of week (for recurring slots)
+          if (bookingDay === dayOfWeek) {
+            const bookingHour = bookingDate.getHours();
+            const bookingMinute = bookingDate.getMinutes();
+            const bookingDuration = booking.duration || 55;
+            
+            // Convert to minutes for easier comparison
+            const slotStartMinutes = hour * 60 + minute;
+            const bookingStartMinutes = bookingHour * 60 + bookingMinute;
+            const bookingEndMinutes = bookingStartMinutes + bookingDuration + 5; // Add 5-min buffer
+            
+            // Check for overlap
+            if (slotStartMinutes >= (bookingStartMinutes - 5) && slotStartMinutes < bookingEndMinutes) {
+              return true;
+            }
+          }
+        }
+        
+        // Check against student bookings
+        for (const booking of studentBookings) {
+          const bookingDate = new Date(booking.scheduledAt);
+          const bookingDay = bookingDate.toLocaleDateString('en-US', { weekday: 'long' });
+          
+          if (bookingDay === dayOfWeek) {
+            const bookingHour = bookingDate.getHours();
+            const bookingMinute = bookingDate.getMinutes();
+            const bookingDuration = booking.duration || 55;
+            
+            const slotStartMinutes = hour * 60 + minute;
+            const bookingStartMinutes = bookingHour * 60 + bookingMinute;
+            const bookingEndMinutes = bookingStartMinutes + bookingDuration + 5;
+            
+            if (slotStartMinutes >= (bookingStartMinutes - 5) && slotStartMinutes < bookingEndMinutes) {
+              return true;
+            }
+          }
+        }
+        
+        return false;
+      };
+      
+      // Transform to format needed by booking pages and filter out conflicting times
+      const availableTimes = mentorTimeSlots
+        .filter((slot: any) => !isTimeConflicting(slot.dayOfWeek, slot.startTime))
+        .map((slot: any) => ({
+          id: slot.id,
+          dayOfWeek: slot.dayOfWeek,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          time: slot.startTime // For compatibility with booking page
+        }));
       
       // Group by day of week
       const groupedByDay = availableTimes.reduce((acc: any, slot: any) => {
@@ -8156,7 +8230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         times: times as string[]
       }));
       
-      console.log(`✅ Found ${availableTimes.length} available time slots`);
+      console.log(`✅ Found ${availableTimes.length} truly available time slots (after filtering bookings)`);
       
       // Deduplicate times for booking form (same time can appear on multiple days)
       const timeSet = new Set(availableTimes.map((slot: any) => slot.time));

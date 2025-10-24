@@ -97,10 +97,14 @@ export default function SchedulePackage() {
 
   // Fetch mentor's available times
   const { data: availableTimes } = useQuery<AvailableTimesResponse | AvailableTime[]>({
-    queryKey: ["/api/mentors", packageData?.mentorId, "available-times"],
+    queryKey: ["/api/mentors", packageData?.mentorId, "available-times", studentId],
     queryFn: async () => {
       if (!packageData?.mentorId) throw new Error('No mentor ID');
-      const response = await fetch(`/api/mentors/${packageData.mentorId}/available-times`);
+      // Include studentId to filter out conflicting times
+      const url = studentId 
+        ? `/api/mentors/${packageData.mentorId}/available-times?studentId=${studentId}`
+        : `/api/mentors/${packageData.mentorId}/available-times`;
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch available times');
       return response.json();
     },
