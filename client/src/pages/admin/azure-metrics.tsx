@@ -1,9 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Activity, AlertTriangle, AlertCircle, Info } from 'lucide-react';
+import { Settings, Activity, AlertTriangle, AlertCircle, Info, TestTube } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import type { AzureAppInsightsConfig } from '@shared/schema';
 import {
@@ -26,6 +26,7 @@ export default function AzureMetrics() {
   const [appInsightsName, setAppInsightsName] = useState('');
   const [appId, setAppId] = useState('');
   const [apiKey, setApiKey] = useState('');
+  const [testing, setTesting] = useState(false);
 
   // Get metrics summary
   const { data: summary } = useQuery({
@@ -64,6 +65,7 @@ export default function AzureMetrics() {
       });
       
       queryClient.invalidateQueries({ queryKey: ['/api/admin/azure-insights/config'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/azure-insights/summary'] });
       setConfigOpen(false);
       
       toast({
@@ -77,6 +79,48 @@ export default function AzureMetrics() {
         description: "Failed to save configuration. Please try again.",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleTestConnection = async () => {
+    try {
+      setTesting(true);
+      const response = await fetch('/api/admin/azure-insights/metrics', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch metrics');
+      }
+
+      const metrics = await response.json();
+      
+      if (metrics && metrics.length > 0) {
+        toast({
+          title: "Connection Successful! ✅",
+          description: `Successfully fetched ${metrics.length} metrics from Azure App Insights. Your configuration is working correctly.`,
+        });
+        
+        // Refresh the summary to show updated data
+        queryClient.invalidateQueries({ queryKey: ['/api/admin/azure-insights/summary'] });
+      } else {
+        toast({
+          title: "Connection Test Complete",
+          description: "Connected to Azure but no metrics were returned. This may be normal if your app has no recent activity.",
+          variant: "default"
+        });
+      }
+    } catch (error: any) {
+      console.error('Test connection error:', error);
+      toast({
+        title: "Connection Failed ❌",
+        description: error.message || "Unable to connect to Azure App Insights. Please check your credentials.",
+        variant: "destructive"
+      });
+    } finally {
+      setTesting(false);
     }
   };
 
@@ -206,14 +250,28 @@ export default function AzureMetrics() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Application: <span className="font-medium text-foreground">{config.appInsightsName}</span>
-            </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Status: <Badge variant={config.isEnabled ? "default" : "secondary"}>
-                {config.isEnabled ? "Enabled" : "Disabled"}
-              </Badge>
-            </p>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground">
+                  Application: <span className="font-medium text-foreground">{config.appInsightsName}</span>
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Status: <Badge variant={config.isEnabled ? "default" : "secondary"}>
+                    {config.isEnabled ? "Enabled" : "Disabled"}
+                  </Badge>
+                </p>
+              </div>
+              <Button 
+                onClick={handleTestConnection}
+                disabled={testing || !config.isEnabled}
+                variant="outline"
+                size="sm"
+                data-testid="button-test-connection"
+              >
+                <TestTube className="mr-2 h-4 w-4" />
+                {testing ? 'Testing...' : 'Test Connection'}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
