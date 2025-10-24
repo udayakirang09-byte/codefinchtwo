@@ -1,4 +1,4 @@
-import { db } from '@db';
+import { db } from './db';
 import { mergedRecordings, recordingAnalysis, recordingTranscripts, bookings, users, mentors } from '@shared/schema';
 import type { InsertRecordingAnalysis, InsertRecordingTranscript } from '@shared/schema';
 import { eq, and, isNull } from 'drizzle-orm';
