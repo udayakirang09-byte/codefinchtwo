@@ -456,8 +456,11 @@ export default function Booking() {
       return;
     }
 
-    // Keep datetime string in local timezone (don't convert to UTC)
-    const scheduledAt = `${formData.selectedDate}T${formData.selectedTime}`;
+    // Convert IST time to UTC for storage
+    // selectedTime is in IST format (e.g., "12:00"), need to convert to UTC
+    const istDateTime = new Date(`${formData.selectedDate}T${formData.selectedTime}:00+05:30`);
+    const scheduledAt = istDateTime.toISOString();
+    console.log(`🕐 [Timezone] IST: ${formData.selectedDate} ${formData.selectedTime} → UTC: ${scheduledAt}`);
     
     // Get authenticated user info
     const userEmail = localStorage.getItem('userEmail');

@@ -4013,55 +4013,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`📅 [Available Times] Found ${bookedSlots.length} existing bookings on ${selectedDate}`);
       
-      // Create a set of hourly slots that are occupied by bookings
+      // Create a set of hourly slots that are occupied by bookings (in IST)
+      // Bookings are stored in UTC, so we convert them to IST for comparison
       const occupiedHourlySlots = new Set<string>();
       
       bookedSlots.forEach(booking => {
-        const bookingStart = new Date(booking.scheduledAt);
-        const bookingEnd = new Date(bookingStart.getTime() + (booking.duration || 55) * 60000);
+        const bookingStartUTC = new Date(booking.scheduledAt);
+        const bookingEndUTC = new Date(bookingStartUTC.getTime() + (booking.duration || 55) * 60000);
         
-        const startHour = bookingStart.getUTCHours();
-        const endHour = bookingEnd.getUTCHours();
-        const endMinutes = bookingEnd.getUTCMinutes();
+        // Convert UTC to IST by adding 5 hours 30 minutes
+        const bookingStartIST = new Date(bookingStartUTC.getTime() + (5 * 60 + 30) * 60000);
+        const bookingEndIST = new Date(bookingEndUTC.getTime() + (5 * 60 + 30) * 60000);
+        
+        const startHourIST = bookingStartIST.getUTCHours(); // Using getUTCHours on IST-adjusted date
+        const endHourIST = bookingEndIST.getUTCHours();
+        const endMinutesIST = bookingEndIST.getUTCMinutes();
         
         // Mark all hourly slots that this booking overlaps with as occupied
-        // If booking starts at 11:30 and ends at 12:25, it occupies both 11:00 and 12:00 slots
-        for (let hour = startHour; hour <= endHour; hour++) {
+        // If booking starts at 11:30 IST and ends at 12:25 IST, it occupies both 11:00 and 12:00 slots
+        for (let hour = startHourIST; hour <= endHourIST; hour++) {
           // If the booking ends exactly on the hour (e.g., 12:00:00), don't mark that hour as occupied
-          if (hour === endHour && endMinutes === 0) {
+          if (hour === endHourIST && endMinutesIST === 0) {
             break;
           }
           const timeString = `${hour.toString().padStart(2, '0')}:00`;
           occupiedHourlySlots.add(timeString);
-          console.log(`🚫 [Available Times] Time ${timeString} is occupied by booking from ${bookingStart.getUTCHours()}:${bookingStart.getUTCMinutes().toString().padStart(2, '0')} to ${endHour}:${endMinutes.toString().padStart(2, '0')}`);
+          console.log(`🚫 [Available Times IST] Time ${timeString} IST is occupied by booking from ${startHourIST}:${bookingStartIST.getUTCMinutes().toString().padStart(2, '0')} to ${endHourIST}:${endMinutesIST.toString().padStart(2, '0')} IST`);
         }
       });
       
-      // Generate available times from time slots, excluding occupied times
-      // Teacher's time slots are stored in IST (UTC+5:30), so we need to convert to UTC
+      // Generate available times from time slots in IST
+      // Teacher's time slots are already in IST, so use them directly
       const availableTimes: string[] = [];
       
       dayTimeSlots.forEach(slot => {
-        // Convert IST time to UTC by subtracting 5 hours 30 minutes
-        const [startHourIST, startMinIST] = slot.startTime.split(':').map(Number);
-        const [endHourIST, endMinIST] = slot.endTime.split(':').map(Number);
+        const startHour = parseInt(slot.startTime.split(':')[0]);
+        const endHour = parseInt(slot.endTime.split(':')[0]);
         
-        // Convert start time from IST to UTC
-        let startMinutesUTC = (startHourIST * 60 + (startMinIST || 0)) - (5 * 60 + 30);
-        if (startMinutesUTC < 0) startMinutesUTC += 24 * 60;
-        const startHourUTC = Math.floor(startMinutesUTC / 60);
+        console.log(`📅 [IST Schedule] Generating slots for ${slot.startTime}-${slot.endTime} IST`);
         
-        // Convert end time from IST to UTC
-        let endMinutesUTC = (endHourIST * 60 + (endMinIST || 0)) - (5 * 60 + 30);
-        if (endMinutesUTC < 0) endMinutesUTC += 24 * 60;
-        const endHourUTC = Math.ceil(endMinutesUTC / 60);
-        
-        console.log(`📅 [Timezone Conversion] IST ${slot.startTime}-${slot.endTime} → UTC ${startHourUTC}:${startMinutesUTC % 60}-${endHourUTC}:${endMinutesUTC % 60}`);
-        
-        // Generate hourly slots in UTC
-        for (let hour = startHourUTC; hour < endHourUTC; hour++) {
-          const utcHour = hour % 24; // Handle day overflow
-          const timeString = `${utcHour.toString().padStart(2, '0')}:00`;
+        // Generate hourly slots in IST
+        for (let hour = startHour; hour < endHour; hour++) {
+          const timeString = `${hour.toString().padStart(2, '0')}:00`;
           
           // Only include if not occupied by any booking
           if (!occupiedHourlySlots.has(timeString)) {
