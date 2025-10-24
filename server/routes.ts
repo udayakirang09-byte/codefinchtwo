@@ -8242,15 +8242,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/payment-config", async (req, res) => {
     try {
-      // Load payment configuration from adminConfig table (Stripe/Razorpay keys)
+      // Load Stripe configuration from adminConfig table
       const configs = await db.select().from(adminConfig).where(
         or(
           eq(adminConfig.configKey, 'stripe_enabled'),
           eq(adminConfig.configKey, 'stripe_publishable_key'),
-          eq(adminConfig.configKey, 'stripe_secret_key'),
-          eq(adminConfig.configKey, 'razorpay_enabled'),
-          eq(adminConfig.configKey, 'razorpay_key_id'),
-          eq(adminConfig.configKey, 'razorpay_key_secret')
+          eq(adminConfig.configKey, 'stripe_secret_key')
         )
       );
       
@@ -8262,11 +8259,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get payment mode configuration from admin_payment_config table
       const adminPaymentConfig = await storage.getAdminPaymentConfig();
       
+      // Get Razorpay configuration from environment variables (secrets)
+      // Use same fallback logic as server initialization
+      const razorpayKeyId = process.env.RAZORPAY_KEY_ID !== 'NA'
+        ? process.env.RAZORPAY_KEY_ID
+        : process.env.TESTING_RAZORPAY_KEY_ID;
+      const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET !== 'NA'
+        ? process.env.RAZORPAY_KEY_SECRET
+        : process.env.TESTING_RAZORPAY_KEY_SECRET;
+      const razorpayAvailable = !!(razorpayKeyId && razorpayKeySecret && razorpayKeyId !== 'NA' && razorpayKeySecret !== 'NA');
+      
       const paymentConfig = {
         stripeEnabled: configMap['stripe_enabled'] === 'true',
         stripePublishableKey: configMap['stripe_publishable_key'] || '',
-        razorpayEnabled: configMap['razorpay_enabled'] === 'true',
-        razorpayKeyId: configMap['razorpay_key_id'] || '',
+        razorpayEnabled: razorpayAvailable && (adminPaymentConfig?.enableRazorpay || false),
+        razorpayKeyId: razorpayKeyId || '',
         // Add payment mode configuration
         paymentMode: adminPaymentConfig?.paymentMode || 'dummy',
         razorpayMode: adminPaymentConfig?.razorpayMode || 'upi',
