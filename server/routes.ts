@@ -2602,15 +2602,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const existingStart = new Date(existingBooking.scheduledAt);
           const existingEnd = new Date(existingStart.getTime() + existingBooking.duration * 60000);
           
-          // Apply 5-minute buffer: new booking should not start within 5 min before existing end
-          // and should not end within 5 min before existing start
-          const newStartWithBuffer = new Date(scheduledStart.getTime() - bufferMs);
-          const newEndWithBuffer = new Date(scheduledEnd.getTime() + bufferMs);
+          // Apply 5-minute buffer ONLY to existing bookings (not to new booking)
+          // This allows booking at exactly 5 minutes after existing class ends
           const existingStartWithBuffer = new Date(existingStart.getTime() - bufferMs);
           const existingEndWithBuffer = new Date(existingEnd.getTime() + bufferMs);
           
-          // Check if time ranges overlap (with buffer)
-          const hasOverlap = newStartWithBuffer < existingEndWithBuffer && newEndWithBuffer > existingStartWithBuffer;
+          // Check if new booking overlaps with buffered existing booking
+          // New booking (without buffer) vs Existing booking (with buffer)
+          const hasOverlap = scheduledStart < existingEndWithBuffer && scheduledEnd > existingStartWithBuffer;
           
           if (hasOverlap) {
             console.log(`🚫 Student booking overlap detected: new booking conflicts with existing booking ${existingBooking.id} (with 5-min buffer)`);
