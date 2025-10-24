@@ -43,11 +43,10 @@ export default function Home() {
   }, []);
 
   // If user is authenticated, show role-based dashboard
+  // Note: Each dashboard component has its own Navigation, so we don't render it here
   if (isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navigation />
-        
         {/* Role-based Dashboard */}
         {userRole === 'student' && <StudentDashboard />}
         {userRole === 'mentor' && <TeacherDashboard />}
@@ -55,16 +54,19 @@ export default function Home() {
         
         {/* Fallback for unknown roles */}
         {!['student', 'mentor', 'admin'].includes(userRole) && (
-          <div className="p-6 text-center">
-            <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
-              <p className="text-yellow-800">
-                Unknown user role: <strong>{userRole}</strong>
-              </p>
-              <p className="text-sm text-yellow-600 mt-2">
-                Please contact support or try logging in again.
-              </p>
+          <>
+            <Navigation />
+            <div className="p-6 text-center">
+              <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                <p className="text-yellow-800">
+                  Unknown user role: <strong>{userRole}</strong>
+                </p>
+                <p className="text-sm text-yellow-600 mt-2">
+                  Please contact support or try logging in again.
+                </p>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     );

@@ -598,27 +598,9 @@ export default function Booking() {
       });
     }
     
-    // C3: Filter out times that overlap with teacher's existing bookings (including 5-min buffer)
-    if (teacherBookings && teacherBookings.length > 0) {
-      const duration = parseInt(formData.duration) || 60;
-      const BUFFER_MINUTES = 5; // 5-minute buffer between sessions
-      
-      uniqueSlots = uniqueSlots.filter(time => {
-        const slotDateTime = new Date(`${formData.selectedDate}T${time}:00`);
-        const slotEndTime = new Date(slotDateTime.getTime() + (duration + BUFFER_MINUTES) * 60000);
-        
-        // Check if this slot conflicts with any existing booking (including buffer)
-        return !teacherBookings.some(booking => {
-          const bookingStart = new Date(booking.scheduledAt);
-          // Coerce booking.duration to number to avoid string concatenation
-          const bookingDuration = Number(booking.duration) || 0;
-          const bookingEnd = new Date(bookingStart.getTime() + (bookingDuration + BUFFER_MINUTES) * 60000);
-          
-          // Check for overlap: slot starts before booking ends AND slot ends after booking starts
-          return slotDateTime < bookingEnd && slotEndTime > bookingStart;
-        });
-      });
-    }
+    // NOTE: The API already filters out conflicting times when selectedDate is provided,
+    // so we don't need to do client-side filtering here. The API checks both teacher
+    // and student bookings on the specific date and excludes conflicting times.
     
     console.log(`📅 Available time slots for ${dayOfWeek}:`, uniqueSlots);
     

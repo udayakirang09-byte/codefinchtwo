@@ -125,8 +125,8 @@ export default function BookingSuccess() {
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                     <h4 className="font-semibold text-blue-800 mb-3">Before Your Session:</h4>
                     <ul className="space-y-2 text-sm text-blue-700">
-                      <li>✓ Check your email for session details and calendar invite</li>
-                      <li>✓ Prepare any questions or code you'd like to review</li>
+                      <li>✓ Make sure you are able to login to application</li>
+                      <li>✓ Prepare any questions you'd like to discuss</li>
                       <li>✓ Test your video call setup (camera & microphone)</li>
                       <li>✓ Have a notepad ready for key learnings</li>
                     </ul>
@@ -135,20 +135,9 @@ export default function BookingSuccess() {
                   <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                     <h4 className="font-semibold text-green-800 mb-3">Session Access:</h4>
                     <ul className="space-y-2 text-sm text-green-700">
-                      <li>✓ Join via the link in your confirmation email</li>
+                      <li>✓ Join via in app video session</li>
                       <li>✓ Sessions are recorded for your reference</li>
-                      <li>✓ Get personalized feedback and resources</li>
-                      <li>✓ Follow-up support via chat/email</li>
                     </ul>
-                  </div>
-
-                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                    <h4 className="font-semibold text-purple-800 mb-3">Need Help?</h4>
-                    <div className="space-y-2 text-sm text-purple-700">
-                      <p>📧 Email: support@techlearnorbit.com</p>
-                      <p>📱 WhatsApp: +91 98765 43210</p>
-                      <p>🕐 Support Hours: 9 AM - 6 PM (Mon-Fri)</p>
-                    </div>
                   </div>
 
                   <div className="space-y-3">
