@@ -8120,7 +8120,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/mentors/:mentorId/available-times", async (req, res) => {
     try {
       const { mentorId } = req.params;
-      const { date, studentId } = req.query; // Optional: filter by date and student
+      const { date, selectedDate, studentId } = req.query; // Optional: filter by date and student
+      
+      // Use selectedDate if provided, otherwise fall back to date
+      const filterDate = selectedDate || date;
       
       console.log(`📅 Getting available times for mentor: ${mentorId}, student: ${studentId || 'none'}`);
       
@@ -8151,20 +8154,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`🔍 Found ${mentorBookings.length} mentor bookings, ${studentBookings.length} student bookings`);
       
-      // Helper function to check if a time conflicts with bookings
-      const isTimeConflicting = (dayOfWeek: string, timeStr: string, date?: string) => {
+      // Helper function to check if a time conflicts with bookings on a SPECIFIC date
+      const isTimeConflicting = (dayOfWeek: string, timeStr: string, selectedDate?: string) => {
         // Parse the time (e.g., "14:00" -> hour: 14, minute: 0)
         const [hourStr, minuteStr] = timeStr.split(':');
         const hour = parseInt(hourStr);
         const minute = parseInt(minuteStr);
         
+        // Helper to check if two dates are on the same calendar day (ignoring time)
+        const isSameDate = (date1: Date, date2: Date) => {
+          return date1.getFullYear() === date2.getFullYear() &&
+                 date1.getMonth() === date2.getMonth() &&
+                 date1.getDate() === date2.getDate();
+        };
+        
+        // If selectedDate is provided, create a Date object for comparison
+        let targetDate: Date | null = null;
+        if (selectedDate && typeof selectedDate === 'string') {
+          targetDate = new Date(selectedDate);
+        }
+        
         // Check against mentor bookings
         for (const booking of mentorBookings) {
           const bookingDate = new Date(booking.scheduledAt);
-          const bookingDay = bookingDate.toLocaleDateString('en-US', { weekday: 'long' });
           
-          // Check if booking is on the same day of week (for recurring slots)
-          if (bookingDay === dayOfWeek) {
+          // If selectedDate provided, only check bookings on that specific date
+          // Otherwise, check all bookings with matching day of week
+          let shouldCheck = false;
+          if (targetDate) {
+            shouldCheck = isSameDate(bookingDate, targetDate);
+          } else {
+            const bookingDay = bookingDate.toLocaleDateString('en-US', { weekday: 'long' });
+            shouldCheck = bookingDay === dayOfWeek;
+          }
+          
+          if (shouldCheck) {
             const bookingHour = bookingDate.getHours();
             const bookingMinute = bookingDate.getMinutes();
             const bookingDuration = booking.duration || 55;
@@ -8184,9 +8208,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Check against student bookings
         for (const booking of studentBookings) {
           const bookingDate = new Date(booking.scheduledAt);
-          const bookingDay = bookingDate.toLocaleDateString('en-US', { weekday: 'long' });
           
-          if (bookingDay === dayOfWeek) {
+          let shouldCheck = false;
+          if (targetDate) {
+            shouldCheck = isSameDate(bookingDate, targetDate);
+          } else {
+            const bookingDay = bookingDate.toLocaleDateString('en-US', { weekday: 'long' });
+            shouldCheck = bookingDay === dayOfWeek;
+          }
+          
+          if (shouldCheck) {
             const bookingHour = bookingDate.getHours();
             const bookingMinute = bookingDate.getMinutes();
             const bookingDuration = booking.duration || 55;
@@ -8206,7 +8237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Transform to format needed by booking pages and filter out conflicting times
       const availableTimes = mentorTimeSlots
-        .filter((slot: any) => !isTimeConflicting(slot.dayOfWeek, slot.startTime))
+        .filter((slot: any) => !isTimeConflicting(slot.dayOfWeek, slot.startTime, filterDate as string | undefined))
         .map((slot: any) => ({
           id: slot.id,
           dayOfWeek: slot.dayOfWeek,

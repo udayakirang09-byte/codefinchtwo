@@ -125,12 +125,14 @@ export default function Booking() {
     availableSlots: Array<{day: string, times: string[]}>,
     rawTimes: string[]
   }>({
-    queryKey: ["/api/mentors", mentorId, "available-times", studentData?.id],
+    queryKey: ["/api/mentors", mentorId, "available-times", studentData?.id, formData.selectedDate],
     queryFn: async () => {
-      // Include studentId to filter out conflicting times
-      const url = studentData?.id 
-        ? `/api/mentors/${mentorId}/available-times?studentId=${studentData.id}`
-        : `/api/mentors/${mentorId}/available-times`;
+      // Include studentId and selectedDate to filter out conflicting times on that specific date
+      const params = new URLSearchParams();
+      if (studentData?.id) params.append('studentId', studentData.id);
+      if (formData.selectedDate) params.append('selectedDate', formData.selectedDate);
+      
+      const url = `/api/mentors/${mentorId}/available-times${params.toString() ? '?' + params.toString() : ''}`;
       const response = await fetch(url);
       return await response.json();
     },
