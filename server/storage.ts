@@ -2836,43 +2836,8 @@ export class DatabaseStorage implements IStorage {
       ...recording,
       id: recording.id || randomUUID()
     };
-    
-    // Execute in a transaction: BOTH merged_recordings insert AND video_sessions upsert must succeed
-    return await db.transaction(async (tx) => {
-      // 1. Insert into merged_recordings table (for student recordings page)
-      const [created] = await tx.insert(mergedRecordings).values(recordingWithId).returning();
-      
-      // 2. Upsert video_sessions record (for AI Analytics)
-      // Check if video_sessions already exists for this booking
-      const [existingSession] = await tx.select().from(videoSessions)
-        .where(eq(videoSessions.bookingId, recording.bookingId));
-      
-      if (existingSession) {
-        // Update existing session with recording URL
-        await tx.update(videoSessions)
-          .set({ 
-            recordingUrl: recording.blobUrl,
-            status: 'ended',
-            endedAt: new Date(recording.mergedAt || Date.now())
-          })
-          .where(eq(videoSessions.id, existingSession.id));
-        console.log(`✅ [TRANSACTION] Updated video_sessions record for booking ${recording.bookingId}`);
-      } else {
-        // Create new video_sessions record
-        await tx.insert(videoSessions).values({
-          bookingId: recording.bookingId,
-          roomId: `room-${recording.bookingId}`,
-          status: 'ended',
-          startedAt: new Date(recording.mergedAt || Date.now()),
-          endedAt: new Date(recording.mergedAt || Date.now()),
-          recordingUrl: recording.blobUrl,
-        });
-        console.log(`✅ [TRANSACTION] Created video_sessions record for booking ${recording.bookingId}`);
-      }
-      
-      // If we reach here, both operations succeeded - transaction will commit
-      return created;
-    });
+    const [created] = await db.insert(mergedRecordings).values(recordingWithId).returning();
+    return created;
   }
 
   async getMergedRecordingByBooking(bookingId: string): Promise<MergedRecording | undefined> {

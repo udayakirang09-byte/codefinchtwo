@@ -22,8 +22,7 @@ import {
   Users,
   DollarSign,
   BookOpen,
-  Activity,
-  Download
+  Activity
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -213,28 +212,6 @@ export default function AdminAnalytics() {
               <option value="30d">Last 30 Days</option>
               <option value="90d">Last 3 Months</option>
             </select>
-            <Button 
-              onClick={async () => {
-                try {
-                  setRefreshing(true);
-                  const result: any = await apiRequest('POST', '/api/admin/recordings/sync-from-azure');
-                  console.log('✅ Sync completed:', result);
-                  alert(`Sync complete! ${result.synced} recordings synced, ${result.skipped} skipped`);
-                  await refetchAudioAnalytics();
-                } catch (error) {
-                  console.error('❌ Failed to sync:', error);
-                  alert('Failed to sync recordings from Azure. Check console for details.');
-                } finally {
-                  setRefreshing(false);
-                }
-              }}
-              variant="outline"
-              disabled={refreshing}
-              data-testid="button-sync-azure"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Sync from Azure
-            </Button>
             <Button 
               onClick={handleRefreshAnalytics}
               disabled={refreshing}
