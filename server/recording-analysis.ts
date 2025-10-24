@@ -1,7 +1,7 @@
 import { db } from './db';
-import { mergedRecordings, recordingAnalysis, recordingTranscripts, bookings, users, mentors } from '@shared/schema';
+import { videoSessions, recordingAnalysis, recordingTranscripts, bookings, users, mentors } from '@shared/schema';
 import type { InsertRecordingAnalysis, InsertRecordingTranscript } from '@shared/schema';
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and, isNull, sql } from 'drizzle-orm';
 import { AzureStorageService } from './azureStorage';
 import OpenAI from 'openai';
 
@@ -13,77 +13,96 @@ const azureStorage = new AzureStorageService();
 
 export class RecordingAnalysisService {
   /**
-   * Analyze a single recording by downloading audio, transcribing, and evaluating teaching quality
+   * Analyze a single video session recording using OpenAI
    */
-  async analyzeRecording(recordingId: string): Promise<{ success: boolean; error?: string }> {
+  async analyzeRecording(videoSessionId: string): Promise<{ success: boolean; error?: string }> {
     try {
-      console.log(`🎙️ [RECORDING ANALYSIS] Starting analysis for recording: ${recordingId}`);
+      console.log(`🎙️ [RECORDING ANALYSIS] Starting analysis for video session: ${videoSessionId}`);
       
-      // Fetch recording details
-      const recording = await db.select({
-        id: mergedRecordings.id,
-        blobPath: mergedRecordings.blobPath,
-        bookingId: mergedRecordings.bookingId,
-        mentorId: mergedRecordings.mentorId,
-        studentId: mergedRecordings.studentId,
-        durationSeconds: mergedRecordings.durationSeconds,
-        aiAnalyzed: mergedRecordings.aiAnalyzed,
+      // Fetch video session with booking details
+      const sessionData = await db.select({
+        id: videoSessions.id,
+        recordingUrl: videoSessions.recordingUrl,
+        bookingId: videoSessions.bookingId,
+        startedAt: videoSessions.startedAt,
+        endedAt: videoSessions.endedAt,
       })
-        .from(mergedRecordings)
-        .where(eq(mergedRecordings.id, recordingId))
+        .from(videoSessions)
+        .where(eq(videoSessions.id, videoSessionId))
         .limit(1);
 
-      if (recording.length === 0) {
-        console.error(`❌ Recording ${recordingId} not found`);
-        return { success: false, error: 'Recording not found' };
+      if (sessionData.length === 0) {
+        console.error(`❌ Video session ${videoSessionId} not found`);
+        return { success: false, error: 'Video session not found' };
       }
 
-      const rec = recording[0];
+      const session = sessionData[0];
 
-      // Skip if already analyzed
-      if (rec.aiAnalyzed) {
-        console.log(`⏭️  Recording ${recordingId} already analyzed, skipping`);
+      // Check if already analyzed
+      const existingAnalysis = await db.select()
+        .from(recordingAnalysis)
+        .where(eq(recordingAnalysis.videoSessionId, videoSessionId))
+        .limit(1);
+
+      if (existingAnalysis.length > 0) {
+        console.log(`⏭️  Video session ${videoSessionId} already analyzed, skipping`);
         return { success: true };
       }
 
-      // Check if this is a real recording (not a mock/test)
-      if (!rec.blobPath || rec.blobPath.trim() === '') {
-        console.log(`⏭️  Recording ${recordingId} has no blob path, skipping`);
-        return { success: false, error: 'No blob path available' };
+      // Check if recording URL exists
+      if (!session.recordingUrl || session.recordingUrl.trim() === '') {
+        console.log(`⏭️  Video session ${videoSessionId} has no recording URL, skipping`);
+        return { success: false, error: 'No recording URL available' };
       }
 
-      // Generate SAS URL for downloading
-      console.log(`📥 Generating SAS URL for blob: ${rec.blobPath}`);
-      const sasUrl = await azureStorage.generateSasUrl(rec.blobPath);
+      // Extract blob path from recording URL
+      // URL format: https://account.blob.core.windows.net/container/path/to/file.webm
+      const blobPath = session.recordingUrl.split('/').slice(4).join('/');
+      console.log(`📥 Generating SAS URL for blob: ${blobPath}`);
+      const sasUrl = await azureStorage.generateSasUrl(blobPath);
       
       if (!sasUrl) {
-        console.error(`❌ Failed to generate SAS URL for ${rec.blobPath}`);
+        console.error(`❌ Failed to generate SAS URL for ${blobPath}`);
         return { success: false, error: 'Failed to generate download URL' };
       }
 
+      // Get booking details for mentor ID
+      const bookingData = await db.select()
+        .from(bookings)
+        .where(eq(bookings.id, session.bookingId))
+        .limit(1);
+
+      if (bookingData.length === 0) {
+        console.error(`❌ Booking ${session.bookingId} not found`);
+        return { success: false, error: 'Booking not found' };
+      }
+
+      const booking = bookingData[0];
+
       console.log(`🎧 Transcribing audio using OpenAI Whisper...`);
-      
-      // Note: OpenAI Whisper API requires file upload, not URL
-      // For production, we would download the file first, then upload to OpenAI
-      // For now, we'll use a simplified approach with mock data
-      const transcription = await this.transcribeAudio(sasUrl, rec.blobPath);
+      const transcription = await this.transcribeAudio(sasUrl, blobPath);
       
       if (!transcription) {
-        console.error(`❌ Transcription failed for recording ${recordingId}`);
+        console.error(`❌ Transcription failed for video session ${videoSessionId}`);
         return { success: false, error: 'Transcription failed' };
       }
+
+      // Calculate duration
+      const durationSeconds = session.endedAt && session.startedAt 
+        ? Math.floor((session.endedAt.getTime() - session.startedAt.getTime()) / 1000)
+        : 3600;
 
       console.log(`🤖 Analyzing teaching quality using GPT-4...`);
       const teachingAnalysis = await this.analyzeTeachingQuality(
         transcription.fullTranscript,
-        rec.durationSeconds || 3600
+        durationSeconds
       );
 
       // Store analysis results
       const analysisData: InsertRecordingAnalysis = {
-        recordingId: rec.id,
-        bookingId: rec.bookingId,
-        mentorId: rec.mentorId,
+        videoSessionId: session.id,
+        bookingId: session.bookingId,
+        mentorId: booking.mentorId,
         
         // Audio Quality Metrics
         audioQualityScore: teachingAnalysis.audioQualityScore,
@@ -118,7 +137,7 @@ export class RecordingAnalysisService {
       // Store transcript segments if available
       if (transcription.segments && transcription.segments.length > 0) {
         const transcriptData: InsertRecordingTranscript[] = transcription.segments.map((seg: any) => ({
-          recordingId: rec.id,
+          videoSessionId: session.id,
           analysisId: analysis.id,
           speaker: seg.speaker,
           text: seg.text,
@@ -131,15 +150,10 @@ export class RecordingAnalysisService {
         console.log(`✅ Saved ${transcriptData.length} transcript segments`);
       }
 
-      // Mark recording as analyzed
-      await db.update(mergedRecordings)
-        .set({ aiAnalyzed: true })
-        .where(eq(mergedRecordings.id, recordingId));
-
-      console.log(`✅ Recording ${recordingId} analysis complete!`);
+      console.log(`✅ Video session ${videoSessionId} analysis complete!`);
       return { success: true };
     } catch (error: any) {
-      console.error(`❌ Error analyzing recording ${recordingId}:`, error);
+      console.error(`❌ Error analyzing video session ${videoSessionId}:`, error);
       return { success: false, error: error.message };
     }
   }
@@ -334,36 +348,43 @@ Respond in JSON format:
   }
 
   /**
-   * Analyze all unanalyzed recordings in the database
+   * Analyze all video sessions that haven't been analyzed yet
    */
   async analyzeAllPendingRecordings(): Promise<{ analyzed: number; failed: number; skipped: number }> {
-    console.log(`🔍 Finding unanalyzed recordings...`);
+    console.log(`🔍 Finding unanalyzed video sessions with recordings...`);
     
-    const pendingRecordings = await db.select({
-      id: mergedRecordings.id,
-      blobPath: mergedRecordings.blobPath,
+    // Get all video sessions with recordings
+    const sessions = await db.select({
+      id: videoSessions.id,
+      recordingUrl: videoSessions.recordingUrl,
     })
-      .from(mergedRecordings)
+      .from(videoSessions)
       .where(
         and(
-          eq(mergedRecordings.aiAnalyzed, false),
-          eq(mergedRecordings.status, 'active')
+          sql`${videoSessions.recordingUrl} IS NOT NULL`,
+          eq(videoSessions.status, 'ended')
         )
       );
 
-    console.log(`📊 Found ${pendingRecordings.length} unanalyzed recordings`);
+    // Filter out already analyzed sessions
+    const analyzedSessionIds = (await db.select({ videoSessionId: recordingAnalysis.videoSessionId })
+      .from(recordingAnalysis)).map(r => r.videoSessionId);
+    
+    const pendingRecordings = sessions.filter(s => !analyzedSessionIds.includes(s.id));
+
+    console.log(`📊 Found ${pendingRecordings.length} unanalyzed video sessions`);
 
     let analyzed = 0;
     let failed = 0;
     let skipped = 0;
 
-    for (const recording of pendingRecordings) {
-      if (!recording.blobPath || recording.blobPath.trim() === '') {
+    for (const session of pendingRecordings) {
+      if (!session.recordingUrl || session.recordingUrl.trim() === '') {
         skipped++;
         continue;
       }
 
-      const result = await this.analyzeRecording(recording.id);
+      const result = await this.analyzeRecording(session.id);
       if (result.success) {
         analyzed++;
       } else {
@@ -380,24 +401,24 @@ Respond in JSON format:
   }
 
   /**
-   * Get analysis results for a specific recording
+   * Get analysis results for a specific video session
    */
-  async getRecordingAnalysis(recordingId: string) {
+  async getRecordingAnalysis(videoSessionId: string) {
     const analysis = await db.select()
       .from(recordingAnalysis)
-      .where(eq(recordingAnalysis.recordingId, recordingId))
+      .where(eq(recordingAnalysis.videoSessionId, videoSessionId))
       .limit(1);
 
     return analysis[0] || null;
   }
 
   /**
-   * Get transcript segments for a recording
+   * Get transcript segments for a video session
    */
-  async getRecordingTranscript(recordingId: string) {
+  async getRecordingTranscript(videoSessionId: string) {
     const segments = await db.select()
       .from(recordingTranscripts)
-      .where(eq(recordingTranscripts.recordingId, recordingId))
+      .where(eq(recordingTranscripts.videoSessionId, videoSessionId))
       .orderBy(recordingTranscripts.startTime);
 
     return segments;
@@ -409,7 +430,7 @@ Respond in JSON format:
   async getAllAnalyzedRecordings() {
     const results = await db.select({
       id: recordingAnalysis.id,
-      recordingId: recordingAnalysis.recordingId,
+      videoSessionId: recordingAnalysis.videoSessionId,
       bookingId: recordingAnalysis.bookingId,
       mentorId: recordingAnalysis.mentorId,
       audioQualityScore: recordingAnalysis.audioQualityScore,

@@ -2016,7 +2016,7 @@ export const mergedRecordings = pgTable("merged_recordings", {
 // Recording Analysis Results (AI-powered analysis of video/audio recordings)
 export const recordingAnalysis = pgTable("recording_analysis", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  recordingId: varchar("recording_id").references(() => mergedRecordings.id).notNull(),
+  videoSessionId: varchar("video_session_id").references(() => videoSessions.id).notNull(),
   bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
   mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
   
@@ -2054,7 +2054,7 @@ export const recordingAnalysis = pgTable("recording_analysis", {
 // Recording Transcript Segments (detailed time-stamped transcription)
 export const recordingTranscripts = pgTable("recording_transcripts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  recordingId: varchar("recording_id").references(() => mergedRecordings.id).notNull(),
+  videoSessionId: varchar("video_session_id").references(() => videoSessions.id).notNull(),
   analysisId: varchar("analysis_id").references(() => recordingAnalysis.id).notNull(),
   
   speaker: varchar("speaker").notNull(), // teacher, student
