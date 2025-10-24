@@ -360,7 +360,24 @@ const BookingCheckoutForm = ({ bookingDetails, hasStripe, paymentIntentId }: { b
       }
     } catch (error: any) {
       // Extract the actual error message from the API response
-      const errorMessage = error?.message || error?.toString() || "An unexpected error occurred";
+      // Error format from apiRequest is: "409: {json response}"
+      let errorMessage = "An unexpected error occurred";
+      
+      if (error?.message) {
+        const errorString = error.message;
+        // Try to parse JSON from the error message (after the status code)
+        const jsonMatch = errorString.match(/\d+:\s*(\{.*\})/);
+        if (jsonMatch) {
+          try {
+            const errorData = JSON.parse(jsonMatch[1]);
+            errorMessage = errorData.message || errorString;
+          } catch {
+            errorMessage = errorString;
+          }
+        } else {
+          errorMessage = errorString;
+        }
+      }
       
       toast({
         title: "Booking Error",
