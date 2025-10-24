@@ -157,6 +157,16 @@ const BookingCheckoutForm = ({ bookingDetails, hasStripe, paymentIntentId }: { b
       return;
     }
     
+    // Validate UPI ID if UPI payment is selected
+    if (selectedPaymentMethod === 'upi' && !upiId.trim()) {
+      toast({
+        title: "UPI ID Required",
+        description: "Please enter your UPI ID to proceed with payment",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setProcessing(true);
 
     try {
@@ -447,7 +457,7 @@ const BookingCheckoutForm = ({ bookingDetails, hasStripe, paymentIntentId }: { b
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="upiId">UPI ID</Label>
+                <Label htmlFor="upiId">UPI ID <span className="text-red-500">*</span></Label>
                 <Input
                   id="upiId"
                   type="text"
@@ -456,6 +466,7 @@ const BookingCheckoutForm = ({ bookingDetails, hasStripe, paymentIntentId }: { b
                   onChange={(e) => setUpiId(e.target.value)}
                   data-testid="input-upi-id"
                   className="text-base"
+                  required
                 />
                 <p className="text-xs text-gray-500">Enter your UPI ID (e.g., yourname@paytm, yourname@ybl)</p>
               </div>
