@@ -2615,20 +2615,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (hasOverlap) {
             console.log(`🚫 Student booking overlap detected: new booking conflicts with existing booking ${existingBooking.id} (with 5-min buffer)`);
             
-            // Format times for user-friendly message
-            const existingStartTime = existingStart.toLocaleTimeString('en-US', { 
+            // Convert UTC times to IST for user-friendly message
+            const existingStartIST = new Date(existingStart.getTime() + (5 * 60 + 30) * 60000);
+            const existingEndIST = new Date(existingEnd.getTime() + (5 * 60 + 30) * 60000);
+            
+            const existingStartTime = existingStartIST.toLocaleTimeString('en-US', { 
               hour: '2-digit', 
               minute: '2-digit',
-              hour12: true 
+              hour12: true,
+              timeZone: 'UTC' // Display IST-adjusted time as-is
             });
-            const existingEndTime = existingEnd.toLocaleTimeString('en-US', { 
+            const existingEndTime = existingEndIST.toLocaleTimeString('en-US', { 
               hour: '2-digit', 
               minute: '2-digit',
-              hour12: true 
+              hour12: true,
+              timeZone: 'UTC' // Display IST-adjusted time as-is
             });
             
             return res.status(409).json({ 
-              message: `You already have a class scheduled from ${existingStartTime} to ${existingEndTime}. Please choose a time at least 5 minutes before or after your existing class.`,
+              message: `You already have a class scheduled from ${existingStartTime} to ${existingEndTime} IST. Please choose a time at least 5 minutes before or after your existing class.`,
               error: "STUDENT_SCHEDULE_CONFLICT",
               conflictingBooking: {
                 id: existingBooking.id,
