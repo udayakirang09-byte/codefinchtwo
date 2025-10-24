@@ -105,6 +105,15 @@ const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET !== 'NA'
   ? process.env.RAZORPAY_KEY_SECRET
   : process.env.TESTING_RAZORPAY_KEY_SECRET;
 
+console.log('🔍 [RAZORPAY DEBUG] Environment check:', {
+  hasTestingKeyId: !!process.env.TESTING_RAZORPAY_KEY_ID,
+  hasTestingKeySecret: !!process.env.TESTING_RAZORPAY_KEY_SECRET,
+  hasProdKeyId: !!process.env.RAZORPAY_KEY_ID,
+  hasProdKeySecret: !!process.env.RAZORPAY_KEY_SECRET,
+  finalKeyIdPresent: !!razorpayKeyId && razorpayKeyId !== 'NA',
+  finalKeySecretPresent: !!razorpayKeySecret && razorpayKeySecret !== 'NA'
+});
+
 let razorpay: Razorpay | null = null;
 
 if (razorpayKeyId && razorpayKeySecret && razorpayKeyId !== 'NA' && razorpayKeySecret !== 'NA') {
