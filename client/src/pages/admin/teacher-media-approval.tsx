@@ -10,6 +10,8 @@ import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 interface TeacherMedia {
   id: string;
@@ -21,6 +23,7 @@ interface TeacherMedia {
   uploadedAt: string;
   mentor: {
     id: string;
+    description: string | null;
     user: {
       firstName: string;
       lastName: string;
@@ -32,6 +35,13 @@ interface TeacherMedia {
 export default function TeacherMediaApproval() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [pendingRejection, setPendingRejection] = useState<{
+    mentorId: string;
+    photoRejected?: boolean;
+    videoRejected?: boolean;
+  } | null>(null);
 
   const { data: config, isLoading: configLoading } = useQuery<{ approvalRequired: boolean }>({
     queryKey: ['/api/admin/teacher-media-config']
@@ -113,6 +123,9 @@ export default function TeacherMediaApproval() {
         title: "Success",
         description: "Teacher media rejected",
       });
+      setRejectDialogOpen(false);
+      setRejectionReason('');
+      setPendingRejection(null);
     },
     onError: () => {
       toast({
@@ -138,25 +151,34 @@ export default function TeacherMediaApproval() {
   };
 
   const handleRejectPhoto = (media: TeacherMedia) => {
-    const reason = prompt('Please provide a reason for rejection:');
-    if (reason) {
-      rejectMutation.mutate({ 
-        mentorId: media.mentorId, 
-        photoRejected: true,
-        reason
+    setPendingRejection({
+      mentorId: media.mentorId,
+      photoRejected: true
+    });
+    setRejectDialogOpen(true);
+  };
+
+  const handleRejectVideo = (media: TeacherMedia) => {
+    setPendingRejection({
+      mentorId: media.mentorId,
+      videoRejected: true
+    });
+    setRejectDialogOpen(true);
+  };
+
+  const confirmRejection = () => {
+    if (pendingRejection && rejectionReason.trim()) {
+      rejectMutation.mutate({
+        ...pendingRejection,
+        reason: rejectionReason
       });
     }
   };
 
-  const handleRejectVideo = (media: TeacherMedia) => {
-    const reason = prompt('Please provide a reason for rejection:');
-    if (reason) {
-      rejectMutation.mutate({ 
-        mentorId: media.mentorId, 
-        videoRejected: true,
-        reason
-      });
-    }
+  const cancelRejection = () => {
+    setRejectDialogOpen(false);
+    setRejectionReason('');
+    setPendingRejection(null);
   };
 
   const handleConfigChange = (checked: boolean) => {
@@ -229,6 +251,7 @@ export default function TeacherMediaApproval() {
                   <TableRow>
                     <TableHead>Teacher</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>About Me</TableHead>
                     <TableHead>Photo</TableHead>
                     <TableHead>Video</TableHead>
                     <TableHead>Uploaded</TableHead>
@@ -242,6 +265,15 @@ export default function TeacherMediaApproval() {
                         {media.mentor.user.firstName} {media.mentor.user.lastName}
                       </TableCell>
                       <TableCell>{media.mentor.user.email}</TableCell>
+                      <TableCell>
+                        <div className="max-w-xs">
+                          {media.mentor.description ? (
+                            <p className="text-sm text-gray-600 line-clamp-2">{media.mentor.description}</p>
+                          ) : (
+                            <span className="text-gray-400 text-sm">No bio provided</span>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         {media.photoBlobUrl ? (
                           <div className="space-y-2">
@@ -351,6 +383,41 @@ export default function TeacherMediaApproval() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Rejection Reason Dialog */}
+      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Provide Rejection Reason</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for rejection:
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+            placeholder="Enter the reason for rejecting this media..."
+            className="min-h-[100px]"
+            data-testid="textarea-rejection-reason"
+          />
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={cancelRejection}
+              data-testid="button-cancel-rejection"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={confirmRejection}
+              disabled={!rejectionReason.trim() || rejectMutation.isPending}
+              data-testid="button-confirm-rejection"
+            >
+              OK
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
