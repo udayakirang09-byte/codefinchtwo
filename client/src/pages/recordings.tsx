@@ -231,12 +231,33 @@ export default function StudentRecordings() {
                   Access and review your completed class sessions
                 </p>
               </div>
-              <Link href="/">
-                <Button variant="secondary" size="sm" data-testid="button-home">
-                  <Home className="h-4 w-4 mr-2" />
-                  Home
+              <div className="flex items-center gap-3">
+                {user && (
+                  <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg">
+                    <p className="text-white text-sm font-medium" data-testid="user-email">
+                      {user.email}
+                    </p>
+                  </div>
+                )}
+                <Link href="/">
+                  <Button variant="secondary" size="sm" data-testid="button-home">
+                    <Home className="h-4 w-4 mr-2" />
+                    Home
+                  </Button>
+                </Link>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    localStorage.removeItem('sessionToken');
+                    window.location.href = '/login';
+                  }}
+                  className="bg-white/10 hover:bg-white/20 text-white border-white/30"
+                  data-testid="button-logout"
+                >
+                  Logout
                 </Button>
-              </Link>
+              </div>
             </div>
           </div>
         </div>

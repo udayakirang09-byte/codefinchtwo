@@ -12273,6 +12273,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sync Azure Blob Storage recordings to database
+  app.post('/api/admin/recordings/sync-from-azure', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      console.log('🔄 Starting Azure Blob Storage sync...');
+      
+      // List all blobs in Azure Storage
+      const allBlobs = await azureStorage.listAllBlobs();
+      
+      console.log(`📊 Found ${allBlobs.length} total blobs in Azure Storage`);
+      
+      // Filter for merged/final recordings only
+      const mergedBlobs = allBlobs.filter(blob => 
+        blob.name.includes('-Final.webm') || blob.name.includes('_merged.webm')
+      );
+      
+      console.log(`🎬 Found ${mergedBlobs.length} merged recordings to sync`);
+      
+      let synced = 0;
+      let skipped = 0;
+      let failed = 0;
+      const errors: string[] = [];
+      
+      for (const blob of mergedBlobs) {
+        try {
+          // Try to extract booking ID from blob name
+          // Format: StudentName-TeacherName-Subject-DateTime-Final.webm or studentId_classId_merged.webm
+          let bookingId: string | null = null;
+          
+          // Try new format first: StudentName-TeacherName-Subject-DateTime-Final.webm
+          const newFormatMatch = blob.name.match(/Final\.webm$/);
+          if (newFormatMatch) {
+            // Extract booking ID from the parts (look for UUID pattern in name)
+            const uuidMatch = blob.name.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+            if (uuidMatch) {
+              bookingId = uuidMatch[0];
+            }
+          }
+          
+          // Try old format: studentId_classId_merged.webm
+          if (!bookingId) {
+            const oldFormatMatch = blob.name.match(/(.+)_(.+)_merged\.webm$/);
+            if (oldFormatMatch) {
+              bookingId = oldFormatMatch[2]; // classId is the booking ID
+            }
+          }
+          
+          if (!bookingId) {
+            console.log(`⚠️ Could not extract booking ID from ${blob.name}, skipping`);
+            skipped++;
+            continue;
+          }
+          
+          // Check if this booking exists
+          const booking = await storage.getBooking(bookingId);
+          if (!booking) {
+            console.log(`⚠️ Booking ${bookingId} not found for ${blob.name}, skipping`);
+            skipped++;
+            continue;
+          }
+          
+          // Check if merged_recordings record already exists
+          const existing = await storage.getMergedRecordingByBooking(bookingId);
+          if (existing) {
+            console.log(`⏭️ Recording for booking ${bookingId} already exists, skipping`);
+            skipped++;
+            continue;
+          }
+          
+          // Create the merged recording (this will also create video_sessions record)
+          const blobUrl = `https://${process.env.AZURE_STORAGE_ACCOUNT_NAME || 'kidzaimathstore31320'}.blob.core.windows.net/${process.env.AZURE_STORAGE_CONTAINER || 'recordings'}/${blob.name}`;
+          
+          await storage.createMergedRecording({
+            bookingId,
+            studentId: booking.studentId,
+            mentorId: booking.mentorId,
+            isDemoRecording: booking.sessionType === 'demo',
+            blobPath: blob.name,
+            blobUrl,
+            fileSizeBytes: blob.size,
+            durationSeconds: 0, // Unknown for existing recordings
+            totalParts: 1,
+            expiresAt: new Date(blob.lastModified.getTime() + (6 * 30 * 24 * 60 * 60 * 1000)), // 6 months from upload
+            status: 'completed',
+            mergedAt: blob.lastModified,
+          });
+          
+          console.log(`✅ Synced recording for booking ${bookingId}: ${blob.name}`);
+          synced++;
+          
+        } catch (error: any) {
+          console.error(`❌ Failed to sync ${blob.name}:`, error);
+          errors.push(`${blob.name}: ${error.message}`);
+          failed++;
+        }
+      }
+      
+      console.log(`✅ Sync complete: ${synced} synced, ${skipped} skipped, ${failed} failed`);
+      
+      res.json({
+        success: true,
+        totalBlobs: allBlobs.length,
+        mergedBlobs: mergedBlobs.length,
+        synced,
+        skipped,
+        failed,
+        errors: errors.length > 0 ? errors : undefined
+      });
+
+    } catch (error) {
+      console.error('❌ Error syncing from Azure:', error);
+      res.status(500).json({ message: 'Failed to sync recordings', error: String(error) });
+    }
+  });
+
   // Diagnostic: Check Azure Blob Storage
   app.get('/api/admin/recordings/storage-check', authenticateSession, async (req: any, res) => {
     try {
