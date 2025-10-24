@@ -4038,14 +4038,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Generate available times from time slots, excluding occupied times
+      // Teacher's time slots are stored in IST (UTC+5:30), so we need to convert to UTC
       const availableTimes: string[] = [];
       
       dayTimeSlots.forEach(slot => {
-        const startHour = parseInt(slot.startTime.split(':')[0]);
-        const endHour = parseInt(slot.endTime.split(':')[0]);
+        // Convert IST time to UTC by subtracting 5 hours 30 minutes
+        const [startHourIST, startMinIST] = slot.startTime.split(':').map(Number);
+        const [endHourIST, endMinIST] = slot.endTime.split(':').map(Number);
         
-        for (let hour = startHour; hour < endHour; hour++) {
-          const timeString = `${hour.toString().padStart(2, '0')}:00`;
+        // Convert start time from IST to UTC
+        let startMinutesUTC = (startHourIST * 60 + (startMinIST || 0)) - (5 * 60 + 30);
+        if (startMinutesUTC < 0) startMinutesUTC += 24 * 60;
+        const startHourUTC = Math.floor(startMinutesUTC / 60);
+        
+        // Convert end time from IST to UTC
+        let endMinutesUTC = (endHourIST * 60 + (endMinIST || 0)) - (5 * 60 + 30);
+        if (endMinutesUTC < 0) endMinutesUTC += 24 * 60;
+        const endHourUTC = Math.ceil(endMinutesUTC / 60);
+        
+        console.log(`📅 [Timezone Conversion] IST ${slot.startTime}-${slot.endTime} → UTC ${startHourUTC}:${startMinutesUTC % 60}-${endHourUTC}:${endMinutesUTC % 60}`);
+        
+        // Generate hourly slots in UTC
+        for (let hour = startHourUTC; hour < endHourUTC; hour++) {
+          const utcHour = hour % 24; // Handle day overflow
+          const timeString = `${utcHour.toString().padStart(2, '0')}:00`;
           
           // Only include if not occupied by any booking
           if (!occupiedHourlySlots.has(timeString)) {
