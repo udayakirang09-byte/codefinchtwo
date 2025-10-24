@@ -48,6 +48,7 @@ import {
   webrtcSessions,
   webrtcStats,
   webrtcEvents,
+  mergedRecordings,
   type InsertAdminConfig, 
   type InsertFooterLink, 
   type InsertTimeSlot, 
@@ -10883,6 +10884,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all merged recordings (admin only)
+  app.get('/api/recordings/merged/all', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      const recordings = await db.select().from(mergedRecordings).orderBy(desc(mergedRecordings.mergedAt));
+      
+      console.log(`📹 [RECORDINGS] Returning ${recordings.length} total recordings for admin`);
+      res.json(recordings);
+    } catch (error) {
+      console.error('Error fetching all merged recordings:', error);
+      res.status(500).json({ message: 'Failed to fetch all merged recordings' });
+    }
+  });
+
   console.log('✅ Recording Parts API routes registered successfully!');
 
   // ============================================================================
@@ -12297,6 +12315,130 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   console.log('✅ Recording Analysis API routes registered successfully!');
+
+  // Admin: Sync Azure Blob Storage recordings to database
+  app.post('/api/admin/recordings/sync-azure', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      console.log('🔄 Starting Azure Storage → Database sync...');
+      
+      const allBlobs = await azureStorage.listAllBlobs();
+      console.log(`📊 Found ${allBlobs.length} total blobs in Azure Storage`);
+      
+      // Filter for merged recordings only
+      const mergedBlobs = allBlobs.filter(blob => 
+        blob.name.endsWith('-Final.webm') || blob.name.endsWith('_merged.webm')
+      );
+      
+      console.log(`🎬 Found ${mergedBlobs.length} merged recordings to process`);
+      
+      let synced = 0;
+      let skipped = 0;
+      let failed = 0;
+      const errors: string[] = [];
+      
+      for (const blob of mergedBlobs) {
+        try {
+          // Check if already synced
+          const existingByPath = await db.select().from(mergedRecordings)
+            .where(eq(mergedRecordings.blobPath, blob.name))
+            .limit(1);
+          
+          if (existingByPath.length > 0) {
+            console.log(`⏭️  Already synced: ${blob.name}`);
+            skipped++;
+            continue;
+          }
+          
+          let bookingId: string | null = null;
+          let studentId: string | null = null;
+          let mentorId: string | null = null;
+          let isDemoRecording = false;
+          
+          // Try old format first: studentId_classId_merged.webm
+          const oldFormatMatch = blob.name.match(/^(.+?)_(.+?)_merged\.webm$/);
+          if (oldFormatMatch) {
+            studentId = oldFormatMatch[1];
+            bookingId = oldFormatMatch[2];
+            
+            // Fetch booking details
+            const booking = await storage.getBooking(bookingId);
+            if (booking) {
+              mentorId = booking.mentorId;
+              isDemoRecording = booking.sessionType === 'demo';
+              console.log(`✅ Matched old format: Booking ${bookingId}`);
+            } else {
+              console.log(`⚠️  Booking ${bookingId} not found, creating generic record`);
+            }
+          } else {
+            // New format: StudentName-TeacherName-Subject-DateTime-Final.webm
+            // We can't reliably extract booking ID from this format
+            // Create a generic recording entry
+            console.log(`📝 Processing new format: ${blob.name}`);
+            
+            // Try to find a recent booking that matches this recording
+            // Extract timestamp from filename if possible
+            const timestampMatch = blob.name.match(/(\d{4}-\d{2}-\d{2}[T-]\d{2}-\d{2}-\d{2})/);
+            let matchingBooking = null;
+            
+            if (timestampMatch) {
+              // Search for bookings around this time
+              console.log(`🔍 Searching for bookings near timestamp: ${timestampMatch[1]}`);
+            }
+            
+            // If we can't match to a specific booking, create a standalone recording
+            // The user will still be able to view it
+            console.log(`⚠️  Creating standalone recording (no booking match): ${blob.name}`);
+          }
+          
+          // Create merged_recordings entry
+          const blobUrl = `https://${process.env.AZURE_STORAGE_ACCOUNT_NAME || 'kidzaimathstore31320'}.blob.core.windows.net/${process.env.AZURE_STORAGE_CONTAINER || 'recordings'}/${blob.name}`;
+          
+          await storage.createMergedRecording({
+            bookingId: bookingId || `unknown-${Date.now()}`,
+            studentId: studentId || 'unknown',
+            mentorId: mentorId || 'unknown',
+            isDemoRecording,
+            blobPath: blob.name,
+            blobUrl,
+            fileSizeBytes: blob.size,
+            durationSeconds: 0,
+            totalParts: 1,
+            expiresAt: new Date(blob.lastModified.getTime() + (6 * 30 * 24 * 60 * 60 * 1000)),
+            status: 'completed',
+            mergedAt: blob.lastModified,
+          });
+          
+          console.log(`✅ Synced: ${blob.name}`);
+          synced++;
+          
+        } catch (error: any) {
+          console.error(`❌ Failed to sync ${blob.name}:`, error);
+          errors.push(`${blob.name}: ${error.message}`);
+          failed++;
+        }
+      }
+      
+      console.log(`✅ Sync complete: ${synced} synced, ${skipped} skipped, ${failed} failed`);
+      
+      res.json({
+        success: true,
+        totalBlobs: allBlobs.length,
+        mergedBlobs: mergedBlobs.length,
+        synced,
+        skipped,
+        failed,
+        errors: errors.length > 0 ? errors : undefined
+      });
+
+    } catch (error) {
+      console.error('❌ Error syncing from Azure:', error);
+      res.status(500).json({ message: 'Failed to sync recordings', error: String(error) });
+    }
+  });
 
   // PC-5, LOG-4, GOV-2: Redacted Media Clips API Routes
   const { mediaRedaction } = await import('./media-redaction');
