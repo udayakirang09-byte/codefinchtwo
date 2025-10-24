@@ -76,7 +76,7 @@ export default function StudentRecordings() {
   });
 
   const filteredRecordings = recordings?.filter(recording =>
-    recording.booking.notes.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    recording.booking.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     `${recording.booking.mentor.user.firstName} ${recording.booking.mentor.user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
