@@ -12273,6 +12273,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Diagnostic: Check Azure Blob Storage
+  app.get('/api/admin/recordings/storage-check', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      console.log('🔍 Checking Azure Blob Storage for recordings...');
+      const blobs = await azureStorage.listAllBlobs();
+      
+      const recordings = blobs.filter(blob => 
+        blob.name.endsWith('.webm') || 
+        blob.name.endsWith('.mp4')
+      );
+
+      console.log(`📊 Found ${recordings.length} recording files in Azure Storage`);
+      
+      res.json({
+        totalBlobs: blobs.length,
+        recordings: recordings.length,
+        files: recordings.map(r => ({
+          name: r.name,
+          size: r.size,
+          lastModified: r.lastModified
+        }))
+      });
+
+    } catch (error) {
+      console.error('❌ Error checking Azure Storage:', error);
+      res.status(500).json({ message: 'Failed to check Azure Storage', error: String(error) });
+    }
+  });
+
   // Get analysis for a specific recording
   app.get('/api/admin/recordings/:recordingId/analysis', authenticateSession, async (req: any, res) => {
     try {

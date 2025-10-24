@@ -353,6 +353,24 @@ export class AzureStorageService {
       return { success: false, error: error.message || 'Unknown error' };
     }
   }
+
+  async listAllBlobs(): Promise<{ name: string; size: number; lastModified: Date }[]> {
+    const blobs: { name: string; size: number; lastModified: Date }[] = [];
+    
+    try {
+      for await (const blob of this.getContainer().listBlobsFlat()) {
+        blobs.push({
+          name: blob.name,
+          size: blob.properties.contentLength || 0,
+          lastModified: blob.properties.lastModified || new Date(),
+        });
+      }
+    } catch (error: any) {
+      console.error('❌ Error listing blobs:', error);
+    }
+    
+    return blobs;
+  }
 }
 
 export const azureStorage = new AzureStorageService();
