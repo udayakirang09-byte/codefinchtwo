@@ -4373,10 +4373,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const totalAmount = pricePerClass * numClasses;
 
       // Create Razorpay order with verified amount
+      // Razorpay receipt max length: 40 chars. Format: bk_timestamp_shortId (28 chars)
+      const shortReceipt = `bk_${Date.now()}_${mentorId.slice(-8)}`;
       const options = {
         amount: Math.round(totalAmount * 100), // Convert to paise (smallest currency unit)
         currency: "INR",
-        receipt: `booking_${mentorId}_${Date.now()}`,
+        receipt: shortReceipt,
         notes: {
           mentorId,
           subject,
