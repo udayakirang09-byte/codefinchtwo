@@ -4363,7 +4363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Calculate amount server-side from database pricing
-      const pricePerClass = parseFloat(matchingSubject.fee);
+      const pricePerClass = parseFloat(matchingSubject.classFee);
       if (isNaN(pricePerClass) || pricePerClass <= 0) {
         return res.status(400).json({ message: "Invalid pricing configuration" });
       }
