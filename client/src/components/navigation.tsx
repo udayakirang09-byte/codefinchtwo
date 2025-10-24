@@ -86,19 +86,14 @@ export default function Navigation() {
         <div className="flex justify-between items-center h-20">
           <Link 
             href="/" 
-            className="flex items-center space-x-3 transition-all duration-200 hover:opacity-90" 
+            className="flex items-center transition-all duration-200 hover:opacity-90" 
             data-testid="link-logo"
           >
-            <div className="flex items-center space-x-3">
-              <img 
-                src="/logo.png" 
-                alt="TechLearnOrbit Logo" 
-                className="h-16 w-16 object-contain bg-white rounded-lg p-1 shadow-sm"
-              />
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Techlearnorbit
-              </span>
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="TechLearnOrbit Logo" 
+              className="h-14 w-auto object-contain"
+            />
           </Link>
           
 
