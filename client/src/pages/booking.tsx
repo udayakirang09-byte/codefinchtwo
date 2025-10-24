@@ -573,6 +573,25 @@ export default function Booking() {
     
     console.log(`📅 Selected date: ${formData.selectedDate}, Day: ${dayOfWeek}`);
     
+    // If the API returned rawTimes (already filtered for bookings), use those directly
+    if (availabilityData.rawTimes && availabilityData.rawTimes.length > 0) {
+      let filteredTimes = availabilityData.rawTimes;
+      
+      // Only filter out past times if it's today
+      if (isToday) {
+        filteredTimes = filteredTimes.filter(time => {
+          const [hour, minute] = time.split(':').map(Number);
+          return hour > currentHour || (hour === currentHour && minute > currentMinute);
+        });
+      }
+      
+      console.log(`✅ Using API-filtered available times (${filteredTimes.length} slots):`, filteredTimes);
+      return filteredTimes.sort();
+    }
+    
+    // Fallback: Generate from time slots if API didn't provide rawTimes
+    console.log(`⚠️ No rawTimes from API, generating from time slots`);
+    
     // Filter slots for the selected day
     const daySlots = availabilityData.timeSlots.filter(
       slot => slot.dayOfWeek.toLowerCase() === dayOfWeek.toLowerCase()
@@ -597,10 +616,6 @@ export default function Booking() {
         return hour > currentHour || (hour === currentHour && minute > currentMinute);
       });
     }
-    
-    // NOTE: The API already filters out conflicting times when selectedDate is provided,
-    // so we don't need to do client-side filtering here. The API checks both teacher
-    // and student bookings on the specific date and excludes conflicting times.
     
     console.log(`📅 Available time slots for ${dayOfWeek}:`, uniqueSlots);
     

@@ -3953,21 +3953,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // GET /api/mentors/:id/available-times - Get mentor's available time slots
+  // GET /api/mentors/:id/available-times - Get mentor's available time slots (filtered by selected date and existing bookings)
   app.get("/api/mentors/:id/available-times", async (req, res) => {
     try {
       const { id } = req.params;
+      const selectedDate = req.query.selectedDate as string;
       
-      const availableTimes = await db
+      // Get all time slots for this mentor
+      const allTimeSlots = await db
         .select()
         .from(timeSlots)
         .where(eq(timeSlots.mentorId, id));
       
+      // If no selected date, return all time slots
+      if (!selectedDate) {
+        return res.json({
+          timeSlots: allTimeSlots,
+          availableSlots: [],
+          rawTimes: []
+        });
+      }
+      
+      // Parse selected date to get day of week
+      const date = new Date(selectedDate);
+      const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' });
+      
+      console.log(`📅 [Available Times] Filtering for mentor ${id} on ${selectedDate} (${dayOfWeek})`);
+      
+      // Filter time slots for the selected day
+      const dayTimeSlots = allTimeSlots.filter(slot => slot.dayOfWeek === dayOfWeek && slot.isAvailable);
+      
+      if (dayTimeSlots.length === 0) {
+        console.log(`📅 [Available Times] No time slots found for ${dayOfWeek}`);
+        return res.json({
+          timeSlots: [],
+          availableSlots: [],
+          rawTimes: []
+        });
+      }
+      
+      // Get all bookings for this mentor on the selected date
+      const bookingDate = new Date(selectedDate);
+      bookingDate.setHours(0, 0, 0, 0);
+      const nextDay = new Date(bookingDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      
+      const bookedSlots = await db
+        .select()
+        .from(bookings)
+        .where(
+          and(
+            eq(bookings.mentorId, id),
+            eq(bookings.status, 'scheduled'),
+            isNull(bookings.cancelledAt),
+            gte(bookings.scheduledAt, bookingDate),
+            lt(bookings.scheduledAt, nextDay)
+          )
+        );
+      
+      console.log(`📅 [Available Times] Found ${bookedSlots.length} existing bookings on ${selectedDate}`);
+      
+      // Create a set of booked times (in HH:MM format)
+      const bookedTimes = new Set<string>();
+      bookedSlots.forEach(booking => {
+        const bookingTime = new Date(booking.scheduledAt);
+        const hours = bookingTime.getUTCHours().toString().padStart(2, '0');
+        const minutes = bookingTime.getUTCMinutes().toString().padStart(2, '0');
+        const timeString = `${hours}:${minutes}`;
+        bookedTimes.add(timeString);
+        console.log(`🚫 [Available Times] Time ${timeString} is already booked`);
+      });
+      
+      // Generate available times from time slots, excluding booked times
+      const availableTimes: string[] = [];
+      
+      dayTimeSlots.forEach(slot => {
+        const startHour = parseInt(slot.startTime.split(':')[0]);
+        const endHour = parseInt(slot.endTime.split(':')[0]);
+        
+        for (let hour = startHour; hour < endHour; hour++) {
+          const timeString = `${hour.toString().padStart(2, '0')}:00`;
+          
+          // Only include if not already booked
+          if (!bookedTimes.has(timeString)) {
+            availableTimes.push(timeString);
+          }
+        }
+      });
+      
+      console.log(`✅ [Available Times] Returning ${availableTimes.length} available times: ${availableTimes.join(', ')}`);
+      
       // Return in expected format for frontend
       res.json({
-        timeSlots: availableTimes,
+        timeSlots: dayTimeSlots,
         availableSlots: [],
-        rawTimes: []
+        rawTimes: availableTimes
       });
     } catch (error) {
       console.error("Error fetching mentor available times:", error);
