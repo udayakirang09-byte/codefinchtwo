@@ -495,11 +495,6 @@ export default function Booking() {
       sessionType: formData.sessionType // C3: Include session type
     };
     
-    console.log('🔍 [BOOKING DEBUG] Saving to sessionStorage:', {
-      sessionCost,
-      bookingDetails
-    });
-    
     // Check payment mode to determine flow
     const paymentMode = paymentModeConfig?.paymentMode || 'dummy';
     
