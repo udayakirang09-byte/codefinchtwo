@@ -10,6 +10,7 @@ import {
   jsonb,
   unique,
   index,
+  real,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -2012,6 +2013,59 @@ export const mergedRecordings = pgTable("merged_recordings", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Recording Analysis Results (AI-powered analysis of video/audio recordings)
+export const recordingAnalysis = pgTable("recording_analysis", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  recordingId: varchar("recording_id").references(() => mergedRecordings.id).notNull(),
+  bookingId: varchar("booking_id").references(() => bookings.id).notNull(),
+  mentorId: varchar("mentor_id").references(() => mentors.id).notNull(),
+  
+  // Audio Quality Metrics
+  audioQualityScore: real("audio_quality_score"), // 0-10 scale
+  audioClarity: varchar("audio_clarity"), // excellent, good, fair, poor
+  backgroundNoiseLevel: varchar("background_noise_level"), // low, medium, high
+  
+  // Teaching Quality Metrics (1-10 scale)
+  explanationClarity: real("explanation_clarity"), // How clear are explanations
+  studentEngagement: real("student_engagement"), // How engaged the student appears
+  pacing: real("pacing"), // Teaching speed appropriateness
+  encouragement: real("encouragement"), // Positive reinforcement
+  professionalismScore: real("professionalism_score"), // Overall professionalism
+  overallTeachingScore: real("overall_teaching_score"), // Combined score
+  
+  // Transcription Data
+  fullTranscript: text("full_transcript"), // Complete transcription
+  transcriptLanguage: varchar("transcript_language").default("en"),
+  wordCount: integer("word_count"),
+  teacherTalkTime: integer("teacher_talk_time"), // Seconds
+  studentTalkTime: integer("student_talk_time"), // Seconds
+  
+  // AI Insights
+  keyTopics: text("key_topics").array(), // Topics covered
+  strengths: text("strengths").array(), // Teaching strengths
+  improvements: text("improvements").array(), // Areas for improvement
+  aiSummary: text("ai_summary"), // AI-generated session summary
+  
+  // Metadata
+  analyzedAt: timestamp("analyzed_at").defaultNow(),
+  analysisVersion: varchar("analysis_version").default("1.0"), // For tracking analysis algorithm version
+});
+
+// Recording Transcript Segments (detailed time-stamped transcription)
+export const recordingTranscripts = pgTable("recording_transcripts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  recordingId: varchar("recording_id").references(() => mergedRecordings.id).notNull(),
+  analysisId: varchar("analysis_id").references(() => recordingAnalysis.id).notNull(),
+  
+  speaker: varchar("speaker").notNull(), // teacher, student
+  text: text("text").notNull(), // Spoken text
+  startTime: real("start_time").notNull(), // Seconds from start
+  endTime: real("end_time").notNull(), // Seconds from start
+  confidence: real("confidence"), // AI transcription confidence 0-1
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Admin UI Configuration (footer links and button visibility)
 export const adminUiConfig = pgTable("admin_ui_config", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -2231,6 +2285,14 @@ export const insertAzureStorageConfigSchema = createInsertSchema(azureStorageCon
 export const insertRecordingPartSchema = createInsertSchema(recordingParts);
 
 export const insertMergedRecordingSchema = createInsertSchema(mergedRecordings);
+
+export const insertRecordingAnalysisSchema = createInsertSchema(recordingAnalysis);
+export const insertRecordingTranscriptSchema = createInsertSchema(recordingTranscripts);
+
+export type RecordingAnalysis = typeof recordingAnalysis.$inferSelect;
+export type InsertRecordingAnalysis = Omit<z.infer<typeof insertRecordingAnalysisSchema>, 'id' | 'analyzedAt'>;
+export type RecordingTranscript = typeof recordingTranscripts.$inferSelect;
+export type InsertRecordingTranscript = Omit<z.infer<typeof insertRecordingTranscriptSchema>, 'id' | 'createdAt'>;
 
 export const insertAdminUiConfigSchema = createInsertSchema(adminUiConfig);
 
