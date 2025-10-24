@@ -13,6 +13,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import Navigation from "@/components/navigation";
 
 // Component to show unread messages indicator on chat button
 function UnreadChatButton({ 
@@ -398,9 +399,11 @@ export default function TeacherDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-      {/* Header with User Info and Logout */}
-      <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+    <>
+      <Navigation />
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+        {/* Header with User Info and Logout */}
+        <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-gradient-to-br from-purple-600 to-indigo-600 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold">
@@ -1614,5 +1617,6 @@ export default function TeacherDashboard() {
       )}
       </div>
     </div>
+    </>
   );
 }

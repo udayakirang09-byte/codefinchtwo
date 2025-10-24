@@ -14,6 +14,7 @@ import { TurnMetricsDashboard } from "@/components/admin/TurnMetricsDashboard";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { useAdminAlerts } from "@/hooks/use-admin-alerts";
+import Navigation from "@/components/navigation";
 
 interface SystemStats {
   totalUsers: number;
@@ -605,8 +606,10 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50">
-      <div className="space-y-8 p-6 max-w-7xl mx-auto">
+    <>
+      <Navigation />
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50">
+        <div className="space-y-8 p-6 max-w-7xl mx-auto">
         {/* TURN Server Infrastructure Warning Banner */}
         {(!import.meta.env.VITE_TURN_SERVER_URL || 
           import.meta.env.VITE_TURN_SERVER_URL?.includes('expressturn') ||
@@ -2521,5 +2524,6 @@ export default function AdminDashboard() {
       </Dialog>
       </div>
     </div>
+    </>
   );
 }

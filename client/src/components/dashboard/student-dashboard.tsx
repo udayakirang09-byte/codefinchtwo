@@ -7,6 +7,7 @@ import { Calendar, Clock, Video, MessageCircle, Star, BookOpen, Award, Bell, Use
 import { formatDistanceToNow, isWithinInterval, addHours, addMinutes } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import Navigation from "@/components/navigation";
 
 // Component to show unread messages indicator on chat button
 function UnreadChatButton({ 
@@ -457,8 +458,10 @@ export default function StudentDashboard() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-      <div className="space-y-8 p-6 max-w-7xl mx-auto">
+    <>
+      <Navigation />
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+        <div className="space-y-8 p-6 max-w-7xl mx-auto">
         {/* Ultra Modern Welcome Section */}
         <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-8 rounded-3xl shadow-2xl border border-white/20">
           <div className="absolute inset-0 bg-gradient-to-r from-black/10 to-transparent"></div>
@@ -832,5 +835,6 @@ export default function StudentDashboard() {
         </Card>
       </div>
     </div>
+    </>
   );
 }
