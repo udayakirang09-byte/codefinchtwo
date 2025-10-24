@@ -402,29 +402,6 @@ export default function TeacherDashboard() {
     <>
       <Navigation />
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-        {/* Header with User Info and Logout */}
-        <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-purple-600 to-indigo-600 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold">
-              {user?.email?.charAt(0).toUpperCase() || 'T'}
-            </div>
-            <div>
-              <h2 className="text-sm font-semibold text-gray-800" data-testid="text-user-email">{user?.email}</h2>
-              <p className="text-xs text-gray-500">Teacher Dashboard</p>
-            </div>
-          </div>
-          <Button 
-            variant="outline" 
-            onClick={handleLogout}
-            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            data-testid="button-logout"
-          >
-            Logout
-          </Button>
-        </div>
-      </div>
-
       <div className="space-y-8 p-6 max-w-7xl mx-auto">
         {/* Ultra Modern Welcome Section */}
         <div className="relative overflow-hidden bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 p-8 rounded-3xl shadow-2xl border border-white/20">
