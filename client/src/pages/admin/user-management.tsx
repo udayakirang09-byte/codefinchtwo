@@ -6,10 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, UserCheck, UserX, Edit, Trash2, Plus } from 'lucide-react';
+import { Search, UserCheck, UserX, Eye, Trash2, Plus } from 'lucide-react';
 import Navigation from '@/components/navigation';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface User {
   id: string;
@@ -24,6 +25,8 @@ interface User {
 export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -58,26 +61,6 @@ export default function UserManagement() {
     }
   });
 
-  const deleteUserMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      return apiRequest('DELETE', `/api/admin/users/${userId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast({
-        title: "Success",
-        description: "User deleted successfully",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to delete user",
-        variant: "destructive",
-      });
-    }
-  });
-
   const filteredUsers = users.filter((user: User) => {
     const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase());
@@ -93,10 +76,26 @@ export default function UserManagement() {
     updateUserMutation.mutate({ userId, updates: { role: newRole as 'student' | 'mentor' | 'admin' } });
   };
 
-  const handleDeleteUser = (userId: string) => {
-    if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      deleteUserMutation.mutate(userId);
+  const handleDeleteUser = (user: User) => {
+    setUserToDelete(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (userToDelete) {
+      // Set user as inactive instead of deleting
+      updateUserMutation.mutate({ 
+        userId: userToDelete.id, 
+        updates: { isActive: false } 
+      });
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
     }
+  };
+
+  const cancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setUserToDelete(null);
   };
 
   return (
@@ -207,24 +206,18 @@ export default function UserManagement() {
                         <div className="flex gap-2">
                           <Button
                             size="sm"
-                            variant={user.isActive ? "outline" : "default"}
-                            onClick={() => handleToggleActive(user.id, user.isActive)}
-                            data-testid={`button-toggle-${user.id}`}
+                            variant="outline"
+                            title="View user details"
+                            data-testid={`button-view-${user.id}`}
                           >
-                            {user.isActive ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                            <Eye className="w-4 h-4" />
                           </Button>
                           <Button
                             size="sm"
                             variant="outline"
-                            data-testid={`button-edit-${user.id}`}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDeleteUser(user.id)}
-                            className="text-red-600 hover:text-red-700"
+                            onClick={() => handleDeleteUser(user)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            title="Delete user (set as inactive)"
                             data-testid={`button-delete-${user.id}`}
                           >
                             <Trash2 className="w-4 h-4" />
@@ -239,6 +232,53 @@ export default function UserManagement() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm User Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this user? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {userToDelete && (
+            <div className="py-4">
+              <p className="text-sm text-gray-600">
+                <strong>User:</strong> {userToDelete.firstName} {userToDelete.lastName}
+              </p>
+              <p className="text-sm text-gray-600">
+                <strong>Email:</strong> {userToDelete.email}
+              </p>
+              <p className="text-sm text-gray-600">
+                <strong>Role:</strong> {userToDelete.role}
+              </p>
+              {userToDelete.role === 'mentor' && (
+                <p className="text-sm text-orange-600 mt-2">
+                  Note: This teacher will be marked as inactive and will not be able to login. They will also be removed from the Find Mentors page.
+                </p>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={cancelDelete}
+              data-testid="button-cancel-delete"
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={updateUserMutation.isPending}
+              data-testid="button-confirm-delete"
+            >
+              OK
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

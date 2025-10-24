@@ -983,6 +983,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
+      // CHECK USER ACTIVE STATUS: Block login for inactive users
+      if (!user.isActive) {
+        console.log(`🚫 Login blocked for ${user.email} - account is inactive`);
+        return res.status(403).json({ 
+          message: "Your account has been deactivated. Please contact support for assistance.",
+          accountInactive: true
+        });
+      }
+      
       // CHECK MENTOR APPROVAL STATUS: Block login for teachers pending media approval
       if (user.role === 'mentor' && userData.mentor) {
         if (userData.mentor.approvalStatus === 'pending') {
