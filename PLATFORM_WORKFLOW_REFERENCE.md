@@ -22,9 +22,10 @@ Teachers must complete these steps to appear in "Find Mentors":
 
 1. **Class Fee Configuration**: Define subjects they teach with per-class fees
 2. **Schedule Setup**: Create time slots showing when they're available
-3. **Media Upload** (optional): Upload profile photo/video for approval
+3. **Payment Setup**: Configure UPI ID to receive payments
+4. **Media Upload** (optional): Upload profile photo/video for approval
 
-**Visibility Rule**: Teachers appear in Find Mentors ONLY if they have both subjects AND time slots configured.
+**Visibility Rule**: Teachers appear in Find Mentors ONLY if they have subjects AND time slots AND UPI payment method configured.
 
 ---
 
@@ -114,7 +115,7 @@ Admins can configure:
 ## 9. Common Troubleshooting Scenarios
 
 ### Teacher Not Visible in Find Mentors
-**Check**: Does teacher have both subjects AND time slots configured?
+**Check**: Does teacher have subjects AND time slots AND UPI payment method configured?
 
 ### UPI Not Showing in Razorpay
 **Solution**: Enable UPI in Razorpay Dashboard → Settings → Payment Methods (Test Mode)
