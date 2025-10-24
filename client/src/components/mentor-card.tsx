@@ -86,27 +86,25 @@ export default function MentorCard({ mentor }: MentorCardProps) {
         {/* Divider */}
         <div className="border-t border-gray-300 dark:border-gray-600 my-4"></div>
 
-        {/* Specialties */}
-        <div className="mb-4">
-          <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-2">Specialties</h4>
-          <div className="flex flex-wrap gap-2">
-            {mentor.subjectsWithExperience && mentor.subjectsWithExperience.length > 0 ? (
-              mentor.subjectsWithExperience.slice(0, 3).map((item, index) => (
+        {/* Teacher Specialties (from signup) */}
+        {(mentor as any).signupSubjects && (mentor as any).signupSubjects.length > 0 && (
+          <div className="mb-4">
+            <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-2">Teacher Specialties</h4>
+            <div className="flex flex-wrap gap-2">
+              {(mentor as any).signupSubjects.slice(0, 3).map((subject: any, index: number) => (
                 <Badge 
                   key={index} 
-                  className="text-xs px-3 py-1 bg-cyan-100 hover:bg-cyan-200 dark:bg-cyan-900 dark:hover:bg-cyan-800 text-cyan-700 dark:text-cyan-300 rounded-full border-0"
-                  data-testid={`badge-specialty-${mentor.id}-${index}`}
+                  className="text-xs px-3 py-1 bg-primary/10 hover:bg-primary/20 text-primary rounded-full border-0"
+                  data-testid={`badge-signup-specialty-${mentor.id}-${index}`}
                 >
-                  {item.subject} ({item.experience})
+                  {subject.subject} ({subject.experience})
                 </Badge>
-              ))
-            ) : (
-              <p className="text-xs text-gray-500 dark:text-gray-400">No specialties listed</p>
-            )}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Subjects & Courses */}
+        {/* Subjects & Courses (with fees) */}
         <div className="mb-5">
           <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-2">Subjects & Courses</h4>
           {((mentor as any).subjects && (mentor as any).subjects.length > 0) ? (
