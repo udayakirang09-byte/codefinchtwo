@@ -2572,7 +2572,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const scheduledEnd = new Date(scheduledStart.getTime() + req.body.duration * 60000);
       
       if (!adminOverride) {
-        // Find all scheduled bookings for this student (any mentor)
+        // Calculate date range for the booking day (start of day to end of day)
+        const bookingDate = new Date(scheduledStart);
+        bookingDate.setHours(0, 0, 0, 0); // Start of day
+        const nextDay = new Date(bookingDate);
+        nextDay.setDate(nextDay.getDate() + 1); // Start of next day
+        
+        // Find all scheduled bookings for this student on the same date
         const studentBookings = await db
           .select()
           .from(bookings)
@@ -2580,9 +2586,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             and(
               eq(bookings.studentId, student.id),
               eq(bookings.status, 'scheduled'),
-              isNull(bookings.cancelledAt) // Exclude cancelled bookings
+              isNull(bookings.cancelledAt), // Exclude cancelled bookings
+              gte(bookings.scheduledAt, bookingDate), // Same date or later
+              lt(bookings.scheduledAt, nextDay) // Before next day starts
             )
           );
+        
+        console.log(`📅 Checking student booking conflicts on ${bookingDate.toISOString().split('T')[0]} - found ${studentBookings.length} existing bookings`);
         
         // Check for overlaps with existing student bookings (with 5-minute buffer)
         const BUFFER_MINUTES = 5;
@@ -2634,7 +2644,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // (scheduledStart and scheduledEnd already defined above)
       
       if (!adminOverride) {
-        // Find all scheduled bookings for this mentor
+        // Calculate date range for the booking day (reuse from above)
+        const bookingDate = new Date(scheduledStart);
+        bookingDate.setHours(0, 0, 0, 0); // Start of day
+        const nextDay = new Date(bookingDate);
+        nextDay.setDate(nextDay.getDate() + 1); // Start of next day
+        
+        // Find all scheduled bookings for this mentor on the same date
         const mentorBookings = await db
           .select()
           .from(bookings)
@@ -2642,9 +2658,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             and(
               eq(bookings.mentorId, req.body.mentorId),
               eq(bookings.status, 'scheduled'),
-              isNull(bookings.cancelledAt) // Exclude cancelled bookings
+              isNull(bookings.cancelledAt), // Exclude cancelled bookings
+              gte(bookings.scheduledAt, bookingDate), // Same date or later
+              lt(bookings.scheduledAt, nextDay) // Before next day starts
             )
           );
+        
+        console.log(`📅 Checking mentor booking conflicts on ${bookingDate.toISOString().split('T')[0]} - found ${mentorBookings.length} existing bookings`);
         
         // Check for overlaps with existing bookings
         for (const existingBooking of mentorBookings) {
