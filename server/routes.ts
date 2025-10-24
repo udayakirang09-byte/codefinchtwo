@@ -12412,6 +12412,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
             mergedAt: blob.lastModified,
           });
           
+          // Create video_sessions entry for AI analysis (if booking exists)
+          if (bookingId && bookingId !== `unknown-${Date.now()}`) {
+            const existingSession = await db.select()
+              .from(videoSessions)
+              .where(eq(videoSessions.bookingId, bookingId))
+              .limit(1);
+            
+            if (existingSession.length === 0) {
+              await db.insert(videoSessions).values({
+                bookingId,
+                recordingUrl: blobUrl,
+                status: 'ended',
+                startedAt: blob.lastModified,
+                endedAt: blob.lastModified,
+              });
+              console.log(`✅ Created video_sessions entry for AI analysis`);
+            } else {
+              // Update existing session with recording URL
+              await db.update(videoSessions)
+                .set({ recordingUrl: blobUrl })
+                .where(eq(videoSessions.id, existingSession[0].id));
+              console.log(`✅ Updated video_sessions with recording URL`);
+            }
+          }
+          
           console.log(`✅ Synced: ${blob.name}`);
           synced++;
           
