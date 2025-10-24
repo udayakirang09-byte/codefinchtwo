@@ -233,6 +233,33 @@ const BookingCheckoutForm = ({ bookingDetails, hasStripe, paymentIntentId }: { b
           theme: {
             color: '#2563eb'
           },
+          config: {
+            display: {
+              blocks: {
+                banks: {
+                  name: 'All payment methods',
+                  instruments: [
+                    {
+                      method: 'upi'
+                    },
+                    {
+                      method: 'card'
+                    },
+                    {
+                      method: 'netbanking'
+                    },
+                    {
+                      method: 'wallet'
+                    }
+                  ]
+                }
+              },
+              sequence: ['block.banks'],
+              preferences: {
+                show_default_blocks: false
+              }
+            }
+          },
           handler: async function (response: any) {
             // Payment successful - verify and create booking
             try {
