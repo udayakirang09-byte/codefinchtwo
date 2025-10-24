@@ -7199,8 +7199,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to paise (INR smallest unit)
-        currency: "inr", // INR for Indian market (required for UPI)
-        payment_method_types: ['card', 'upi'], // Enable both card and UPI payments
+        currency: "inr", // INR for Indian market
+        payment_method_types: ['card'], // Only cards for Stripe (UPI via Razorpay)
         metadata: {
           ...(courseId && { courseId }),
           ...(courseName && { courseName }),
