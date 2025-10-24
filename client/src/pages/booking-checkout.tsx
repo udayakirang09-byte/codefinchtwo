@@ -217,6 +217,8 @@ const BookingCheckoutForm = ({ bookingDetails, hasStripe, paymentIntentId }: { b
         const orderData = await orderResponse.json();
 
         // Open Razorpay checkout
+        // NOTE: UPI option requires enabling in Razorpay Dashboard → Settings → Payment Methods (Test Mode)
+        // If UPI doesn't appear, check dashboard settings or contact Razorpay support
         const options = {
           key: orderData.keyId,
           amount: orderData.amount,
@@ -228,38 +230,13 @@ const BookingCheckoutForm = ({ bookingDetails, hasStripe, paymentIntentId }: { b
             : `Coding Session - ${bookingDetails.subject}`,
           prefill: {
             email: bookingDetails.userEmail,
-            contact: ''
+            contact: bookingDetails.userPhone || ''
           },
           theme: {
             color: '#2563eb'
           },
-          config: {
-            display: {
-              blocks: {
-                banks: {
-                  name: 'All payment methods',
-                  instruments: [
-                    {
-                      method: 'upi'
-                    },
-                    {
-                      method: 'card'
-                    },
-                    {
-                      method: 'netbanking'
-                    },
-                    {
-                      method: 'wallet'
-                    }
-                  ]
-                }
-              },
-              sequence: ['block.banks'],
-              preferences: {
-                show_default_blocks: false
-              }
-            }
-          },
+          // Let Razorpay auto-detect available payment methods from dashboard settings
+          // UPI, Cards, Netbanking, Wallets will show based on what's enabled in your account
           handler: async function (response: any) {
             // Payment successful - verify and create booking
             try {
