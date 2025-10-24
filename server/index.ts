@@ -19,9 +19,10 @@ import { initializeRedis } from "./redis";
 
 const app = express();
 
-// Trust proxy headers from Azure App Service and other reverse proxies
-// This ensures req.secure and req.ip work correctly behind proxies
-app.set('trust proxy', true);
+// Trust proxy - Set to 1 for Azure deployment (behind Azure load balancer)
+// This prevents IP spoofing while allowing rate limiting to work correctly
+// For production with multiple proxies, adjust this number accordingly
+app.set('trust proxy', 1);
 
 // Initialize Redis/cache
 initializeRedis().catch(console.error);
