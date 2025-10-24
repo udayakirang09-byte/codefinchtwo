@@ -20,6 +20,7 @@ export default function MentorCard({ mentor }: MentorCardProps) {
   ) || mentor.experience || 0;
 
   // Use teacher's actual photo from approved media, fallback to user profileImageUrl, then initials
+  // Video byte: If video cannot be placed in card, display photo (as per user requirement)
   const profileImage = mentor.media?.photoBlobUrl || mentor.user.profileImageUrl || null;
 
   // 🔍 DEBUG: Log photo data for troubleshooting
@@ -35,66 +36,65 @@ export default function MentorCard({ mentor }: MentorCardProps) {
   }
 
   return (
-    <div className="group relative bg-gradient-to-br from-blue-50/80 via-purple-50/60 to-blue-50/80 dark:from-gray-800 dark:to-gray-900 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700" data-testid={`card-mentor-${mentor.id}`}>
+    <div className="group relative bg-gradient-to-br from-purple-50/50 via-blue-50/40 to-purple-50/50 rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border border-purple-200/30" data-testid={`card-mentor-${mentor.id}`}>
       {/* Content */}
       <div className="p-6">
+        {/* Star Rating - Top Right Corner */}
+        <div className="absolute top-4 right-4 flex items-center gap-1 bg-white/80 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-sm">
+          <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+          <span className="text-sm font-semibold text-gray-900" data-testid={`badge-rating-${mentor.id}`}>
+            {parseFloat(mentor.rating || "0").toFixed(2)}
+          </span>
+        </div>
+
         {/* Circular Profile Photo at Top */}
         <div className="flex justify-center mb-4">
           {profileImage ? (
             <img 
               src={profileImage} 
               alt={`${mentor.user.firstName} ${mentor.user.lastName}`} 
-              className="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-gray-700 shadow-lg" 
+              className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg" 
               data-testid={`img-mentor-photo-${mentor.id}`}
             />
           ) : (
-            <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-3xl border-4 border-white dark:border-gray-700 shadow-lg">
+            <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-3xl border-4 border-white shadow-lg">
               {getInitials(mentor.user.firstName, mentor.user.lastName)}
             </div>
           )}
         </div>
 
-        {/* Name, Title and Rating */}
+        {/* Name and Title */}
         <div className="mb-4 text-center">
-          <div className="flex items-center justify-center gap-2 mb-1">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100" data-testid={`text-mentor-name-${mentor.id}`}>
-              {mentor.user.firstName} {mentor.user.lastName}
-            </h3>
-            <div className="flex items-center gap-0.5" data-testid={`badge-rating-${mentor.id}`}>
-              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{parseFloat(mentor.rating || "0").toFixed(2)}</span>
-            </div>
-          </div>
-          <p className="text-sm text-cyan-600 dark:text-cyan-400 font-medium" data-testid={`text-mentor-title-${mentor.id}`}>
+          <h3 className="text-xl font-bold text-gray-900 mb-1" data-testid={`text-mentor-name-${mentor.id}`}>
+            {mentor.user.firstName} {mentor.user.lastName}
+          </h3>
+          <p className="text-sm text-cyan-600 font-medium" data-testid={`text-mentor-title-${mentor.id}`}>
             {mentor.title}
           </p>
         </div>
 
-        {/* Stats Section with Light Background */}
-        <div className="mb-4 bg-white/60 dark:bg-gray-800/40 rounded-lg p-3 space-y-2">
+        {/* Stats Section */}
+        <div className="mb-4 space-y-2">
           <div className="flex items-center gap-2" data-testid={`stat-experience-${mentor.id}`}>
-            <GraduationCap className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-            <span className="text-sm text-gray-700 dark:text-gray-300">{totalExperience} years total</span>
+            <GraduationCap className="w-4 h-4 text-cyan-600" />
+            <span className="text-sm text-gray-700">{totalExperience} years total</span>
           </div>
           
           <div className="flex items-center gap-2" data-testid={`stat-students-${mentor.id}`}>
-            <Users className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-            <span className="text-sm text-gray-700 dark:text-gray-300">{mentor.totalStudents || 0} students</span>
+            <Users className="w-4 h-4 text-cyan-600" />
+            <span className="text-sm text-gray-700">{mentor.totalStudents || 0} students</span>
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="border-t border-gray-300 dark:border-gray-600 my-4"></div>
-
-        {/* Teacher Specialties (from signup) */}
+        {/* Specialties Section */}
         {(mentor as any).signupSubjects && (mentor as any).signupSubjects.length > 0 && (
           <div className="mb-4">
-            <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-2">Teacher Specialties</h4>
+            <h4 className="text-base font-bold text-gray-900 mb-2">Specialties</h4>
             <div className="flex flex-wrap gap-2">
               {(mentor as any).signupSubjects.slice(0, 3).map((subject: any, index: number) => (
                 <Badge 
                   key={index} 
-                  className="text-xs px-3 py-1 bg-primary/10 hover:bg-primary/20 text-primary rounded-full border-0"
+                  className="text-xs px-3 py-1.5 bg-cyan-100 hover:bg-cyan-200 text-cyan-700 rounded-full border-0"
                   data-testid={`badge-signup-specialty-${mentor.id}-${index}`}
                 >
                   {subject.subject} ({subject.experience})
@@ -104,24 +104,34 @@ export default function MentorCard({ mentor }: MentorCardProps) {
           </div>
         )}
 
-        {/* Subjects & Courses (with fees) */}
-        <div className="mb-5">
-          <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-2">Subjects & Courses</h4>
+        {/* Subjects & Courses */}
+        <div className="mb-4">
+          <h4 className="text-base font-bold text-gray-900 mb-2">Subjects & Courses</h4>
           {((mentor as any).subjects && (mentor as any).subjects.length > 0) ? (
-            <div className="text-xs text-gray-600 dark:text-gray-400">
+            <div className="text-sm text-gray-600">
               {(mentor as any).subjects.slice(0, 2).map((s: any, i: number) => s.subject).join(', ')}
               {(mentor as any).subjects.length > 2 && ` +${(mentor as any).subjects.length - 2} more`}
             </div>
           ) : (
-            <p className="text-xs text-gray-500 dark:text-gray-400">No subjects listed</p>
+            <p className="text-sm text-gray-500">No subjects listed</p>
           )}
         </div>
+
+        {/* About Teacher Section */}
+        {mentor.description && (
+          <div className="mb-5">
+            <h4 className="text-base font-bold text-gray-900 mb-2">About Teacher</h4>
+            <p className="text-sm text-gray-600 line-clamp-3" data-testid={`text-about-${mentor.id}`}>
+              {mentor.description}
+            </p>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex gap-3">
           <Link href={`/booking/${mentor.id}`} className="flex-1">
             <Button 
-              className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold rounded-lg shadow-md" 
+              className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold rounded-xl shadow-md" 
               data-testid={`button-book-session-${mentor.id}`}
             >
               Book Session
@@ -130,7 +140,7 @@ export default function MentorCard({ mentor }: MentorCardProps) {
           <Link href={`/mentors/${mentor.id}`} className="flex-1">
             <Button 
               variant="outline"
-              className="w-full border-2 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950 font-semibold rounded-lg" 
+              className="w-full border-2 border-purple-300 text-purple-700 hover:bg-purple-50 font-semibold rounded-xl" 
               data-testid={`button-view-profile-${mentor.id}`}
             >
               View Profile

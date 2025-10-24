@@ -419,6 +419,27 @@ export default function Signup() {
         return;
       }
 
+      // Bio validation for mentors - mandatory field
+      if (!formData.bio || formData.bio.trim().length === 0) {
+        toast({
+          title: "About Teacher Required",
+          description: "Please tell students about yourself and your teaching approach.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (formData.bio.trim().length < 50) {
+        toast({
+          title: "About Teacher Too Short",
+          description: "Please provide at least 50 characters describing your teaching background.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       // Validate that qualifications have required fields
       for (const qual of validQualifications) {
         if (!qual.specialization) {
@@ -622,7 +643,7 @@ export default function Signup() {
           <form onSubmit={handleSignup} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
+                <Label htmlFor="firstName">First Name <span className="text-red-500">*</span></Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -640,7 +661,7 @@ export default function Signup() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
+                <Label htmlFor="lastName">Last Name <span className="text-red-500">*</span></Label>
                 <Input
                   id="lastName"
                   type="text"
@@ -655,7 +676,7 @@ export default function Signup() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -673,7 +694,7 @@ export default function Signup() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="role">I want to</Label>
+              <Label htmlFor="role">I want to <span className="text-red-500">*</span></Label>
               <Select value={formData.role} onValueChange={(value) => handleInputChange("role", value)}>
                 <SelectTrigger data-testid="select-role">
                   <SelectValue placeholder="Choose your role" />
@@ -686,7 +707,7 @@ export default function Signup() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="country">Country</Label>
+              <Label htmlFor="country">Country <span className="text-red-500">*</span></Label>
               <Select value={formData.country} onValueChange={(value) => handleInputChange("country", value)}>
                 <SelectTrigger data-testid="select-country">
                   <SelectValue placeholder="Select your country" />
@@ -923,22 +944,23 @@ export default function Signup() {
 
                 {/* About Teacher (Bio) */}
                 <div className="space-y-2">
-                  <Label htmlFor="bio">About Teacher</Label>
+                  <Label htmlFor="bio">About Teacher <span className="text-red-500">*</span></Label>
                   <textarea
                     id="bio"
                     value={formData.bio}
                     onChange={(e) => handleInputChange("bio", e.target.value)}
-                    placeholder="Tell students about yourself, your teaching approach, and what makes you a great teacher..."
+                    placeholder="Tell students about yourself, your teaching approach, and what makes you a great teacher... (minimum 50 characters)"
                     className="w-full min-h-[120px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                     data-testid="input-bio"
+                    required
                   />
-                  <p className="text-xs text-gray-500">This will help students understand your teaching style and expertise</p>
+                  <p className="text-xs text-gray-500">This will help students understand your teaching style and expertise (minimum 50 characters)</p>
                 </div>
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -970,7 +992,7 @@ export default function Signup() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">Confirm Password <span className="text-red-500">*</span></Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
