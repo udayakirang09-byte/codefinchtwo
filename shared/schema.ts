@@ -29,6 +29,7 @@ export const users = pgTable("users", {
   // 2FA Fields (Microsoft Authenticator / TOTP)
   totpSecret: text("totp_secret"), // Encrypted TOTP secret for 2FA
   totpEnabled: boolean("totp_enabled").default(false), // Whether 2FA is active
+  isActive: boolean("is_active").default(true), // User active status
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

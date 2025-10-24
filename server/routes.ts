@@ -6857,6 +6857,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const updates = req.body;
       await storage.updateUser(id, updates);
+      
+      // If updating isActive, also update mentor.isActive for consistency
+      if ('isActive' in updates) {
+        const mentor = await storage.getMentorByUserId(id);
+        if (mentor) {
+          await db.update(mentors)
+            .set({ isActive: updates.isActive })
+            .where(eq(mentors.userId, id));
+          console.log(`✅ Updated mentor.isActive to ${updates.isActive} for user ${id}`);
+        }
+      }
+      
       res.json({ message: "User updated successfully" });
     } catch (error) {
       console.error("Error updating user:", error);
