@@ -49,6 +49,7 @@ import {
   webrtcStats,
   webrtcEvents,
   mergedRecordings,
+  recordingAnalysis,
   type InsertAdminConfig, 
   type InsertFooterLink, 
   type InsertTimeSlot, 
@@ -12311,6 +12312,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('❌ Error fetching recording analysis:', error);
       res.status(500).json({ message: 'Failed to fetch analysis' });
+    }
+  });
+
+  // Get all merged recordings with their analysis status
+  app.get('/api/admin/recordings/all', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      // Get all merged recordings
+      const recordings = await db.select({
+        id: mergedRecordings.id,
+        bookingId: mergedRecordings.bookingId,
+        studentId: mergedRecordings.studentId,
+        mentorId: mergedRecordings.mentorId,
+        blobPath: mergedRecordings.blobPath,
+        blobUrl: mergedRecordings.blobUrl,
+        fileSizeBytes: mergedRecordings.fileSizeBytes,
+        durationSeconds: mergedRecordings.durationSeconds,
+        status: mergedRecordings.status,
+        mergedAt: mergedRecordings.mergedAt,
+      })
+        .from(mergedRecordings)
+        .orderBy(sql`${mergedRecordings.mergedAt} DESC`);
+
+      // Get all video sessions to check which recordings have sessions
+      const videoSessionsMap = new Map();
+      const sessions = await db.select()
+        .from(videoSessions)
+        .where(sql`${videoSessions.recordingUrl} IS NOT NULL`);
+      
+      sessions.forEach(session => {
+        videoSessionsMap.set(session.bookingId, session.id);
+      });
+
+      // Get all analyses
+      const analysesMap = new Map();
+      const analyses = await db.select()
+        .from(recordingAnalysis);
+      
+      analyses.forEach(analysis => {
+        analysesMap.set(analysis.videoSessionId, analysis);
+      });
+
+      // Combine the data
+      const recordingsWithStatus = recordings.map(rec => {
+        const videoSessionId = videoSessionsMap.get(rec.bookingId);
+        const analysis = videoSessionId ? analysesMap.get(videoSessionId) : null;
+        
+        return {
+          ...rec,
+          videoSessionId,
+          hasVideoSession: !!videoSessionId,
+          isAnalyzed: !!analysis,
+          analysis: analysis ? {
+            id: analysis.id,
+            overallTeachingScore: analysis.overallTeachingScore,
+            audioQualityScore: analysis.audioQualityScore,
+            analyzedAt: analysis.analyzedAt,
+          } : null,
+        };
+      });
+
+      res.json({
+        count: recordingsWithStatus.length,
+        recordings: recordingsWithStatus,
+      });
+
+    } catch (error) {
+      console.error('❌ Error fetching all recordings:', error);
+      res.status(500).json({ message: 'Failed to fetch recordings' });
     }
   });
 

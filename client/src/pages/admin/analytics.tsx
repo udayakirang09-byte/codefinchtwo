@@ -73,6 +73,11 @@ export default function AdminAnalytics() {
     queryKey: ['/api/admin/teacher-analytics'],
   });
 
+  // All recordings with analysis status
+  const { data: allRecordingsData, isLoading: allRecordingsLoading, refetch: refetchAllRecordings } = useQuery<any>({
+    queryKey: ['/api/admin/recordings/all'],
+  });
+
   // Original Audio Analytics Query (Session Details) - Now using real recording analysis
   const { data: audioAnalyticsData, isLoading: audioLoading, refetch: refetchAudioAnalytics } = useQuery<any>({
     queryKey: ['/api/admin/recordings/analyzed'],
@@ -118,6 +123,8 @@ export default function AdminAnalytics() {
     queryKey: ['/api/admin/stats'],
   });
 
+  const [analyzingRecordingId, setAnalyzingRecordingId] = useState<string | null>(null);
+
   const handleRefreshAnalytics = async () => {
     setRefreshing(true);
     try {
@@ -127,12 +134,31 @@ export default function AdminAnalytics() {
       
       // Refetch the analyzed recordings data
       await refetchAudioAnalytics();
+      await refetchAllRecordings();
       
     } catch (error) {
       console.error('❌ Failed to analyze recordings:', error);
       alert('Failed to analyze recordings. Check console for details.');
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  const handleAnalyzeRecording = async (videoSessionId: string, recordingId: string) => {
+    setAnalyzingRecordingId(recordingId);
+    try {
+      await apiRequest('POST', `/api/admin/recordings/analyze/${videoSessionId}`);
+      console.log(`✅ Analysis completed for recording ${recordingId}`);
+      
+      // Refetch the data
+      await refetchAudioAnalytics();
+      await refetchAllRecordings();
+      
+    } catch (error) {
+      console.error(`❌ Failed to analyze recording ${recordingId}:`, error);
+      alert(`Failed to analyze recording. Check console for details.`);
+    } finally {
+      setAnalyzingRecordingId(null);
     }
   };
 
@@ -531,6 +557,146 @@ export default function AdminAnalytics() {
 
           {/* Audio Analytics & Teacher Rankings Tab */}
           <TabsContent value="audio-analytics" className="space-y-6">
+            {/* Recordings Management - NEW */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Brain className="h-5 w-5" />
+                  AI Recording Analysis Manager
+                </CardTitle>
+                <CardDescription>
+                  Manage all video recordings and trigger AI-powered teaching quality analysis
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {allRecordingsLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+                      <span className="ml-3">Loading recordings...</span>
+                    </div>
+                  ) : allRecordingsData?.recordings && allRecordingsData.recordings.length > 0 ? (
+                    <>
+                      <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="grid grid-cols-3 gap-4 text-center">
+                          <div>
+                            <div className="text-2xl font-bold text-blue-600">{allRecordingsData.count}</div>
+                            <div className="text-sm text-gray-600">Total Recordings</div>
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold text-green-600">
+                              {allRecordingsData.recordings.filter((r: any) => r.isAnalyzed).length}
+                            </div>
+                            <div className="text-sm text-gray-600">Analyzed</div>
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold text-orange-600">
+                              {allRecordingsData.recordings.filter((r: any) => !r.isAnalyzed && r.hasVideoSession).length}
+                            </div>
+                            <div className="text-sm text-gray-600">Pending Analysis</div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {allRecordingsData.recordings.map((recording: any, index: number) => (
+                        <div key={recording.id || index} className="border rounded-lg p-4 bg-gradient-to-r from-gray-50 to-blue-50" data-testid={`recording-${index}`}>
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                              <div className="text-xs text-gray-500">Booking ID</div>
+                              <div className="text-sm font-mono" data-testid={`recording-booking-${index}`}>
+                                {recording.bookingId.substring(0, 8)}...
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-500">File Size</div>
+                              <div className="text-sm font-semibold" data-testid={`recording-size-${index}`}>
+                                {(recording.fileSizeBytes / 1024 / 1024).toFixed(2)} MB
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-500">Status</div>
+                              <div data-testid={`recording-status-${index}`}>
+                                {recording.isAnalyzed ? (
+                                  <Badge className="bg-green-600">
+                                    <CheckCircle className="w-3 h-3 mr-1" />
+                                    Analyzed
+                                  </Badge>
+                                ) : recording.hasVideoSession ? (
+                                  <Badge className="bg-orange-500">
+                                    <AlertTriangle className="w-3 h-3 mr-1" />
+                                    Pending
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline">
+                                    <XCircle className="w-3 h-3 mr-1" />
+                                    No Session
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-end">
+                              {recording.isAnalyzed ? (
+                                <div className="text-sm">
+                                  <div className="text-xs text-gray-500">Teaching Score</div>
+                                  <div className="text-lg font-bold text-green-600" data-testid={`recording-score-${index}`}>
+                                    {recording.analysis?.overallTeachingScore?.toFixed(1) || 'N/A'}/10
+                                  </div>
+                                </div>
+                              ) : recording.hasVideoSession ? (
+                                <Button
+                                  onClick={() => handleAnalyzeRecording(recording.videoSessionId, recording.id)}
+                                  disabled={analyzingRecordingId === recording.id}
+                                  size="sm"
+                                  data-testid={`button-analyze-${index}`}
+                                >
+                                  {analyzingRecordingId === recording.id ? (
+                                    <>
+                                      <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full mr-2" />
+                                      Analyzing...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Brain className="w-4 h-4 mr-1" />
+                                      Analyze
+                                    </>
+                                  )}
+                                </Button>
+                              ) : (
+                                <div className="text-xs text-gray-500 italic">Cannot analyze (no session)</div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {recording.isAnalyzed && recording.analysis && (
+                            <div className="mt-4 pt-4 border-t">
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                                <div>
+                                  <span className="text-gray-500">Audio Quality:</span>{' '}
+                                  <span className="font-semibold">{recording.analysis.audioQualityScore?.toFixed(1) || 'N/A'}/10</span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-500">Analyzed:</span>{' '}
+                                  <span className="font-semibold">
+                                    {recording.analysis.analyzedAt ? new Date(recording.analysis.analyzedAt).toLocaleDateString() : 'N/A'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Brain className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                      <p className="text-gray-500">No recordings found. Sync from Azure Blob Storage to get started.</p>
+                      <p className="text-sm text-gray-400 mt-2">Use the Admin Recordings page to sync recordings</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Original Audio Analytics Sessions */}
             <Card>
               <CardHeader>
