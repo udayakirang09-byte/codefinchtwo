@@ -4013,18 +4013,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`📅 [Available Times] Found ${bookedSlots.length} existing bookings on ${selectedDate}`);
       
-      // Create a set of booked times (in HH:MM format)
-      const bookedTimes = new Set<string>();
+      // Create a set of hourly slots that are occupied by bookings
+      const occupiedHourlySlots = new Set<string>();
+      
       bookedSlots.forEach(booking => {
-        const bookingTime = new Date(booking.scheduledAt);
-        const hours = bookingTime.getUTCHours().toString().padStart(2, '0');
-        const minutes = bookingTime.getUTCMinutes().toString().padStart(2, '0');
-        const timeString = `${hours}:${minutes}`;
-        bookedTimes.add(timeString);
-        console.log(`🚫 [Available Times] Time ${timeString} is already booked`);
+        const bookingStart = new Date(booking.scheduledAt);
+        const bookingEnd = new Date(bookingStart.getTime() + (booking.duration || 55) * 60000);
+        
+        const startHour = bookingStart.getUTCHours();
+        const endHour = bookingEnd.getUTCHours();
+        const endMinutes = bookingEnd.getUTCMinutes();
+        
+        // Mark all hourly slots that this booking overlaps with as occupied
+        // If booking starts at 11:30 and ends at 12:25, it occupies both 11:00 and 12:00 slots
+        for (let hour = startHour; hour <= endHour; hour++) {
+          // If the booking ends exactly on the hour (e.g., 12:00:00), don't mark that hour as occupied
+          if (hour === endHour && endMinutes === 0) {
+            break;
+          }
+          const timeString = `${hour.toString().padStart(2, '0')}:00`;
+          occupiedHourlySlots.add(timeString);
+          console.log(`🚫 [Available Times] Time ${timeString} is occupied by booking from ${bookingStart.getUTCHours()}:${bookingStart.getUTCMinutes().toString().padStart(2, '0')} to ${endHour}:${endMinutes.toString().padStart(2, '0')}`);
+        }
       });
       
-      // Generate available times from time slots, excluding booked times
+      // Generate available times from time slots, excluding occupied times
       const availableTimes: string[] = [];
       
       dayTimeSlots.forEach(slot => {
@@ -4034,8 +4047,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (let hour = startHour; hour < endHour; hour++) {
           const timeString = `${hour.toString().padStart(2, '0')}:00`;
           
-          // Only include if not already booked
-          if (!bookedTimes.has(timeString)) {
+          // Only include if not occupied by any booking
+          if (!occupiedHourlySlots.has(timeString)) {
             availableTimes.push(timeString);
           }
         }
