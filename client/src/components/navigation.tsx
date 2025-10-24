@@ -78,12 +78,12 @@ export default function Navigation() {
 
   return (
     <nav
-      className={`sticky top-0 z-50 border-b border-white/20 transition-all duration-300 ${
-        isScrolled ? "sticky-nav" : "bg-background/80 backdrop-blur-sm"
+      className={`sticky top-0 z-50 border-b border-purple-200/30 transition-all duration-300 ${
+        isScrolled ? "sticky-nav" : "bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-sm"
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-20">
           <Link 
             href="/" 
             className="flex items-center space-x-3 transition-all duration-200 hover:opacity-90" 
@@ -93,7 +93,7 @@ export default function Navigation() {
               <img 
                 src="/logo.png" 
                 alt="TechLearnOrbit Logo" 
-                className="h-12 w-12 object-contain"
+                className="h-16 w-16 object-contain bg-white rounded-lg p-1 shadow-sm"
               />
               <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Techlearnorbit
