@@ -358,10 +358,13 @@ const BookingCheckoutForm = ({ bookingDetails, hasStripe, paymentIntentId }: { b
         // Redirect to success page
         navigate(`/booking-success?mentorId=${bookingDetails.mentorId}`);
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Extract the actual error message from the API response
+      const errorMessage = error?.message || error?.toString() || "An unexpected error occurred";
+      
       toast({
         title: "Booking Error",
-        description: "Payment was successful but there was an error creating your booking. Please contact support.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
