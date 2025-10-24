@@ -73,10 +73,30 @@ export default function AdminAnalytics() {
     queryKey: ['/api/admin/teacher-analytics'],
   });
 
-  // Original Audio Analytics Query (Session Details)
-  const { data: audioAnalytics = [], isLoading: audioLoading } = useQuery<any[]>({
-    queryKey: ['/api/admin/audio-analytics'],
+  // Original Audio Analytics Query (Session Details) - Now using real recording analysis
+  const { data: audioAnalyticsData, isLoading: audioLoading, refetch: refetchAudioAnalytics } = useQuery<any>({
+    queryKey: ['/api/admin/recordings/analyzed'],
   });
+
+  const audioAnalytics = useMemo(() => {
+    if (!audioAnalyticsData?.recordings) return [];
+    
+    return audioAnalyticsData.recordings.map((rec: any) => ({
+      id: rec.id,
+      recordingId: rec.recordingId,
+      bookingId: rec.bookingId,
+      mentorId: rec.mentorId,
+      audioQuality: rec.audioQualityScore,
+      teachingScore: rec.overallTeachingScore,
+      clarity: rec.explanationClarity,
+      engagement: rec.studentEngagement,
+      pacing: rec.pacing,
+      encouragement: rec.encouragement,
+      topics: rec.keyTopics,
+      summary: rec.aiSummary,
+      analyzedAt: rec.analyzedAt
+    }));
+  }, [audioAnalyticsData]);
 
   // Cloud Deployments Query
   const { data: cloudDeployments = [], isLoading: cloudLoading } = useQuery<any[]>({
@@ -101,13 +121,16 @@ export default function AdminAnalytics() {
   const handleRefreshAnalytics = async () => {
     setRefreshing(true);
     try {
-      // First seed some sample data
-      await apiRequest('POST', '/api/admin/seed-analytics');
-      // Then run AI analysis
-      await apiRequest('POST', '/api/admin/refresh-analytics');
-      window.location.reload(); // Refresh all data
+      // Run AI analysis on all recordings
+      const result = await apiRequest('POST', '/api/admin/recordings/analyze-all');
+      console.log('✅ Analysis completed:', result);
+      
+      // Refetch the analyzed recordings data
+      await refetchAudioAnalytics();
+      
     } catch (error) {
-      console.error('Failed to refresh analytics:', error);
+      console.error('❌ Failed to analyze recordings:', error);
+      alert('Failed to analyze recordings. Check console for details.');
     } finally {
       setRefreshing(false);
     }

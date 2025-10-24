@@ -12203,6 +12203,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   console.log('✅ Azure Application Insights API routes registered successfully!');
 
+  // Recording Analysis API Routes - AI-powered teaching quality assessment
+  const { recordingAnalysisService } = await import('./recording-analysis');
+
+  // Analyze a single recording
+  app.post('/api/admin/recordings/analyze/:recordingId', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      const { recordingId } = req.params;
+      
+      console.log(`🎬 Starting AI analysis for recording ${recordingId}`);
+      const analysis = await recordingAnalysisService.analyzeRecording(recordingId);
+      
+      if (!analysis) {
+        return res.status(404).json({ message: 'Recording not found or already analyzed' });
+      }
+
+      console.log(`✅ Analysis completed for recording ${recordingId}`);
+      res.json(analysis);
+
+    } catch (error) {
+      console.error('❌ Error analyzing recording:', error);
+      res.status(500).json({ message: 'Failed to analyze recording', error: String(error) });
+    }
+  });
+
+  // Analyze all pending recordings (batch analysis)
+  app.post('/api/admin/recordings/analyze-all', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      console.log('🎬 Starting batch AI analysis for all pending recordings');
+      const results = await recordingAnalysisService.analyzeAllPendingRecordings();
+      
+      console.log(`✅ Batch analysis completed: ${results.analyzed} analyzed, ${results.failed} failed, ${results.skipped} skipped`);
+      res.json({ 
+        success: true, 
+        ...results
+      });
+
+    } catch (error) {
+      console.error('❌ Error in batch analysis:', error);
+      res.status(500).json({ message: 'Failed to analyze recordings', error: String(error) });
+    }
+  });
+
+  // Get all analyzed recordings
+  app.get('/api/admin/recordings/analyzed', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      const analyzedRecordings = await recordingAnalysisService.getAllAnalyzedRecordings();
+      
+      res.json({
+        count: analyzedRecordings.length,
+        recordings: analyzedRecordings
+      });
+
+    } catch (error) {
+      console.error('❌ Error fetching analyzed recordings:', error);
+      res.status(500).json({ message: 'Failed to fetch analyzed recordings' });
+    }
+  });
+
+  // Get analysis for a specific recording
+  app.get('/api/admin/recordings/:recordingId/analysis', authenticateSession, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      const { recordingId } = req.params;
+      const analysis = await recordingAnalysisService.getRecordingAnalysis(recordingId);
+      
+      if (!analysis) {
+        return res.status(404).json({ message: 'Analysis not found for this recording' });
+      }
+
+      res.json(analysis);
+
+    } catch (error) {
+      console.error('❌ Error fetching recording analysis:', error);
+      res.status(500).json({ message: 'Failed to fetch analysis' });
+    }
+  });
+
+  console.log('✅ Recording Analysis API routes registered successfully!');
+
   // PC-5, LOG-4, GOV-2: Redacted Media Clips API Routes
   const { mediaRedaction } = await import('./media-redaction');
 
