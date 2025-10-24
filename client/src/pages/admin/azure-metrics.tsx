@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Settings, Activity, AlertTriangle, AlertCircle, Info } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { AzureAppInsightsConfig } from '@shared/schema';
 import {
   Dialog,
@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import Navigation from '@/components/navigation';
 
 export default function AzureMetrics() {
   const { toast } = useToast();
@@ -36,8 +37,26 @@ export default function AzureMetrics() {
     queryKey: ['/api/admin/azure-insights/config'],
   });
 
+  // Populate form with existing config when dialog opens
+  useEffect(() => {
+    if (config && configOpen) {
+      setAppInsightsName(config.appInsightsName || '');
+      setAppId(config.appId || '');
+      setApiKey(''); // Don't populate API key for security
+    }
+  }, [config, configOpen]);
+
   const handleSaveConfig = async () => {
     try {
+      if (!appInsightsName || !appId || !apiKey) {
+        toast({
+          title: "Validation Error",
+          description: "Please fill in all required fields.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       await apiRequest('POST', '/api/admin/azure-insights/config', {
         appInsightsName,
         appId,
@@ -52,6 +71,7 @@ export default function AzureMetrics() {
         description: "Azure App Insights configuration has been saved successfully.",
       });
     } catch (error) {
+      console.error('Config save error:', error);
       toast({
         title: "Error",
         description: "Failed to save configuration. Please try again.",
@@ -112,14 +132,17 @@ export default function AzureMetrics() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold mb-2" data-testid="heading-azure-metrics">Azure Application Insights</h1>
-          <p className="text-muted-foreground">
-            Monitor and manage your application performance metrics
-          </p>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      <Navigation />
+      
+      <div className="container mx-auto py-8 px-4">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold mb-2" data-testid="heading-azure-metrics">Azure Application Insights</h1>
+            <p className="text-muted-foreground">
+              Monitor and manage your application performance metrics
+            </p>
+          </div>
         <Dialog open={configOpen} onOpenChange={setConfigOpen}>
           <DialogTrigger asChild>
             <Button variant="outline" data-testid="button-configure">
@@ -269,6 +292,7 @@ export default function AzureMetrics() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
