@@ -629,6 +629,13 @@ export default function BookingCheckout() {
     const booking = storedBulkPackage ? JSON.parse(storedBulkPackage) : JSON.parse(storedBooking!);
     const isBulkPackage = !!storedBulkPackage;
     
+    console.log('🔍 [CHECKOUT DEBUG] Read from sessionStorage:', {
+      sessionCost: booking.sessionCost,
+      totalAmount: booking.totalAmount,
+      isBulkPackage,
+      rawBooking: booking
+    });
+    
     // Add isBulkPackage flag to booking details for later use
     booking.isBulkPackage = isBulkPackage;
     setBookingDetails(booking);
