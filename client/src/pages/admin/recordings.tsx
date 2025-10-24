@@ -10,8 +10,9 @@ export default function AdminRecordings() {
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<any>(null);
 
-  const { data: recordings, refetch } = useQuery({
+  const { data: recordings, refetch, isLoading } = useQuery({
     queryKey: ['/api/recordings/merged/all'],
+    refetchOnMount: true,
   });
 
   const handleSync = async () => {
