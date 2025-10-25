@@ -3,7 +3,7 @@ import {
   users, mentors, students, bookings, reviews, achievements, 
   teacherQualifications, teacherSubjects, successStories,
   chatSessions, chatMessages, videoSessions, classFeedback,
-  notifications, userSessions, teacherProfiles, paymentMethods,
+  notifications, userSessions, teacherProfiles, teacherMedia, paymentMethods,
   transactionFeeConfig, paymentTransactions, unsettledFinances, paymentWorkflows,
   analyticsEvents, aiInsights, businessMetrics, complianceMonitoring,
   chatAnalytics, audioAnalytics, predictiveModels, cloudDeployments,
@@ -35,7 +35,7 @@ async function syncDataToAzure() {
     }
 
     // Step 1: Export all data from current database
-    console.log("\n📤 Exporting data from ALL 62 tables...");
+    console.log("\n📤 Exporting data from ALL 63 tables...");
     
     // Base tables (no dependencies)
     const usersData = await db.select().from(users);
@@ -75,6 +75,7 @@ async function syncDataToAzure() {
     // Level 2 (depend on level 1)
     const teacherQualificationsData = await db.select().from(teacherQualifications);
     const teacherSubjectsData = await db.select().from(teacherSubjects);
+    const teacherMediaData = await db.select().from(teacherMedia);
     const timeSlotsData = await db.select().from(timeSlots);
     const teacherAudioMetricsData = await db.select().from(teacherAudioMetrics);
     const coursesData = await db.select().from(courses);
@@ -111,7 +112,7 @@ async function syncDataToAzure() {
     const recordingPartsData = await db.select().from(recordingParts);
     const mergedRecordingsData = await db.select().from(mergedRecordings);
 
-    console.log("📊 Source data counts (62 tables):");
+    console.log("📊 Source data counts (63 tables):");
     console.log(`   Users: ${usersData.length}`);
     console.log(`   Mentors: ${mentorsData.length}`);
     console.log(`   Students: ${studentsData.length}`);
@@ -127,11 +128,12 @@ async function syncDataToAzure() {
     console.log(`   Chat Messages: ${chatMessagesData.length}`);
     console.log(`   Video Sessions: ${videoSessionsData.length}`);
     console.log(`   Payment Transactions: ${paymentTransactionsData.length}`);
+    console.log(`   Teacher Media (photos/videos): ${teacherMediaData.length}`);
     console.log(`   ... and 47 more tables`);
 
     const totalRecords = usersData.length + mentorsData.length + studentsData.length + 
                         bookingsData.length + reviewsData.length + achievementsData.length +
-                        teacherQualificationsData.length + teacherSubjectsData.length + 
+                        teacherQualificationsData.length + teacherSubjectsData.length + teacherMediaData.length +
                         successStoriesData.length + coursesData.length + courseEnrollmentsData.length +
                         timeSlotsData.length + chatSessionsData.length + chatMessagesData.length +
                         videoSessionsData.length + notificationsData.length + userSessionsData.length +
@@ -204,7 +206,7 @@ async function syncDataToAzure() {
     }
 
     // Step 3: Clear target database tables (in REVERSE dependency order)
-    console.log("\n🗑️ Clearing ALL 62 target tables...");
+    console.log("\n🗑️ Clearing ALL 63 target tables...");
     
     try {
       // Delete in reverse dependency order to avoid foreign key conflicts
@@ -244,6 +246,7 @@ async function syncDataToAzure() {
       await db.delete(courses);
       await db.delete(teacherAudioMetrics);
       await db.delete(timeSlots);
+      await db.delete(teacherMedia);
       await db.delete(teacherSubjects);
       await db.delete(teacherQualifications);
       
@@ -282,13 +285,13 @@ async function syncDataToAzure() {
       await db.delete(specializations);
       await db.delete(qualifications);
       
-      console.log("✅ All 62 tables cleared successfully");
+      console.log("✅ All 63 tables cleared successfully");
     } catch (error: any) {
       console.log("⚠️ Some tables may already be empty:", error.message);
     }
 
-    // Step 4: Insert data in correct dependency order (ALL 62 tables)
-    console.log("\n📥 Inserting data into ALL 62 tables...");
+    // Step 4: Insert data in correct dependency order (ALL 63 tables)
+    console.log("\n📥 Inserting data into ALL 63 tables...");
 
     let totalInserted = 0;
 
@@ -330,6 +333,7 @@ async function syncDataToAzure() {
     // Level 2 (depend on level 1 - mentors/students/users)
     if (teacherQualificationsData.length > 0) { await db.insert(teacherQualifications).values(teacherQualificationsData); totalInserted += teacherQualificationsData.length; console.log(`✅ Inserted ${teacherQualificationsData.length} teacher qualifications`); }
     if (teacherSubjectsData.length > 0) { await db.insert(teacherSubjects).values(teacherSubjectsData); totalInserted += teacherSubjectsData.length; console.log(`✅ Inserted ${teacherSubjectsData.length} teacher subjects`); }
+    if (teacherMediaData.length > 0) { await db.insert(teacherMedia).values(teacherMediaData); totalInserted += teacherMediaData.length; console.log(`✅ Inserted ${teacherMediaData.length} teacher media (photos/videos with blob paths)`); }
     if (timeSlotsData.length > 0) { await db.insert(timeSlots).values(timeSlotsData); totalInserted += timeSlotsData.length; console.log(`✅ Inserted ${timeSlotsData.length} time slots`); }
     if (teacherAudioMetricsData.length > 0) { await db.insert(teacherAudioMetrics).values(teacherAudioMetricsData); totalInserted += teacherAudioMetricsData.length; console.log(`✅ Inserted ${teacherAudioMetricsData.length} teacher audio metrics`); }
     if (coursesData.length > 0) { await db.insert(courses).values(coursesData); totalInserted += coursesData.length; console.log(`✅ Inserted ${coursesData.length} courses`); }
