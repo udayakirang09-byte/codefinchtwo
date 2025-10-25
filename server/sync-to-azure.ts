@@ -14,7 +14,7 @@ import {
   qualifications, specializations, subjects, teacherAudioMetrics,
   homeSectionControls, azureStorageConfig, recordingParts, mergedRecordings,
   adminConfig, adminPaymentConfig, adminUiConfig, timeSlots, footerLinks,
-  courses, courseEnrollments, systemAlerts
+  courses, courseEnrollments, bulkBookingPackages, systemAlerts
 } from "../shared/schema.js";
 import { inArray } from "drizzle-orm";
 
@@ -35,7 +35,7 @@ async function syncDataToAzure() {
     }
 
     // Step 1: Export all data from current database
-    console.log("\n📤 Exporting data from ALL 63 tables...");
+    console.log("\n📤 Exporting data from ALL 64 tables...");
     
     // Base tables (no dependencies)
     const usersData = await db.select().from(users);
@@ -79,6 +79,7 @@ async function syncDataToAzure() {
     const timeSlotsData = await db.select().from(timeSlots);
     const teacherAudioMetricsData = await db.select().from(teacherAudioMetrics);
     const coursesData = await db.select().from(courses);
+    const bulkBookingPackagesData = await db.select().from(bulkBookingPackages);
     const paymentMethodsData = await db.select().from(paymentMethods);
     const achievementsData = await db.select().from(achievements);
     const forumPostsData = await db.select().from(forumPosts);
@@ -112,7 +113,7 @@ async function syncDataToAzure() {
     const recordingPartsData = await db.select().from(recordingParts);
     const mergedRecordingsData = await db.select().from(mergedRecordings);
 
-    console.log("📊 Source data counts (63 tables):");
+    console.log("📊 Source data counts (64 tables):");
     console.log(`   Users: ${usersData.length}`);
     console.log(`   Mentors: ${mentorsData.length}`);
     console.log(`   Students: ${studentsData.length}`);
@@ -135,9 +136,9 @@ async function syncDataToAzure() {
                         bookingsData.length + reviewsData.length + achievementsData.length +
                         teacherQualificationsData.length + teacherSubjectsData.length + teacherMediaData.length +
                         successStoriesData.length + coursesData.length + courseEnrollmentsData.length +
-                        timeSlotsData.length + chatSessionsData.length + chatMessagesData.length +
-                        videoSessionsData.length + notificationsData.length + userSessionsData.length +
-                        paymentTransactionsData.length + classFeedbackData.length +
+                        bulkBookingPackagesData.length + timeSlotsData.length + chatSessionsData.length +
+                        chatMessagesData.length + videoSessionsData.length + notificationsData.length +
+                        userSessionsData.length + paymentTransactionsData.length + classFeedbackData.length +
                         teacherProfilesData.length + paymentMethodsData.length + transactionFeeConfigData.length +
                         unsettledFinancesData.length + paymentWorkflowsData.length +
                         analyticsEventsData.length + aiInsightsData.length + businessMetricsData.length +
@@ -206,7 +207,7 @@ async function syncDataToAzure() {
     }
 
     // Step 3: Clear target database tables (in REVERSE dependency order)
-    console.log("\n🗑️ Clearing ALL 63 target tables...");
+    console.log("\n🗑️ Clearing ALL 64 target tables...");
     
     try {
       // Delete in reverse dependency order to avoid foreign key conflicts
@@ -243,6 +244,7 @@ async function syncDataToAzure() {
       await db.delete(forumPosts);
       await db.delete(achievements);
       await db.delete(paymentMethods);
+      await db.delete(bulkBookingPackages);
       await db.delete(courses);
       await db.delete(teacherAudioMetrics);
       await db.delete(timeSlots);
@@ -285,13 +287,13 @@ async function syncDataToAzure() {
       await db.delete(specializations);
       await db.delete(qualifications);
       
-      console.log("✅ All 63 tables cleared successfully");
+      console.log("✅ All 64 tables cleared successfully");
     } catch (error: any) {
       console.log("⚠️ Some tables may already be empty:", error.message);
     }
 
-    // Step 4: Insert data in correct dependency order (ALL 63 tables)
-    console.log("\n📥 Inserting data into ALL 63 tables...");
+    // Step 4: Insert data in correct dependency order (ALL 64 tables)
+    console.log("\n📥 Inserting data into ALL 64 tables...");
 
     let totalInserted = 0;
 
@@ -337,6 +339,7 @@ async function syncDataToAzure() {
     if (timeSlotsData.length > 0) { await db.insert(timeSlots).values(timeSlotsData); totalInserted += timeSlotsData.length; console.log(`✅ Inserted ${timeSlotsData.length} time slots`); }
     if (teacherAudioMetricsData.length > 0) { await db.insert(teacherAudioMetrics).values(teacherAudioMetricsData); totalInserted += teacherAudioMetricsData.length; console.log(`✅ Inserted ${teacherAudioMetricsData.length} teacher audio metrics`); }
     if (coursesData.length > 0) { await db.insert(courses).values(coursesData); totalInserted += coursesData.length; console.log(`✅ Inserted ${coursesData.length} courses`); }
+    if (bulkBookingPackagesData.length > 0) { await db.insert(bulkBookingPackages).values(bulkBookingPackagesData); totalInserted += bulkBookingPackagesData.length; console.log(`✅ Inserted ${bulkBookingPackagesData.length} bulk booking packages`); }
     if (paymentMethodsData.length > 0) { await db.insert(paymentMethods).values(paymentMethodsData); totalInserted += paymentMethodsData.length; console.log(`✅ Inserted ${paymentMethodsData.length} payment methods`); }
     if (achievementsData.length > 0) { await db.insert(achievements).values(achievementsData); totalInserted += achievementsData.length; console.log(`✅ Inserted ${achievementsData.length} achievements`); }
     if (forumPostsData.length > 0) { await db.insert(forumPosts).values(forumPostsData); totalInserted += forumPostsData.length; console.log(`✅ Inserted ${forumPostsData.length} forum posts`); }
