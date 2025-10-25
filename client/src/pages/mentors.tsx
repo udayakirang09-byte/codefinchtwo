@@ -21,6 +21,23 @@ export default function Mentors() {
       const data = await res.json();
       console.log('✅ [FIND MENTORS] Received mentors:', data.length);
       
+      // Debug all mentors media data
+      data.forEach((m: any) => {
+        if (m.media) {
+          console.log(`📷 [MENTOR MEDIA] ${m.user?.firstName} ${m.user?.lastName}:`, {
+            mentorId: m.id,
+            hasPhoto: !!m.media.photoBlobUrl,
+            hasVideo: !!m.media.videoBlobUrl,
+            photoBlobUrl: m.media.photoBlobUrl,
+            videoBlobUrl: m.media.videoBlobUrl,
+            photoValidation: m.media.photoValidationStatus,
+            videoValidation: m.media.videoValidationStatus
+          });
+        } else {
+          console.log(`❌ [MENTOR MEDIA] ${m.user?.firstName} ${m.user?.lastName}: No media object`);
+        }
+      });
+      
       // Debug log for UDAYA prm specifically
       const udayaMentor = data.find((m: any) => 
         m.user?.firstName === 'UDAYA' && m.user?.lastName === 'prm'
