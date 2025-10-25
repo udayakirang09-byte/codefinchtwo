@@ -21,7 +21,7 @@ export default function MentorCard({ mentor }: MentorCardProps) {
 
   // Use secure backend proxy for teacher's photo (requires authentication)
   // Fallback to user profileImageUrl, then initials
-  const profileImage = mentor.media?.photoBlobUrl 
+  const profileImage = mentor.media?.photoBlobPath 
     ? `/api/images/mentor/${mentor.id}/photo`
     : mentor.user.profileImageUrl || null;
 
@@ -29,12 +29,13 @@ export default function MentorCard({ mentor }: MentorCardProps) {
   if (mentor.user.firstName === 'UDAYA' && mentor.user.lastName === 'prm') {
     console.log('🖼️ [MENTOR CARD] UDAYA prm photo debug:', {
       hasMedia: !!mentor.media,
+      photoBlobPath: mentor.media?.photoBlobPath,
       photoBlobUrl: mentor.media?.photoBlobUrl,
       photoStatus: mentor.media?.photoValidationStatus,
       profileImageUrl: mentor.user.profileImageUrl,
       finalProfileImage: profileImage,
       mentorId: mentor.id,
-      usingProxyEndpoint: !!mentor.media?.photoBlobUrl
+      usingProxyEndpoint: !!mentor.media?.photoBlobPath
     });
   }
 
