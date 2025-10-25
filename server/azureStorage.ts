@@ -72,7 +72,7 @@ export class AzureStorageService {
     return this.container;
   }
 
-  async uploadProfileMedia(userId: string, buffer: Buffer, contentType: string, mediaType: 'photo' | 'video'): Promise<string> {
+  async uploadProfileMedia(userId: string, buffer: Buffer, contentType: string, mediaType: 'photo' | 'video'): Promise<{ blobPath: string; contentType: string }> {
     // Create blob path: profile-media/{userId}/{type}-{timestamp}.{ext}
     const timestamp = Date.now();
     
@@ -105,7 +105,7 @@ export class AzureStorageService {
       },
     });
 
-    return blockBlobClient.url;
+    return { blobPath, contentType };
   }
 
   async uploadRecordingPart(upload: RecordingPartUpload): Promise<RecordingPartInfo> {

@@ -1332,8 +1332,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('✅ Mentor user created successfully with 2FA enabled');
         
         // Upload files to Azure if provided
-        let profileImageUrl: string | undefined;
-        let introVideoUrl: string | undefined;
+        let photoBlobPath: string | undefined;
+        let videoBlobPath: string | undefined;
         
         if (pendingSignup.photoBuffer || pendingSignup.videoBuffer) {
           const { azureStorage } = await import('./azureStorage');
@@ -1341,16 +1341,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Upload photo
           if (pendingSignup.photoBuffer && pendingSignup.photoMimetype) {
             try {
-              profileImageUrl = await azureStorage.uploadProfileMedia(
+              const photoResult = await azureStorage.uploadProfileMedia(
                 user.id,
                 pendingSignup.photoBuffer,
                 pendingSignup.photoMimetype,
                 'photo'
               );
-              console.log('✅ Profile photo uploaded successfully');
-              
-              // Update user's profile image URL
-              await storage.updateUser(user.id, { profileImageUrl });
+              photoBlobPath = photoResult.blobPath;
+              console.log('✅ Profile photo uploaded successfully to:', photoBlobPath);
             } catch (uploadError: any) {
               console.error('❌ Photo upload failed:', uploadError);
             }
@@ -1359,13 +1357,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Upload video
           if (pendingSignup.videoBuffer && pendingSignup.videoMimetype) {
             try {
-              introVideoUrl = await azureStorage.uploadProfileMedia(
+              const videoResult = await azureStorage.uploadProfileMedia(
                 user.id,
                 pendingSignup.videoBuffer,
                 pendingSignup.videoMimetype,
                 'video'
               );
-              console.log('✅ Intro video uploaded successfully');
+              videoBlobPath = videoResult.blobPath;
+              console.log('✅ Intro video uploaded successfully to:', videoBlobPath);
             } catch (uploadError: any) {
               console.error('❌ Video upload failed:', uploadError);
             }
@@ -1382,7 +1381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           specialties: ['Mathematics', 'Physics', 'Chemistry', 'Computer Science'],
           hourlyRate: '35.00',
           availableSlots: [],
-          introVideoUrl: introVideoUrl || undefined
+          introVideoUrl: undefined  // No longer storing URL in mentor record
         });
         
         // Create teacher profile with qualification and subject data
@@ -1397,7 +1396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // Create teacher media record if photo/video was uploaded
-        if (profileImageUrl || introVideoUrl) {
+        if (photoBlobPath || videoBlobPath) {
           console.log('📸 Creating teacher media record...');
           
           // Check if media approval is required from admin config
@@ -1408,18 +1407,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           await storage.createTeacherMedia({
             mentorId: mentor.id,
-            photoBlobPath: profileImageUrl ? `mentors/${user.id}/profile.jpg` : '',
-            photoBlobUrl: profileImageUrl || null,
-            photoValidationStatus: profileImageUrl ? initialStatus : null,
-            videoBlobPath: introVideoUrl ? `mentors/${user.id}/intro.mp4` : null,
-            videoBlobUrl: introVideoUrl || null,
-            videoValidationStatus: introVideoUrl ? initialStatus : null,
+            photoBlobPath: photoBlobPath || '',
+            photoBlobUrl: null,  // No longer storing URLs, only blob paths
+            photoValidationStatus: photoBlobPath ? initialStatus : null,
+            videoBlobPath: videoBlobPath || null,
+            videoBlobUrl: null,  // No longer storing URLs, only blob paths
+            videoValidationStatus: videoBlobPath ? initialStatus : null,
           });
           
           console.log(`✅ Teacher media created with status: ${initialStatus}`);
           
           // Send email notification based on approval requirement
-          if (!approvalRequired && (profileImageUrl || introVideoUrl)) {
+          if (!approvalRequired && (photoBlobPath || videoBlobPath)) {
             // Auto-approved - send login notification
             try {
               const { sendEmail, generateTeacherWelcomeEmail } = await import('./email');
@@ -2276,23 +2275,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send('Photo not available');
       }
 
-      // Extract blob path from full URL if using photoBlobUrl, otherwise use photoBlobPath
-      let blobPath = media[0].photoBlobPath;
-      if (media[0].photoBlobUrl) {
-        // Extract path from URL: https://account.blob.core.windows.net/container/path/to/blob
-        const urlParts = media[0].photoBlobUrl.split('/replayknowledge/');
-        if (urlParts.length > 1) {
-          blobPath = urlParts[1];
-        }
-      }
-
+      // Get blob path directly from database (no URL parsing)
+      const blobPath = media[0].photoBlobPath;
       if (!blobPath) {
+        console.log(`❌ [PHOTO] No blob path stored for mentor ${id}`);
         return res.status(404).send('Photo not available');
       }
 
       console.log(`📷 [PHOTO] Streaming from blob path: ${blobPath}`);
 
-      // Stream photo from Azure Blob Storage
+      // Stream photo from Azure Blob Storage using connection string
       const result = await azureStorage.streamProfilePhoto(blobPath);
       if (!result) {
         return res.status(500).send('Failed to load photo');
@@ -2336,23 +2328,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send('Video not available');
       }
 
-      // Extract blob path from full URL if using videoBlobUrl, otherwise use videoBlobPath
-      let blobPath = media[0].videoBlobPath;
-      if (media[0].videoBlobUrl) {
-        // Extract path from URL: https://account.blob.core.windows.net/container/path/to/blob
-        const urlParts = media[0].videoBlobUrl.split('/replayknowledge/');
-        if (urlParts.length > 1) {
-          blobPath = urlParts[1];
-        }
-      }
-
+      // Get blob path directly from database (no URL parsing)
+      const blobPath = media[0].videoBlobPath;
       if (!blobPath) {
+        console.log(`❌ [VIDEO] No blob path stored for mentor ${id}`);
         return res.status(404).send('Video not available');
       }
 
       console.log(`🎥 [VIDEO] Streaming from blob path: ${blobPath}`);
 
-      // Stream video from Azure Blob Storage
+      // Stream video from Azure Blob Storage using connection string
       const result = await azureStorage.streamProfileVideo(blobPath);
       if (!result) {
         return res.status(500).send('Failed to load video');
