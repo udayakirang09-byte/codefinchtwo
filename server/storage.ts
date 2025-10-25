@@ -1772,6 +1772,14 @@ export class DatabaseStorage implements IStorage {
         .set(updates)
         .where(eq(teacherMedia.mentorId, mentorId));
       
+      // Also update mentor approvalStatus to 'approved' so teacher can log in
+      await db
+        .update(mentors)
+        .set({ approvalStatus: 'approved' })
+        .where(eq(mentors.id, mentorId));
+      
+      console.log(`✅ Updated mentor approvalStatus to 'approved' for mentorId: ${mentorId}`);
+      
       // Invalidate mentors cache so the updated media shows up in Find Mentors immediately
       await cache.del('mentors:list');
       console.log('🗑️ [CACHE] Cleared mentors cache after media approval for mentor:', mentorId);
