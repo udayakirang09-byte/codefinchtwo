@@ -21,7 +21,7 @@ export default function MentorCard({ mentor }: MentorCardProps) {
 
   // Use secure backend proxy for teacher's photo (requires authentication)
   // Fallback to user profileImageUrl, then initials
-  const profileImage = mentor.media?.photoBlobPath 
+  const profileImage = mentor.media?.photoBlobUrl 
     ? `/api/images/mentor/${mentor.id}/photo`
     : mentor.user.profileImageUrl || null;
 
@@ -29,13 +29,12 @@ export default function MentorCard({ mentor }: MentorCardProps) {
   if (mentor.user.firstName === 'UDAYA' && mentor.user.lastName === 'prm') {
     console.log('🖼️ [MENTOR CARD] UDAYA prm photo debug:', {
       hasMedia: !!mentor.media,
-      photoBlobPath: mentor.media?.photoBlobPath,
       photoBlobUrl: mentor.media?.photoBlobUrl,
       photoStatus: mentor.media?.photoValidationStatus,
       profileImageUrl: mentor.user.profileImageUrl,
       finalProfileImage: profileImage,
       mentorId: mentor.id,
-      usingProxyEndpoint: !!mentor.media?.photoBlobPath
+      usingProxyEndpoint: !!mentor.media?.photoBlobUrl
     });
   }
 
@@ -121,11 +120,11 @@ export default function MentorCard({ mentor }: MentorCardProps) {
           )}
         </div>
 
-        {/* About Mentor Section */}
+        {/* About Teacher Section */}
         {mentor.description && (
           <div className="mb-5">
-            <h4 className="text-base font-bold text-gray-900 mb-2">About Mentor</h4>
-            <p className="text-sm text-gray-600 line-clamp-2" data-testid={`text-about-${mentor.id}`}>
+            <h4 className="text-base font-bold text-gray-900 mb-2">About Teacher</h4>
+            <p className="text-sm text-gray-600 line-clamp-3" data-testid={`text-about-${mentor.id}`}>
               {mentor.description}
             </p>
           </div>

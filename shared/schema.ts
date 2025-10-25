@@ -513,9 +513,7 @@ export type MentorWithUser = Mentor & {
   user: User;
   subjectsWithExperience?: { subject: string; experience: string }[];
   media?: {
-    photoBlobPath: string | null;
     photoBlobUrl: string | null;
-    videoBlobPath: string | null;
     videoBlobUrl: string | null;
     photoValidationStatus: string | null;
     videoValidationStatus: string | null;

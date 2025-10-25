@@ -646,9 +646,7 @@ export class DatabaseStorage implements IStorage {
         subjects: mentorSubjects,
         qualifications: mentorQualifications,
         media: media ? {
-          photoBlobPath: media.photoBlobPath,
           photoBlobUrl: media.photoBlobUrl,
-          videoBlobPath: media.videoBlobPath,
           videoBlobUrl: media.videoBlobUrl,
           photoValidationStatus: media.photoValidationStatus,
           videoValidationStatus: media.videoValidationStatus,
