@@ -2240,19 +2240,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Secure streaming endpoint for mentor profile photos (requires authentication)
-  app.get("/api/images/mentor/:id/photo", authenticateSession, async (req: any, res) => {
+  app.get("/api/images/mentor/:id/photo", async (req: any, res) => {
     try {
       const { id } = req.params;
 
-      // Verify user is authenticated and is a student
+      // Verify user is authenticated via session cookie (sent automatically by browser)
       if (!req.session?.userId) {
+        console.log('🔒 [PHOTO] No session found, authentication required');
         return res.status(401).send('Authentication required');
       }
 
       const user = await storage.getUser(req.session.userId);
       if (!user || user.role !== 'student') {
+        console.log('🔒 [PHOTO] Access denied - user role:', user?.role);
         return res.status(403).send('Access restricted to students only');
       }
+
+      console.log('✅ [PHOTO] Authenticated student:', user.email, 'requesting photo for mentor:', id);
 
       // Get mentor media data
       const media = await db.select().from(teacherMedia).where(eq(teacherMedia.mentorId, id)).limit(1);
@@ -2280,19 +2284,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Secure streaming endpoint for mentor profile videos (requires authentication)
-  app.get("/api/images/mentor/:id/video", authenticateSession, async (req: any, res) => {
+  app.get("/api/images/mentor/:id/video", async (req: any, res) => {
     try {
       const { id } = req.params;
 
-      // Verify user is authenticated and is a student
+      // Verify user is authenticated via session cookie (sent automatically by browser)
       if (!req.session?.userId) {
+        console.log('🔒 [VIDEO] No session found, authentication required');
         return res.status(401).send('Authentication required');
       }
 
       const user = await storage.getUser(req.session.userId);
       if (!user || user.role !== 'student') {
+        console.log('🔒 [VIDEO] Access denied - user role:', user?.role);
         return res.status(403).send('Access restricted to students only');
       }
+
+      console.log('✅ [VIDEO] Authenticated student:', user.email, 'requesting video for mentor:', id);
 
       // Get mentor media data
       const media = await db.select().from(teacherMedia).where(eq(teacherMedia.mentorId, id)).limit(1);
