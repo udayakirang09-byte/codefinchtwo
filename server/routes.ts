@@ -2255,19 +2255,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
 
-      // Verify user is authenticated via session cookie (sent automatically by browser)
-      if (!req.session?.userId) {
-        console.log('🔒 [PHOTO] No session found, authentication required');
+      // Check for authentication via Bearer token (admin) OR session cookie (student)
+      const userId = req.userSession?.userId || req.session?.userId;
+      if (!userId) {
+        console.log('🔒 [PHOTO] No authentication found');
         return res.status(401).send('Authentication required');
       }
 
-      const user = await storage.getUser(req.session.userId);
-      if (!user || user.role !== 'student') {
-        console.log('🔒 [PHOTO] Access denied - user role:', user?.role);
-        return res.status(403).send('Access restricted to students only');
+      const user = await storage.getUser(userId);
+      if (!user) {
+        console.log('🔒 [PHOTO] User not found:', userId);
+        return res.status(403).send('Access denied');
       }
 
-      console.log('✅ [PHOTO] Authenticated student:', user.email, 'requesting photo for mentor:', id);
+      // Allow students and admins (for approval purposes)
+      if (user.role !== 'student' && user.role !== 'admin') {
+        console.log('🔒 [PHOTO] Access denied - user role:', user.role);
+        return res.status(403).send('Access restricted to students and admins only');
+      }
+
+      console.log('✅ [PHOTO] Authenticated user:', user.email, '(', user.role, ') requesting photo for mentor:', id);
 
       // Get mentor media data
       const media = await db.select().from(teacherMedia).where(eq(teacherMedia.mentorId, id)).limit(1);
@@ -2308,19 +2315,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
 
-      // Verify user is authenticated via session cookie (sent automatically by browser)
-      if (!req.session?.userId) {
-        console.log('🔒 [VIDEO] No session found, authentication required');
+      // Check for authentication via Bearer token (admin) OR session cookie (student)
+      const userId = req.userSession?.userId || req.session?.userId;
+      if (!userId) {
+        console.log('🔒 [VIDEO] No authentication found');
         return res.status(401).send('Authentication required');
       }
 
-      const user = await storage.getUser(req.session.userId);
-      if (!user || user.role !== 'student') {
-        console.log('🔒 [VIDEO] Access denied - user role:', user?.role);
-        return res.status(403).send('Access restricted to students only');
+      const user = await storage.getUser(userId);
+      if (!user) {
+        console.log('🔒 [VIDEO] User not found:', userId);
+        return res.status(403).send('Access denied');
       }
 
-      console.log('✅ [VIDEO] Authenticated student:', user.email, 'requesting video for mentor:', id);
+      // Allow students and admins (for approval purposes)
+      if (user.role !== 'student' && user.role !== 'admin') {
+        console.log('🔒 [VIDEO] Access denied - user role:', user.role);
+        return res.status(403).send('Access restricted to students and admins only');
+      }
+
+      console.log('✅ [VIDEO] Authenticated user:', user.email, '(', user.role, ') requesting video for mentor:', id);
 
       // Get mentor media data
       const media = await db.select().from(teacherMedia).where(eq(teacherMedia.mentorId, id)).limit(1);
