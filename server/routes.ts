@@ -2272,12 +2272,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get mentor media data
       const media = await db.select().from(teacherMedia).where(eq(teacherMedia.mentorId, id)).limit(1);
-      if (!media || media.length === 0 || !media[0].photoBlobPath) {
+      if (!media || media.length === 0) {
         return res.status(404).send('Photo not available');
       }
 
+      // Extract blob path from full URL if using photoBlobUrl, otherwise use photoBlobPath
+      let blobPath = media[0].photoBlobPath;
+      if (media[0].photoBlobUrl) {
+        // Extract path from URL: https://account.blob.core.windows.net/container/path/to/blob
+        const urlParts = media[0].photoBlobUrl.split('/replayknowledge/');
+        if (urlParts.length > 1) {
+          blobPath = urlParts[1];
+        }
+      }
+
+      if (!blobPath) {
+        return res.status(404).send('Photo not available');
+      }
+
+      console.log(`📷 [PHOTO] Streaming from blob path: ${blobPath}`);
+
       // Stream photo from Azure Blob Storage
-      const result = await azureStorage.streamProfilePhoto(media[0].photoBlobPath);
+      const result = await azureStorage.streamProfilePhoto(blobPath);
       if (!result) {
         return res.status(500).send('Failed to load photo');
       }
@@ -2316,12 +2332,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get mentor media data
       const media = await db.select().from(teacherMedia).where(eq(teacherMedia.mentorId, id)).limit(1);
-      if (!media || media.length === 0 || !media[0].videoBlobPath) {
+      if (!media || media.length === 0) {
         return res.status(404).send('Video not available');
       }
 
+      // Extract blob path from full URL if using videoBlobUrl, otherwise use videoBlobPath
+      let blobPath = media[0].videoBlobPath;
+      if (media[0].videoBlobUrl) {
+        // Extract path from URL: https://account.blob.core.windows.net/container/path/to/blob
+        const urlParts = media[0].videoBlobUrl.split('/replayknowledge/');
+        if (urlParts.length > 1) {
+          blobPath = urlParts[1];
+        }
+      }
+
+      if (!blobPath) {
+        return res.status(404).send('Video not available');
+      }
+
+      console.log(`🎥 [VIDEO] Streaming from blob path: ${blobPath}`);
+
       // Stream video from Azure Blob Storage
-      const result = await azureStorage.streamProfileVideo(media[0].videoBlobPath);
+      const result = await azureStorage.streamProfileVideo(blobPath);
       if (!result) {
         return res.status(500).send('Failed to load video');
       }
