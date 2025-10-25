@@ -19,9 +19,11 @@ export default function MentorCard({ mentor }: MentorCardProps) {
     0
   ) || mentor.experience || 0;
 
-  // Use teacher's actual photo from approved media, fallback to user profileImageUrl, then initials
-  // Video byte: If video cannot be placed in card, display photo (as per user requirement)
-  const profileImage = mentor.media?.photoBlobUrl || mentor.user.profileImageUrl || null;
+  // Use secure backend proxy for teacher's photo (requires authentication)
+  // Fallback to user profileImageUrl, then initials
+  const profileImage = mentor.media?.photoBlobUrl 
+    ? `/api/images/mentor/${mentor.id}/photo`
+    : mentor.user.profileImageUrl || null;
 
   // 🔍 DEBUG: Log photo data for troubleshooting
   if (mentor.user.firstName === 'UDAYA' && mentor.user.lastName === 'prm') {
@@ -31,7 +33,8 @@ export default function MentorCard({ mentor }: MentorCardProps) {
       photoStatus: mentor.media?.photoValidationStatus,
       profileImageUrl: mentor.user.profileImageUrl,
       finalProfileImage: profileImage,
-      mentorId: mentor.id
+      mentorId: mentor.id,
+      usingProxyEndpoint: !!mentor.media?.photoBlobUrl
     });
   }
 

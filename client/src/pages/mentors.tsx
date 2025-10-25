@@ -268,20 +268,20 @@ export default function Mentors() {
             {filteredMentors.map((mentor: any) => (
               <Card key={mentor.id} className="group hover:shadow-xl transition-all duration-300 transform hover:scale-105 bg-white border-0">
                 <CardHeader className="pb-3">
-                  {/* Teacher Photo/Video */}
+                  {/* Teacher Photo/Video (via secure backend proxy) */}
                   {mentor.media && (mentor.media.videoBlobUrl || mentor.media.photoBlobUrl) && (
                     <div className="mb-4 relative rounded-xl overflow-hidden">
                       {mentor.media.videoBlobUrl ? (
                         <video 
-                          src={mentor.media.videoBlobUrl} 
+                          src={`/api/images/mentor/${mentor.id}/video`}
                           className="w-full h-48 object-cover"
                           controls
-                          poster={mentor.media.photoBlobUrl || undefined}
+                          poster={mentor.media.photoBlobUrl ? `/api/images/mentor/${mentor.id}/photo` : undefined}
                           data-testid={`video-mentor-${mentor.id}`}
                         />
                       ) : mentor.media.photoBlobUrl && (
                         <img 
-                          src={mentor.media.photoBlobUrl} 
+                          src={`/api/images/mentor/${mentor.id}/photo`}
                           alt={`${mentor.user?.firstName} ${mentor.user?.lastName}`}
                           className="w-full h-48 object-cover"
                           data-testid={`img-mentor-photo-${mentor.id}`}

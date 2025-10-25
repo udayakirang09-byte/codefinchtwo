@@ -38,6 +38,7 @@ import {
   paymentMethods,
   videoSessions,
   teacherSubjects,
+  teacherMedia,
   abusiveLanguageIncidents,
   adminUiConfig,
   emailOtps,
@@ -2239,7 +2240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Secure streaming endpoint for mentor profile photos (requires authentication)
-  app.get("/api/images/mentor/:id/photo", authenticateSession, async (req, res) => {
+  app.get("/api/images/mentor/:id/photo", authenticateSession, async (req: any, res) => {
     try {
       const { id } = req.params;
 
@@ -2253,19 +2254,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).send('Access restricted to students only');
       }
 
-      // Get mentor data
-      const mentor = await storage.getMentor(id);
-      if (!mentor) {
-        return res.status(404).send('Mentor not found');
-      }
-
-      // Check if mentor has a photo
-      if (!mentor.photoBlobPath) {
+      // Get mentor media data
+      const media = await db.select().from(teacherMedia).where(eq(teacherMedia.mentorId, id)).limit(1);
+      if (!media || media.length === 0 || !media[0].photoBlobPath) {
         return res.status(404).send('Photo not available');
       }
 
       // Stream photo from Azure Blob Storage
-      const result = await azureStorage.streamProfilePhoto(mentor.photoBlobPath);
+      const result = await azureStorage.streamProfilePhoto(media[0].photoBlobPath);
       if (!result) {
         return res.status(500).send('Failed to load photo');
       }
@@ -2284,7 +2280,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Secure streaming endpoint for mentor profile videos (requires authentication)
-  app.get("/api/images/mentor/:id/video", authenticateSession, async (req, res) => {
+  app.get("/api/images/mentor/:id/video", authenticateSession, async (req: any, res) => {
     try {
       const { id } = req.params;
 
@@ -2298,19 +2294,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).send('Access restricted to students only');
       }
 
-      // Get mentor data
-      const mentor = await storage.getMentor(id);
-      if (!mentor) {
-        return res.status(404).send('Mentor not found');
-      }
-
-      // Check if mentor has a video
-      if (!mentor.videoBlobPath) {
+      // Get mentor media data
+      const media = await db.select().from(teacherMedia).where(eq(teacherMedia.mentorId, id)).limit(1);
+      if (!media || media.length === 0 || !media[0].videoBlobPath) {
         return res.status(404).send('Video not available');
       }
 
       // Stream video from Azure Blob Storage
-      const result = await azureStorage.streamProfileVideo(mentor.videoBlobPath);
+      const result = await azureStorage.streamProfileVideo(media[0].videoBlobPath);
       if (!result) {
         return res.status(500).send('Failed to load video');
       }
