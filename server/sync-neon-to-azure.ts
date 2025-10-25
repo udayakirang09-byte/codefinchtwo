@@ -1,16 +1,16 @@
 import { Pool } from 'pg';
 
 async function syncNeonToAzure() {
-  const neonUrl = process.env.DATABASE_URL_NEON;
-  const azureUrl = process.env.DATABASE_URL;
+  const sourceUrl = process.env.DATABASE_URL;
+  const azureUrl = process.env.DATABASE_URL_AZURE;
 
-  console.log("🔄 Starting comprehensive Neon → Azure sync...\n");
+  console.log("🔄 Starting comprehensive Replit → Azure sync...\n");
 
-  if (!neonUrl || !azureUrl) {
-    throw new Error("Both DATABASE_URL_NEON and DATABASE_URL are required");
+  if (!sourceUrl || !azureUrl) {
+    throw new Error("Both DATABASE_URL and DATABASE_URL_AZURE are required");
   }
 
-  const neonPool = new Pool({ connectionString: neonUrl });
+  const sourcePool = new Pool({ connectionString: sourceUrl });
   const azurePool = new Pool({ 
     connectionString: azureUrl,
     ssl: { rejectUnauthorized: false }
@@ -18,23 +18,23 @@ async function syncNeonToAzure() {
 
   try {
     console.log("🔗 Testing connections...");
-    await neonPool.query('SELECT 1');
-    console.log("✅ Neon connected");
+    await sourcePool.query('SELECT 1');
+    console.log("✅ Source database connected");
     await azurePool.query('SELECT 1');
-    console.log("✅ Azure connected\n");
+    console.log("✅ Azure database connected\n");
 
     // STEP 1: FIX SCHEMA DIFFERENCES
     console.log("🔧 STEP 1: Fixing schema differences...\n");
 
-    // Get all tables from Neon
-    const neonTables = await neonPool.query(`
+    // Get all tables from source
+    const sourceTables = await sourcePool.query(`
       SELECT tablename 
       FROM pg_tables 
       WHERE schemaname = 'public' 
       ORDER BY tablename
     `);
 
-    for (const { tablename } of neonTables.rows) {
+    for (const { tablename } of sourceTables.rows) {
       // Check if table exists in Azure
       const azureTableExists = await azurePool.query(
         `SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = $1)`,
@@ -47,7 +47,7 @@ async function syncNeonToAzure() {
       }
 
       // Get columns from both databases
-      const neonCols = await neonPool.query(`
+      const sourceCols = await sourcePool.query(`
         SELECT column_name, data_type, udt_name, is_nullable, column_default
         FROM information_schema.columns
         WHERE table_schema = 'public' AND table_name = $1
@@ -64,26 +64,26 @@ async function syncNeonToAzure() {
       const azureColMap = new Map(azureCols.rows.map(c => [c.column_name, c]));
 
       // Check for missing columns
-      for (const neonCol of neonCols.rows) {
-        if (!azureColMap.has(neonCol.column_name)) {
-          console.log(`  🔧 Adding column: ${tablename}.${neonCol.column_name}`);
+      for (const sourceCol of sourceCols.rows) {
+        if (!azureColMap.has(sourceCol.column_name)) {
+          console.log(`  🔧 Adding column: ${tablename}.${sourceCol.column_name}`);
           
           // Build ALTER TABLE statement
-          let colType = neonCol.data_type;
-          if (neonCol.data_type === 'USER-DEFINED') {
-            colType = neonCol.udt_name;
+          let colType = sourceCol.data_type;
+          if (sourceCol.data_type === 'USER-DEFINED') {
+            colType = sourceCol.udt_name;
           }
-          if (neonCol.data_type === 'ARRAY') {
-            colType = neonCol.udt_name + '[]';
+          if (sourceCol.data_type === 'ARRAY') {
+            colType = sourceCol.udt_name + '[]';
           }
           
-          const nullable = neonCol.is_nullable === 'YES' ? '' : ' NOT NULL';
-          const defaultVal = neonCol.column_default ? ` DEFAULT ${neonCol.column_default}` : '';
+          const nullable = sourceCol.is_nullable === 'YES' ? '' : ' NOT NULL';
+          const defaultVal = sourceCol.column_default ? ` DEFAULT ${sourceCol.column_default}` : '';
           
           try {
             await azurePool.query(`
               ALTER TABLE ${tablename} 
-              ADD COLUMN ${neonCol.column_name} ${colType}${defaultVal}${nullable}
+              ADD COLUMN ${sourceCol.column_name} ${colType}${defaultVal}${nullable}
             `);
             console.log(`    ✅ Added successfully`);
           } catch (err: any) {
@@ -165,14 +165,14 @@ async function syncNeonToAzure() {
 
     for (const table of tables) {
       try {
-        const exists = await neonPool.query(
+        const exists = await sourcePool.query(
           `SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = $1)`,
           [table]
         );
 
         if (!exists.rows[0].exists) continue;
 
-        const result = await neonPool.query(`SELECT * FROM ${table}`);
+        const result = await sourcePool.query(`SELECT * FROM ${table}`);
         if (result.rows.length === 0) continue;
 
         console.log(`📦 ${table}: ${result.rows.length} records`);
@@ -262,7 +262,7 @@ async function syncNeonToAzure() {
     }
 
     // Final verification
-    const neonCounts = await neonPool.query(`
+    const sourceCounts = await sourcePool.query(`
       SELECT 
         (SELECT COUNT(*) FROM users) as users,
         (SELECT COUNT(*) FROM mentors) as mentors,
@@ -277,17 +277,17 @@ async function syncNeonToAzure() {
     `);
 
     console.log("📊 Final counts:");
-    console.log("  Neon: ", neonCounts.rows[0]);
+    console.log("  Source: ", sourceCounts.rows[0]);
     console.log("  Azure:", azureCounts.rows[0]);
 
-    const neon = neonCounts.rows[0];
+    const source = sourceCounts.rows[0];
     const azure = azureCounts.rows[0];
     let allMatch = true;
     
     console.log("\n🔍 Verification:");
-    for (const key in neon) {
-      const match = neon[key] === azure[key];
-      console.log(`${match ? '✅' : '⚠️ '} ${key}: Neon=${neon[key]}, Azure=${azure[key]}`);
+    for (const key in source) {
+      const match = source[key] === azure[key];
+      console.log(`${match ? '✅' : '⚠️ '} ${key}: Source=${source[key]}, Azure=${azure[key]}`);
       if (!match) allMatch = false;
     }
 
@@ -298,7 +298,7 @@ async function syncNeonToAzure() {
     console.error("❌ Sync failed:", error);
     throw error;
   } finally {
-    await neonPool.end();
+    await sourcePool.end();
     await azurePool.end();
   }
 }

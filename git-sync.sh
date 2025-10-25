@@ -29,11 +29,11 @@ fi
 if [ "$SYNC_DB" = true ]; then
     echo ""
     echo "📊 Step 2: Syncing database to Azure..."
-    echo "  → Pushing schema to Neon..."
+    echo "  → Pushing schema to source database..."
     npm run db:push --force 2>/dev/null || npm run db:push
     
     echo "  → Syncing data to Azure..."
-    FORCE_SYNC=true tsx server/sync-to-azure.ts
+    tsx server/sync-neon-to-azure.ts
     echo "✅ Database synced successfully"
 fi
 
