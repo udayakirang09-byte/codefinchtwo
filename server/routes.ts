@@ -2250,16 +2250,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Secure streaming endpoint for mentor profile photos (PUBLIC - no auth required for admin approval workflow)
+  // Secure streaming endpoint for mentor profile photos (requires authentication via Bearer token OR session cookie)
   app.get("/api/images/mentor/:id/photo", async (req: any, res) => {
     try {
       const { id } = req.params;
 
       console.log('📸 [PHOTO] Request for mentor photo:', id);
+      
+      // Check authentication: Support BOTH Bearer tokens (admin) AND session cookies (students)
+      // req.userSession = from Bearer token (used by admin approval page)
+      // req.session = from session cookie (used by students browsing Find Mentors)
+      const userId = req.userSession?.userId || req.session?.userId;
+      console.log('🔍 [PHOTO AUTH] userSession userId:', req.userSession?.userId, 'session userId:', req.session?.userId, 'final userId:', userId);
+      
+      if (!userId) {
+        console.log('🔒 [PHOTO] No authentication found - request denied');
+        return res.status(401).send('Authentication required');
+      }
+
+      const user = await storage.getUser(userId);
+      console.log('🔍 [PHOTO AUTH] User retrieved:', user?.email, 'role:', user?.role);
+      
+      if (!user) {
+        console.log('🔒 [PHOTO] User not found:', userId);
+        return res.status(403).send('Access denied');
+      }
+
+      // Allow students and admins (for approval purposes)
+      const isStudent = user.role === 'student';
+      const isAdmin = user.role === 'admin';
+      console.log('🔍 [PHOTO AUTH] isStudent:', isStudent, 'isAdmin:', isAdmin, 'should allow:', (isStudent || isAdmin));
+      
+      if (!isStudent && !isAdmin) {
+        console.log('🔒 [PHOTO] Access denied - user role:', user.role);
+        return res.status(403).send('Access restricted to students and admins only');
+      }
+
+      console.log('✅ [PHOTO] Authenticated user:', user.email, '(', user.role, ') requesting photo for mentor:', id);
 
       // Get mentor media data
       const media = await db.select().from(teacherMedia).where(eq(teacherMedia.mentorId, id)).limit(1);
       if (!media || media.length === 0) {
+        console.log(`❌ [PHOTO] No media record found for mentor ${id}`);
         return res.status(404).send('Photo not available');
       }
 
@@ -2291,16 +2323,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Secure streaming endpoint for mentor profile videos (PUBLIC - no auth required for admin approval workflow)
+  // Secure streaming endpoint for mentor profile videos (requires authentication via Bearer token OR session cookie)
   app.get("/api/images/mentor/:id/video", async (req: any, res) => {
     try {
       const { id } = req.params;
 
       console.log('🎥 [VIDEO] Request for mentor video:', id);
+      
+      // Check authentication: Support BOTH Bearer tokens (admin) AND session cookies (students)
+      // req.userSession = from Bearer token (used by admin approval page)
+      // req.session = from session cookie (used by students browsing Find Mentors)
+      const userId = req.userSession?.userId || req.session?.userId;
+      console.log('🔍 [VIDEO AUTH] userSession userId:', req.userSession?.userId, 'session userId:', req.session?.userId, 'final userId:', userId);
+      
+      if (!userId) {
+        console.log('🔒 [VIDEO] No authentication found - request denied');
+        return res.status(401).send('Authentication required');
+      }
+
+      const user = await storage.getUser(userId);
+      console.log('🔍 [VIDEO AUTH] User retrieved:', user?.email, 'role:', user?.role);
+      
+      if (!user) {
+        console.log('🔒 [VIDEO] User not found:', userId);
+        return res.status(403).send('Access denied');
+      }
+
+      // Allow students and admins (for approval purposes)
+      const isStudent = user.role === 'student';
+      const isAdmin = user.role === 'admin';
+      console.log('🔍 [VIDEO AUTH] isStudent:', isStudent, 'isAdmin:', isAdmin, 'should allow:', (isStudent || isAdmin));
+      
+      if (!isStudent && !isAdmin) {
+        console.log('🔒 [VIDEO] Access denied - user role:', user.role);
+        return res.status(403).send('Access restricted to students and admins only');
+      }
+
+      console.log('✅ [VIDEO] Authenticated user:', user.email, '(', user.role, ') requesting video for mentor:', id);
 
       // Get mentor media data
       const media = await db.select().from(teacherMedia).where(eq(teacherMedia.mentorId, id)).limit(1);
       if (!media || media.length === 0) {
+        console.log(`❌ [VIDEO] No media record found for mentor ${id}`);
         return res.status(404).send('Video not available');
       }
 

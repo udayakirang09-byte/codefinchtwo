@@ -636,6 +636,10 @@ export class DatabaseStorage implements IStorage {
         }
       }
 
+      // Transform blob paths to proxy URLs for Backend Proxy (Option 3)
+      const photoBlobUrl = media?.photoBlobPath ? `/api/images/mentor/${mentor.id}/photo` : null;
+      const videoBlobUrl = media?.videoBlobPath ? `/api/images/mentor/${mentor.id}/video` : null;
+
       return {
         ...mentor,
         rating: calculatedRating,
@@ -646,8 +650,8 @@ export class DatabaseStorage implements IStorage {
         subjects: mentorSubjects,
         qualifications: mentorQualifications,
         media: media ? {
-          photoBlobUrl: media.photoBlobUrl,
-          videoBlobUrl: media.videoBlobUrl,
+          photoBlobUrl,
+          videoBlobUrl,
           photoValidationStatus: media.photoValidationStatus,
           videoValidationStatus: media.videoValidationStatus,
         } : null,
