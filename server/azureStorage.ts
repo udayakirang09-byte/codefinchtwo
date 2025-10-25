@@ -371,6 +371,48 @@ export class AzureStorageService {
     
     return blobs;
   }
+
+  async streamProfilePhoto(blobPath: string): Promise<{ stream: NodeJS.ReadableStream; contentType: string; contentLength: number } | null> {
+    try {
+      const blockBlobClient = this.getContainer().getBlockBlobClient(blobPath);
+      const downloadResponse = await blockBlobClient.download(0);
+
+      if (!downloadResponse.readableStreamBody) {
+        console.error(`❌ No readable stream for blob: ${blobPath}`);
+        return null;
+      }
+
+      return {
+        stream: downloadResponse.readableStreamBody,
+        contentType: downloadResponse.contentType || 'image/jpeg',
+        contentLength: downloadResponse.contentLength || 0,
+      };
+    } catch (error: any) {
+      console.error(`❌ Error streaming photo from ${blobPath}:`, error);
+      return null;
+    }
+  }
+
+  async streamProfileVideo(blobPath: string): Promise<{ stream: NodeJS.ReadableStream; contentType: string; contentLength: number } | null> {
+    try {
+      const blockBlobClient = this.getContainer().getBlockBlobClient(blobPath);
+      const downloadResponse = await blockBlobClient.download(0);
+
+      if (!downloadResponse.readableStreamBody) {
+        console.error(`❌ No readable stream for blob: ${blobPath}`);
+        return null;
+      }
+
+      return {
+        stream: downloadResponse.readableStreamBody,
+        contentType: downloadResponse.contentType || 'video/mp4',
+        contentLength: downloadResponse.contentLength || 0,
+      };
+    } catch (error: any) {
+      console.error(`❌ Error streaming video from ${blobPath}:`, error);
+      return null;
+    }
+  }
 }
 
 export const azureStorage = new AzureStorageService();

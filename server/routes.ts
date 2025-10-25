@@ -2238,6 +2238,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Secure streaming endpoint for mentor profile photos (requires authentication)
+  app.get("/api/images/mentor/:id/photo", authenticateSession, async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // Verify user is authenticated and is a student
+      if (!req.session?.userId) {
+        return res.status(401).send('Authentication required');
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user || user.role !== 'student') {
+        return res.status(403).send('Access restricted to students only');
+      }
+
+      // Get mentor data
+      const mentor = await storage.getMentor(id);
+      if (!mentor) {
+        return res.status(404).send('Mentor not found');
+      }
+
+      // Check if mentor has a photo
+      if (!mentor.photoBlobPath) {
+        return res.status(404).send('Photo not available');
+      }
+
+      // Stream photo from Azure Blob Storage
+      const result = await azureStorage.streamProfilePhoto(mentor.photoBlobPath);
+      if (!result) {
+        return res.status(500).send('Failed to load photo');
+      }
+
+      // Set appropriate headers
+      res.setHeader('Content-Type', result.contentType);
+      res.setHeader('Content-Length', result.contentLength);
+      res.setHeader('Cache-Control', 'private, max-age=3600'); // Cache for 1 hour
+
+      // Pipe the stream to response
+      result.stream.pipe(res);
+    } catch (error) {
+      console.error("Error streaming mentor photo:", error);
+      res.status(500).send('Failed to load photo');
+    }
+  });
+
+  // Secure streaming endpoint for mentor profile videos (requires authentication)
+  app.get("/api/images/mentor/:id/video", authenticateSession, async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // Verify user is authenticated and is a student
+      if (!req.session?.userId) {
+        return res.status(401).send('Authentication required');
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user || user.role !== 'student') {
+        return res.status(403).send('Access restricted to students only');
+      }
+
+      // Get mentor data
+      const mentor = await storage.getMentor(id);
+      if (!mentor) {
+        return res.status(404).send('Mentor not found');
+      }
+
+      // Check if mentor has a video
+      if (!mentor.videoBlobPath) {
+        return res.status(404).send('Video not available');
+      }
+
+      // Stream video from Azure Blob Storage
+      const result = await azureStorage.streamProfileVideo(mentor.videoBlobPath);
+      if (!result) {
+        return res.status(500).send('Failed to load video');
+      }
+
+      // Set appropriate headers
+      res.setHeader('Content-Type', result.contentType);
+      res.setHeader('Content-Length', result.contentLength);
+      res.setHeader('Cache-Control', 'private, max-age=3600'); // Cache for 1 hour
+
+      // Pipe the stream to response
+      result.stream.pipe(res);
+    } catch (error) {
+      console.error("Error streaming mentor video:", error);
+      res.status(500).send('Failed to load video');
+    }
+  });
+
   // Student routes
   app.get("/api/students/user/:userId", authenticateSession, async (req, res) => {
     try {
