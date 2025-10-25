@@ -163,8 +163,8 @@ export default function MentorProfile() {
             </div>
 
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-foreground mb-4">About</h2>
-              <p className="text-muted-foreground leading-relaxed" data-testid="text-mentor-description">
+              <h2 className="text-2xl font-bold text-foreground mb-4">About Mentor</h2>
+              <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap" data-testid="text-mentor-description">
                 {mentor.description}
               </p>
               {(mentor as any).country && (mentor as any).country !== 'NA-Country' && (

@@ -120,11 +120,11 @@ export default function MentorCard({ mentor }: MentorCardProps) {
           )}
         </div>
 
-        {/* About Teacher Section */}
+        {/* About Mentor Section */}
         {mentor.description && (
           <div className="mb-5">
-            <h4 className="text-base font-bold text-gray-900 mb-2">About Teacher</h4>
-            <p className="text-sm text-gray-600 line-clamp-3" data-testid={`text-about-${mentor.id}`}>
+            <h4 className="text-base font-bold text-gray-900 mb-2">About Mentor</h4>
+            <p className="text-sm text-gray-600 line-clamp-2" data-testid={`text-about-${mentor.id}`}>
               {mentor.description}
             </p>
           </div>
