@@ -305,9 +305,10 @@ export default function AllActiveClasses() {
   const handleRescheduleSubmit = () => {
     if (!selectedBooking || !newDate || !newHour) return;
 
-    // Construct the new date-time with minutes fixed at 00
-    const newDateTime = `${newDate}T${newHour}:00:00`;
+    // Construct the new date-time with IST timezone offset (+05:30)
+    const newDateTime = `${newDate}T${newHour}:00+05:30`;
     const newScheduledAt = new Date(newDateTime);
+    console.log(`🕐 [Timezone Fix] Reschedule: IST ${newDate} ${newHour}:00 → UTC ${newScheduledAt.toISOString()}`);
 
     // Check for conflicts with other active bookings
     const hasConflict = activeBookings.some(booking => {
@@ -331,7 +332,7 @@ export default function AllActiveClasses() {
 
     rescheduleMutation.mutate({
       bookingId: selectedBooking.id,
-      scheduledAt: newDateTime,
+      scheduledAt: newScheduledAt.toISOString(),
     });
   };
 
@@ -366,9 +367,10 @@ export default function AllActiveClasses() {
   const handleBulkRescheduleSubmit = () => {
     if (selectedBookingIds.length === 0 || !bulkNewDate || !bulkNewHour) return;
 
-    // Construct the new date-time with minutes fixed at 00
-    const bulkNewDateTime = `${bulkNewDate}T${bulkNewHour}:00:00`;
+    // Construct the new date-time with IST timezone offset (+05:30)
+    const bulkNewDateTime = `${bulkNewDate}T${bulkNewHour}:00+05:30`;
     const newScheduledAt = new Date(bulkNewDateTime);
+    console.log(`🕐 [Timezone Fix] Bulk Reschedule: IST ${bulkNewDate} ${bulkNewHour}:00 → UTC ${newScheduledAt.toISOString()}`);
 
     // Check for conflicts with other active bookings
     const conflictingBookings = selectedBookingIds.filter(selectedId => {
@@ -397,7 +399,7 @@ export default function AllActiveClasses() {
 
     bulkRescheduleMutation.mutate({
       bookingIds: selectedBookingIds,
-      scheduledAt: bulkNewDateTime,
+      scheduledAt: newScheduledAt.toISOString(),
     });
   };
 
