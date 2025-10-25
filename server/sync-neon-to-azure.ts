@@ -1,13 +1,30 @@
 import { Pool } from 'pg';
 
 async function syncNeonToAzure() {
-  const sourceUrl = process.env.DATABASE_URL;
-  const azureUrl = process.env.DATABASE_URL_AZURE;
+  // Support two environments:
+  // 1. Replit: DATABASE_URL (source) + DATABASE_URL_AZURE (Azure)
+  // 2. GitHub Actions: DATABASE_URL_NEON (source) + DATABASE_URL (Azure)
+  let sourceUrl = process.env.DATABASE_URL_NEON || process.env.DATABASE_URL;
+  let azureUrl = process.env.DATABASE_URL_AZURE || process.env.DATABASE_URL;
+
+  // If DATABASE_URL_NEON exists, DATABASE_URL is Azure (GitHub Actions scenario)
+  if (process.env.DATABASE_URL_NEON) {
+    sourceUrl = process.env.DATABASE_URL_NEON;
+    azureUrl = process.env.DATABASE_URL;
+  }
 
   console.log("🔄 Starting comprehensive Replit → Azure sync...\n");
 
   if (!sourceUrl || !azureUrl) {
-    throw new Error("Both DATABASE_URL and DATABASE_URL_AZURE are required");
+    console.error("❌ Missing database URLs:");
+    console.error("   DATABASE_URL:", process.env.DATABASE_URL ? "SET" : "NOT SET");
+    console.error("   DATABASE_URL_AZURE:", process.env.DATABASE_URL_AZURE ? "SET" : "NOT SET");
+    console.error("   DATABASE_URL_NEON:", process.env.DATABASE_URL_NEON ? "SET" : "NOT SET");
+    throw new Error("Database URLs required. Use either: (DATABASE_URL + DATABASE_URL_AZURE) or (DATABASE_URL_NEON + DATABASE_URL)");
+  }
+
+  if (sourceUrl === azureUrl) {
+    throw new Error("Source and Azure URLs are the same - cannot sync database to itself!");
   }
 
   const sourcePool = new Pool({ connectionString: sourceUrl });
