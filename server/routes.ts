@@ -1142,6 +1142,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isActive: true
       });
       
+      // Set session cookie for image authentication (enables <img> tags to authenticate)
+      (req as any).session.userId = user.id;
+      (req as any).session.userRole = user.role;
+      console.log(`🍪 [SESSION] Set session cookie for user ${user.email}`);
+      
       res.json({ 
         success: true, 
         sessionToken,
@@ -1166,6 +1171,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (sessionToken) {
         await storage.deleteSession(sessionToken);
+      }
+      
+      // Clear session cookie
+      if ((req as any).session) {
+        (req as any).session.destroy((err: any) => {
+          if (err) console.error('Session destroy error:', err);
+        });
       }
       
       res.json({ success: true, message: "Logged out successfully" });

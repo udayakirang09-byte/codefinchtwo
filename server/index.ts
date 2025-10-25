@@ -8,6 +8,7 @@ import { WebSocketServer } from "ws";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import cors from "cors";
+import session from "express-session";
 import { aiModeration, type ModerationContext } from "./ai-moderation";
 import { RecordingScheduler } from "./recordingScheduler";
 import { RetentionScheduler } from "./retentionScheduler";
@@ -75,6 +76,19 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Configure session middleware for cookie-based authentication (needed for img tags)
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV !== 'development', // HTTPS only in production
+    httpOnly: true, // Prevent XSS attacks
+    sameSite: process.env.NODE_ENV !== 'development' ? 'none' : 'lax', // Allow cross-site cookies in production
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
 
 // Force HTTPS redirect in production (Azure/Replit)
 app.use((req, res, next) => {
