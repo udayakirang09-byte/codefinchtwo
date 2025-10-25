@@ -1737,13 +1737,24 @@ export class DatabaseStorage implements IStorage {
         )
       );
 
-    return result.map((row: any) => ({
-      ...row.teacher_media,
-      mentor: {
-        ...row.mentors!,
-        user: row.users!
-      }
-    }));
+    return result.map((row: any) => {
+      const media = row.teacher_media;
+      const mentor = row.mentors;
+      
+      // Transform blob paths to proxy URLs for Backend Proxy (Option 3)
+      const photoBlobUrl = media.photoBlobPath ? `/api/images/mentor/${mentor.id}/photo` : null;
+      const videoBlobUrl = media.videoBlobPath ? `/api/images/mentor/${mentor.id}/video` : null;
+      
+      return {
+        ...media,
+        photoBlobUrl,  // Add camelCase field for frontend
+        videoBlobUrl,  // Add camelCase field for frontend
+        mentor: {
+          ...mentor!,
+          user: row.users!
+        }
+      };
+    });
   }
 
   async approveTeacherMedia(mentorId: string, approvalData: { photoApproved?: boolean; videoApproved?: boolean }): Promise<void> {
