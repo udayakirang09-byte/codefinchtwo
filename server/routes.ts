@@ -1845,7 +1845,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       req.user = user;
-      req.session = session;
+      req.userSession = session;
       
       // Prevent HTTP caching on authenticated endpoints to avoid 304 responses
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
@@ -1965,7 +1965,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { sessionToken } = req.params;
       
       // Only allow users to check their own session token
-      if (req.session.sessionToken !== sessionToken && req.user.role !== 'admin') {
+      if (req.userSession.sessionToken !== sessionToken && req.user.role !== 'admin') {
         return res.status(403).json({ message: "Access denied" });
       }
       
@@ -1993,7 +1993,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { sessionToken } = req.params;
       
       // Only allow users to update their own session
-      if (req.session.sessionToken !== sessionToken) {
+      if (req.userSession.sessionToken !== sessionToken) {
         return res.status(403).json({ message: "Access denied" });
       }
       
@@ -2010,7 +2010,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { sessionToken } = req.params;
       
       // Only allow users to deactivate their own session or admin
-      if (req.session.sessionToken !== sessionToken && req.user.role !== 'admin') {
+      if (req.userSession.sessionToken !== sessionToken && req.user.role !== 'admin') {
         return res.status(403).json({ message: "Access denied" });
       }
       
