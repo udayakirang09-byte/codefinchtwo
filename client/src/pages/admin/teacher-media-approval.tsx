@@ -51,11 +51,8 @@ export default function TeacherMediaApproval() {
     queryKey: ['/api/admin/teacher-media/pending']
   });
 
-  // Helper function to convert Azure Blob URL to proxied URL
-  const getProxiedUrl = (blobUrl: string | null): string | null => {
-    if (!blobUrl) return null;
-    return `/api/media/proxy?url=${encodeURIComponent(blobUrl)}`;
-  };
+  // Backend returns proxy URLs directly (Option 3: Backend Proxy)
+  // No transformation needed - URLs like /api/images/mentor/:id/photo are already proxied
 
   const updateConfigMutation = useMutation({
     mutationFn: async (approvalRequired: boolean) => {
@@ -278,7 +275,7 @@ export default function TeacherMediaApproval() {
                         {media.photoBlobUrl ? (
                           <div className="space-y-2">
                             <img 
-                              src={getProxiedUrl(media.photoBlobUrl) || ''} 
+                              src={media.photoBlobUrl || ''} 
                               alt="Teacher" 
                               className="w-20 h-20 object-cover rounded"
                               data-testid={`img-teacher-photo-${media.id}`}
@@ -319,7 +316,7 @@ export default function TeacherMediaApproval() {
                         {media.videoBlobUrl ? (
                           <div className="space-y-2">
                             <video 
-                              src={getProxiedUrl(media.videoBlobUrl) || ''} 
+                              src={media.videoBlobUrl || ''} 
                               className="w-40 h-24 rounded"
                               controls
                               data-testid={`video-teacher-intro-${media.id}`}
