@@ -12485,29 +12485,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
             mergedAt: blob.lastModified,
           });
           
-          // Create video_sessions entry for AI analysis (if booking exists)
-          if (bookingId && bookingId !== `unknown-${Date.now()}`) {
-            const existingSession = await db.select()
-              .from(videoSessions)
-              .where(eq(videoSessions.bookingId, bookingId))
+          // Create video_sessions entry for AI analysis (only if we have a REAL booking ID)
+          if (bookingId && !bookingId.startsWith('unknown-')) {
+            // Verify the booking actually exists in the database
+            const bookingExists = await db.select({ id: bookings.id })
+              .from(bookings)
+              .where(eq(bookings.id, bookingId))
               .limit(1);
             
-            if (existingSession.length === 0) {
-              await db.insert(videoSessions).values({
-                bookingId,
-                recordingUrl: blobUrl,
-                status: 'ended',
-                startedAt: blob.lastModified,
-                endedAt: blob.lastModified,
-              });
-              console.log(`✅ Created video_sessions entry for AI analysis`);
+            if (bookingExists.length > 0) {
+              const existingSession = await db.select()
+                .from(videoSessions)
+                .where(eq(videoSessions.bookingId, bookingId))
+                .limit(1);
+              
+              if (existingSession.length === 0) {
+                await db.insert(videoSessions).values({
+                  bookingId,
+                  roomId: `azure-sync-${bookingId}`, // Generate a room ID for synced recordings
+                  recordingUrl: blobUrl,
+                  status: 'ended',
+                  startedAt: blob.lastModified,
+                  endedAt: blob.lastModified,
+                });
+                console.log(`✅ Created video_sessions entry for AI analysis (booking: ${bookingId})`);
+              } else {
+                // Update existing session with recording URL
+                await db.update(videoSessions)
+                  .set({ recordingUrl: blobUrl })
+                  .where(eq(videoSessions.id, existingSession[0].id));
+                console.log(`✅ Updated video_sessions with recording URL (session: ${existingSession[0].id})`);
+              }
             } else {
-              // Update existing session with recording URL
-              await db.update(videoSessions)
-                .set({ recordingUrl: blobUrl })
-                .where(eq(videoSessions.id, existingSession[0].id));
-              console.log(`✅ Updated video_sessions with recording URL`);
+              console.log(`⚠️  Booking ${bookingId} not found in database - cannot create video_sessions`);
             }
+          } else {
+            console.log(`⚠️  No valid booking ID - skipping video_sessions creation for ${blob.name}`);
           }
           
           console.log(`✅ Synced: ${blob.name}`);
