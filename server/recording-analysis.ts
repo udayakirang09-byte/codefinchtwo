@@ -368,9 +368,9 @@ Respond in JSON format:
 
     // Filter out already analyzed sessions
     const analyzedSessionIds = (await db.select({ videoSessionId: recordingAnalysis.videoSessionId })
-      .from(recordingAnalysis)).map(r => r.videoSessionId);
+      .from(recordingAnalysis)).map((r: { videoSessionId: string }) => r.videoSessionId);
     
-    const pendingRecordings = sessions.filter(s => !analyzedSessionIds.includes(s.id));
+    const pendingRecordings = sessions.filter((s: { id: string; recordingUrl: string | null }) => !analyzedSessionIds.includes(s.id));
 
     console.log(`📊 Found ${pendingRecordings.length} unanalyzed video sessions`);
 

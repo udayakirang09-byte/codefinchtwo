@@ -4114,7 +4114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`📅 [Available Times] Filtering for mentor ${id} on ${selectedDate} (${dayOfWeek})`);
       
       // Filter time slots for the selected day
-      const dayTimeSlots = allTimeSlots.filter(slot => slot.dayOfWeek === dayOfWeek && slot.isAvailable);
+      const dayTimeSlots = allTimeSlots.filter((slot: any) => slot.dayOfWeek === dayOfWeek && slot.isAvailable);
       
       if (dayTimeSlots.length === 0) {
         console.log(`📅 [Available Times] No time slots found for ${dayOfWeek}`);
@@ -4150,7 +4150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Bookings are stored in UTC, so we convert them to IST for comparison
       const occupiedHourlySlots = new Set<string>();
       
-      bookedSlots.forEach(booking => {
+      bookedSlots.forEach((booking: any) => {
         const bookingStartUTC = new Date(booking.scheduledAt);
         const bookingEndUTC = new Date(bookingStartUTC.getTime() + (booking.duration || 55) * 60000);
         
@@ -4179,7 +4179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Teacher's time slots are already in IST, so use them directly
       const availableTimes: string[] = [];
       
-      dayTimeSlots.forEach(slot => {
+      dayTimeSlots.forEach((slot: any) => {
         const startHour = parseInt(slot.startTime.split(':')[0]);
         const endHour = parseInt(slot.endTime.split(':')[0]);
         
@@ -12462,7 +12462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(videoSessions)
         .where(sql`${videoSessions.recordingUrl} IS NOT NULL`);
       
-      sessions.forEach(session => {
+      sessions.forEach((session: any) => {
         videoSessionsMap.set(session.bookingId, session.id);
       });
 
@@ -12471,12 +12471,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const analyses = await db.select()
         .from(recordingAnalysis);
       
-      analyses.forEach(analysis => {
+      analyses.forEach((analysis: any) => {
         analysesMap.set(analysis.videoSessionId, analysis);
       });
 
       // Combine the data
-      const recordingsWithStatus = recordings.map(rec => {
+      const recordingsWithStatus = recordings.map((rec: any) => {
         const videoSessionId = videoSessionsMap.get(rec.bookingId);
         const analysis = videoSessionId ? analysesMap.get(videoSessionId) : null;
         
